@@ -5,25 +5,31 @@
 EAPI=4
 
 DESCRIPTION="Gfxboot themes for Gentoo Linux"
-HOMEPAGE="http://www.github.com/anex5/gfxboot-themes-aur"
-EGIT_REPO_URI="http://www.github.com/anex5/gfxboot-themes-aur"
+HOMEPAGE="https://www.github.com/anex5"
+
+EGIT_REPO_URI="https://www.github.com/anex5/gfxboot-themes-aur.git"
+GIT_ECLASS="git-r3"
+
+inherit ${GIT_ECLASS}
 
 LICENSE="Apache-2.0"
 SLOT="0"
 KEYWORDS="amd64 x86"
 IUSE=""
 
-DEPEND="media-gfx/gfxboot"
-#	!<sys-apps/calculate-utils-3.5.2.6"
+DEPEND="media-gfx/gfxboot
+        dev-lang/perl
+        dev-vcs/git"
 
 RDEPEND="${DEPEND}"
 
 src_compile() {
-	emake -j1
+        chmod 0755 ${S}/po/bin/{rm_text,po2txt,fixpot,change_textadd_text}
+        emake -j1
 }
 
 src_install() {
-	dodir /usr/share/themes/gfxboot-themes-aur
-	insinto /usr/share/themes/gfxboot-themes-aur
-	doins -r $(find install/* | grep -v -e back.jpg -e install/log -e bootlogo.tar.gz)
+        dodir /usr/share/themes/gfxboot-themes-aur
+        insinto /usr/share/themes/gfxboot-themes-aur
+        doins -r $(find install/* | grep -v -e back.jpg -e install/log -e bootlogo.tar.gz)
 }
