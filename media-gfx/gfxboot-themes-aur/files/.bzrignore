@@ -1,0 +1,8 @@
+boot
+install
+po/*.tr
+po/text.inc
+debian/*.debhelper*
+debian/*.substvars
+debian/files
+debian/gfxboot-theme-ubuntu
