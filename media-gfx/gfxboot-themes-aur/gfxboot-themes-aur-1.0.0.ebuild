@@ -5,7 +5,8 @@
 EAPI=4
 
 DESCRIPTION="Gfxboot themes for Gentoo Linux"
-HOMEPAGE="http://www.github.com/anex5"
+HOMEPAGE="http://www.github.com/anex5/gfxboot-themes-aur"
+EGIT_REPO_URI="http://www.github.com/anex5/gfxboot-themes-aur"
 
 LICENSE="Apache-2.0"
 SLOT="0"
@@ -16,8 +17,6 @@ DEPEND="media-gfx/gfxboot"
 #	!<sys-apps/calculate-utils-3.5.2.6"
 
 RDEPEND="${DEPEND}"
-
-S=${FILESDIR}
 
 src_compile() {
 	emake -j1
