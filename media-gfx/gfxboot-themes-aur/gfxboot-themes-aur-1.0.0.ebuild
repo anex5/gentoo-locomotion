@@ -24,12 +24,12 @@ DEPEND="media-gfx/gfxboot
 RDEPEND="${DEPEND}"
 
 src_compile() {
-        chmod 0755 ${S}/po/bin/{rm_text,po2txt,fixpot,change_textadd_text}
+        chmod 0755 ${S}/po/bin/{rm_text,po2txt,fixpot,change_text,add_text}
         emake -j1
 }
 
 src_install() {
         dodir /usr/share/themes/gfxboot-themes-aur
         insinto /usr/share/themes/gfxboot-themes-aur
-        doins -r $(find install/* | grep -v -e back.jpg -e install/log -e bootlogo.tar.gz)
+        doins -r install/bootlogo
 }
