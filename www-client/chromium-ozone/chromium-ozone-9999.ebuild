@@ -16,9 +16,11 @@ HOMEPAGE="http://chromium.org/"
 
 LICENSE="BSD"
 SLOT="0"
-KEYWORDS="~amd64 ~x86"
-IUSE="component-build cups gnome-keyring +hangouts jumbo-build kerberos neon pic +proprietary-codecs pulseaudio selinux +suid +system-ffmpeg +system-icu +system-libvpx +tcmalloc widevine"
-RESTRICT="!system-ffmpeg? ( proprietary-codecs? ( bindist ) )"
+KEYWORDS="~amd64 ~arm64 ~x86"
+IUSE="atk component-build cups custom-cflags dbus gnome gnome-keyring gtk gtk3 jumbo-build kerberos neon pic +proprietary-codecs pulseaudio selinux +suid +system-ffmpeg +system-icu +system-libvpx +tcmalloc widevine wayland X"
+RESTRICT="mirror !system-ffmpeg? ( proprietary-codecs? ( bindist ) )"
+
+REQUIRED_USE="atk? ( dbus )"
 
 COMMON_DEPEND="
 	atk? ( app-accessibility/at-spi2-atk:2 )
