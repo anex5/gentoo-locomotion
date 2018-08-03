@@ -728,6 +728,7 @@ src_install() {
 
 	if use doc; then
 		readme.gentoo_create_doc
+	fi
 }
 
 pkg_preinst() {
