@@ -24,7 +24,7 @@ DEPEND="media-gfx/gfxboot
 RDEPEND="${DEPEND}"
 
 src_compile() {
-        chmod 0755 ${S}/po/bin/{rm_text,po2txt,fixpot,change_text,add_text}
+        fperms 0755 ${S}/po/bin/{rm_text,po2txt,fixpot,change_text,add_text}
         emake -j1
 }
 
