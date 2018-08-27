@@ -17,7 +17,7 @@ HOMEPAGE="http://chromium.org/"
 LICENSE="BSD"
 SLOT="0"
 KEYWORDS="~amd64 ~arm64 ~x86"
-IUSE="atk component-build cups custom-cflags dbus gnome gnome-keyring gtk gtk3 jumbo-build kerberos neon pic +proprietary-codecs pulseaudio selinux +suid +system-ffmpeg +system-icu +system-libvpx +tcmalloc widevine wayland X"
+IUSE="atk component-build cups custom-cflags dbus gnome gnome-keyring gtk gtk3 hangouts jumbo-build kerberos neon pic +proprietary-codecs pulseaudio selinux +suid +system-ffmpeg +system-icu +system-libvpx +tcmalloc widevine wayland X"
 RESTRICT="mirror !system-ffmpeg? ( proprietary-codecs? ( bindist ) )"
 
 REQUIRED_USE="atk? ( dbus )"
@@ -106,12 +106,11 @@ DEPEND="${COMMON_DEPEND}
 	dev-lang/perl
 	>=dev-util/gperf-3.0.3
 	>=dev-util/ninja-1.7.2
-	>=net-libs/nodejs-6.9.4
+	>=net-libs/nodejs-6.9.4[inspector]
 	sys-apps/hwids[usb(+)]
 	>=sys-devel/bison-2.4.3
 	sys-devel/flex
 	>=sys-devel/clang-5
-	>=sys-devel/lld-5
 	virtual/pkgconfig
 	dev-vcs/git
 "
@@ -198,33 +197,43 @@ src_unpack() {
 	#EGIT_REPO_URI="git://github.com/Igalia/chromium.git"
 	#EGIT_BRANCH="ozone-wayland-dev"
 	einfo "Fetching chromium using depot_tools"
+	export GYP_DEFINES="OS=linux"
+	#"${EPYTHON}" 
 	python2 depot_tools/gclient.py config --spec 'solutions=[{\
 		"url": "https://github.com/Igalia/chromium.git@origin/ozone-wayland-dev",\
 		"managed": False,\
 		"name": "src",\
-		"deps_file": ".DEPS.git",\
+		"deps_file": ".DEPS",\
 		"custom_deps": {\
+			"src/build/third_party/cbuildbot_chromite": None,\
+			"src/build/third_party/gsutil": None,\
+			"src/build/third_party/lighttpd": None,\
+			"src/build/third_party/swarm_client": None,\
+			"src/build/third_party/xvfb": None,\
+			"src/build/xvfb": None,\
 			"src/chrome/tools/test/reference_build/chrome_linux": None,\
 			"src/chrome/tools/test/reference_build/chrome_mac": None,\
 			"src/chrome/tools/test/reference_build/chrome_win": None,\
 			"src/chrome/tools/test/reference_build/chrome": None,\
 			"src/third_party/WebKit/LayoutTests": None,\
+			"src/webkit/data/layout_tests/LayoutTests":None,\
 			"src/chrome_frame/tools/test/reference_build/chrome_win": None,\
 			"src/chrome_frame/tools/test/reference_build/chrome": None,\
 			"src/chrome/test/data/perf/canvas_bench": None,\
 			"src/chrome/test/data/perf/frame_rate/content": None,\
 			"src/third_party/hunspell_dictionaries": None,\
+			"src/third_party/chromite": None,\
+			"src/third_party/pyelftools": None,\
 			"src/ios": None,\
 			"src/chromeos": None,\
-			"src/cloud_print": None,\
-            "src/courgette": None,\
-            "src/devices": None,\
-            "src/docs": None,\
+			"src/devices": None,\
 			"src/android_webview": None\
-	}}]; target_os = ["linux"]'
+	}}]; target_os = ["linux"]; target_os_only = True' || die
 	
-	python2 depot_tools/gclient.py sync --no-history --shallow --with_branch_heads --jobs=1 --disable-syntax-validation
+	#"${EPYTHON}" 
+	python2 depot_tools/gclient.py sync --upstream --no-history --shallow --with_branch_heads --jobs=1 --disable-syntax-validation --nohooks --noprehooks || die
 } 
+
 
 src_prepare() {
 	# Calling this here supports resumption via FEATURES=keepwork
@@ -233,8 +242,8 @@ src_prepare() {
 	default
 
 	mkdir -p third_party/node/linux/node-linux-x64/bin || die
-	ln -s "${EPREFIX}"/usr/bin/node third_party/node/linux/node-linux-x64/bin/node || die
 
+	ln -sf "${EPREFIX}"/usr/bin/node third_party/node/linux/node-linux-x64/bin/node || die
 	local keeplibs=(
 		base/third_party/dmg_fp
 		base/third_party/dynamic_annotations
@@ -296,7 +305,7 @@ src_prepare() {
 		third_party/crashpad
 		third_party/crashpad/crashpad/third_party/zlib
 		third_party/crc32c
-		third_party/cros_system_api
+		#third_party/cros_system_api
 		third_party/devscripts
 		third_party/dom_distiller_js
 		third_party/fips181
@@ -330,7 +339,7 @@ src_prepare() {
 		third_party/libxml/chromium
 		third_party/libyuv
 		#third_party/llvm
-		third_party/lss
+		#third_party/lss
 		third_party/lzma_sdk
 		third_party/markupsafe
 		third_party/mesa
@@ -387,7 +396,6 @@ src_prepare() {
 		url/third_party/mozilla
 		v8/src/third_party/valgrind
 		v8/src/third_party/utf8-decoder
-		v8/third_party/antlr4
 		v8/third_party/inspector_protocol
 
 		# gyp -> gn leftovers
@@ -395,7 +403,7 @@ src_prepare() {
 		third_party/adobe
 		third_party/speech-dispatcher
 		third_party/usb_ids
-		third_party/xdg-utils
+		#third_party/xdg-utils
 		third_party/yasm/run_yasm.py
 	)
 	if ! use system-ffmpeg; then
@@ -478,7 +486,7 @@ src_configure() {
 		fontconfig
 		freetype
 		# Need harfbuzz_from_pkgconfig target
-		#harfbuzz-ng
+		harfbuzz-ng
 		libdrm
 		libjpeg
 		libpng
@@ -516,7 +524,7 @@ src_configure() {
 	# TODO: link_pulseaudio=true for GN.
 
 	# Inox
-	myconf_gn+=" is_official_build=true" # implies is_cfi=true on x86_64
+	myconf_gn+=" is_official_build=false" # implies is_cfi=false on x86_64
 	myconf_gn+=" remove_webcore_debug_symbols=true"
 	myconf_gn+=" enable_hangout_services_extension=false"
 	myconf_gn+=" link_pulseaudio=$(usex pulseaudio true false)"
@@ -530,13 +538,13 @@ src_configure() {
 	if use wayland; then
 		myconf_gn+=" use_ozone=true"
 		myconf_gn+=" ozone_auto_platforms=false"
-		myconf_gn+=" ozone_platform_x11=true ozone_platform_wayland=true"
+		myconf_gn+=" ozone_platform_x11=false ozone_platform_wayland=true"
 		myconf_gn+=" enable_package_mash_services=true"
 		myconf_gn+=" enable_xdg_shell=true xkbcommon=true"
 		myconf_gn+=" enable_mus=true"
 	fi
 
-	myconf_gn+=" fieldtrial_testing_like_official_build=true"
+	myconf_gn+=" fieldtrial_testing_like_official_build=false"
 
 	# Never use bundled gold binary. Disable gold linker flags for now.
 	# Do not use bundled clang.
@@ -603,7 +611,7 @@ src_configure() {
 	fi
 
 	# https://bugs.gentoo.org/588596
-	#append-cxxflags $(test-flags-CXX -fno-delete-null-pointer-checks)
+	append-cxxflags $(test-flags-CXX -fno-delete-null-pointer-checks)
 
 	# Bug 491582.
 	export TMPDIR="${WORKDIR}/temp"
