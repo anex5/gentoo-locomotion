@@ -17,6 +17,7 @@ SLOT="0"
 IUSE=""
 
 DEPEND="
+	dev-perl/JSON
 	dev-lang/perl
 	dev-vcs/git
 "
@@ -24,7 +25,7 @@ DEPEND="
 src_prepare() {
 	if [[ ${PV} == "9999" ]] ; then
 		local ver="git-${EGIT_VERSION:0:6}"
-		sed -i "/^GITVER[[:space:]]*=/s:=.*:=${ver}:" mk/git.mk || die
+		#sed -i "/^GITVER[[:space:]]*=/s:=.*:=${ver}:" mk/git.mk || die
 		einfo "Producing ChangeLog from Git history"
 		GIT_DIR="${S}/.git" git log >"${S}"/ChangeLog
 	fi
@@ -43,7 +44,7 @@ src_install() {
 
 pkg_postinst() {
 	if [ -f "/usr/share/Th3inspector/Th3inspector.pl" ]; then
-		elog "You can execute tool by typing Th3inspector"
+		elog "You can execute tool by typing /usr/share/Th3inspector/Th3inspector.pl"
 	else
 		elog "Tool Cannot Be Installed On Your System! Use It As Portable !"
 	fi
