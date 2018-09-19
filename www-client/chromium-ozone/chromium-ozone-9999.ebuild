@@ -8,29 +8,30 @@ CHROMIUM_LANGS="am ar bg bn ca cs da de el en-GB es es-419 et fa fi fil fr gu he
 	hi hr hu id it ja kn ko lt lv ml mr ms nb nl pl pt-BR pt-PT ro ru sk sl sr
 	sv sw ta te th tr uk vi zh-CN zh-TW"
 
-inherit git-r3 check-reqs chromium-2 eutils gnome2-utils flag-o-matic multilib ninja-utils pax-utils portability python-any-r1 readme.gentoo-r1 toolchain-funcs xdg-utils
+inherit git-r3 check-reqs chromium-2 eutils gnome2-utils flag-o-matic multilib ninja-utils pax-utils portability python-any-r1 readme.gentoo-r1 toolchain-funcs xdg-utils versionator
 
 DESCRIPTION="Open-source version of Google Chrome web browser"
 HOMEPAGE="http://chromium.org/"
-#SRC_URI="https://commondatastorage.googleapis.com/chromium-browser-official/${P}.tar.xz"
+SRC_URI="https://commondatastorage.googleapis.com/chromium-browser-official/${P}.tar.xz"
 
 LICENSE="BSD"
 SLOT="0"
-KEYWORDS="~amd64 ~arm64 ~x86"
-IUSE="atk component-build cups custom-cflags dbus gnome gnome-keyring gtk gtk3 hangouts jumbo-build kerberos neon pic +proprietary-codecs pulseaudio selinux +suid +system-ffmpeg +system-icu +system-libvpx +tcmalloc widevine wayland X"
-RESTRICT="mirror !system-ffmpeg? ( proprietary-codecs? ( bindist ) )"
-
+KEYWORDS="~amd64 ~x86"
+IUSE="component-build cups gnome-keyring hangouts jumbo-build kerberos neon pic +proprietary-codecs pulseaudio selinux +suid +system-ffmpeg +system-icu +system-libvpx +tcmalloc widevine +thin-lto vaapi wayland X atk custom-cflags dbus gtk gtk3 doc"
+RESTRICT="!system-ffmpeg? ( proprietary-codecs? ( bindist ) )"
 REQUIRED_USE="atk? ( dbus )"
 
 COMMON_DEPEND="
-	atk? ( app-accessibility/at-spi2-atk:2 )
-	atk? ( dev-libs/atk )
 	app-arch/bzip2:=
 	cups? ( >=net-print/cups-1.3.11:= )
+	atk? ( 
+		dev-libs/atk
+		app-accessibility/at-spi2-atk:2
+	)
 	dev-libs/expat:=
 	dev-libs/glib:2
 	system-icu? ( >=dev-libs/icu-59:= )
-	>=dev-libs/libxml2-2.9.4-r3:=[icu]
+	>=dev-libs/libxml2-2.9.5:=[icu]
 	dev-libs/libxslt:=
 	dev-libs/nspr:=
 	>=dev-libs/nss-3.26:=
@@ -62,7 +63,8 @@ COMMON_DEPEND="
 	gtk3? ( x11-libs/gtk+:3[X] )
 	gtk? ( x11-libs/gtk+:2[X] )
 	X? ( 
-		x11-libs/libX11:= 
+		x11-libs/gtk+:3[X]
+		x11-libs/libX11:=
 		x11-libs/libXcomposite:=
 		x11-libs/libXcursor:=
 		x11-libs/libXdamage:=
@@ -74,7 +76,7 @@ COMMON_DEPEND="
 		x11-libs/libXScrnSaver:=
 		x11-libs/libXtst:=
 		x11-libs/pango:=
-	)	
+	)
 	app-arch/snappy:=
 	media-libs/flac:=
 	>=media-libs/libwebp-0.4.0:=
@@ -88,7 +90,6 @@ COMMON_DEPEND="
 # For nvidia-drivers blocker, see bug #413637 .
 RDEPEND="${COMMON_DEPEND}
 	!<www-plugins/chrome-binary-plugins-57
-	dev-util/gn
 	x11-misc/xdg-utils
 	virtual/opengl
 	virtual/ttf-fonts
@@ -104,13 +105,15 @@ DEPEND="${COMMON_DEPEND}
 		dev-lang/yasm
 	)
 	dev-lang/perl
+	dev-util/gn
 	>=dev-util/gperf-3.0.3
 	>=dev-util/ninja-1.7.2
-	>=net-libs/nodejs-6.9.4[inspector]
+	>=net-libs/nodejs-6.9.4
 	sys-apps/hwids[usb(+)]
 	>=sys-devel/bison-2.4.3
 	sys-devel/flex
 	>=sys-devel/clang-5
+	>=sys-devel/lld-5
 	virtual/pkgconfig
 	dev-vcs/git
 "
@@ -140,12 +143,13 @@ GTK+ icon theme.
 
 PATCHES=(
 	"${FILESDIR}/chromium-compiler-r4.patch"
-	"${FILESDIR}/chromium-widevine-r2.patch"
 	"${FILESDIR}/chromium-webrtc-r0.patch"
 	"${FILESDIR}/chromium-memcpy-r0.patch"
 	"${FILESDIR}/chromium-math.h-r0.patch"
 	"${FILESDIR}/chromium-stdint.patch"
 	"${FILESDIR}/chromium-ffmpeg-ebp-r1.patch"
+	"${FILESDIR}/chromium-skia-harmony.patch"
+	"${FILESDIR}/chromium-system-icu.patch"
 )
 
 pre_build_checks() {
@@ -203,7 +207,7 @@ src_unpack() {
 		"url": "https://github.com/Igalia/chromium.git@origin/ozone-wayland-dev",\
 		"managed": False,\
 		"name": "src",\
-		"deps_file": ".DEPS",\
+		"deps_file": "DEPS",\
 		"custom_deps": {\
 			"src/build/third_party/cbuildbot_chromite": None,\
 			"src/build/third_party/gsutil": None,\
@@ -215,18 +219,23 @@ src_unpack() {
 			"src/chrome/tools/test/reference_build/chrome_mac": None,\
 			"src/chrome/tools/test/reference_build/chrome_win": None,\
 			"src/chrome/tools/test/reference_build/chrome": None,\
-			"src/third_party/WebKit/LayoutTests": None,\
-			"src/webkit/data/layout_tests/LayoutTests":None,\
-			"src/chrome_frame/tools/test/reference_build/chrome_win": None,\
-			"src/chrome_frame/tools/test/reference_build/chrome": None,\
 			"src/chrome/test/data/perf/canvas_bench": None,\
 			"src/chrome/test/data/perf/frame_rate/content": None,\
+			"src/chrome/installer/mac/third_party/xz/xz": None,\
+			"src/third_party/WebKit/LayoutTests": None,\
+			"src/webkit/data/layout_tests/LayoutTests":None,\
 			"src/third_party/hunspell_dictionaries": None,\
 			"src/third_party/chromite": None,\
 			"src/third_party/pyelftools": None,\
-			"src/ios": None,\
-			"src/chromeos": None,\
-			"src/devices": None,\
+			"src/third_party/GTM": None,\
+			"src/third_party/pdfsqueeze": None,\
+			"src/third_party/swig/mac": None,\
+			"src/third_party/ffmpeg": None,\
+			"src/third_party/WebKit/Tools/gdb": None,\
+			"src/chrome/test/data/layout_tests/LayoutTests/platform/chromium-mac/http/tests/workers": None,\
+			"chromeos": None,\
+			"src/third_party/cros": None,\
+			"devices": None,\
 			"src/android_webview": None\
 	}}]; target_os = ["linux"]; target_os_only = True' || die
 	
@@ -241,9 +250,15 @@ src_prepare() {
 
 	default
 
-	mkdir -p third_party/node/linux/node-linux-x64/bin || die
+	use widevine && eapply "${FILESDIR}/${PN}-widevine-r2.patch"
+	use vaapi && for i in $(cat "${FILESDIR}/vaapi-patchset-$(get_major_version)/series");do eapply "${FILESDIR}/vaapi-patchset-$(get_major_version)/$i";done
+	for i in $(cat "${FILESDIR}/debian-patchset-$(get_major_version)/series");do eapply "${FILESDIR}/debian-patchset-$(get_major_version)/$i";done
+	for i in $(cat "${FILESDIR}/ungoogled-patchset-$(get_major_version)/series");do eapply "${FILESDIR}/ungoogled-patchset-$(get_major_version)/$i";done
 
-	ln -sf "${EPREFIX}"/usr/bin/node third_party/node/linux/node-linux-x64/bin/node || die
+
+	mkdir -p third_party/node/linux/node-linux-x64/bin || die
+	ln -s "${EPREFIX}"/usr/bin/node third_party/node/linux/node-linux-x64/bin/node || die
+
 	local keeplibs=(
 		base/third_party/dmg_fp
 		base/third_party/dynamic_annotations
@@ -305,7 +320,7 @@ src_prepare() {
 		third_party/crashpad
 		third_party/crashpad/crashpad/third_party/zlib
 		third_party/crc32c
-		#third_party/cros_system_api
+		third_party/cros_system_api
 		third_party/devscripts
 		third_party/dom_distiller_js
 		third_party/fips181
@@ -327,8 +342,6 @@ src_prepare() {
 		third_party/libXNVCtrl
 		third_party/libaddressinput
 		third_party/libaom
-		third_party/libaom/source/libaom/third_party/vector
-		third_party/libaom/source/libaom/third_party/x86inc
 		third_party/libjingle
 		third_party/libphonenumber
 		third_party/libsecret
@@ -338,15 +351,15 @@ src_prepare() {
 		third_party/libwebm
 		third_party/libxml/chromium
 		third_party/libyuv
-		#third_party/llvm
-		#third_party/lss
+		third_party/llvm
+		third_party/lss
 		third_party/lzma_sdk
 		third_party/markupsafe
 		third_party/mesa
 		third_party/metrics_proto
 		third_party/modp_b64
 		third_party/node
-		#third_party/node/node_modules/polymer-bundler/lib/third_party/UglifyJS2
+		third_party/node/node_modules/polymer-bundler/lib/third_party/UglifyJS2
 		third_party/openmax_dl
 		third_party/ots
 		third_party/pdfium
@@ -378,9 +391,6 @@ src_prepare() {
 		third_party/spirv-headers
 		third_party/spirv-tools-angle
 		third_party/sqlite
-		third_party/swiftshader
-		third_party/swiftshader/third_party/llvm-subzero
-		third_party/swiftshader/third_party/subzero
 		third_party/unrar
 		third_party/usrsctp
 		third_party/vulkan
@@ -396,6 +406,7 @@ src_prepare() {
 		url/third_party/mozilla
 		v8/src/third_party/valgrind
 		v8/src/third_party/utf8-decoder
+		v8/third_party/antlr4
 		v8/third_party/inspector_protocol
 
 		# gyp -> gn leftovers
@@ -403,7 +414,7 @@ src_prepare() {
 		third_party/adobe
 		third_party/speech-dispatcher
 		third_party/usb_ids
-		#third_party/xdg-utils
+		third_party/xdg-utils
 		third_party/yasm/run_yasm.py
 	)
 	if ! use system-ffmpeg; then
@@ -419,6 +430,7 @@ src_prepare() {
 	if use tcmalloc; then
 		keeplibs+=( third_party/tcmalloc )
 	fi
+	keeplibs+=( third_party/ungoogled )
 
 	# Remove most bundled libraries. Some are still needed.
 	build/linux/unbundle/remove_bundled_libraries.py "${keeplibs[@]}" --do-remove || die
@@ -480,6 +492,50 @@ src_configure() {
 	# TODO: use_system_ssl (http://crbug.com/58087).
 	# TODO: use_system_sqlite (http://crbug.com/22208).
 
+	#
+	myconf_gn+=" use_gio=false"
+	myconf_gn+=" use_vaapi=$(usex vaapi true false)"
+	myconf_gn+=" enable_vulkan=true"
+
+	# Debian
+	myconf_gn+=" use_libjpeg_turbo=true"
+	myconf_gn+=" enable_swiftshader=false"
+	myconf_gn+=" enable_nacl_nonsfi=false"
+	myconf_gn+=" enable_google_now=false"
+	myconf_gn+=" enable_reading_list=false"
+	myconf_gn+=" enable_iterator_debugging=false"
+	myconf_gn+=" link_pulseaudio=true"
+	myconf_gn+=" use_system_zlib=true"
+	myconf_gn+=" use_system_lcms2=true"
+	myconf_gn+=" use_system_libjpeg=true"
+	myconf_gn+=" use_system_freetype=true"
+
+	#
+	myconf_gn+=" blink_symbol_level=0"
+	myconf_gn+=" enable_ac3_eac3_audio_demuxing=true"
+	myconf_gn+=" enable_hevc_demuxing=true"
+	myconf_gn+=" enable_mdns=false"
+	myconf_gn+=" enable_mse_mpeg2ts_stream_parser=true"
+	myconf_gn+=" enable_one_click_signin=false"
+	myconf_gn+=" enable_remoting=false"
+	myconf_gn+=" enable_reporting=false"
+	myconf_gn+=" enable_service_discovery=false"
+	myconf_gn+=" exclude_unwind_tables=true"
+	myconf_gn+=" safe_browsing_mode=0"
+	myconf_gn+=" symbol_level=0"
+	myconf_gn+=" use_sysroot=false"
+
+	# wayland
+	if use wayland; then
+		myconf_gn+=" use_ozone=true"
+		myconf_gn+=" ozone_auto_platforms=false"
+		myconf_gn+=" ozone_platform_x11=false ozone_platform_wayland=true"
+		myconf_gn+=" enable_package_mash_services=true"
+		myconf_gn+=" enable_xdg_shell=true xkbcommon=true"
+		myconf_gn+=" enable_mus=true"
+	fi
+
+
 	# libevent: https://bugs.gentoo.org/593458
 	local gn_system_libraries=(
 		flac
@@ -508,6 +564,8 @@ src_configure() {
 	if use system-libvpx; then
 		gn_system_libraries+=( libvpx )
 	fi
+	gn_system_libraries+=( libevent )
+
 	build/linux/unbundle/replace_gn_files.py --system-libraries "${gn_system_libraries[@]}" || die
 
 	# See dependency logic in third_party/BUILD.gn
@@ -523,36 +581,15 @@ src_configure() {
 
 	# TODO: link_pulseaudio=true for GN.
 
-	# Inox
-	myconf_gn+=" is_official_build=false" # implies is_cfi=false on x86_64
-	myconf_gn+=" remove_webcore_debug_symbols=true"
-	myconf_gn+=" enable_hangout_services_extension=false"
-	myconf_gn+=" link_pulseaudio=$(usex pulseaudio true false)"
-	myconf_gn+=" enable_nacl_nonsfi=false"
-	myconf_gn+=" enable_swiftshader=false"
-	myconf_gn+=" enable_remoting=false"
-	myconf_gn+=" enable_google_now=false"
-	myconf_gn+=" enable_reporting=false"
-	myconf_gn+=" safe_browsing_mode=0"
-
-	if use wayland; then
-		myconf_gn+=" use_ozone=true"
-		myconf_gn+=" ozone_auto_platforms=false"
-		myconf_gn+=" ozone_platform_x11=false ozone_platform_wayland=true"
-		myconf_gn+=" enable_package_mash_services=true"
-		myconf_gn+=" enable_xdg_shell=true xkbcommon=true"
-		myconf_gn+=" enable_mus=true"
-	fi
-
-	myconf_gn+=" fieldtrial_testing_like_official_build=false"
+	myconf_gn+=" fieldtrial_testing_like_official_build=true"
 
 	# Never use bundled gold binary. Disable gold linker flags for now.
 	# Do not use bundled clang.
 	# Trying to use gold results in linker crash.
-	myconf_gn+=" use_gold=false use_sysroot=false linux_use_bundled_binutils=false use_custom_libcxx=false"
+	myconf_gn+=" use_gold=true use_sysroot=false linux_use_bundled_binutils=false use_custom_libcxx=false"
 
 	# Disable forced lld, bug 641556
-	myconf_gn+=" use_lld=false"
+	myconf_gn+=" use_lld=true"
 
 	ffmpeg_branding="$(usex proprietary-codecs Chrome Chromium)"
 	myconf_gn+=" proprietary_codecs=$(usex proprietary-codecs true false)"
@@ -611,7 +648,7 @@ src_configure() {
 	fi
 
 	# https://bugs.gentoo.org/588596
-	append-cxxflags $(test-flags-CXX -fno-delete-null-pointer-checks)
+	#append-cxxflags $(test-flags-CXX -fno-delete-null-pointer-checks)
 
 	# Bug 491582.
 	export TMPDIR="${WORKDIR}/temp"
@@ -620,11 +657,16 @@ src_configure() {
 	# https://bugs.gentoo.org/654216
 	addpredict /dev/dri/ #nowarn
 
-	#if ! use system-ffmpeg; then
-	if false; then
+	if ! use system-ffmpeg; then
 		local build_ffmpeg_args=""
 		if use pic && [[ "${ffmpeg_target_arch}" == "ia32" ]]; then
 			build_ffmpeg_args+=" --disable-asm"
+		fi
+
+		if use vaapi; then
+			build_ffmpeg_args+=" --enable-vaapi --enable-vaapi" build_ffmpeg_args+=" --enable-vaapi --enable-vaapi --optflags=-O3,-pipe,-fomit-frame-pointer,-fno-stack-protector --disable-debug"
+		else
+			build_ffmpeg_args+=" --enable-vdpau --enable-vdpau --enable-hwaccel=h264_vdpau,hevc_vdpau,mpeg1_vdpau,mpeg2_vdpau,mpeg4_vdpau,vc1_vdpau,wmv3_vdpau --optflags=-O3,-pipe,-fomit-frame-pointer,-fno-stack-protector --disable-debug"
 		fi
 
 		# Re-configure bundled ffmpeg. See bug #491378 for example reasons.
@@ -648,6 +690,18 @@ src_compile() {
 	python_setup
 
 	#"${EPYTHON}" tools/clang/scripts/update.py --force-local-build --gcc-toolchain /usr --skip-checkout --use-system-cmake --without-android || die
+
+	# Build mksnapshot and pax-mark it.
+	local x
+	for x in mksnapshot v8_context_snapshot_generator; do
+		if tc-is-cross-compiler; then
+			eninja -C out/Release "host/${x}"
+			pax-mark m "out/Release/host/${x}"
+		else
+			eninja -C out/Release "${x}"
+			pax-mark m "out/Release/${x}"
+		fi
+	done
 
 	# Even though ninja autodetects number of CPUs, we respect
 	# user's options, for debugging with -j 1 or any other reason.
@@ -701,11 +755,6 @@ src_install() {
 	doins -r out/Release/locales
 	doins -r out/Release/resources
 
-	if [[ -d out/Release/swiftshader ]]; then
-		insinto "${CHROMIUM_HOME}/swiftshader"
-		doins out/Release/swiftshader/*.so
-	fi
-
 	# Install icons and desktop entry.
 	local branding size
 	for size in 16 22 24 32 48 64 128 256 ; do
@@ -728,7 +777,6 @@ src_install() {
 			chromium-browser \
 			"Network;WebBrowser" \
 			"MimeType=${mime_types}\nStartupWMClass=chromium-browser"
-	
 		sed -e "/^Exec/s/$/ %U/" -i "${ED}"/usr/share/applications/*.desktop || die
 
 		# Install GNOME default application entry (bug #303100).
