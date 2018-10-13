@@ -17,7 +17,7 @@ should file a bug report to let the developers know about it.* —
 [Gentoo's Handbook](https://wiki.gentoo.org/wiki/Handbook:AMD64/Full/Portage#Testing)
 
 ## How to install the overlay
-You can clone the repository and create `/etc/portage/repos.conf/chaoslab.conf`
+You can clone the repository and create `/etc/portage/repos.conf/gentoo-locomotion.conf`
 with the following contents:
 
 ```ini
