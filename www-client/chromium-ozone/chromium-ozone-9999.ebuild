@@ -10,16 +10,17 @@ CHROMIUM_LANGS="
 	th tr uk vi zh-CN zh-TW
 "
 
-inherit check-reqs chromium-2 gnome2-utils eapi7-ver flag-o-matic multilib ninja-utils pax-utils portability python-r1 readme.gentoo-r1 toolchain-funcs xdg-utils
+inherit git-r3 check-reqs chromium-2 gnome2-utils eapi7-ver flag-o-matic multilib ninja-utils pax-utils portability python-r1 readme.gentoo-r1 toolchain-funcs xdg-utils
 
 UGC_PV="69.0.3497.100-2"
 UGC_P="ungoogled-chromium-${UGC_PV}"
 UGC_WD="${WORKDIR}/${UGC_P}"
 
+
 DESCRIPTION="Modifications to Chromium for removing Google integration and enhancing privacy"
 HOMEPAGE="https://github.com/Eloston/ungoogled-chromium https://www.chromium.org/ https://github.com/Igalia/chromium"
 SRC_URI="
-	https://github.com/Eloston/${PN}/archive/${UGC_PV}.tar.gz -> ${UGC_P}.tar.gz
+	https://github.com/Eloston/ungoogled-chromium/archive/${UGC_PV}.tar.gz -> ${UGC_P}.tar.gz
 "
 
 LICENSE="BSD"
@@ -112,7 +113,7 @@ DEPEND="${COMMON_DEPEND}
 	>=app-arch/gzip-1.7
 	dev-lang/perl
 	dev-lang/yasm
-	dev-util/depot_tools
+	dev-util/gn
 	>=dev-util/gperf-3.0.3
 	>=dev-util/ninja-1.7.2
 	>=net-libs/nodejs-6.9.4
@@ -155,16 +156,15 @@ theme that covers the appropriate MIME types, and configure this as your
 GTK+ icon theme.
 "
 
-PATCHES=(
-	"${FILESDIR}/chromium-compiler-r4.patch"
-	"${FILESDIR}/chromium-webrtc-r0.patch"
-	"${FILESDIR}/chromium-memcpy-r0.patch"
-	"${FILESDIR}/chromium-math.h-r0.patch"
-	"${FILESDIR}/chromium-stdint.patch"
-	"${FILESDIR}/chromium-ffmpeg-ebp-r1.patch"
-)
+PATCHES=()
+#	"${FILESDIR}/chromium-compiler-r4.patch"
+#	"${FILESDIR}/chromium-webrtc-r0.patch"
+#	"${FILESDIR}/chromium-memcpy-r0.patch"
+#	"${FILESDIR}/chromium-math.h-r0.patch"
+#	"${FILESDIR}/chromium-stdint.patch"
+#	"${FILESDIR}/chromium-ffmpeg-ebp-r1.patch"
+#)
 
-S="${WORKDIR}/src"
 
 pre_build_checks() {
 	# Check build requirements (Bug #541816, #471810)
@@ -192,13 +192,27 @@ pkg_setup() {
 }
 
 src_unpack() {
-	# build tools
+
+	default
+	
+	# build tools  
+	
+	URI_DEPOT_TOOLS="https://chromium.googlesource.com/chromium/tools/depot_tools.git"
+	einfo "Fetching depot_tools from googlesource"
+	git-r3_fetch ${URI_DEPOT_TOOLS}
+	git-r3_checkout ${URI_DEPOT_TOOLS} depot_tools
+
+	dosym {$S}/depot_tools/cipd /usr/bin/cipd
+	dosym {$S}/depot_tools/gclient /usr/bin/gclient
+
 	einfo "Fetching chromium using depot_tools"
 	
+	S="${WORKDIR}/src"
+
 	python_setup 'python2*'
 
 	if ! [[ -f .gclient ]]; then
-		gclient config --spec 'solutions=[{\
+		depot_tools/gclient config --name=src --spec 'solutions=[{\
 		"url": "https://github.com/Igalia/chromium.git@origin/ozone-wayland-dev",\
 		"managed": False,\
 		"name": "src",\
@@ -225,33 +239,33 @@ src_unpack() {
 			"src/third_party/GTM": None,\
 			"src/third_party/pdfsqueeze": None,\
 			"src/third_party/swig/mac": None,\
-			"src/third_party/ffmpeg": None,\
 			"src/third_party/WebKit/Tools/gdb": None,\
 			"src/chrome/test/data/layout_tests/LayoutTests/platform/chromium-mac/http/tests/workers": None,\
 			"chromeos": None,\
-			"src/third_party/cros": None,\
-			"devices": None,\
-			"src/android_webview": None\
+			"src/third_party/cros": None \
 		}}]; target_os = ["linux"]; target_os_only = True' || die
 	fi
 
-	gclient sync --upstream --no-history --shallow --with_branch_heads --jobs=1 --disable-syntax-validation --nohooks --noprehooks || die
+	depot_tools/gclient sync --upstream --no-history --shallow --with_branch_heads --jobs=1 --disable-syntax-validation || die
+	#depot_tools/gclient runhooks || die
+	
 } 
 
 src_prepare() {
 	# Calling this here supports resumption via FEATURES=keepwork
+    	
 	python_setup
 
 	default
 
 	mkdir -p third_party/node/linux/node-linux-x64/bin || die
-	ln -s "${EPREFIX%/}"/usr/bin/node third_party/node/linux/node-linux-x64/bin/node || die
+	ln -sf "${EPREFIX%/}"/usr/bin/node third_party/node/linux/node-linux-x64/bin/node || die
 
 	# Apply extra patches
-	local ep
-	for ep in "${FILESDIR}/extra-$(ver_cut 1-1)"/*.patch; do
-		eapply "${ep}"
-	done
+	#local ep
+	#for ep in "${FILESDIR}/extra\-69/*.patch"; do
+	#	eapply "${ep}"
+	#done
 
 	# Adapt ungoogled-chromium to *Gentoo* way
 	local ugc_cli="${UGC_WD}/run_buildkit_cli.py"
@@ -297,15 +311,15 @@ src_prepare() {
 	python_setup 'python3*'
 
 	ebegin "Pruning binaries"
-	"${ugc_cli}" prune -b "${ugc_config}" ./ || die
+	"${ugc_cli}" prune -b "${ugc_config}" "${S}" #|| die
 	eend $?
 
 	ebegin "Applying ungoogled-chromium patches"
-	"${ugc_cli}" patches apply -b "${ugc_config}" ./ || die
+	"${ugc_cli}" patches apply -b "${ugc_config}" "${S}" #|| die
 	eend $?
 
 	ebegin "Applying domain substitution"
-	"${ugc_cli}" domains apply -b "${ugc_config}" -c domainsubcache.tar.gz ./ || die
+	"${ugc_cli}" domains apply -b "${ugc_config}" -c domainsubcache.tar.gz "${S}" #|| die
 	eend $?
 
 	local keeplibs=(
@@ -367,7 +381,7 @@ src_prepare() {
 		third_party/crashpad
 		third_party/crashpad/crashpad/third_party/zlib
 		third_party/crc32c
-		third_party/cros_system_api
+		#third_party/cros_system_api
 		third_party/devscripts
 		third_party/dom_distiller_js
 		third_party/fips181
@@ -397,14 +411,14 @@ src_prepare() {
 		third_party/libwebm
 		third_party/libxml/chromium
 		third_party/libyuv
-		third_party/lss
+		#third_party/lss
 		third_party/lzma_sdk
 		third_party/markupsafe
 		third_party/mesa
 		third_party/metrics_proto
 		third_party/modp_b64
 		third_party/node
-		third_party/node/node_modules/polymer-bundler/lib/third_party/UglifyJS2
+		#third_party/node/node_modules/polymer-bundler/lib/third_party/UglifyJS2
 		third_party/openmax_dl
 		third_party/ots
 		third_party/pdfium
@@ -435,7 +449,7 @@ src_prepare() {
 		third_party/spirv-headers
 		third_party/spirv-tools-angle
 		third_party/sqlite
-		third_party/ungoogled
+		#third_party/ungoogled
 		third_party/unrar
 		third_party/usrsctp
 		third_party/vulkan
@@ -451,7 +465,7 @@ src_prepare() {
 		url/third_party/mozilla
 		v8/src/third_party/valgrind
 		v8/src/third_party/utf8-decoder
-		v8/third_party/antlr4
+		#v8/third_party/antlr4
 		v8/third_party/inspector_protocol
 
 		# gyp -> gn leftovers
@@ -580,7 +594,7 @@ src_configure() {
 	myconf_gn+=" is_clang=true"
 	myconf_gn+=" is_debug=false"
 	myconf_gn+=" is_official_build=true"
-	#myconf_gn+=" optimize_webui=false"
+	myconf_gn+=" optimize_webui=false"
 	myconf_gn+=" proprietary_codecs=$(usex proprietary-codecs true false)"
 	myconf_gn+=" safe_browsing_mode=0"
 	myconf_gn+=" symbol_level=0"
@@ -588,7 +602,6 @@ src_configure() {
 	myconf_gn+=" use_gnome_keyring=$(usex gnome-keyring true false)"
 	myconf_gn+=" use_jumbo_build=$(usex jumbo-build true false)"
 	myconf_gn+=" use_official_google_api_keys=false"
-	myconf_gn+=" use_ozone=false"
 	myconf_gn+=" use_sysroot=false"
 	myconf_gn+=" use_unofficial_version_number=false"
 	# Keep in sync with config_bundles/linux_rooted/gn_flags.map
@@ -602,7 +615,7 @@ src_configure() {
 	else
 		myconf_gn+=" host_toolchain=\"//build/toolchain/linux/unbundle:default\""
 	fi
-	myconf_gn+=" link_pulseaudio=true"
+	myconf_gn+=" link_pulseaudio=$(usex pulseaudio true false)"
 	myconf_gn+=" linux_use_bundled_binutils=false"
 	myconf_gn+=" optimize_for_size=false"
 	myconf_gn+=" use_allocator=$(usex tcmalloc \"tcmalloc\" \"none\")"
@@ -610,7 +623,7 @@ src_configure() {
 	myconf_gn+=" use_custom_libcxx=false"
 	myconf_gn+=" use_gio=false"
 	myconf_gn+=" use_gold=true"
-	myconf_gn+=" use_gtk3=true"
+	myconf_gn+=" use_gtk3=$(usex gtk true false)"
 	myconf_gn+=" use_kerberos=$(usex kerberos true false)"
 	myconf_gn+=" use_lld=true"
 	myconf_gn+=" use_openh264=$(usex openh264 true false)"
@@ -680,16 +693,16 @@ src_compile() {
 	python_setup 'python2*'
 
 	# Build mksnapshot and pax-mark it
-	local x
-	for x in mksnapshot v8_context_snapshot_generator; do
-		if tc-is-cross-compiler; then
-			eninja -C out/Release "host/${x}"
-			pax-mark m "out/Release/host/${x}"
-		else
-			eninja -C out/Release "${x}"
-			pax-mark m "out/Release/${x}"
-		fi
-	done
+	#local x
+	#for x in mksnapshot v8_context_snapshot_generator; do
+	#	if tc-is-cross-compiler; then
+	#		eninja -C out/Release "host/${x}"
+	#		pax-mark m "out/Release/host/${x}"
+	#	else
+	#		eninja -C out/Release "${x}"
+	#		pax-mark m "out/Release/${x}"
+	#	fi
+	#done
 
 	# Even though ninja autodetects number of CPUs, we respect
 	# user's options, for debugging with -j 1 or any other reason
@@ -791,7 +804,7 @@ pkg_postrm() {
 	if use gnome; then
 		gnome2_icon_cache_update
 		xdg_desktop_database_update
-	if
+	fi
 }
 
 pkg_postinst() {
