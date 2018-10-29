@@ -15,7 +15,7 @@ inherit git-r3 check-reqs chromium-2 gnome2-utils eapi7-ver flag-o-matic multili
 UGC_PV="70.0.3538.77"
 UGC_PR="1"
 UGC_PV1="70"
-UGC_P="ungoogled-chromium-${UGC_PV}-${UGC_PVR}"
+UGC_P="ungoogled-chromium-${UGC_PV}-${UGC_PR}"
 UGC_WD="${WORKDIR}/${UGC_P}"
 
 
@@ -82,12 +82,12 @@ COMMON_DEPEND="
 	dbus? ( sys-apps/dbus:= )
 	sys-apps/pciutils:=
 	virtual/udev
-	x11-libs/cairo:=
-	x11-libs/gdk-pixbuf:2
 	vaapi? ( >=x11-libs/libva:= )
 
 	gtk? ( x11-libs/gtk+:3[X] )
 	X? ( 
+		x11-libs/cairo:=
+		x11-libs/gdk-pixbuf:2
 		x11-libs/gtk+:3[X]
 		x11-libs/libX11:=
 		x11-libs/libXcomposite:=
@@ -167,13 +167,14 @@ GTK+ icon theme.
 "
 
 PATCHES=(
-	"${FILESDIR}/chromium-compiler-r4.patch"
+	"${FILESDIR}/ungoogled-chromium-compiler-r4.patch"
 	"${FILESDIR}/chromium-webrtc-r0.patch"
 	"${FILESDIR}/chromium-memcpy-r0.patch"
 	"${FILESDIR}/chromium-math.h-r0.patch"
 	"${FILESDIR}/chromium-stdint.patch"
 )
 
+S="${WORKDIR}/chromium-${UGC_PV}
 
 pre_build_checks() {
 	# Check build requirements (Bug #541816, #471810)
@@ -640,7 +641,11 @@ src_configure() {
 	myconf_gn+=" use_gnome_keyring=false" # Deprecated by libsecret
 	myconf_gn+=" use_jumbo_build=$(usex jumbo-build true false)"
 	myconf_gn+=" use_official_google_api_keys=false"
-	myconf_gn+=" use_ozone=false"
+
+	myconf_gn+=" use_gtk3=$(usex gtk true false)"
+	myconf_gn+=" rtc_use_gtk=$(usex gtk true false)"
+	myconf_gn+=" rtc_use_x11=$(usex X true false)"
+
 	myconf_gn+=" use_sysroot=false"
 	myconf_gn+=" use_unofficial_version_number=false"
 
@@ -676,6 +681,7 @@ src_configure() {
 	# wayland
 	if use wayland; then
 		myconf_gn+=" use_ozone=true"
+		myconf_gn+=" use_aura=true"
 		myconf_gn+=" ozone_auto_platforms=false"
 		myconf_gn+=" ozone_platform_x11=false ozone_platform_wayland=true"
 		myconf_gn+=" enable_package_mash_services=true"
