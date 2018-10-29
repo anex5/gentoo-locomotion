@@ -82,12 +82,18 @@ COMMON_DEPEND="
 	dbus? ( sys-apps/dbus:= )
 	sys-apps/pciutils:=
 	virtual/udev
+<<<<<<< HEAD
 	x11-libs/cairo:=
 	x11-libs/gdk-pixbuf:2
 	vaapi? ( x11-libs/libva:= )
+=======
+	vaapi? ( >=x11-libs/libva:= )
+>>>>>>> d85e6ff43ac46f19a7edde559cbb6b6113626c7c
 
 	gtk? ( x11-libs/gtk+:3[X] )
 	X? ( 
+		x11-libs/cairo:=
+		x11-libs/gdk-pixbuf:2
 		x11-libs/gtk+:3[X]
 		x11-libs/libX11:=
 		x11-libs/libXcomposite:=
@@ -174,7 +180,11 @@ PATCHES=(
 	"${FILESDIR}/chromium-stdint.patch"
 )
 
+<<<<<<< HEAD
 S="${WORKDIR}/chromium-${UGC_PV}"
+=======
+S="${WORKDIR}/chromium-${UGC_PV}
+>>>>>>> d85e6ff43ac46f19a7edde559cbb6b6113626c7c
 
 pre_build_checks() {
 	# Check build requirements (Bug #541816, #471810)
@@ -641,6 +651,14 @@ src_configure() {
 	myconf_gn+=" use_gnome_keyring=false" # Deprecated by libsecret
 	myconf_gn+=" use_jumbo_build=$(usex jumbo-build true false)"
 	myconf_gn+=" use_official_google_api_keys=false"
+<<<<<<< HEAD
+=======
+
+	myconf_gn+=" use_gtk3=$(usex gtk true false)"
+	myconf_gn+=" rtc_use_gtk=$(usex gtk true false)"
+	myconf_gn+=" rtc_use_x11=$(usex X true false)"
+
+>>>>>>> d85e6ff43ac46f19a7edde559cbb6b6113626c7c
 	myconf_gn+=" use_sysroot=false"
 	myconf_gn+=" use_unofficial_version_number=false"
 
@@ -676,6 +694,7 @@ src_configure() {
 	# wayland
 	if use wayland; then
 		myconf_gn+=" use_ozone=true"
+		myconf_gn+=" use_aura=true"
 		myconf_gn+=" ozone_auto_platforms=false"
 		myconf_gn+=" ozone_platform_x11=false ozone_platform_wayland=true"
 		myconf_gn+=" enable_package_mash_services=true"
