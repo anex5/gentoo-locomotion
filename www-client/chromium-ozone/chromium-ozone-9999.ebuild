@@ -173,7 +173,7 @@ PATCHES=(
 	"${FILESDIR}/chromium-stdint.patch"
 )
 
-S="${WORKDIR}/chromium-${UGC_PV}
+S="${WORKDIR}/chromium-${UGC_PV}"
 
 pre_build_checks() {
 	# Check build requirements (Bug #541816, #471810)
@@ -638,7 +638,7 @@ src_configure() {
 	myconf_gn+=" symbol_level=0"
 	myconf_gn+=" treat_warnings_as_errors=false"
 	myconf_gn+=" use_gnome_keyring=false" # Deprecated by libsecret
-	myconf_gn+=" use_jumbo_build=$(usex jumbo-build true false)"
+	myconf_gn+=" use_jumbo_build=$(usetf jumbo-build)"
 	myconf_gn+=" use_official_google_api_keys=false"
 
 	myconf_gn+=" use_gtk3=$(usex gtk true false)"
