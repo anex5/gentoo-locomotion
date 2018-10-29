@@ -25,7 +25,6 @@ done
 
 RDEPEND="
 	x11-libs/libdrm
-	# !media-libs/mesa[gbm]
 	"
 DEPEND="${RDEPEND}
 	virtual/pkgconfig
