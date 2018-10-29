@@ -10,12 +10,12 @@ CHROMIUM_LANGS="
 	th tr uk vi zh-CN zh-TW
 "
 
-inherit git-r3 check-reqs chromium-2 gnome2-utils eapi7-ver flag-o-matic multilib ninja-utils pax-utils portability python-r1 readme.gentoo-r1 toolchain-funcs xdg-utils
+inherit check-reqs chromium-2 gnome2-utils eapi7-ver flag-o-matic multilib ninja-utils pax-utils portability python-r1 readme.gentoo-r1 toolchain-funcs xdg-utils
 
 UGC_PV="70.0.3538.77"
 UGC_PR="1"
 UGC_PV1="70"
-UGC_P="ungoogled-chromium-${UGC_PV}-${UGC_PVR}"
+UGC_P="ungoogled-chromium-${UGC_PV}-${UGC_PR}"
 UGC_WD="${WORKDIR}/${UGC_P}"
 
 
@@ -84,7 +84,7 @@ COMMON_DEPEND="
 	virtual/udev
 	x11-libs/cairo:=
 	x11-libs/gdk-pixbuf:2
-	vaapi? ( >=x11-libs/libva:= )
+	vaapi? ( x11-libs/libva:= )
 
 	gtk? ( x11-libs/gtk+:3[X] )
 	X? ( 
@@ -167,13 +167,14 @@ GTK+ icon theme.
 "
 
 PATCHES=(
-	"${FILESDIR}/chromium-compiler-r4.patch"
+	"${FILESDIR}/ungoogled-chromium-compiler-r4.patch"
 	"${FILESDIR}/chromium-webrtc-r0.patch"
 	"${FILESDIR}/chromium-memcpy-r0.patch"
 	"${FILESDIR}/chromium-math.h-r0.patch"
 	"${FILESDIR}/chromium-stdint.patch"
 )
 
+S="${WORKDIR}/chromium-${UGC_PV}"
 
 pre_build_checks() {
 	# Check build requirements (Bug #541816, #471810)
@@ -640,7 +641,6 @@ src_configure() {
 	myconf_gn+=" use_gnome_keyring=false" # Deprecated by libsecret
 	myconf_gn+=" use_jumbo_build=$(usex jumbo-build true false)"
 	myconf_gn+=" use_official_google_api_keys=false"
-	myconf_gn+=" use_ozone=false"
 	myconf_gn+=" use_sysroot=false"
 	myconf_gn+=" use_unofficial_version_number=false"
 
@@ -770,9 +770,9 @@ src_install() {
 
 	doexe out/Release/chromedriver
 
-	newexe "${FILESDIR}/chromium-launcher-r3.sh" chromium-launcher.sh
+	newexe "${FILESDIR}/ungoogled-chromium-launcher-r3.sh" chromium-launcher.sh
 	sed -i "s:/usr/lib/:/usr/$(get_libdir)/:g" \
-		"${ED%/}${CHROMIUM_HOME}/chromium-launcher.sh" || die
+		"${ED%/}${CHROMIUM_HOME}/ungoogled-chromium-launcher.sh" || die
 
 	# It is important that we name the target "chromium-browser",
 	# xdg-utils expect it (Bug #355517)
