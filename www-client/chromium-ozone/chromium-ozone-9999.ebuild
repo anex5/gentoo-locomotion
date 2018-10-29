@@ -18,7 +18,6 @@ UGC_PV1="70"
 UGC_P="ungoogled-chromium-${UGC_PV}-${UGC_PR}"
 UGC_WD="${WORKDIR}/${UGC_P}"
 
-
 DESCRIPTION="Modifications to Chromium for removing Google integration and enhancing privacy"
 HOMEPAGE="https://github.com/Eloston/ungoogled-chromium https://www.chromium.org/ https://github.com/Igalia/chromium"
 SRC_URI="
@@ -778,7 +777,7 @@ src_install() {
 
 	newexe "${FILESDIR}/ungoogled-chromium-launcher-r3.sh" chromium-launcher.sh
 	sed -i "s:/usr/lib/:/usr/$(get_libdir)/:g" \
-		"${ED%/}${CHROMIUM_HOME}/ungoogled-chromium-launcher.sh" || die
+		"${ED%/}${CHROMIUM_HOME}/chromium-launcher.sh" || die
 
 	# It is important that we name the target "chromium-browser",
 	# xdg-utils expect it (Bug #355517)
