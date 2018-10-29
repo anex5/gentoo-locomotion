@@ -82,13 +82,9 @@ COMMON_DEPEND="
 	dbus? ( sys-apps/dbus:= )
 	sys-apps/pciutils:=
 	virtual/udev
-<<<<<<< HEAD
 	x11-libs/cairo:=
 	x11-libs/gdk-pixbuf:2
 	vaapi? ( x11-libs/libva:= )
-=======
-	vaapi? ( >=x11-libs/libva:= )
->>>>>>> d85e6ff43ac46f19a7edde559cbb6b6113626c7c
 
 	gtk? ( x11-libs/gtk+:3[X] )
 	X? ( 
@@ -180,11 +176,7 @@ PATCHES=(
 	"${FILESDIR}/chromium-stdint.patch"
 )
 
-<<<<<<< HEAD
-S="${WORKDIR}/chromium-${UGC_PV}"
-=======
 S="${WORKDIR}/chromium-${UGC_PV}
->>>>>>> d85e6ff43ac46f19a7edde559cbb6b6113626c7c
 
 pre_build_checks() {
 	# Check build requirements (Bug #541816, #471810)
@@ -651,14 +643,11 @@ src_configure() {
 	myconf_gn+=" use_gnome_keyring=false" # Deprecated by libsecret
 	myconf_gn+=" use_jumbo_build=$(usex jumbo-build true false)"
 	myconf_gn+=" use_official_google_api_keys=false"
-<<<<<<< HEAD
-=======
 
 	myconf_gn+=" use_gtk3=$(usex gtk true false)"
 	myconf_gn+=" rtc_use_gtk=$(usex gtk true false)"
 	myconf_gn+=" rtc_use_x11=$(usex X true false)"
 
->>>>>>> d85e6ff43ac46f19a7edde559cbb6b6113626c7c
 	myconf_gn+=" use_sysroot=false"
 	myconf_gn+=" use_unofficial_version_number=false"
 
