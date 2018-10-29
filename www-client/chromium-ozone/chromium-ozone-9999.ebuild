@@ -686,6 +686,7 @@ src_configure() {
 		myconf_gn+=" enable_package_mash_services=true"
 		myconf_gn+=" enable_xdg_shell=true xkbcommon=true"
 		myconf_gn+=" enable_mus=true"
+		myconf_gn+=" use_system_minigbm=false"
 	fi
 
 	# Optionally enable new tcmalloc (https://crbug.com/724399)

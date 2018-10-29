@@ -25,7 +25,8 @@ done
 
 RDEPEND="
 	x11-libs/libdrm
-	!media-libs/mesa[gbm]"
+	# !media-libs/mesa[gbm]
+	"
 DEPEND="${RDEPEND}
 	virtual/pkgconfig
 	video_cards_amdgpu? ( media-libs/mesa )"
