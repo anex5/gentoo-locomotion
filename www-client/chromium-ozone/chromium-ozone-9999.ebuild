@@ -10,7 +10,7 @@ CHROMIUM_LANGS="
 	th tr uk vi zh-CN zh-TW
 "
 
-inherit git-r3 check-reqs chromium-2 gnome2-utils eapi7-ver flag-o-matic multilib ninja-utils pax-utils portability python-r1 readme.gentoo-r1 toolchain-funcs xdg-utils
+inherit check-reqs chromium-2 gnome2-utils eapi7-ver flag-o-matic multilib ninja-utils pax-utils portability python-r1 readme.gentoo-r1 toolchain-funcs xdg-utils
 
 UGC_PV="70.0.3538.77"
 UGC_PR="1"
@@ -82,7 +82,7 @@ COMMON_DEPEND="
 	dbus? ( sys-apps/dbus:= )
 	sys-apps/pciutils:=
 	virtual/udev
-	vaapi? ( >=x11-libs/libva:= )
+	vaapi? ( x11-libs/libva:= )
 
 	gtk? ( x11-libs/gtk+:3[X] )
 	X? ( 
@@ -776,9 +776,9 @@ src_install() {
 
 	doexe out/Release/chromedriver
 
-	newexe "${FILESDIR}/chromium-launcher-r3.sh" chromium-launcher.sh
+	newexe "${FILESDIR}/ungoogled-chromium-launcher-r3.sh" chromium-launcher.sh
 	sed -i "s:/usr/lib/:/usr/$(get_libdir)/:g" \
-		"${ED%/}${CHROMIUM_HOME}/chromium-launcher.sh" || die
+		"${ED%/}${CHROMIUM_HOME}/ungoogled-chromium-launcher.sh" || die
 
 	# It is important that we name the target "chromium-browser",
 	# xdg-utils expect it (Bug #355517)

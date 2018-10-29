@@ -1,0 +1,47 @@
+--- a/build/config/compiler/BUILD.gn
++++ b/build/config/compiler/BUILD.gn
+@@ -235,8 +235,6 @@
+ 
+   configs += [
+     # See the definitions below.
+-    ":clang_revision",
+-    ":compiler_cpu_abi",
+     ":compiler_codegen",
+   ]
+ 
+@@ -1942,7 +1940,7 @@
+       cflags = [ "-Os" ] + common_optimize_on_cflags
+     }
+   } else {
+-    cflags = [ "-O2" ] + common_optimize_on_cflags
++    cflags = common_optimize_on_cflags
+   }
+   ldflags = common_optimize_on_ldflags
+ }
+@@ -1965,7 +1963,7 @@
+   } else if (optimize_for_fuzzing) {
+     cflags = [ "-O1" ] + common_optimize_on_cflags
+   } else {
+-    cflags = [ "-O2" ] + common_optimize_on_cflags
++    cflags = common_optimize_on_cflags
+   }
+   ldflags = common_optimize_on_ldflags
+ }
+@@ -2030,7 +2028,7 @@
+     } else if (optimize_for_fuzzing) {
+       cflags = [ "-O1" ] + common_optimize_on_cflags
+     } else {
+-      cflags = [ "-O2" ] + common_optimize_on_cflags
++      cflags = common_optimize_on_cflags
+     }
+   }
+ }
+@@ -2075,7 +2073,7 @@
+     } else if (optimize_for_fuzzing) {
+       cflags = [ "-O1" ] + common_optimize_on_cflags
+     } else {
+-      cflags = [ "-O3" ] + common_optimize_on_cflags
++      cflags = common_optimize_on_cflags
+     }
+   }
+ }
