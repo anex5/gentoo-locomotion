@@ -10,14 +10,14 @@ CHROMIUM_LANGS="
 	th tr uk vi zh-CN zh-TW
 "
 
-inherit check-reqs chromium-2 gnome2-utils eapi7-ver flag-o-matic multilib ninja-utils pax-utils portability python-r1 readme.gentoo-r1 toolchain-funcs xdg-utils
+inherit git-r3 check-reqs chromium-2 gnome2-utils eapi7-ver flag-o-matic multilib ninja-utils pax-utils portability python-r1 readme.gentoo-r1 toolchain-funcs xdg-utils
 
 UGC_PV="70.0.3538.77"
 UGC_PR="1"
 UGC_PV1="70"
 UGC_P="ungoogled-chromium-${UGC_PV}-${UGC_PR}"
 UGC_WD="${WORKDIR}/${UGC_P}"
-DEPOT_TOOLS="${WORKDIR}/chromium-${UGC_PV}/third_party/depot_tools"
+DEPOT_TOOLS="${WORKDIR}/depot_tools"
 
 DESCRIPTION="Modifications to Chromium for removing Google integration and enhancing privacy"
 HOMEPAGE="https://github.com/Eloston/ungoogled-chromium https://www.chromium.org/ https://github.com/Igalia/chromium"
