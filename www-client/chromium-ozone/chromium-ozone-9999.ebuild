@@ -250,11 +250,6 @@ src_unpack() {
 #		"deps_file": "DEPS",\
 #		"custom_deps": {\
 #			"src/build/third_party/cbuildbot_chromite": None,\
-#			"src/build/third_party/gsutil": None,\
-#			"src/build/third_party/lighttpd": None,\
-#			"src/build/third_party/swarm_client": None,\
-#			"src/build/third_party/xvfb": None,\
-#			"src/build/xvfb": None,\
 #			"src/chrome/tools/test/reference_build/chrome_linux": None,\
 #			"src/chrome/tools/test/reference_build/chrome_mac": None,\
 #			"src/chrome/tools/test/reference_build/chrome_win": None,\
@@ -265,23 +260,16 @@ src_unpack() {
 #			"src/third_party/WebKit/LayoutTests": None,\
 #			"src/webkit/data/layout_tests/LayoutTests":None,\
 #			"src/third_party/hunspell_dictionaries": None,\
-#			"src/third_party/chromite": None,\
-#			"src/third_party/pyelftools": None,\
-#			"src/third_party/GTM": None,\
-#			"src/third_party/pdfsqueeze": None,\
-#			"src/third_party/swig/mac": None,\
-#			"src/third_party/WebKit/Tools/gdb": None,\
-#			"src/chrome/test/data/layout_tests/LayoutTests/platform/chromium-mac/http/tests/workers": None,\
-#			"chromeos": None,\
-#			"src/third_party/cros": None \
+#			"src/chrome/test/data/layout_tests/LayoutTests/platform/chromium-mac/http/tests/workers": None\
 #		}}]; target_os = ["linux"]; target_os_only = True' || die
 #	fi
 #
-#	depot_tools/gclient sync --nohooks --upstream --no-history --shallow --with_branch_heads --jobs=1 --disable-syntax-validation || die
+#	depot_tools/gclient sync --no-history --with_branch_heads --jobs=1 || die
 #	#depot_tools/gclient runhooks || die	
 } 
 
 usetf()  { usex $1 true false ; }
+
 src_prepare() {
 	if use custom-cflags; then
 		ewarn
@@ -327,7 +315,7 @@ src_prepare() {
 	local ugc_rooted_dir="${UGC_WD}/config_bundles/linux_rooted"
 
 	# Remove ARM and GCC related patches
-	use !clang && sed -i \
+	use clang || sed -i \
 		-e '/arm\/skia.patch/d' \
 		-e '/arm\/gcc_skcms_ice.patch/d' \
 		-e '/fixes\/alignof.patch/d' \
