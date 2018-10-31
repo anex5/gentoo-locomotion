@@ -21,7 +21,6 @@ DEPOT_TOOLS="${WORKDIR}/chromium-${UGC_PV}/third_party/depot_tools"
 
 DESCRIPTION="Modifications to Chromium for removing Google integration and enhancing privacy"
 HOMEPAGE="https://github.com/Eloston/ungoogled-chromium https://www.chromium.org/ https://github.com/Igalia/chromium"
-EGIT_REPO_URI="https://chromium.googlesource.com/chromiumos/platform/minigbm"
 SRC_URI="
 	https://commondatastorage.googleapis.com/chromium-browser-official/chromium-${UGC_PV}.tar.xz
 	https://github.com/Eloston/ungoogled-chromium/archive/${UGC_PV}-${UGC_PR}.tar.gz -> ${UGC_P}.tar.gz
@@ -221,20 +220,22 @@ pkg_setup() {
 
 export PATH=${PATH}:${DEPOT_TOOLS}
 
-#src_unpack() {
-#
-#	default
-#	
-#	# build tools  
-#	
-#	URI_DEPOT_TOOLS="https://chromium.googlesource.com/chromium/tools/depot_tools.git"
-#	einfo "Fetching depot_tools from googlesource"
-#	git-r3_fetch ${URI_DEPOT_TOOLS}
-#	git-r3_checkout ${URI_DEPOT_TOOLS} depot_tools
-#
-#	dosym {$S}/depot_tools/cipd /usr/bin/cipd
-#	dosym {$S}/depot_tools/gclient /usr/bin/gclient
-#
+src_unpack() {
+
+	default
+	
+	# build tools  
+	
+	DEPOT_TOOLS_URI="https://chromium.googlesource.com/chromium/tools/depot_tools.git"
+	einfo "Fetching depot_tools from googlesource"
+	git-r3_fetch ${DEPOT_TOOLS_URI}
+	git-r3_checkout ${DEPOT_TOOLS_URI} depot_tools
+
+	MINIGBM_URI="https://chromium.googlesource.com/chromiumos/platform/minigbm"
+	einfo "Fetching minigbm from googlesource"
+	git-r3_fetch ${MINIGBM_URI}
+	git-r3_checkout ${MINIGBM_URI} minigbm
+
 #	einfo "Fetching chromium using depot_tools"
 #	
 #	S="${WORKDIR}/src"
@@ -277,9 +278,8 @@ export PATH=${PATH}:${DEPOT_TOOLS}
 #	fi
 #
 #	depot_tools/gclient sync --nohooks --upstream --no-history --shallow --with_branch_heads --jobs=1 --disable-syntax-validation || die
-#	#depot_tools/gclient runhooks || die
-#	
-#} 
+#	#depot_tools/gclient runhooks || die	
+} 
 
 usetf()  { usex $1 true false ; }
 src_prepare() {
@@ -787,8 +787,8 @@ src_configure() {
 	# Clang features.
 	myconf_gn+=" is_asan=$(usetf asan)"
 	myconf_gn+=" is_clang=$(usetf clang)"
-	myconf_gn+=" cros_host_is_clang=$(usetf clang)"
-	myconf_gn+=" cros_v8_snapshot_is_clang=$(usetf clang)"
+	#myconf_gn+=" cros_host_is_clang=$(usetf clang)"
+	#myconf_gn+=" cros_v8_snapshot_is_clang=$(usetf clang)"
 	myconf_gn+=" clang_use_chrome_plugins=false"
 	myconf_gn+=" use_thin_lto=$(usetf thinlto)"
 	myconf_gn+=" use_lld=$(usetf lld)"
