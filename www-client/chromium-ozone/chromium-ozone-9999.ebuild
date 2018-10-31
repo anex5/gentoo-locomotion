@@ -34,7 +34,7 @@ IUSE="
 	+proprietary-codecs pulseaudio selinux +suid +system-ffmpeg +system-harfbuzz
 	+system-icu +system-libevent +system-libvpx +system-openjpeg +tcmalloc vaapi
 	widevine wayland X atk dbus gtk doc +v4l2_codec v4lplugin xkbcommon libcxx
-	asan gold +clang clang_tidy lld +cfi +thinlto
+	asan gold +clang clang_tidy lld +cfi +thinlto debug
 "
 REQUIRED_USE="
 	|| ( $(python_gen_useflags 'python3*') )
@@ -607,7 +607,7 @@ setup_compile_flags() {
 	# The .dwp file for x86 and arm exceeds 4GB limit. Adding this flag as a
 	# workaround. The generated symbol files are the same with/without this
 	# flag. See https://crbug.com/641188
-	if use chrome_debug && ( use x86 || use arm ) && ! use clang; then
+	if use debug && ( use x86 || use arm ) && ! use clang; then
 		EBUILD_CFLAGS+=( -femit-struct-debug-reduced )
 		EBUILD_CXXFLAGS+=( -femit-struct-debug-reduced )
 	fi
@@ -752,7 +752,7 @@ src_configure() {
 	myconf_gn+=" enable_ac3_eac3_audio_demuxing=true"
 	myconf_gn+=" enable_hangout_services_extension=false"
 	myconf_gn+=" enable_hevc_demuxing=true"
-	myconf_gn+=" enable_iterator_debugging=false"
+	myconf_gn+=" enable_iterator_debugging=$(usetf debug)"
 	myconf_gn+=" enable_mdns=false"
 	myconf_gn+=" enable_mse_mpeg2ts_stream_parser=true"
 	myconf_gn+=" enable_nacl=false"
@@ -783,7 +783,7 @@ src_configure() {
 	myconf_gn+=" is_cfi=$(usetf cfi)"
 	myconf_gn+=" use_cfi_cast=$(usetf cfi)"
 
-	myconf_gn+=" is_debug=false"
+	myconf_gn+=" is_debug=$(usetf debug)"
 	myconf_gn+=" is_official_build=true" # Implies is_cfi=true
 	myconf_gn+=" optimize_webui=$(usetf optimize-webui)"
 	myconf_gn+=" proprietary_codecs=$(usetf proprietary-codecs)"
