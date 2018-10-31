@@ -33,7 +33,7 @@ IUSE="
 	cups custom-cflags jumbo-build kerberos new-tcmalloc +openh264 optimize-webui
 	+proprietary-codecs pulseaudio selinux +suid +system-ffmpeg +system-harfbuzz
 	+system-icu +system-libevent +system-libvpx +system-openjpeg +tcmalloc vaapi
-	widevine wayland X atk dbus gtk doc +v4l2_codec v4lplugin xkbcommon libcxx
+	widevine wayland X atk dbus gtk doc xkbcommon libcxx
 	asan gold +clang clang_tidy lld cfi +thinlto debug
 "
 REQUIRED_USE="
@@ -74,7 +74,6 @@ COMMON_DEPEND="
 	system-harfbuzz? ( >=media-libs/harfbuzz-1.8.8:0=[icu(-)] )
 	media-libs/libjpeg-turbo:=
 	media-libs/libpng:=
-	v4lplugin? ( media-libs/libv4lplugins )
 	system-libvpx? ( >=media-libs/libvpx-1.7.0:=[postproc,svc] )
 	openh264? ( >=media-libs/openh264-1.6.0:= )
 	system-openjpeg? ( media-libs/openjpeg:2 )
@@ -745,8 +744,6 @@ src_configure() {
 
 	local myconf_gn=""
 	# UGC's "common" GN flags (config_bundles/common/gn_flags.map)
-	myconf_gn+=" use_v4l2_codec=$(usetf v4l2_codec)"
-	myconf_gn+=" use_v4lplugin=$(usetf v4lplugin)"
 	myconf_gn+=" blink_symbol_level=0"
 	myconf_gn+=" clang_use_chrome_plugins=false"
 	myconf_gn+=" enable_ac3_eac3_audio_demuxing=true"
