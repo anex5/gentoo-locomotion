@@ -17,6 +17,7 @@ UGC_PR="1"
 UGC_PV1="70"
 UGC_P="ungoogled-chromium-${UGC_PV}-${UGC_PR}"
 UGC_WD="${WORKDIR}/${UGC_P}"
+DEPOT_TOOLS="${WORKDIR}/chromium-${UGC_PV}/third_party/depot_tools"
 
 DESCRIPTION="Modifications to Chromium for removing Google integration and enhancing privacy"
 HOMEPAGE="https://github.com/Eloston/ungoogled-chromium https://www.chromium.org/ https://github.com/Igalia/chromium"
@@ -32,12 +33,19 @@ IUSE="
 	cups custom-cflags jumbo-build kerberos new-tcmalloc +openh264 optimize-webui
 	+proprietary-codecs pulseaudio selinux +suid +system-ffmpeg +system-harfbuzz
 	+system-icu +system-libevent +system-libvpx +system-openjpeg +tcmalloc vaapi
-	widevine wayland X atk dbus gtk doc
+	widevine wayland X atk dbus gtk doc +v4l2_codec v4lplugin xkbcommon libcxx
+	asan gold +clang clang_tidy lld +cfi +thinlto
 "
 REQUIRED_USE="
 	|| ( $(python_gen_useflags 'python3*') )
 	|| ( $(python_gen_useflags 'python2*') )
 	new-tcmalloc? ( tcmalloc )
+	asan? ( clang )
+	?? ( gold lld )
+	cfi? ( thinlto )
+	clang_tidy? ( clang )
+	libcxx? ( clang )
+	thinlto? ( clang || ( gold lld ) )
 "
 RESTRICT="
 	!system-ffmpeg? ( proprietary-codecs? ( bindist ) )
@@ -66,6 +74,7 @@ COMMON_DEPEND="
 	system-harfbuzz? ( >=media-libs/harfbuzz-1.8.8:0=[icu(-)] )
 	media-libs/libjpeg-turbo:=
 	media-libs/libpng:=
+	v4lplugin? ( media-libs/libv4lplugins )
 	system-libvpx? ( >=media-libs/libvpx-1.7.0:=[postproc,svc] )
 	openh264? ( >=media-libs/openh264-1.6.0:= )
 	system-openjpeg? ( media-libs/openjpeg:2 )
@@ -82,7 +91,14 @@ COMMON_DEPEND="
 	sys-apps/pciutils:=
 	virtual/udev
 	vaapi? ( x11-libs/libva:= )
-
+	xkbcommon? (
+		x11-libs/libxkbcommon
+		x11-misc/xkeyboard-config
+	)
+	libcxx? (
+		sys-libs/libcxxabi
+		sys-libs/libcxx
+	)
 	gtk? ( x11-libs/gtk+:3[X] )
 	X? ( 
 		x11-libs/cairo:=
@@ -202,6 +218,8 @@ pkg_setup() {
 	chromium_suid_sandbox_check_kernel_config
 }
 
+export PATH=${PATH}:${DEPOT_TOOLS}
+
 #src_unpack() {
 #
 #	default
@@ -262,6 +280,7 @@ pkg_setup() {
 #	
 #} 
 
+usetf()  { usex $1 true false ; }
 src_prepare() {
 	if use custom-cflags; then
 		ewarn
@@ -545,19 +564,134 @@ src_prepare() {
 	build/linux/unbundle/remove_bundled_libraries.py "${keeplibs[@]}" --do-remove || die
 }
 
+# Handle all CFLAGS/CXXFLAGS/etc... munging here.
+setup_compile_flags() {
+	# The chrome makefiles specify -O and -g flags already, so remove the
+	# portage flags.
+	filter-flags -g -O*
+	# -clang-syntax is a flag that enable us to do clang syntax checking on
+	# top of building Chrome with gcc. Since Chrome itself is clang clean,
+	# there is no need to check it again in Chrome OS land. And this flag has
+	# nothing to do with USE=clang.
+	filter-flags -clang-syntax
+	# Remove unsupported arm64 linker flag on arm32 builds.
+	# https://crbug.com/889079
+	use arm && filter-flags "-Wl,--fix-cortex-a53-843419"
+	# There are some flags we want to only use in the ebuild.
+	# The rest will be exported to the simple chrome workflow.
+	EBUILD_CFLAGS=()
+	EBUILD_CXXFLAGS=()
+	EBUILD_LDFLAGS=()
+
+	#if use afdo_use; then
+	#	local afdo_flags=()
+	#	afdo_flags+=( -fprofile-sample-use="${AFDO_PROFILE_LOC}" )
+	#	# This is required because compiler emits different warnings
+	#	# for AFDO vs. non-AFDO. AFDO may inline different
+	#	# functions from non-AFDO, leading to different warnings.
+	#	afdo_flags+=( -Wno-error )
+	#	EBUILD_CFLAGS+=( "${afdo_flags[@]}" )
+	#	EBUILD_CXXFLAGS+=( "${afdo_flags[@]}" )
+	#fi
+	
+	# LLVM needs this when parsing profiles.
+	# See README on https://github.com/google/autofdo
+	# For ARM, we do not need this flag because we don't get profiles
+	# from ARM machines. And it triggers an llvm assertion when thinlto
+	# and debug fission is used together.
+	# See https://bugs.llvm.org/show_bug.cgi?id=37255
+	if use clang && ! use arm; then
+		append-flags -fdebug-info-for-profiling
+	fi
+	
+	# The .dwp file for x86 and arm exceeds 4GB limit. Adding this flag as a
+	# workaround. The generated symbol files are the same with/without this
+	# flag. See https://crbug.com/641188
+	if use chrome_debug && ( use x86 || use arm ) && ! use clang; then
+		EBUILD_CFLAGS+=( -femit-struct-debug-reduced )
+		EBUILD_CXXFLAGS+=( -femit-struct-debug-reduced )
+	fi
+	
+	if use thinlto; then
+		# We need to change the default value of import-instr-limit in
+		# LLVM to limit the text size increase. The default value is
+		# 100, and we change it to 30 to reduce the text size increase
+		# from 25% to 10%. The performance number of page_cycler is the
+		# same on two of the thinLTO configurations, we got 1% slowdown
+		# on speedometer when changing import-instr-limit from 100 to 30.
+		# We need to further reduce it to 20 for arm to limit the size
+		# increase to 10%.
+		local thinlto_ldflag="-Wl,-plugin-opt,-import-instr-limit=30"
+		if use arm; then
+			thinlto_ldflag="-Wl,-plugin-opt,-import-instr-limit=20"
+			EBUILD_LDFLAGS+=( -gsplit-dwarf )
+		fi
+		EBUILD_LDFLAGS+=( ${thinlto_ldflag} )
+	fi
+	
+	# Enable std::vector []-operator bounds checking.
+	append-cxxflags -D__google_stl_debug_vector=1
+	
+	# Chrome and Chrome OS versions of the compiler may not be in
+	# sync. So, don't complain if Chrome uses a diagnostic
+	# option that is not yet implemented in the compiler version used
+	# by Chrome OS.
+	# Turns out this is only really supported by Clang. See crosbug.com/615466
+	if use clang; then
+		append-flags -Wno-unknown-warning-option
+		export CXXFLAGS_host+=" -Wno-unknown-warning-option"
+		export CFLAGS_host+=" -Wno-unknown-warning-option"
+		if use libcxx; then
+			append-cxxflags "-stdlib=libc++"
+			append-ldflags "-stdlib=libc++"
+		fi
+	fi
+	
+	# Workaround: Disable fatal linker warnings with asan/gold builds.
+	# See https://crbug.com/823936
+#	use asan && use gold && append-ldflags "-Wl,--no-fatal-warnings"
+#	use vtable_verify && append-ldflags -fvtable-verify=preinit
+	local flags
+	einfo "Building with the compiler settings:"
+	for flags in {C,CXX,CPP,LD}FLAGS; do
+		einfo "  ${flags} = ${!flags}"
+	done
+}
+
 src_configure() {
 	# Calling this here supports resumption via FEATURES=keepwork
 	python_setup 'python2*'
 
 	# Make sure the build system will use the right tools (Bug #340795)
-	tc-export AR CC CXX NM
-
-	# Force clang
-	CC=${CHOST}-clang
-	CXX=${CHOST}-clang++
-	AR=llvm-ar
-	NM=llvm-nm
-	strip-unsupported-flags
+	tc-export CXX CC AR AS NM RANLIB STRIP
+	export CC_host=$(usex clang "${CBUILD}-clang" "$(tc-getBUILD_CC)")
+	export CXX_host=$(usex clang "${CBUILD}-clang++" "$(tc-getBUILD_CXX)")
+	export NM_host=$(tc-getBUILD_NM)
+	if use gold ; then
+		if [[ "${GOLD_SET}" != "yes" ]]; then
+			export GOLD_SET="yes"
+			einfo "Using gold from the following location: $(get_binutils_path_gold)"
+			export CC="${CC} -B$(get_binutils_path_gold)"
+			export CXX="${CXX} -B$(get_binutils_path_gold)"
+		fi
+	elif ! use lld ; then
+		ewarn "gold and lld disabled. Using GNU ld."
+	fi
+	# Use g++ as the linker driver.
+	export LD="${CXX}"
+	export LD_host=${CXX_host}
+	# We need below change when USE="thinlto" is set. We set this globally
+	# so that users can turn on the "use_thin_lto" in the simplechrome
+	# flow more easily. We might be able to remve the dependency on use
+	# clang because clang is the default compiler now.
+	if use clang ; then
+		export AR="llvm-ar"
+		# USE=thinlto affects host build, we need to set host AR to
+		# llvm-ar to make sure host package builds with thinlto.
+		# crbug.com/731335
+		export AR_host="llvm-ar"
+		export RANLIB="llvm-ranlib"
+	fi
 
 	# shellcheck disable=SC2086
 	if has ccache ${FEATURES}; then
@@ -565,10 +699,16 @@ src_configure() {
 		export CCACHE_SLOPPINESS=time_macros
 	fi
 
+	setup_compile_flags
+	
 	# Facilitate deterministic builds (taken from build/config/compiler/BUILD.gn)
 	append-cflags -Wno-builtin-macro-redefined
 	append-cxxflags -Wno-builtin-macro-redefined
 	append-cppflags "-D__DATE__= -D__TIME__= -D__TIMESTAMP__="
+
+	if use clang_tidy; then
+		export WITH_TIDY=1
+	fi
 
 	# Use system-provided libraries
 	# TODO: freetype -- remove sources (https://crbug.com/pdfium/733)
@@ -605,6 +745,8 @@ src_configure() {
 
 	local myconf_gn=""
 	# UGC's "common" GN flags (config_bundles/common/gn_flags.map)
+	myconf_gn+=" use_v4l2_codec=$(usetf v4l2_codec)"
+	myconf_gn+=" use_v4lplugin=$(usetf v4lplugin)"
 	myconf_gn+=" blink_symbol_level=0"
 	myconf_gn+=" clang_use_chrome_plugins=false"
 	myconf_gn+=" enable_ac3_eac3_audio_demuxing=true"
@@ -621,7 +763,7 @@ src_configure() {
 	myconf_gn+=" enable_reporting=false"
 	myconf_gn+=" enable_service_discovery=false"
 	myconf_gn+=" enable_swiftshader=false"
-	myconf_gn+=" enable_widevine=$(usex widevine true false)"
+	myconf_gn+=" enable_widevine=$(usetf widevine)"
 	myconf_gn+=" exclude_unwind_tables=true"
 	myconf_gn+=" fatal_linker_warnings=false"
 	myconf_gn+=" ffmpeg_branding=\"$(usex proprietary-codecs Chrome Chromium)\""
@@ -629,11 +771,22 @@ src_configure() {
 	myconf_gn+=" google_api_key=\"\""
 	myconf_gn+=" google_default_client_id=\"\""
 	myconf_gn+=" google_default_client_secret=\"\""
-	myconf_gn+=" is_clang=true" # Implies use_lld=true
+
+	# Clang features.
+	myconf_gn+=" is_asan=$(usetf asan)"
+	myconf_gn+=" is_clang=$(usetf clang)"
+	myconf_gn+=" cros_host_is_clang=$(usetf clang)"
+	myconf_gn+=" cros_v8_snapshot_is_clang=$(usetf clang)"
+	myconf_gn+=" clang_use_chrome_plugins=false"
+	myconf_gn+=" use_thin_lto=$(usetf thinlto)"
+	myconf_gn+=" use_lld=$(usetf lld)"
+	myconf_gn+=" is_cfi=$(usetf cfi)"
+	myconf_gn+=" use_cfi_cast=$(usetf cfi)"
+
 	myconf_gn+=" is_debug=false"
 	myconf_gn+=" is_official_build=true" # Implies is_cfi=true
-	myconf_gn+=" optimize_webui=$(usex optimize-webui true false)"
-	myconf_gn+=" proprietary_codecs=$(usex proprietary-codecs true false)"
+	myconf_gn+=" optimize_webui=$(usetf optimize-webui)"
+	myconf_gn+=" proprietary_codecs=$(usetf proprietary-codecs)"
 	myconf_gn+=" safe_browsing_mode=0"
 	myconf_gn+=" symbol_level=0"
 	myconf_gn+=" treat_warnings_as_errors=false"
@@ -650,7 +803,7 @@ src_configure() {
 
 	# UGC's "linux_rooted" GN flags (config_bundles/linux_rooted/gn_flags.map)
 	myconf_gn+=" custom_toolchain=\"//build/toolchain/linux/unbundle:default\""
-	myconf_gn+=" gold_path=\"\""
+	myconf_gn+=" gold_path=\"$(get_binutils_path_gold)\""
 	myconf_gn+=" goma_dir=\"\""
 	if tc-is-cross-compiler; then
 		tc-export BUILD_{AR,CC,CXX,NM}
@@ -663,19 +816,23 @@ src_configure() {
 	myconf_gn+=" linux_use_bundled_binutils=false"
 	myconf_gn+=" optimize_for_size=false"
 	myconf_gn+=" use_allocator=\"$(usex tcmalloc tcmalloc none)\""
-	myconf_gn+=" use_cups=$(usex cups true false)"
+	myconf_gn+=" use_new_tcmalloc=$(usetf new-tcmalloc)"
+
+	myconf_gn+=" use_cups=$(usetf cups)"
 	myconf_gn+=" use_custom_libcxx=false"
 	myconf_gn+=" use_gio=false"
-	myconf_gn+=" use_kerberos=$(usex kerberos true false)"
-	myconf_gn+=" use_openh264=$(usex !openh264 true false)" # Enable this to
+	myconf_gn+=" use_kerberos=$(usetf kerberos)"
+	myconf_gn+=" use_openh264=$(usetf openh264)" # Enable this to
 	# build OpenH264 for encoding, hence the restriction: !openh264? ( bindist )
-	myconf_gn+=" use_pulseaudio=$(usex pulseaudio true false)"
-	myconf_gn+=" use_system_freetype=$(usex system-harfbuzz true false)"
-	myconf_gn+=" use_system_harfbuzz=$(usex system-harfbuzz true false)"
+	myconf_gn+=" use_pulseaudio=$(usetf pulseaudio)"
+	myconf_gn+=" use_system_freetype=$(usetf system-harfbuzz)"
+	myconf_gn+=" use_system_harfbuzz=$(usetf system-harfbuzz)"
 	myconf_gn+=" use_system_lcms2=true"
 	myconf_gn+=" use_system_libjpeg=true"
 	myconf_gn+=" use_system_zlib=true"
-	myconf_gn+=" use_vaapi=$(usex vaapi true false)"
+	myconf_gn+=" use_vaapi=$(usetf vaapi)"
+
+	myconf_gn+=" use_xkbcommon=$(usetf xkbcommon)"
 
 	# wayland
 	if use wayland; then
