@@ -34,7 +34,7 @@ IUSE="
 	+proprietary-codecs pulseaudio selinux +suid +system-ffmpeg +system-harfbuzz
 	+system-icu +system-libevent +system-libvpx +system-openjpeg +tcmalloc vaapi
 	widevine wayland X atk dbus gtk doc +v4l2_codec v4lplugin xkbcommon libcxx
-	asan gold +clang clang_tidy lld +cfi +thinlto debug
+	asan gold +clang clang_tidy lld cfi +thinlto debug
 "
 REQUIRED_USE="
 	|| ( $(python_gen_useflags 'python3*') )
@@ -767,7 +767,7 @@ src_configure() {
 	myconf_gn+=" exclude_unwind_tables=true"
 	myconf_gn+=" fatal_linker_warnings=false"
 	myconf_gn+=" ffmpeg_branding=\"$(usex proprietary-codecs Chrome Chromium)\""
-	myconf_gn+=" fieldtrial_testing_like_official_build=true"
+	myconf_gn+=" fieldtrial_testing_like_official_build=$(usex cfi)"
 	myconf_gn+=" google_api_key=\"\""
 	myconf_gn+=" google_default_client_id=\"\""
 	myconf_gn+=" google_default_client_secret=\"\""
@@ -784,7 +784,7 @@ src_configure() {
 	myconf_gn+=" use_cfi_cast=$(usetf cfi)"
 
 	myconf_gn+=" is_debug=$(usetf debug)"
-	myconf_gn+=" is_official_build=true" # Implies is_cfi=true
+	myconf_gn+=" is_official_build=$(usetf cfi)"
 	myconf_gn+=" optimize_webui=$(usetf optimize-webui)"
 	myconf_gn+=" proprietary_codecs=$(usetf proprietary-codecs)"
 	myconf_gn+=" safe_browsing_mode=0"
