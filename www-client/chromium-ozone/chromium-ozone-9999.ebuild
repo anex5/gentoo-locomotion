@@ -567,6 +567,16 @@ src_prepare() {
 	build/linux/unbundle/remove_bundled_libraries.py "${keeplibs[@]}" --do-remove || die
 }
 
+get_binutils_path_ld() {
+	ld_path=$(readlink -f $(which $(tc-getLD)))
+	binutils_dir=$(dirname ${ld_path})
+	echo ${binutils_dir}
+}
+
+get_binutils_path_gold() {
+	echo $(get_binutils_path_ld)-gold
+}
+
 # Handle all CFLAGS/CXXFLAGS/etc... munging here.
 setup_compile_flags() {
 	# The chrome makefiles specify -O and -g flags already, so remove the
@@ -644,6 +654,10 @@ setup_compile_flags() {
 		append-flags -Wno-unknown-warning-option
 		export CXXFLAGS_host+=" -Wno-unknown-warning-option"
 		export CFLAGS_host+=" -Wno-unknown-warning-option"
+		# Facilitate deterministic builds (taken from build/config/compiler/BUILD.gn)
+		append-cflags -Wno-builtin-macro-redefined
+		append-cxxflags -Wno-builtin-macro-redefined
+		append-cppflags "-D__DATE__= -D__TIME__= -D__TIMESTAMP__="
 		if use libcxx; then
 			append-cxxflags "-stdlib=libc++"
 			append-ldflags "-stdlib=libc++"
@@ -667,9 +681,11 @@ src_configure() {
 
 	# Make sure the build system will use the right tools (Bug #340795)
 	tc-export CXX CC AR AS NM RANLIB STRIP
-	export CC_host=$(usex clang "${CBUILD}-clang" "$(tc-getBUILD_CC)")
-	export CXX_host=$(usex clang "${CBUILD}-clang++" "$(tc-getBUILD_CXX)")
-	export NM_host=$(tc-getBUILD_NM)
+	export CC=$(usex clang "${CBUILD}-clang" "$(tc-getBUILD_CC)")
+	export CXX=$(usex clang "${CBUILD}-clang++" "$(tc-getBUILD_CXX)")
+	export AR=$(usex clang llvm-ar "$(tc-getBUILD_AR)")
+	export NM=$(tc-getBUILD_NM)
+
 	if use gold ; then
 		if [[ "${GOLD_SET}" != "yes" ]]; then
 			export GOLD_SET="yes"
@@ -703,11 +719,6 @@ src_configure() {
 	fi
 
 	setup_compile_flags
-	
-	# Facilitate deterministic builds (taken from build/config/compiler/BUILD.gn)
-	append-cflags -Wno-builtin-macro-redefined
-	append-cxxflags -Wno-builtin-macro-redefined
-	append-cppflags "-D__DATE__= -D__TIME__= -D__TIMESTAMP__="
 
 	if use clang_tidy; then
 		export WITH_TIDY=1
