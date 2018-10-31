@@ -827,7 +827,7 @@ src_configure() {
 	myconf_gn+=" use_openh264=$(usetf openh264)" # Enable this to
 	# build OpenH264 for encoding, hence the restriction: !openh264? ( bindist )
 	myconf_gn+=" use_pulseaudio=$(usetf pulseaudio)"
-	myconf_gn+=" use_cras=true"
+	myconf_gn+=" use_cras=false"
 	myconf_gn+=" use_system_freetype=$(usetf system-harfbuzz)"
 	myconf_gn+=" use_system_harfbuzz=$(usetf system-harfbuzz)"
 	myconf_gn+=" use_system_lcms2=true"
