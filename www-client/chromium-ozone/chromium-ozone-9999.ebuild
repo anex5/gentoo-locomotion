@@ -33,7 +33,7 @@ IUSE="
 	cups custom-cflags jumbo-build kerberos new-tcmalloc +openh264 optimize-webui
 	+proprietary-codecs pulseaudio selinux +suid +system-ffmpeg +system-harfbuzz
 	+system-icu +system-libevent +system-libvpx +system-openjpeg +tcmalloc vaapi
-	widevine wayland X atk dbus gtk doc xkbcommon libcxx
+	widevine wayland X atk dbus gtk doc xkbcommon libcxx +v4l2_codec v4lplugin
 	asan gold +clang clang_tidy lld cfi +thinlto debug
 "
 REQUIRED_USE="
@@ -98,6 +98,7 @@ COMMON_DEPEND="
 		sys-libs/libcxxabi
 		sys-libs/libcxx
 	)
+	v4lplugin? ( media-libs/libv4lplugins )
 	gtk? ( x11-libs/gtk+:3[X] )
 	X? ( 
 		x11-libs/cairo:=
@@ -772,8 +773,8 @@ src_configure() {
 	# Clang features.
 	myconf_gn+=" is_asan=$(usetf asan)"
 	myconf_gn+=" is_clang=$(usetf clang)"
-	myconf_gn+=" cros_host_is_clang=$(usetf clang)"
-	myconf_gn+=" cros_v8_snapshot_is_clang=$(usetf clang)"
+	#myconf_gn+=" cros_host_is_clang=$(usetf clang)"
+	#myconf_gn+=" cros_v8_snapshot_is_clang=$(usetf clang)"
 	myconf_gn+=" clang_use_chrome_plugins=false"
 	myconf_gn+=" use_thin_lto=$(usetf thinlto)"
 	myconf_gn+=" use_lld=$(usetf lld)"
@@ -830,6 +831,8 @@ src_configure() {
 	myconf_gn+=" use_vaapi=$(usetf vaapi)"
 
 	myconf_gn+=" use_xkbcommon=$(usetf xkbcommon)"
+	myconf_gn+=" use_v4l2_codec=$(usetf v4l2_codec)"
+	myconf_gn+=" use_v4lplugin=$(usetf v4lplugin)"
 
 	# wayland
 	if use wayland; then
@@ -838,7 +841,7 @@ src_configure() {
 		myconf_gn+=" ozone_auto_platforms=false"
 		myconf_gn+=" ozone_platform_x11=false ozone_platform_wayland=true"
 		myconf_gn+=" enable_package_mash_services=true"
-		myconf_gn+=" enable_xdg_shell=true xkbcommon=true"
+		myconf_gn+=" enable_xdg_shell=true"
 		myconf_gn+=" enable_mus=true"
 		myconf_gn+=" use_system_minigbm=false"
 	fi
