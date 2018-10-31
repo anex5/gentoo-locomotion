@@ -21,6 +21,7 @@ DEPOT_TOOLS="${WORKDIR}/chromium-${UGC_PV}/third_party/depot_tools"
 
 DESCRIPTION="Modifications to Chromium for removing Google integration and enhancing privacy"
 HOMEPAGE="https://github.com/Eloston/ungoogled-chromium https://www.chromium.org/ https://github.com/Igalia/chromium"
+EGIT_REPO_URI="https://chromium.googlesource.com/chromiumos/platform/minigbm"
 SRC_URI="
 	https://commondatastorage.googleapis.com/chromium-browser-official/chromium-${UGC_PV}.tar.xz
 	https://github.com/Eloston/ungoogled-chromium/archive/${UGC_PV}-${UGC_PR}.tar.gz -> ${UGC_P}.tar.gz
@@ -34,7 +35,7 @@ IUSE="
 	+proprietary-codecs pulseaudio selinux +suid +system-ffmpeg +system-harfbuzz
 	+system-icu +system-libevent +system-libvpx +system-openjpeg +tcmalloc vaapi
 	widevine wayland X atk dbus gtk doc xkbcommon libcxx +v4l2_codec v4lplugin
-	asan gold +clang clang_tidy lld cfi +thinlto debug
+	-asan gold +clang clang_tidy lld cfi +thinlto debug
 "
 REQUIRED_USE="
 	|| ( $(python_gen_useflags 'python3*') )
@@ -316,6 +317,8 @@ src_prepare() {
 	cp -a "${EPREFIX%/}/usr/include/libusb-1.0/libusb.h" \
 		third_party/libusb/src/libusb/libusb.h || die
 
+	cp -a "${WORKDIR}/minigbm/*" third_party/minigbm/src || die
+
 	# From here we adapt ungoogled-chromium's patches to our needs
 	local ugc_cli="${UGC_WD}/run_buildkit_cli.py"
 	local ugc_config="${UGC_WD}/config_bundles/linux_rooted"
@@ -323,7 +326,7 @@ src_prepare() {
 	local ugc_rooted_dir="${UGC_WD}/config_bundles/linux_rooted"
 
 	# Remove ARM and GCC related patches
-	sed -i \
+	use !clang && sed -i \
 		-e '/arm\/skia.patch/d' \
 		-e '/arm\/gcc_skcms_ice.patch/d' \
 		-e '/fixes\/alignof.patch/d' \
@@ -649,7 +652,7 @@ setup_compile_flags() {
 	
 	# Workaround: Disable fatal linker warnings with asan/gold builds.
 	# See https://crbug.com/823936
-#	use asan && use gold && append-ldflags "-Wl,--no-fatal-warnings"
+	use asan && use gold && append-ldflags "-Wl,--no-fatal-warnings"
 #	use vtable_verify && append-ldflags -fvtable-verify=preinit
 	local flags
 	einfo "Building with the compiler settings:"
@@ -765,7 +768,7 @@ src_configure() {
 	myconf_gn+=" exclude_unwind_tables=true"
 	myconf_gn+=" fatal_linker_warnings=false"
 	myconf_gn+=" ffmpeg_branding=\"$(usex proprietary-codecs Chrome Chromium)\""
-	myconf_gn+=" fieldtrial_testing_like_official_build=$(usex cfi)"
+	myconf_gn+=" fieldtrial_testing_like_official_build=$(usetf cfi)"
 	myconf_gn+=" google_api_key=\"\""
 	myconf_gn+=" google_default_client_id=\"\""
 	myconf_gn+=" google_default_client_secret=\"\""
@@ -773,8 +776,8 @@ src_configure() {
 	# Clang features.
 	myconf_gn+=" is_asan=$(usetf asan)"
 	myconf_gn+=" is_clang=$(usetf clang)"
-	#myconf_gn+=" cros_host_is_clang=$(usetf clang)"
-	#myconf_gn+=" cros_v8_snapshot_is_clang=$(usetf clang)"
+	myconf_gn+=" cros_host_is_clang=$(usetf clang)"
+	myconf_gn+=" cros_v8_snapshot_is_clang=$(usetf clang)"
 	myconf_gn+=" clang_use_chrome_plugins=false"
 	myconf_gn+=" use_thin_lto=$(usetf thinlto)"
 	myconf_gn+=" use_lld=$(usetf lld)"
@@ -782,6 +785,7 @@ src_configure() {
 	myconf_gn+=" use_cfi_cast=$(usetf cfi)"
 
 	myconf_gn+=" is_debug=$(usetf debug)"
+	myconf_gn+=" use_debug_fission=$(usetf debug)"
 	myconf_gn+=" is_official_build=$(usetf cfi)"
 	myconf_gn+=" optimize_webui=$(usetf optimize-webui)"
 	myconf_gn+=" proprietary_codecs=$(usetf proprietary-codecs)"
@@ -823,6 +827,7 @@ src_configure() {
 	myconf_gn+=" use_openh264=$(usetf openh264)" # Enable this to
 	# build OpenH264 for encoding, hence the restriction: !openh264? ( bindist )
 	myconf_gn+=" use_pulseaudio=$(usetf pulseaudio)"
+	myconf_gn+=" use_cras=true"
 	myconf_gn+=" use_system_freetype=$(usetf system-harfbuzz)"
 	myconf_gn+=" use_system_harfbuzz=$(usetf system-harfbuzz)"
 	myconf_gn+=" use_system_lcms2=true"
@@ -843,7 +848,8 @@ src_configure() {
 		myconf_gn+=" enable_package_mash_services=true"
 		myconf_gn+=" enable_xdg_shell=true"
 		myconf_gn+=" enable_mus=true"
-		myconf_gn+=" use_system_minigbm=false"
+		myconf_gn+=" use_system_minigbm=true"
+		myconf_gn+=" use_system_libdrm=true"
 	fi
 
 	# Optionally enable new tcmalloc (https://crbug.com/724399)
