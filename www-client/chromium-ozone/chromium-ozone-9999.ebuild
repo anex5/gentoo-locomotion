@@ -317,7 +317,8 @@ src_prepare() {
 	cp -a "${EPREFIX%/}/usr/include/libusb-1.0/libusb.h" \
 		third_party/libusb/src/libusb/libusb.h || die
 
-	cp -a "${WORKDIR}/minigbm/*" third_party/minigbm/src || die
+	rm -r third_party/minigbm/src || die
+	ln -s "${WORKDIR}/minigbm" third_party/minigbm/src || die
 
 	# From here we adapt ungoogled-chromium's patches to our needs
 	local ugc_cli="${UGC_WD}/run_buildkit_cli.py"
