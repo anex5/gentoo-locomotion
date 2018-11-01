@@ -1,0 +1,13 @@
+diff --git a/var/tmp/portage/www-client/chromium-ozone-9999/work/chromium-70.0.3538.77/chrome/test/BUILD.gn b/root/BUILD.gn
+index b0b7066..0596fef 100644
+--- a/var/tmp/portage/www-client/chromium-ozone-9999/work/chromium-70.0.3538.77/chrome/test/BUILD.gn
++++ b/root/BUILD.gn
+@@ -3835,7 +3835,7 @@ test("unit_tests") {
+       "../browser/ui/input_method/input_method_engine_unittest.cc",
+     ]
+   }
+-  if (!is_chromeos && !is_chromecast && is_linux) {
++  if (!is_chromeos && !is_chromecast && !use_aura && is_linux) {
+     sources +=
+         [ "../browser/ui/libgtkui/select_file_dialog_impl_gtk_unittest.cc" ]
+     deps += [ "//build/config/linux/gtk" ]
