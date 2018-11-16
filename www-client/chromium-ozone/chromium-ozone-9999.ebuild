@@ -12,17 +12,15 @@ CHROMIUM_LANGS="
 
 inherit git-r3 check-reqs chromium-2 gnome2-utils eapi7-ver flag-o-matic multilib ninja-utils pax-utils portability python-r1 readme.gentoo-r1 toolchain-funcs xdg-utils
 
-UGC_PV="70.0.3538.77"
-UGC_PR="1"
-UGC_PV1="70"
-UGC_P="ungoogled-chromium-${UGC_PV}-${UGC_PR}"
+UGC_PV="master"
+UGC_P="ungoogled-chromium-${UGC_PV}"
 UGC_WD="${WORKDIR}/${UGC_P}"
 DEPOT_TOOLS="${WORKDIR}/depot_tools"
 
 DESCRIPTION="Modifications to Chromium for removing Google integration and enhancing privacy"
 HOMEPAGE="https://github.com/Eloston/ungoogled-chromium https://www.chromium.org/ https://github.com/Igalia/chromium"
 SRC_URI="
-	https://commondatastorage.googleapis.com/chromium-browser-official/chromium-${UGC_PV}.tar.xz
+	https://commondatastorage.googleapis.com/chromium-browser-official/chromium-70.0.3538.102.tar.xz
 	https://github.com/Eloston/ungoogled-chromium/archive/${UGC_PV}-${UGC_PR}.tar.gz -> ${UGC_P}.tar.gz
 "
 
@@ -33,8 +31,8 @@ IUSE="
 	cups custom-cflags jumbo-build kerberos new-tcmalloc +openh264 optimize-webui
 	+proprietary-codecs pulseaudio selinux +suid +system-ffmpeg +system-harfbuzz
 	+system-icu +system-libevent +system-libvpx +system-openjpeg +tcmalloc vaapi
-	widevine wayland X atk dbus gtk doc xkbcommon libcxx +v4l2_codec v4lplugin
-	-asan gold +clang clang_tidy lld cfi +thinlto debug
+	widevine wayland X atk dbus gtk doc xkbcommon libcxx v4l2_codec v4lplugin
+	asan gold +clang clang_tidy lld cfi +thinlto debug
 "
 REQUIRED_USE="
 	|| ( $(python_gen_useflags 'python3*') )
@@ -183,6 +181,7 @@ GTK+ icon theme.
 
 PATCHES=(
 	"${FILESDIR}/ungoogled-chromium-compiler-r4.patch"
+	"${FILESDIR}/chromium-test-r0.patch"
 	"${FILESDIR}/chromium-webrtc-r0.patch"
 	"${FILESDIR}/chromium-memcpy-r0.patch"
 	"${FILESDIR}/chromium-math.h-r0.patch"
@@ -268,7 +267,7 @@ src_unpack() {
 #	#depot_tools/gclient runhooks || die	
 } 
 
-usetf()  { usex $1 true false ; }
+usetf() { usex $1 true false ; }
 
 src_prepare() {
 	if use custom-cflags; then
@@ -296,7 +295,7 @@ src_prepare() {
 
 	# Apply extra patches (taken from openSUSE)
 	local ep
-	for ep in "${FILESDIR}/extra-${UGC_PV1}"/*.patch; do
+	for ep in "${FILESDIR}/extra-70"/*.patch; do
 		eapply "${ep}"
 	done
 
@@ -331,7 +330,8 @@ src_prepare() {
 	# The licensing issue only matters to Debian folks, it also
 	# depends on system icu (https://bugs.debian.org/900596)
 	sed -i '/system\/convertutf.patch/d' "${ugc_rooted_dir}/patch_order.list" || die
-	#sed -i '/system\/icu.patch/d' "${ugc_rooted_dir}/patch_order.list" || die
+	sed -i '/system\/icu.patch/d' "${ugc_rooted_dir}/patch_order.list" || die
+	sed -i '/opensuse\/system-libdrm.patch/d' "${ugc_rooted_dir}/patch_order.list" || die
 
 	if ! use system-icu; then
 		sed -i '/common\/icudtl.dat/d' "${ugc_rooted_dir}/pruning.list" || die
@@ -672,7 +672,6 @@ src_configure() {
 	tc-export CXX CC AR AS NM RANLIB STRIP
 	export CC=$(usex clang "${CBUILD}-clang" "$(tc-getBUILD_CC)")
 	export CXX=$(usex clang "${CBUILD}-clang++" "$(tc-getBUILD_CXX)")
-	export AR=$(usex clang llvm-ar "$(tc-getBUILD_AR)")
 	export NM=$(tc-getBUILD_NM)
 
 	if use gold ; then
@@ -796,9 +795,9 @@ src_configure() {
 	myconf_gn+=" use_jumbo_build=$(usetf jumbo-build)"
 	myconf_gn+=" use_official_google_api_keys=false"
 
-	myconf_gn+=" use_gtk3=$(usex gtk true false)"
-	myconf_gn+=" rtc_use_gtk=$(usex gtk true false)"
-	myconf_gn+=" rtc_use_x11=$(usex X true false)"
+	myconf_gn+=" use_gtk3=$(usetf gtk)"
+	myconf_gn+=" rtc_use_gtk=$(usetf gtk)"
+	myconf_gn+=" rtc_use_x11=$(usetf X)"
 
 	myconf_gn+=" use_sysroot=false"
 	myconf_gn+=" use_unofficial_version_number=false"
@@ -814,7 +813,7 @@ src_configure() {
 	else
 		myconf_gn+=" host_toolchain=\"//build/toolchain/linux/unbundle:default\""
 	fi
-	myconf_gn+=" link_pulseaudio=$(usex pulseaudio true false)"
+	myconf_gn+=" link_pulseaudio=$(usetf pulseaudio)"
 	myconf_gn+=" linux_use_bundled_binutils=false"
 	myconf_gn+=" optimize_for_size=false"
 	myconf_gn+=" use_allocator=\"$(usex tcmalloc tcmalloc none)\""
@@ -834,7 +833,6 @@ src_configure() {
 	myconf_gn+=" use_system_libjpeg=true"
 	myconf_gn+=" use_system_zlib=true"
 	myconf_gn+=" use_vaapi=$(usetf vaapi)"
-
 	myconf_gn+=" use_xkbcommon=$(usetf xkbcommon)"
 	myconf_gn+=" use_v4l2_codec=$(usetf v4l2_codec)"
 	myconf_gn+=" use_v4lplugin=$(usetf v4lplugin)"
@@ -844,17 +842,14 @@ src_configure() {
 		myconf_gn+=" use_ozone=true"
 		myconf_gn+=" use_aura=true"
 		myconf_gn+=" ozone_auto_platforms=false"
-		myconf_gn+=" ozone_platform_x11=false ozone_platform_wayland=true"
+		myconf_gn+=" ozone_platform_x11=$(usetf X)"
+		myconf_gn+=" ozone_platform_wayland=true"
 		myconf_gn+=" enable_package_mash_services=true"
 		myconf_gn+=" enable_xdg_shell=true"
 		myconf_gn+=" enable_mus=true"
 		myconf_gn+=" use_system_minigbm=true"
 		myconf_gn+=" use_system_libdrm=true"
 	fi
-
-	# Optionally enable new tcmalloc (https://crbug.com/724399)
-	# It's relevant only when use_allocator == "tcmalloc"
-	myconf_gn+=" use_new_tcmalloc=$(usex new-tcmalloc true false)"
 
 	# SC2155
 	local myarch
