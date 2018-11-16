@@ -14,13 +14,13 @@ inherit git-r3 check-reqs chromium-2 gnome2-utils eapi7-ver flag-o-matic multili
 
 UGC_PV="master"
 UGC_P="ungoogled-chromium-${UGC_PV}"
-UGC_WD="${WORKDIR}/${UGC_P}"
+UGC_WD="${WORKDIR}/${UGC_PV}"
 DEPOT_TOOLS="${WORKDIR}/depot_tools"
 
 DESCRIPTION="Modifications to Chromium for removing Google integration and enhancing privacy"
 HOMEPAGE="https://github.com/Eloston/ungoogled-chromium https://www.chromium.org/ https://github.com/Igalia/chromium"
 SRC_URI="
-	https://commondatastorage.googleapis.com/chromium-browser-official/chromium-70.0.3538.102.tar.xz
+	https://commondatastorage.googleapis.com/chromium-browser-official/chromium-70.0.3538.102.tar.xz -> ${UGC_PV}.tar.xz
 	https://github.com/Eloston/ungoogled-chromium/archive/${UGC_PV}.tar.gz -> ${UGC_P}.tar.gz
 "
 
@@ -188,7 +188,7 @@ PATCHES=(
 	"${FILESDIR}/chromium-stdint.patch"
 )
 
-S="${WORKDIR}/chromium-${UGC_PV}"
+S="${WORKDIR}/${UGC_PV}"
 
 pre_build_checks() {
 	# Check build requirements (Bug #541816, #471810)
