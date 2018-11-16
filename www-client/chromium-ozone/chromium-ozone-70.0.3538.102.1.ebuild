@@ -20,6 +20,7 @@ DEPOT_TOOLS="${WORKDIR}/depot_tools"
 DESCRIPTION="Modifications to Chromium for removing Google integration and enhancing privacy"
 HOMEPAGE="https://github.com/Eloston/ungoogled-chromium https://www.chromium.org/ https://github.com/Igalia/chromium"
 SRC_URI="
+	https://commondatastorage.googleapis.com/chromium-browser-official/chromium-$(ver_cut 1-4).tar.xz
 	https://github.com/Eloston/ungoogled-chromium/archive/${UGC_PV}.tar.gz -> ${UGC_P}.tar.gz
 "
 
@@ -187,7 +188,7 @@ PATCHES=(
 	"${FILESDIR}/chromium-stdint.patch"
 )
 
-S="${WORKDIR}/${UGC_PV}"
+S="${WORKDIR}/chromium-$(ver_cut 1-4)"
 
 pre_build_checks() {
 	# Check build requirements (Bug #541816, #471810)
@@ -234,38 +235,38 @@ src_unpack() {
 	git-r3_fetch ${MINIGBM_URI}
 	git-r3_checkout ${MINIGBM_URI} minigbm
 
-	einfo "Fetching chromium using depot_tools"
-	
-	S="${WORKDIR}/src"
+#	einfo "Fetching chromium using depot_tools"
+#	
+#	S="${WORKDIR}/src"
+#
+#	python_setup 'python2*'
+#
+#	if ! [[ -f .gclient ]]; then
+#		depot_tools/gclient config --name=src --spec 'solutions=[{\
+#		"url": "https://github.com/Igalia/chromium.git@origin/ozone-wayland-dev",\
+#		"managed": False,\
+#		"name": "src",\
+#		"deps_file": "DEPS",\
+#		"custom_deps": {\
+#			"src/build/third_party/cbuildbot_chromite": None,\
+#			"src/chrome/tools/test/reference_build/chrome_linux": None,\
+#			"src/chrome/tools/test/reference_build/chrome_mac": None,\
+#			"src/chrome/tools/test/reference_build/chrome_win": None,\
+#			"src/chrome/tools/test/reference_build/chrome": None,\
+#			"src/chrome/test/data/perf/canvas_bench": None,\
+#			"src/chrome/test/data/perf/frame_rate/content": None,\
+#			"src/chrome/installer/mac/third_party/xz/xz": None,\
+#			"src/third_party/WebKit/LayoutTests": None,\
+#			"src/webkit/data/layout_tests/LayoutTests":None,\
+#			"src/third_party/hunspell_dictionaries": None,\
+#			"src/chrome/test/data/layout_tests/LayoutTests/platform/chromium-mac/http/tests/workers": None\
+#		}}]; target_os = ["linux"]; target_os_only = True' || die
+#	fi
+#
+#	depot_tools/gclient sync --no-history --with_branch_heads --jobs=1 || die
+#	#depot_tools/gclient runhooks || die	
+} 
 
-	python_setup 'python2*'
-
-	if ! [[ -f .gclient ]]; then
-		depot_tools/gclient config --name=src --spec 'solutions=[{\
-		"url": "https://github.com/Igalia/chromium.git@origin/ozone-wayland-dev",\
-		"managed": False,\
-		"name": "src",\
-		"deps_file": "DEPS",\
-		"custom_deps": {\
-			"src/build/third_party/cbuildbot_chromite": None,\
-			"src/chrome/tools/test/reference_build/chrome_linux": None,\
-			"src/chrome/tools/test/reference_build/chrome_mac": None,\
-			"src/chrome/tools/test/reference_build/chrome_win": None,\
-			"src/chrome/tools/test/reference_build/chrome": None,\
-			"src/chrome/test/data/perf/canvas_bench": None,\
-			"src/chrome/test/data/perf/frame_rate/content": None,\
-			"src/chrome/installer/mac/third_party/xz/xz": None,\
-			"src/third_party/WebKit/LayoutTests": None,\
-			"src/webkit/data/layout_tests/LayoutTests":None,\
-			"src/third_party/hunspell_dictionaries": None,\
-			"src/chrome/test/data/layout_tests/LayoutTests/platform/chromium-mac/http/tests/workers": None\
-		}}]; target_os = ["linux"]; target_os_only = True' || die
-	fi
-
-	depot_tools/gclient sync --no-history --with_branch_heads --jobs=1 || die
-	#depot_tools/gclient runhooks || die	
-}
- 
 usetf() { usex $1 true false ; }
 
 src_prepare() {
