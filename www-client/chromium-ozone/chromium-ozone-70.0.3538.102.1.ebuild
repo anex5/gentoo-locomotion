@@ -575,7 +575,7 @@ setup_compile_flags() {
 	# top of building Chrome with gcc. Since Chrome itself is clang clean,
 	# there is no need to check it again in Chrome OS land. And this flag has
 	# nothing to do with USE=clang.
-	filter-flags -clang-syntax
+	use clang && filter-flags -clang-syntax
 	# Remove unsupported arm64 linker flag on arm32 builds.
 	# https://crbug.com/889079
 	use arm && filter-flags "-Wl,--fix-cortex-a53-843419"
@@ -867,7 +867,7 @@ src_configure() {
 	# Avoid CFLAGS problems (Bug #352457, #390147)
 	if ! use custom-cflags; then
 		replace-flags "-Os" "-O2"
-		strip-flags
+		#strip-flags
 
 		# Filter common/redundant flags. See build/config/compiler/BUILD.gn
 		filter-flags -fomit-frame-pointer -fno-omit-frame-pointer
