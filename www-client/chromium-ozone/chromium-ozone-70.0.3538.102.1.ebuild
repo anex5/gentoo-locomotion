@@ -657,6 +657,8 @@ setup_compile_flags() {
 	# See https://crbug.com/823936
 	use asan && use gold && append-ldflags "-Wl,--no-fatal-warnings"
 #	use vtable_verify && append-ldflags -fvtable-verify=preinit
+	! use debug && append-ldflags "-fvtable-verify=preinit,--strip-debug,--reduce-memory-overheads"
+	
 	local flags
 	einfo "Building with the compiler settings:"
 	for flags in {C,CXX,CPP,LD}FLAGS; do
@@ -804,7 +806,7 @@ src_configure() {
 
 	# UGC's "linux_rooted" GN flags (config_bundles/linux_rooted/gn_flags.map)
 	myconf_gn+=" custom_toolchain=\"//build/toolchain/linux/unbundle:default\""
-	myconf_gn+=" gold_path=\"$(get_binutils_path_gold)\""
+	myconf_gn+=" gold_path=\"\""
 	myconf_gn+=" goma_dir=\"\""
 	if tc-is-cross-compiler; then
 		tc-export BUILD_{AR,CC,CXX,NM}
