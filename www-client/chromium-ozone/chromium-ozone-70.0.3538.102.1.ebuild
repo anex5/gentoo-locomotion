@@ -235,36 +235,6 @@ src_unpack() {
 	git-r3_fetch ${MINIGBM_URI}
 	git-r3_checkout ${MINIGBM_URI} minigbm
 
-#	einfo "Fetching chromium using depot_tools"
-#	
-#	S="${WORKDIR}/src"
-#
-#	python_setup 'python2*'
-#
-#	if ! [[ -f .gclient ]]; then
-#		depot_tools/gclient config --name=src --spec 'solutions=[{\
-#		"url": "https://github.com/Igalia/chromium.git@origin/ozone-wayland-dev",\
-#		"managed": False,\
-#		"name": "src",\
-#		"deps_file": "DEPS",\
-#		"custom_deps": {\
-#			"src/build/third_party/cbuildbot_chromite": None,\
-#			"src/chrome/tools/test/reference_build/chrome_linux": None,\
-#			"src/chrome/tools/test/reference_build/chrome_mac": None,\
-#			"src/chrome/tools/test/reference_build/chrome_win": None,\
-#			"src/chrome/tools/test/reference_build/chrome": None,\
-#			"src/chrome/test/data/perf/canvas_bench": None,\
-#			"src/chrome/test/data/perf/frame_rate/content": None,\
-#			"src/chrome/installer/mac/third_party/xz/xz": None,\
-#			"src/third_party/WebKit/LayoutTests": None,\
-#			"src/webkit/data/layout_tests/LayoutTests":None,\
-#			"src/third_party/hunspell_dictionaries": None,\
-#			"src/chrome/test/data/layout_tests/LayoutTests/platform/chromium-mac/http/tests/workers": None\
-#		}}]; target_os = ["linux"]; target_os_only = True' || die
-#	fi
-#
-#	depot_tools/gclient sync --no-history --with_branch_heads --jobs=1 || die
-#	#depot_tools/gclient runhooks || die	
 } 
 
 usetf() { usex $1 true false ; }
@@ -657,7 +627,7 @@ setup_compile_flags() {
 	# See https://crbug.com/823936
 	use asan && use gold && append-ldflags "-Wl,--no-fatal-warnings"
 #	use vtable_verify && append-ldflags -fvtable-verify=preinit
-	! use debug && append-ldflags "-fvtable-verify=preinit,--strip-debug,--reduce-memory-overheads"
+	! use debug && append-ldflags "-s,--no-map-whole-files"
 	
 	local flags
 	einfo "Building with the compiler settings:"
