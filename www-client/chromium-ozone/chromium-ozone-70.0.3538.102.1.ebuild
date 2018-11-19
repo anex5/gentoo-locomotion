@@ -593,7 +593,7 @@ setup_compile_flags() {
 		# on speedometer when changing import-instr-limit from 100 to 30.
 		# We need to further reduce it to 20 for arm to limit the size
 		# increase to 10%.
-		local thinlto_ldflag="-Wl,-plugin-opt,-import-instr-limit=30"
+		local thinlto_ldflag="-Wl,-import-instr-limit=30"
 		if use arm; then
 			thinlto_ldflag="-Wl,-plugin-opt,-import-instr-limit=20"
 			EBUILD_LDFLAGS+=( -gsplit-dwarf )
@@ -720,7 +720,6 @@ src_configure() {
 	local myconf_gn=""
 	# UGC's "common" GN flags (config_bundles/common/gn_flags.map)
 	myconf_gn+=" blink_symbol_level=0"
-	myconf_gn+=" clang_use_chrome_plugins=false"
 	myconf_gn+=" enable_ac3_eac3_audio_demuxing=true"
 	myconf_gn+=" enable_hangout_services_extension=false"
 	myconf_gn+=" enable_hevc_demuxing=true"
