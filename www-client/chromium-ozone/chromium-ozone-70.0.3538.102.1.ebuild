@@ -627,7 +627,7 @@ setup_compile_flags() {
 	# See https://crbug.com/823936
 	use asan && use gold && append-ldflags "-Wl,--no-fatal-warnings"
 #	use vtable_verify && append-ldflags -fvtable-verify=preinit
-	! use debug && append-ldflags "-s,--no-map-whole-files"
+	! use debug && append-ldflags "-s"
 	
 	local flags
 	einfo "Building with the compiler settings:"
