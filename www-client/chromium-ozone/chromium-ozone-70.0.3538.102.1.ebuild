@@ -593,9 +593,9 @@ setup_compile_flags() {
 		# on speedometer when changing import-instr-limit from 100 to 30.
 		# We need to further reduce it to 20 for arm to limit the size
 		# increase to 10%.
-		local thinlto_ldflag="-Wl,-import-instr-limit=30"
+		local thinlto_ldflag="-Wl,--plugin-opt=thinlto,-import-instr-limit=30"
 		if use arm; then
-			thinlto_ldflag="-Wl,-plugin-opt,-import-instr-limit=20"
+			thinlto_ldflag="-Wl,--plugin-opt=thinlto,-import-instr-limit=20"
 			EBUILD_LDFLAGS+=( -gsplit-dwarf )
 		fi
 		EBUILD_LDFLAGS+=( ${thinlto_ldflag} )
