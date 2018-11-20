@@ -32,7 +32,7 @@ IUSE="
 	+proprietary-codecs pulseaudio selinux +suid +system-ffmpeg +system-harfbuzz
 	+system-icu +system-libevent +system-libvpx +system-openjpeg +tcmalloc vaapi
 	widevine wayland X atk dbus gtk doc xkbcommon libcxx v4l2_codec v4lplugin
-	asan gold +clang clang_tidy lld cfi +thinlto debug
+	asan gold +clang clang_tidy lld cfi +thinlto debug gnome
 "
 REQUIRED_USE="
 	|| ( $(python_gen_useflags 'python3*') )
@@ -928,7 +928,7 @@ src_install() {
 	insinto "${CHROMIUM_HOME}"
 	doins out/Release/*.bin
 	doins out/Release/*.pak
-	doins out/Release/*.so
+	#doins out/Release/*.so
 
 	if ! use system-icu; then
 		doins out/Release/icudtl.dat
@@ -968,9 +968,7 @@ src_install() {
 		doins "${FILESDIR}"/chromium-browser.xml
 	fi
 
-	if use doc; then
-		readme.gentoo_create_doc
-	fi
+	use doc && readme.gentoo_create_doc
 }
 
 pkg_preinst() {
@@ -991,5 +989,5 @@ pkg_postinst() {
 		gnome2_icon_cache_update
 		xdg_desktop_database_update
 	fi
-	readme.gentoo_print_elog
+	use doc && readme.gentoo_print_elog
 }
