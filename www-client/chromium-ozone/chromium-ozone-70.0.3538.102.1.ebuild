@@ -1,7 +1,7 @@
 # Copyright 1999-2018 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI="6"
+EAPI="7"
 PYTHON_COMPAT=( python{2_7,3_{5,6,7}} )
 
 CHROMIUM_LANGS="
@@ -26,14 +26,23 @@ SRC_URI="
 
 LICENSE="BSD"
 SLOT="0"
-KEYWORDS="~amd64 ~x86"
+KEYWORDS="~*"
+VIDEO_CARDS="
+	amdgpu exynos intel marvell mediatek msm radeon radeonsi rockchip tegra vc4 virgl
+"
+
 IUSE="
-	cups custom-cflags jumbo-build kerberos new-tcmalloc +openh264 optimize-webui
+	cups custom-cflags gnome jumbo-build kerberos new-tcmalloc +openh264 optimize-webui
 	+proprietary-codecs pulseaudio selinux +suid +system-ffmpeg +system-harfbuzz
 	+system-icu +system-libevent +system-libvpx +system-openjpeg +tcmalloc vaapi
 	widevine wayland X atk dbus gtk doc xkbcommon libcxx v4l2_codec v4lplugin
-	asan gold +clang clang_tidy lld cfi +thinlto debug gnome
+	asan gold +clang clang_tidy lld cfi +thinlto debug
 "
+
+for card in ${VIDEO_CARDS}; do
+	IUSE+=" video_cards_${card}"
+done
+
 REQUIRED_USE="
 	|| ( $(python_gen_useflags 'python3*') )
 	|| ( $(python_gen_useflags 'python2*') )
@@ -136,7 +145,8 @@ RDEPEND="${COMMON_DEPEND}
 
 # dev-vcs/git (Bug #593476)
 # sys-apps/sandbox - https://crbug.com/586444
-DEPEND="${COMMON_DEPEND}
+DEPEND="${COMMON_DEPEND}"
+BDEPEND="
 	>=app-arch/gzip-1.7
 	dev-lang/perl
 	dev-lang/yasm
@@ -146,10 +156,13 @@ DEPEND="${COMMON_DEPEND}
 	>net-libs/nodejs-6[inspector]
 	sys-apps/hwids[usb(+)]
 	>=sys-devel/bison-2.4.3
-	>=sys-devel/clang-7.0.0
+	clang? (
+		>=sys-devel/clang-7.0.0
+		>=sys-devel/clang-runtime-7.0.0[sanitize]
+		lld? ( >=sys-devel/lld-7.0.0 )
+		gold? ( >=sys-devel/llvm-7.0.0[gold(-)] )
+	)
 	sys-devel/flex
-	>=sys-devel/lld-7.0.0
-	>=sys-devel/llvm-7.0.0
 	virtual/libusb:1
 	virtual/pkgconfig
 	dev-vcs/git
@@ -225,6 +238,11 @@ src_unpack() {
 	
 	# build tools  
 	
+	# Prevents gclient from updating self.
+	export DEPOT_TOOLS_UPDATE=0
+	# Prevent gclient metrics collection.
+	export DEPOT_TOOLS_METRICS=0
+	
 	DEPOT_TOOLS_URI="https://chromium.googlesource.com/chromium/tools/depot_tools.git"
 	einfo "Fetching depot_tools from googlesource"
 	git-r3_fetch ${DEPOT_TOOLS_URI}
@@ -276,6 +294,8 @@ src_prepare() {
 
 	rm -r third_party/minigbm/src || die
 	ln -s "${WORKDIR}/minigbm" third_party/minigbm/src || die
+
+	use gold && eapply "${FILESDIR}/chromium-compiler-gold.patch"
 
 	# From here we adapt ungoogled-chromium's patches to our needs
 	local ugc_cli="${UGC_WD}/run_buildkit_cli.py"
@@ -555,17 +575,19 @@ setup_compile_flags() {
 	EBUILD_CXXFLAGS=()
 	EBUILD_LDFLAGS=()
 
-	#if use afdo_use; then
-	#	local afdo_flags=()
-	#	afdo_flags+=( -fprofile-sample-use="${AFDO_PROFILE_LOC}" )
-	#	# This is required because compiler emits different warnings
-	#	# for AFDO vs. non-AFDO. AFDO may inline different
-	#	# functions from non-AFDO, leading to different warnings.
-	#	afdo_flags+=( -Wno-error )
-	#	EBUILD_CFLAGS+=( "${afdo_flags[@]}" )
-	#	EBUILD_CXXFLAGS+=( "${afdo_flags[@]}" )
-	#fi
-	
+	use video_cards_amdgpu && append-cppflags -DDRV_AMDGPU && export DRV_AMDGPU=1
+	use video_cards_exynos && append-cppflags -DDRV_EXYNOS && export DRV_EXYNOS=1
+	use video_cards_intel && append-cppflags -DDRV_I915 && export DRV_I915=1
+	use video_cards_marvell && append-cppflags -DDRV_MARVELL && export DRV_MARVELL=1
+	use video_cards_mediatek && append-cppflags -DDRV_MEDIATEK && export DRV_MEDIATEK=1
+	use video_cards_msm && append-cppflags -DDRV_MSM && export DRV_MSM=1
+	use video_cards_radeon && append-cppflags -DDRV_RADEON && export DRV_RADEON=1
+	use video_cards_radeonsi && append-cppflags -DDRV_RADEON && export DRV_RADEON=1
+	use video_cards_rockchip && append-cppflags -DDRV_ROCKCHIP && export DRV_ROCKCHIP=1
+	use video_cards_tegra && append-cppflags -DDRV_TEGRA && export DRV_TEGRA=1
+	use video_cards_vc4 && append-cppflags -DDRV_VC4 && export DRV_VC4=1
+	use video_cards_virgl && append-cppflags -DDRV_VIRGL && export DRV_VIRGL=1
+
 	# LLVM needs this when parsing profiles.
 	# See README on https://github.com/google/autofdo
 	# For ARM, we do not need this flag because we don't get profiles
@@ -593,9 +615,9 @@ setup_compile_flags() {
 		# on speedometer when changing import-instr-limit from 100 to 30.
 		# We need to further reduce it to 20 for arm to limit the size
 		# increase to 10%.
-		local thinlto_ldflag="-Wl,--plugin-opt=thinlto,-import-instr-limit=30"
+		local thinlto_ldflag="-Wl,-plugin-opt=thinlto,-import-instr-limit=30"
 		if use arm; then
-			thinlto_ldflag="-Wl,--plugin-opt=thinlto,-import-instr-limit=20"
+			thinlto_ldflag="-Wl,-plugin-opt=thinlto,-import-instr-limit=20"
 			EBUILD_LDFLAGS+=( -gsplit-dwarf )
 		fi
 		EBUILD_LDFLAGS+=( ${thinlto_ldflag} )
@@ -621,6 +643,7 @@ setup_compile_flags() {
 			append-cxxflags "-stdlib=libc++"
 			append-ldflags "-stdlib=libc++"
 		fi
+		use debug && append-flags -fno-split-dwarf-inlining
 	fi
 	
 	# Workaround: Disable fatal linker warnings with asan/gold builds.
@@ -670,12 +693,6 @@ src_configure() {
 		# crbug.com/731335
 		export AR_host="llvm-ar"
 		export RANLIB="llvm-ranlib"
-	fi
-
-	# shellcheck disable=SC2086
-	if has ccache ${FEATURES}; then
-		# Avoid falling back to preprocessor mode when sources contain time macros
-		export CCACHE_SLOPPINESS=time_macros
 	fi
 
 	setup_compile_flags
@@ -760,7 +777,8 @@ src_configure() {
 	myconf_gn+=" optimize_webui=$(usetf optimize-webui)"
 	myconf_gn+=" proprietary_codecs=$(usetf proprietary-codecs)"
 	myconf_gn+=" safe_browsing_mode=0"
-	myconf_gn+=" symbol_level=0"
+	myconf_gn+=" symbol_level=$(usex debug 2 0)"
+
 	myconf_gn+=" treat_warnings_as_errors=false"
 	myconf_gn+=" use_gnome_keyring=false" # Deprecated by libsecret
 	myconf_gn+=" use_jumbo_build=$(usetf jumbo-build)"
@@ -836,7 +854,7 @@ src_configure() {
 	# Avoid CFLAGS problems (Bug #352457, #390147)
 	if ! use custom-cflags; then
 		replace-flags "-Os" "-O2"
-		#strip-flags
+		strip-unsupported-flags
 
 		# Filter common/redundant flags. See build/config/compiler/BUILD.gn
 		filter-flags -fomit-frame-pointer -fno-omit-frame-pointer
@@ -864,8 +882,17 @@ src_configure() {
 }
 
 src_compile() {
+	# Final link uses lots of file descriptors.
+	ulimit -n 2048
+
 	# Calling this here supports resumption via FEATURES=keepwork
 	python_setup 'python2*'
+
+	# shellcheck disable=SC2086
+	if has ccache ${FEATURES}; then
+		# Avoid falling back to preprocessor mode when sources contain time macros
+		export CCACHE_SLOPPINESS=time_macros
+	fi
 
 	# Build mksnapshot and pax-mark it
 	local x
@@ -930,9 +957,7 @@ src_install() {
 	doins out/Release/*.pak
 	#doins out/Release/*.so
 
-	if ! use system-icu; then
-		doins out/Release/icudtl.dat
-	fi
+	use system-icu || doins out/Release/icudtl.dat
 
 	doins -r out/Release/locales
 	doins -r out/Release/resources
@@ -971,23 +996,21 @@ src_install() {
 	use doc && readme.gentoo_create_doc
 }
 
-pkg_preinst() {
-	if use gnome; then
-		gnome2_icon_savelist
+update_caches() {
+	if type gtk-update-icon-cache &>/dev/null; then
+		ebegin "Updating GTK icon cache"
+		gtk-update-icon-cache "${EROOT}/usr/share/icons/hicolor"
+		eend $?
 	fi
+	xdg_desktop_database_update
 }
 
 pkg_postrm() {
-	if use gnome; then
-		gnome2_icon_cache_update
-		xdg_desktop_database_update
-	fi
+	use gnome && update_caches
 }
 
 pkg_postinst() {
-	if use gnome; then
-		gnome2_icon_cache_update
-		xdg_desktop_database_update
-	fi
+	use gnome && update_caches
 	use doc && readme.gentoo_print_elog
 }
+
