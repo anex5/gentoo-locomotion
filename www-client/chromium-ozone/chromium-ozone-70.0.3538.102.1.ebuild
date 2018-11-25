@@ -306,6 +306,8 @@ src_prepare() {
 	local ugc_common_dir="${UGC_WD}/config_bundles/common"
 	local ugc_rooted_dir="${UGC_WD}/config_bundles/linux_rooted"
 
+	use widevine || sed -i '/inox-patchset\/chromium-widevine-r2.patch/d' "${ugc_common_dir}/patch_order.list" || die 
+
 	# Remove ARM and GCC related patches
 	use clang || sed -i \
 		-e '/arm\/skia.patch/d' \
@@ -326,22 +328,10 @@ src_prepare() {
 	sed -i '/system\/icu.patch/d' "${ugc_rooted_dir}/patch_order.list" || die
 	sed -i '/opensuse\/system-libdrm.patch/d' "${ugc_rooted_dir}/patch_order.list" || die
 
-	if ! use system-icu; then
-		sed -i '/common\/icudtl.dat/d' "${ugc_rooted_dir}/pruning.list" || die
-	fi
-
-	if ! use system-libevent; then
-		sed -i '/system\/event.patch/d' "${ugc_rooted_dir}/patch_order.list" || die
-	fi
-
-	if ! use system-libvpx; then
-		sed -i '/system\/vpx.patch/d' "${ugc_rooted_dir}/patch_order.list" || die
-	fi
-
-	if use system-openjpeg; then
-		sed -i '/system\/nspr.patch/a debian/system/openjpeg.patch' \
-			"${ugc_rooted_dir}/patch_order.list" || die
-	fi
+	use system-icu || sed -i '/common\/icudtl.dat/d' "${ugc_rooted_dir}/pruning.list" || die
+	use system-libevent || sed -i '/system\/event.patch/d' "${ugc_rooted_dir}/patch_order.list" || die
+	use system-libvpx || sed -i '/system\/vpx.patch/d' "${ugc_rooted_dir}/patch_order.list" || die
+	use system-openjpeg && sed -i '/system\/nspr.patch/a debian/system/openjpeg.patch' "${ugc_rooted_dir}/patch_order.list" || die
 
 	if ! use vaapi; then
 		sed -i '/chromium-vaapi-r18.patch/d' "${ugc_rooted_dir}/patch_order.list" || die
