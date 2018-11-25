@@ -1,22 +1,24 @@
-diff --git a/build/config/compiler/BUILD.gn b/build/config/compiler/BUILD.gn
-index d533179..6d68026 100644
+diff --git a/build/config/compiler/BUILD.gn b/build/config/compiler/BUILD.gn 
+index 0eaf039..c37f1ca 100644
 --- a/build/config/compiler/BUILD.gn
-+++ b/build/config/compiler/BUILD.gn
-@@ -626,7 +626,7 @@ config("compiler") {
++++ b/build/config/compiler/BUILD.gn     
+@@ -636,8 +636,8 @@ config("compiler") {
        (current_toolchain == default_toolchain ||
         (is_android && defined(android_secondary_abi_toolchain) &&
          current_toolchain == android_secondary_abi_toolchain))) {
--    assert(use_lld || target_os == "chromeos", "gold plugin only supported with ChromeOS")
-+  # assert(use_lld || target_os == "chromeos", "gold plugin only supported with ChromeOS")
+-    assert(use_lld || target_os == "chromeos",
+-           "gold plugin only supported with ChromeOS")
++#    assert(use_lld || target_os == "chromeos",
++#           "gold plugin only supported with ChromeOS")
  
      cflags += [ "-flto=thin" ]
  
-@@ -662,7 +662,7 @@ config("compiler") {
+@@ -673,7 +673,7 @@ config("compiler") {
            "-Wl,--thinlto-cache-policy,$cache_policy",
          ]
        } else {
 -        ldflags += [ "-Wl,-plugin-opt,jobs=8" ]
-+        ldflags += [ "-Wl,-plugin-opt=jobs=8" ]
++        ldflags += [ "-Wl,-plugin-opt=thinlto,jobs=8" ]
        }
  
        if (use_lld) {
