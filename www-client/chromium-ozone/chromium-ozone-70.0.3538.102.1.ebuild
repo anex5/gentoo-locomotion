@@ -1,7 +1,7 @@
 # Copyright 1999-2018 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI="7"
+EAPI="6"
 PYTHON_COMPAT=( python{2_7,3_{5,6,7}} )
 
 CHROMIUM_LANGS="
@@ -35,7 +35,7 @@ IUSE="
 	cups custom-cflags gnome jumbo-build kerberos new-tcmalloc +openh264 optimize-webui
 	+proprietary-codecs pulseaudio selinux +suid +system-ffmpeg +system-harfbuzz
 	+system-icu +system-libevent +system-libvpx +system-openjpeg +tcmalloc vaapi
-	widevine wayland X atk dbus gtk doc xkbcommon libcxx v4l2_codec v4lplugin
+	widevine wayland X atk dbus gtk xkbcommon libcxx v4l2_codec v4lplugin
 	asan gold +clang clang_tidy lld cfi +thinlto debug
 "
 
@@ -74,7 +74,7 @@ COMMON_DEPEND="
 	dev-libs/libxslt:=
 	dev-libs/nspr:=
 	>=dev-libs/nss-3.26:=
-	>=dev-libs/re2-0.2016.05.01:=
+	>=dev-libs/re2-0.2016.11.01:=
 	>=media-libs/alsa-lib-1.0.19:=
 	media-libs/fontconfig:=
 	media-libs/freetype:=
@@ -133,6 +133,7 @@ COMMON_DEPEND="
 "
 # For nvidia-drivers blocker (Bug #413637)
 RDEPEND="${COMMON_DEPEND}
+	!<www-plugins/chrome-binary-plugins-57
 	x11-misc/xdg-utils
 	virtual/opengl
 	virtual/ttf-fonts
@@ -149,11 +150,13 @@ DEPEND="${COMMON_DEPEND}"
 BDEPEND="
 	>=app-arch/gzip-1.7
 	dev-lang/perl
-	dev-lang/yasm
+	!arm? (
+		dev-lang/yasm
+	)
 	dev-util/gn
 	>=dev-util/gperf-3.0.3
 	>=dev-util/ninja-1.7.2
-	>net-libs/nodejs-6[inspector]
+	>=net-libs/nodejs-7.6.0[inspector]
 	sys-apps/hwids[usb(+)]
 	>=sys-devel/bison-2.4.3
 	clang? (
@@ -367,6 +370,7 @@ src_prepare() {
 		base/third_party/dmg_fp
 		base/third_party/dynamic_annotations
 		base/third_party/icu
+		base/third_party/nspr
 		base/third_party/superfasthash
 		base/third_party/symbolize
 		base/third_party/valgrind
@@ -384,6 +388,7 @@ src_prepare() {
 		net/third_party/uri_template
 		third_party/WebKit
 		third_party/abseil-cpp
+		third_party/analytics
 		third_party/angle
 		third_party/angle/src/common/third_party/base
 		third_party/angle/src/common/third_party/smhasher
@@ -420,6 +425,7 @@ src_prepare() {
 		third_party/catapult/tracing/third_party/pako
 		third_party/ced
 		third_party/cld_3
+		third_party/closure_compiler
 		third_party/crashpad
 		third_party/crashpad/crashpad/third_party/zlib
 		third_party/crc32c
@@ -439,6 +445,7 @@ src_prepare() {
 		third_party/iccjpeg
 		third_party/inspector_protocol
 		third_party/jinja2
+		third_party/jsoncpp
 		third_party/jstemplate
 		third_party/khronos
 		third_party/leveldatabase
@@ -458,6 +465,7 @@ src_prepare() {
 		third_party/libxml/chromium
 		third_party/libyuv
 		third_party/lss
+		third_party/lzma_sdk
 		third_party/markupsafe
 		third_party/mesa
 		third_party/metrics_proto
@@ -475,6 +483,7 @@ src_prepare() {
 		third_party/pdfium/third_party/libpng16
 		third_party/pdfium/third_party/libtiff
 		third_party/pdfium/third_party/skia_shared
+		third_party/perfetto
 		third_party/ply
 		third_party/polymer
 		third_party/protobuf
@@ -491,8 +500,12 @@ src_prepare() {
 		third_party/skia/third_party/vulkan
 		third_party/smhasher
 		third_party/spirv-headers
+		third_party/SPIRV-Tools
 		third_party/spirv-tools-angle
 		third_party/sqlite
+		third_party/swiftshader
+		third_party/swiftshader/third_party/llvm-subzero
+		third_party/swiftshader/third_party/subzero
 		third_party/ungoogled
 		third_party/unrar
 		third_party/usrsctp
@@ -529,16 +542,10 @@ src_prepare() {
 
 	use openh264 || keeplibs+=( third_party/openh264 )
 	use system-ffmpeg || keeplibs+=( third_party/ffmpeg third_party/opus )
-	if ! use system-harfbuzz; then
-		keeplibs+=( third_party/freetype )
-		keeplibs+=( third_party/harfbuzz-ng )
-	fi
+	use system-harfbuzz || keeplibs+=( third_party/freetype third_party/harfbuzz-ng )
 	use system-icu || keeplibs+=( third_party/icu )
 	use system-libevent || keeplibs+=( base/third_party/libevent )
-	if ! use system-libvpx; then
-		keeplibs+=( third_party/libvpx )
-		keeplibs+=( third_party/libvpx/source/libvpx/third_party/x86inc )
-	fi
+	use system-libvpx || keeplibs+=( third_party/libvpx third_party/libvpx/source/libvpx/third_party/x86inc )
 	use system-openjpeg || keeplibs+=( third_party/pdfium/third_party/libopenjpeg20 )
 	use tcmalloc && keeplibs+=( third_party/tcmalloc )
 
@@ -558,17 +565,32 @@ get_binutils_path_gold() {
 
 # Handle all CFLAGS/CXXFLAGS/etc... munging here.
 setup_compile_flags() {
-	# The chrome makefiles specify -O and -g flags already, so remove the
-	# portage flags.
-	filter-flags -g -O*
+	# Avoid CFLAGS problems (Bug #352457, #390147)
+	if ! use custom-cflags; then
+		replace-flags "-Os" "-O2"
+		strip-unsupported-flags
+
+		# Prevent linker from running out of address space, bug #471810 .
+		if use x86; then
+			filter-flags "-g*"
+		fi
+
+		# Prevent libvpx build failures (Bug #530248, #544702, #546984)
+		if [[ ${myarch} == amd64 || ${myarch} == x86 ]]; then
+			filter-flags -mno-mmx -mno-sse2 -mno-ssse3 -mno-sse4.1 -mno-avx -mno-avx2
+		fi
+	fi
+
 	# -clang-syntax is a flag that enable us to do clang syntax checking on
 	# top of building Chrome with gcc. Since Chrome itself is clang clean,
 	# there is no need to check it again in Chrome OS land. And this flag has
 	# nothing to do with USE=clang.
 	use clang && filter-flags -clang-syntax
+
 	# Remove unsupported arm64 linker flag on arm32 builds.
 	# https://crbug.com/889079
 	use arm && filter-flags "-Wl,--fix-cortex-a53-843419"
+	
 	# There are some flags we want to only use in the ebuild.
 	# The rest will be exported to the simple chrome workflow.
 	EBUILD_CFLAGS=()
@@ -649,8 +671,9 @@ setup_compile_flags() {
 	# Workaround: Disable fatal linker warnings with asan/gold builds.
 	# See https://crbug.com/823936
 	use asan && use gold && append-ldflags "-Wl,--no-fatal-warnings"
-#	use vtable_verify && append-ldflags -fvtable-verify=preinit
-	! use debug && append-ldflags "-s"
+	
+	# Strip debug info
+	use debug || append-ldflags "-s"
 	
 	local flags
 	einfo "Building with the compiler settings:"
@@ -679,9 +702,11 @@ src_configure() {
 	elif ! use lld ; then
 		ewarn "gold and lld disabled. Using GNU ld."
 	fi
+	
 	# Use g++ as the linker driver.
 	export LD="${CXX}"
 	export LD_host=${CXX_host}
+	
 	# We need below change when USE="thinlto" is set. We set this globally
 	# so that users can turn on the "use_thin_lto" in the simplechrome
 	# flow more easily. We might be able to remve the dependency on use
@@ -743,6 +768,8 @@ src_configure() {
 	myconf_gn+=" enable_iterator_debugging=$(usetf debug)"
 	myconf_gn+=" enable_mdns=false"
 	myconf_gn+=" enable_mse_mpeg2ts_stream_parser=true"
+
+	# Disable nacl, we can't build without pnacl (http://crbug.com/269560).
 	myconf_gn+=" enable_nacl=false"
 	myconf_gn+=" enable_nacl_nonsfi=false"
 	myconf_gn+=" enable_one_click_signin=false"
@@ -756,9 +783,17 @@ src_configure() {
 	myconf_gn+=" fatal_linker_warnings=false"
 	myconf_gn+=" ffmpeg_branding=\"$(usex proprietary-codecs Chrome Chromium)\""
 	myconf_gn+=" fieldtrial_testing_like_official_build=$(usetf cfi)"
-	myconf_gn+=" google_api_key=\"\""
-	myconf_gn+=" google_default_client_id=\"\""
-	myconf_gn+=" google_default_client_secret=\"\""
+
+	# Set up Google API keys, see http://www.chromium.org/developers/how-tos/api-keys .
+	# Note: these are for Gentoo use ONLY. For your own distribution,
+	# please get your own set of keys. Feel free to contact chromium@gentoo.org
+	# for more info.
+	local google_api_key="AIzaSyDEAOvatFo0eTgsV_ZlEzx0ObmepsMzfAc"
+	local google_default_client_id="329227923882.apps.googleusercontent.com"
+	local google_default_client_secret="vgKG0NNv7GoDpbtoFNLxCUXu"
+	myconf_gn+=" google_api_key=\"${google_api_key}\""
+	myconf_gn+=" google_default_client_id=\"${google_default_client_id}\""
+	myconf_gn+=" google_default_client_secret=\"${google_default_client_secret}\""
 
 	# Clang features.
 	myconf_gn+=" is_asan=$(usetf asan)"
@@ -807,7 +842,6 @@ src_configure() {
 	myconf_gn+=" optimize_for_size=false"
 	myconf_gn+=" use_allocator=\"$(usex tcmalloc tcmalloc none)\""
 	myconf_gn+=" use_new_tcmalloc=$(usetf new-tcmalloc)"
-
 	myconf_gn+=" use_cups=$(usetf cups)"
 	myconf_gn+=" use_custom_libcxx=false"
 	myconf_gn+=" use_gio=false"
@@ -851,25 +885,8 @@ src_configure() {
 		die "Failed to determine target arch, got '$myarch'."
 	fi
 
-	# Avoid CFLAGS problems (Bug #352457, #390147)
-	if ! use custom-cflags; then
-		replace-flags "-Os" "-O2"
-		strip-unsupported-flags
-
-		# Filter common/redundant flags. See build/config/compiler/BUILD.gn
-		filter-flags -fomit-frame-pointer -fno-omit-frame-pointer
-		filter-flags '-fstack-protector*' '-fno-stack-protector*'
-		filter-flags '-fuse-ld=*' '-g*' '-Wl,*'
-
-		# Prevent libvpx build failures (Bug #530248, #544702, #546984)
-		if [[ ${myarch} == amd64 || ${myarch} == x86 ]]; then
-			filter-flags -mno-mmx -mno-sse2 -mno-ssse3 -mno-sse4.1 -mno-avx -mno-avx2
-		fi
-	fi
-
 	# Bug #491582
 	export TMPDIR="${WORKDIR}/temp"
-	# shellcheck disable=SC2174
 	mkdir -p -m 755 "${TMPDIR}" || die
 
 	# But #654216
@@ -888,27 +905,25 @@ src_compile() {
 	# Calling this here supports resumption via FEATURES=keepwork
 	python_setup 'python2*'
 
-	# shellcheck disable=SC2086
 	if has ccache ${FEATURES}; then
 		# Avoid falling back to preprocessor mode when sources contain time macros
 		export CCACHE_SLOPPINESS=time_macros
 	fi
 
 	# Build mksnapshot and pax-mark it
-	local x
-	for x in mksnapshot v8_context_snapshot_generator; do
-		if tc-is-cross-compiler; then
-			eninja -C out/Release "host/${x}"
-			pax-mark m "out/Release/host/${x}"
-		else
-			eninja -C out/Release "${x}"
-			pax-mark m "out/Release/${x}"
-		fi
-	done
+	#local x
+	#for x in mksnapshot v8_context_snapshot_generator; do
+	#	if tc-is-cross-compiler; then
+	#		eninja -C out/Release "host/${x}"
+	#		pax-mark m "out/Release/host/${x}"
+	#	else
+	#		eninja -C out/Release "${x}"
+	#		pax-mark m "out/Release/${x}"
+	#	fi
+	#done
 
 	# Work around broken deps
-	eninja -C out/Release gen/ui/accessibility/ax_enums.mojom.h
-	eninja -C out/Release gen/ui/accessibility/ax_enums.mojom-shared.h
+	eninja -C out/Release gen/ui/accessibility/ax_enums.mojom{,-shared}.h
 
 	# Even though ninja autodetects number of CPUs, we respect
 	# user's options, for debugging with -j 1 or any other reason
@@ -919,9 +934,8 @@ src_compile() {
 }
 
 src_install() {
-	# SC2155
-	local CHROMIUM_HOME
-	CHROMIUM_HOME="/usr/$(get_libdir)/chromium-browser"
+	local CHROMIUM_HOME="/usr/$(get_libdir)/chromium-browser"
+
 	exeinto "${CHROMIUM_HOME}"
 	doexe out/Release/chrome
 
@@ -950,17 +964,22 @@ src_install() {
 
 	pushd out/Release/locales > /dev/null || die
 	chromium_remove_language_paks
-	popd > /dev/null || die
+	popd
 
 	insinto "${CHROMIUM_HOME}"
 	doins out/Release/*.bin
 	doins out/Release/*.pak
-	#doins out/Release/*.so
+	doins out/Release/*.so
 
 	use system-icu || doins out/Release/icudtl.dat
 
 	doins -r out/Release/locales
 	doins -r out/Release/resources
+
+	if [[ -d out/Release/swiftshader ]]; then
+		insinto "${CHROMIUM_HOME}/swiftshader"
+		doins out/Release/swiftshader/*.so
+	fi
 
 	# Install icons and desktop entry
 
@@ -993,7 +1012,7 @@ src_install() {
 		doins "${FILESDIR}"/chromium-browser.xml
 	fi
 
-	use doc && readme.gentoo_create_doc
+	readme.gentoo_create_doc
 }
 
 update_caches() {
@@ -1011,6 +1030,6 @@ pkg_postrm() {
 
 pkg_postinst() {
 	use gnome && update_caches
-	use doc && readme.gentoo_print_elog
+	readme.gentoo_print_elog
 }
 
