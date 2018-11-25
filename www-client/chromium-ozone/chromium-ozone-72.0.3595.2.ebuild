@@ -540,7 +540,7 @@ src_prepare() {
 	use tcmalloc && keeplibs+=( third_party/tcmalloc )
 
 	# Remove most bundled libraries, some are still needed
-	build/linux/unbundle/remove_bundled_libraries.py "${keeplibs[@]}" --do-remove
+	# build/linux/unbundle/remove_bundled_libraries.py "${keeplibs[@]}" --do-remove || die
 }
 
 get_binutils_path_ld() {
