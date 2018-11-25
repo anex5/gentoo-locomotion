@@ -32,7 +32,7 @@ VIDEO_CARDS="
 
 IUSE="
 	cups custom-cflags gnome jumbo-build kerberos new-tcmalloc +openh264 optimize-webui
-	+proprietary-codecs pulseaudio selinux +suid +system-ffmpeg +system-harfbuzz
+	proprietary-codecs pulseaudio selinux +suid +system-ffmpeg +system-harfbuzz
 	+system-icu +system-libevent +system-libvpx +system-openjpeg +tcmalloc vaapi
 	widevine wayland X atk dbus gtk xkbcommon libcxx v4l2_codec v4lplugin
 	asan gold +clang clang_tidy lld cfi +thinlto debug
