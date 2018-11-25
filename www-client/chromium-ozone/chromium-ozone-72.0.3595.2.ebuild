@@ -342,9 +342,9 @@ src_prepare() {
 		fi
 	fi
 
-	ebegin "Pruning binaries"
-	"${ugc_cli}" prune -b "${ugc_config}" ./ 
-	eend $?
+	#ebegin "Pruning binaries"
+	#"${ugc_cli}" prune -b "${ugc_config}" ./ || die
+	#eend $?
 
 	ebegin "Applying ungoogled-chromium patches"
 	"${ugc_cli}" patches apply -b "${ugc_config}" ./
@@ -1022,4 +1022,3 @@ pkg_postinst() {
 	use gnome && update_caches
 	readme.gentoo_print_elog
 }
-
