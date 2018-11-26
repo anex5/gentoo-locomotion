@@ -32,11 +32,11 @@ VIDEO_CARDS="
 "
 
 IUSE="
-	cups custom-cflags gnome jumbo-build kerberos new-tcmalloc +openh264 optimize-webui
+	cups custom-cflags gnome jumbo-build kerberos new-tcmalloc +openh264 +optimize-webui
 	proprietary-codecs pulseaudio selinux +suid +system-ffmpeg +system-harfbuzz
 	+system-icu +system-libevent +system-libvpx +system-openjpeg +tcmalloc vaapi
 	widevine wayland X atk dbus gtk xkbcommon libcxx v4l2_codec v4lplugin
-	asan gold +clang clang_tidy lld cfi +thinlto debug
+	asan gold +clang +clang_tidy lld cfi +thinlto closure debug
 "
 
 for card in ${VIDEO_CARDS}; do
@@ -803,6 +803,7 @@ src_configure() {
 
 	myconf_gn+=" is_debug=$(usetf debug)"
 	myconf_gn+=" is_java_debug=$(usetf debug)"
+	myconf_gn+=" closure_compile=$(usetf closure)"
 	myconf_gn+=" remove_webcore_debug_symbols=$(usex debug false true)"
 	#myconf_gn+=" use_debug_fission=$(usetf debug)"
 	#myconf_gn+=" is_official_build=false"
