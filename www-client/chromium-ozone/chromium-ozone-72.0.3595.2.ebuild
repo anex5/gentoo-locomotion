@@ -26,7 +26,7 @@ SRC_URI="
 
 LICENSE="BSD"
 SLOT="0"
-KEYWORDS="~*"
+KEYWORDS=""
 VIDEO_CARDS="
 	amdgpu exynos intel marvell mediatek msm radeon radeonsi rockchip tegra vc4 virgl
 "
