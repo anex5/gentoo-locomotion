@@ -326,7 +326,7 @@ src_prepare() {
 	use system-icu || sed -i '/common\/icudtl.dat/d' "${ugc_rooted_dir}/pruning.list" || die
 	use system-libevent || sed -i '/system\/event.patch/d' "${ugc_rooted_dir}/patch_order.list" || die
 	use system-libvpx || sed -i '/system\/vpx.patch/d' "${ugc_rooted_dir}/patch_order.list" || die
-	use system-openjpeg && sed -i '/system\/nspr.patch/a debian/system/openjpeg.patch' "${ugc_rooted_dir}/patch_order.list" || die
+	use system-openjpeg && sed -i '/system\/nspr.patch/a debian_buster/system/openjpeg.patch' "${ugc_rooted_dir}/patch_order.list" || die
 
 	if ! use vaapi; then
 		sed -i '/chromium-vaapi-r18.patch/d' "${ugc_rooted_dir}/patch_order.list" || die
