@@ -18,7 +18,7 @@ index 0eaf039..c37f1ca 100644
          ]
        } else {
 -        ldflags += [ "-Wl,-plugin-opt,jobs=8" ]
-+        ldflags += [ "-Wl,-plugin-opt=thinlto,jobs=8" ]
++        ldflags += [ "-Wl,--plugin=thinlto,--plugin-opt,jobs=8" ]
        }
  
        if (use_lld) {
