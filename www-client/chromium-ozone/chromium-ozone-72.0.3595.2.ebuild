@@ -306,6 +306,11 @@ src_prepare() {
 
 	use widevine || sed -i '/inox-patchset\/chromium-widevine-r2.patch/d' "${ugc_common_dir}/patch_order.list" || die 
 
+	#This version only
+	#for ep in "${S}/components/domain_reliability/baked_in_configs"/*.json; do
+	#	sed -i 's/\.com\//\.com/' "${ep}"
+	#done
+
 	# Remove ARM and GCC related patches
 	use clang || sed -i \
 		-e '/arm\/skia.patch/d' \
@@ -348,9 +353,9 @@ src_prepare() {
 	"${ugc_cli}" patches apply -b "${ugc_config}" ./
 	eend $?
 
-	ebegin "Applying domain substitution"
-	"${ugc_cli}" domains apply -b "${ugc_config}" -c domainsubcache.tar.gz ./
-	eend $?
+	#ebegin "Applying domain substitution"
+	#"${ugc_cli}" domains apply -b "${ugc_config}" -c domainsubcache.tar.gz ./
+	#eend $?
 
 	python_setup 'python2*'
 
@@ -749,7 +754,7 @@ src_configure() {
 
 	local myconf_gn=""
 	# UGC's "common" GN flags (config_bundles/common/gn_flags.map)
-	myconf_gn+=" blink_symbol_level=0"
+	myconf_gn+=" blink_symbol_level=$(usex debug 2 -1)"
 	myconf_gn+=" enable_ac3_eac3_audio_demuxing=true"
 	myconf_gn+=" enable_hangout_services_extension=false"
 	myconf_gn+=" enable_hevc_demuxing=true"
@@ -770,19 +775,19 @@ src_configure() {
 	myconf_gn+=" exclude_unwind_tables=true"
 	myconf_gn+=" fatal_linker_warnings=false"
 	myconf_gn+=" ffmpeg_branding=\"$(usex proprietary-codecs Chrome Chromium)\""
-	myconf_gn+=" fieldtrial_testing_like_official_build=$(usetf cfi)"
+	myconf_gn+=" fieldtrial_testing_like_official_build=false"
 
 	# Set up Google API keys, see http://www.chromium.org/developers/how-tos/api-keys .
 	# Note: these are for Gentoo use ONLY. For your own distribution,
 	# please get your own set of keys. Feel free to contact chromium@gentoo.org
 	# for more info.
-	local google_api_key="AIzaSyDEAOvatFo0eTgsV_ZlEzx0ObmepsMzfAc"
-	local google_default_client_id="329227923882.apps.googleusercontent.com"
-	local google_default_client_secret="vgKG0NNv7GoDpbtoFNLxCUXu"
-	myconf_gn+=" google_api_key=\"${google_api_key}\""
-	myconf_gn+=" google_default_client_id=\"${google_default_client_id}\""
-	myconf_gn+=" google_default_client_secret=\"${google_default_client_secret}\""
-	myconf_gn+=" use_official_google_api_keys=yes"
+	#local google_api_key="AIzaSyDEAOvatFo0eTgsV_ZlEzx0ObmepsMzfAc"
+	#local google_default_client_id="329227923882.apps.googleusercontent.com"
+	#local google_default_client_secret="vgKG0NNv7GoDpbtoFNLxCUXu"
+	#myconf_gn+=" google_api_key=\"${google_api_key}\""
+	#myconf_gn+=" google_default_client_id=\"${google_default_client_id}\""
+	#myconf_gn+=" google_default_client_secret=\"${google_default_client_secret}\""
+	myconf_gn+=" use_official_google_api_keys=false"
 
 	# Clang features.
 	myconf_gn+=" is_asan=$(usetf asan)"
@@ -798,19 +803,19 @@ src_configure() {
 
 	myconf_gn+=" is_debug=$(usetf debug)"
 	myconf_gn+=" is_java_debug=$(usetf debug)"
-	myconf_gn+=" remove_webcore_debug_symbols = $(usex debug false true)"
-	myconf_gn+=" use_debug_fission=$(usetf debug)"
-	myconf_gn+=" is_official_build=false"
-	myconf_gn+=" optimize_webui=$(usetf optimize-webui)"
-	myconf_gn+=" proprietary_codecs=$(usetf proprietary-codecs)"
+	myconf_gn+=" remove_webcore_debug_symbols=$(usex debug false true)"
+	#myconf_gn+=" use_debug_fission=$(usetf debug)"
+	#myconf_gn+=" is_official_build=false"
+	#myconf_gn+=" optimize_webui=$(usetf optimize-webui)"
+	#myconf_gn+=" proprietary_codecs=$(usetf proprietary-codecs)"
 	myconf_gn+=" safe_browsing_mode=0"
-	myconf_gn+=" symbol_level=$(usex debug 2 0)"
+	myconf_gn+=" symbol_level=$(usex debug 2 -1)"
 
 	myconf_gn+=" treat_warnings_as_errors=false"
 	myconf_gn+=" use_gnome_keyring=false" # Deprecated by libsecret
 	myconf_gn+=" use_jumbo_build=$(usetf jumbo-build)"
 	myconf_gn+=" jumbo_file_merge_limit=3"
-	#$(sed -n -e '/MemTotal:/s/^[^:]*: *\([0-9]\+\) kB/\1/p' /proc/meminfo)"
+	# $(sed -n -e '/MemTotal:/s/^[^:]*: *\([0-9]\+\) kB/\1/p' /proc/meminfo)"
 
 	myconf_gn+=" use_gtk3=$(usetf gtk)"
 	myconf_gn+=" rtc_use_gtk=$(usetf gtk)"
@@ -836,7 +841,7 @@ src_configure() {
 	myconf_gn+=" use_allocator=\"$(usex tcmalloc tcmalloc none)\""
 	myconf_gn+=" use_new_tcmalloc=$(usetf new-tcmalloc)"
 	myconf_gn+=" use_cups=$(usetf cups)"
-	myconf_gn+=" use_custom_libcxx=false"
+	myconf_gn+=" use_custom_libcxx=$(usetf libcxx)"
 	myconf_gn+=" use_gio=false"
 	myconf_gn+=" use_kerberos=$(usetf kerberos)"
 	myconf_gn+=" use_openh264=$(usetf openh264)" # Enable this to
@@ -860,7 +865,7 @@ src_configure() {
 		myconf_gn+=" ozone_auto_platforms=false"
 		myconf_gn+=" ozone_platform_x11=$(usetf X)"
 		myconf_gn+=" ozone_platform_wayland=true"
-		myconf_gn+=" enable_package_mash_services=true"
+		#myconf_gn+=" enable_package_mash_services=true"
 		myconf_gn+=" enable_xdg_shell=true"
 		myconf_gn+=" enable_mus=true"
 		myconf_gn+=" use_system_minigbm=true"
