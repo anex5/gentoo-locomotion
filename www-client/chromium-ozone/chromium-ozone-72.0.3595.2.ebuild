@@ -36,7 +36,7 @@ IUSE="
 	proprietary-codecs pulseaudio selinux +suid +system-ffmpeg +system-harfbuzz
 	+system-icu +system-libevent +system-libvpx +system-openjpeg +tcmalloc vaapi
 	widevine wayland X atk dbus gtk xkbcommon libcxx v4l2_codec v4lplugin
-	asan gold +clang +clang_tidy lld cfi +thinlto closure debug
+	gold +clang +clang_tidy lld cfi +thinlto closure debug
 "
 
 for card in ${VIDEO_CARDS}; do
@@ -47,7 +47,6 @@ REQUIRED_USE="
 	|| ( $(python_gen_useflags 'python3*') )
 	|| ( $(python_gen_useflags 'python2*') )
 	new-tcmalloc? ( tcmalloc )
-	asan? ( clang )
 	?? ( gold lld )
 	cfi? ( thinlto )
 	clang_tidy? ( clang )
@@ -284,6 +283,7 @@ src_prepare() {
 
 	# Apply extra patches (taken from openSUSE)
 	local ep
+	#for ep in "${FILESDIR}/extra-$(ver_cut 1-1)"/*.patch; do
 	for ep in "${FILESDIR}/extra-70"/*.patch; do
 		eapply "${ep}"
 	done
@@ -356,8 +356,6 @@ src_prepare() {
 	#ebegin "Applying domain substitution"
 	#"${ugc_cli}" domains apply -b "${ugc_config}" -c domainsubcache.tar.gz ./
 	#eend $?
-
-	python_setup 'python2*'
 
 	local keeplibs=(
 		base/third_party/dmg_fp
@@ -543,7 +541,8 @@ src_prepare() {
 	use tcmalloc && keeplibs+=( third_party/tcmalloc )
 
 	# Remove most bundled libraries, some are still needed
-	# build/linux/unbundle/remove_bundled_libraries.py "${keeplibs[@]}" --do-remove || die
+	python_setup 'python2*'
+	build/linux/unbundle/remove_bundled_libraries.py "${keeplibs[@]}" --do-remove || die
 }
 
 get_binutils_path_ld() {
@@ -654,16 +653,16 @@ setup_compile_flags() {
 		append-cflags -Wno-builtin-macro-redefined
 		append-cxxflags -Wno-builtin-macro-redefined
 		append-cppflags "-D__DATE__= -D__TIME__= -D__TIMESTAMP__="
-		if use libcxx; then
-			append-cxxflags "-stdlib=libc++"
-			append-ldflags "-stdlib=libc++"
-		fi
+		#if use libcxx; then
+		#	append-cxxflags "-stdlib=libc++"
+		#	append-ldflags "-stdlib=libc++"
+		#fi
 		use debug && append-flags -fno-split-dwarf-inlining
 	fi
 	
 	# Workaround: Disable fatal linker warnings with asan/gold builds.
 	# See https://crbug.com/823936
-	use asan && use gold && append-ldflags "-Wl,--no-fatal-warnings"
+	use gold && append-ldflags "-Wl,--no-fatal-warnings"
 	
 	# Strip debug info
 	use debug || append-ldflags "-s"
@@ -775,7 +774,7 @@ src_configure() {
 	myconf_gn+=" exclude_unwind_tables=true"
 	myconf_gn+=" fatal_linker_warnings=false"
 	myconf_gn+=" ffmpeg_branding=\"$(usex proprietary-codecs Chrome Chromium)\""
-	myconf_gn+=" fieldtrial_testing_like_official_build=false"
+	myconf_gn+=" fieldtrial_testing_like_official_build=true"
 
 	# Set up Google API keys, see http://www.chromium.org/developers/how-tos/api-keys .
 	# Note: these are for Gentoo use ONLY. For your own distribution,
@@ -790,7 +789,7 @@ src_configure() {
 	myconf_gn+=" use_official_google_api_keys=false"
 
 	# Clang features.
-	myconf_gn+=" is_asan=$(usetf asan)"
+	myconf_gn+=" is_asan=false" #$(usetf asan)"
 	myconf_gn+=" is_clang=$(usetf clang)"
 	#myconf_gn+=" cros_host_is_clang=$(usetf clang)"
 	#myconf_gn+=" cros_v8_snapshot_is_clang=$(usetf clang)"
@@ -842,8 +841,8 @@ src_configure() {
 	myconf_gn+=" use_allocator=\"$(usex tcmalloc tcmalloc none)\""
 	myconf_gn+=" use_new_tcmalloc=$(usetf new-tcmalloc)"
 	myconf_gn+=" use_cups=$(usetf cups)"
-	myconf_gn+=" use_custom_libcxx=$(usetf libcxx)"
-	myconf_gn+=" use_gio=false"
+	myconf_gn+=" use_custom_libcxx=false" #$(usetf libcxx)"
+	myconf_gn+=" use_gio=$(usetf gnome)"
 	myconf_gn+=" use_kerberos=$(usetf kerberos)"
 	myconf_gn+=" use_openh264=$(usetf openh264)" # Enable this to
 	# build OpenH264 for encoding, hence the restriction: !openh264? ( bindist )
