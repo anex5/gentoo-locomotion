@@ -371,7 +371,7 @@ src_prepare() {
 		net/third_party/uri_template
 		third_party/WebKit
 		third_party/abseil-cpp
-		third_party/analytics
+		#third_party/analytics
 		third_party/angle
 		third_party/angle/src/common/third_party/base
 		third_party/angle/src/common/third_party/smhasher
@@ -782,7 +782,7 @@ src_configure() {
 	myconf_gn+=" use_official_google_api_keys=false"
 
 	# Clang features.
-	myconf_gn+=" is_asan=$(usetf asan)"
+	#myconf_gn+=" is_asan=$(usetf asan)"
 	myconf_gn+=" is_clang=$(usetf clang)"
 	myconf_gn+=" clang_use_chrome_plugins=false"
 	myconf_gn+=" use_thin_lto=$(usetf thinlto)"
