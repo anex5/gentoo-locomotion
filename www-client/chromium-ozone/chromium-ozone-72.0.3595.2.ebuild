@@ -78,10 +78,10 @@ COMMON_DEPEND="
 	>=media-libs/alsa-lib-1.0.19:=
 	media-libs/fontconfig:=
 	media-libs/freetype:=
-	system-harfbuzz? ( >=media-libs/harfbuzz-1.8.8:0=[icu(-)] )
+	system-harfbuzz? ( >=media-libs/harfbuzz-2.0.0:0=[icu(-)] )
 	media-libs/libjpeg-turbo:=
 	media-libs/libpng:=
-	system-libvpx? ( >=media-libs/libvpx-1.7.0:=[postproc,svc] )
+	system-libvpx? ( media-libs/libvpx:=[postproc,svc] )
 	openh264? ( >=media-libs/openh264-1.6.0:= )
 	system-openjpeg? ( media-libs/openjpeg:2 )
 	pulseaudio? ( media-sound/pulseaudio:= )
@@ -133,7 +133,6 @@ COMMON_DEPEND="
 "
 # For nvidia-drivers blocker (Bug #413637)
 RDEPEND="${COMMON_DEPEND}
-	!<www-plugins/chrome-binary-plugins-57
 	x11-misc/xdg-utils
 	virtual/opengl
 	virtual/ttf-fonts
@@ -171,7 +170,6 @@ BDEPEND="
 	dev-vcs/git
 "
 
-# shellcheck disable=SC2086
 if ! has chromium_pkg_die ${EBUILD_DEATH_HOOKS}; then
 	EBUILD_DEATH_HOOKS+=" chromium_pkg_die";
 fi
@@ -209,7 +207,7 @@ S="${WORKDIR}/chromium-$(ver_cut 1-4)"
 pre_build_checks() {
 	# Check build requirements (Bug #541816, #471810)
 	CHECKREQS_MEMORY="3G"
-	CHECKREQS_DISK_BUILD="5G"
+	CHECKREQS_DISK_BUILD="8G"
 	if use custom-cflags; then
 		eshopts_push -s extglob
 		if is-flagq '-g?(gdb)?([1-9])'; then
@@ -342,9 +340,9 @@ src_prepare() {
 		fi
 	fi
 
-	#ebegin "Pruning binaries"
-	#"${ugc_cli}" prune -b "${ugc_config}" ./ || die
-	#eend $?
+	# ebegin "Pruning binaries"
+	# "${ugc_cli}" prune -b "${ugc_config}" ./ || die
+	# eend $?
 
 	ebegin "Applying ungoogled-chromium patches"
 	"${ugc_cli}" patches apply -b "${ugc_config}" ./
@@ -784,6 +782,7 @@ src_configure() {
 	myconf_gn+=" google_api_key=\"${google_api_key}\""
 	myconf_gn+=" google_default_client_id=\"${google_default_client_id}\""
 	myconf_gn+=" google_default_client_secret=\"${google_default_client_secret}\""
+	myconf_gn+=" use_official_google_api_keys=yes"
 
 	# Clang features.
 	myconf_gn+=" is_asan=$(usetf asan)"
@@ -795,10 +794,13 @@ src_configure() {
 	myconf_gn+=" use_lld=$(usetf lld)"
 	myconf_gn+=" is_cfi=$(usetf cfi)"
 	myconf_gn+=" use_cfi_cast=$(usetf cfi)"
+	myconf_gn+=" use_cfi_icall=$(usetf cfi)"
 
 	myconf_gn+=" is_debug=$(usetf debug)"
+	myconf_gn+=" is_java_debug=$(usetf debug)"
+	myconf_gn+=" remove_webcore_debug_symbols = $(usex debug false true)"
 	myconf_gn+=" use_debug_fission=$(usetf debug)"
-	myconf_gn+=" is_official_build=$(usetf cfi)"
+	myconf_gn+=" is_official_build=false"
 	myconf_gn+=" optimize_webui=$(usetf optimize-webui)"
 	myconf_gn+=" proprietary_codecs=$(usetf proprietary-codecs)"
 	myconf_gn+=" safe_browsing_mode=0"
@@ -807,7 +809,8 @@ src_configure() {
 	myconf_gn+=" treat_warnings_as_errors=false"
 	myconf_gn+=" use_gnome_keyring=false" # Deprecated by libsecret
 	myconf_gn+=" use_jumbo_build=$(usetf jumbo-build)"
-	myconf_gn+=" use_official_google_api_keys=false"
+	myconf_gn+=" jumbo_file_merge_limit=3"
+	#$(sed -n -e '/MemTotal:/s/^[^:]*: *\([0-9]\+\) kB/\1/p' /proc/meminfo)"
 
 	myconf_gn+=" use_gtk3=$(usetf gtk)"
 	myconf_gn+=" rtc_use_gtk=$(usetf gtk)"
