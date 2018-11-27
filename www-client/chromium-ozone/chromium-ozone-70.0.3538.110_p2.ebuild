@@ -244,6 +244,7 @@ src_unpack() {
 	git-r3_fetch ${DEPOT_TOOLS_URI}
 	git-r3_checkout ${DEPOT_TOOLS_URI} depot_tools
 
+	REFS="refs/heads/stabilize-11005.B"
 	MINIGBM_URI="https://chromium.googlesource.com/chromiumos/platform/minigbm"
 	einfo "Fetching minigbm from googlesource"
 	git-r3_fetch ${MINIGBM_URI}
