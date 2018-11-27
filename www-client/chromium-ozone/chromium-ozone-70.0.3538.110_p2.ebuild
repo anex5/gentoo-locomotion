@@ -613,6 +613,7 @@ setup_compile_flags() {
 	fi
 	
 	if use thinlto; then
+		append-ldflags "-fuse-linker-plugin"
 		# We need to change the default value of import-instr-limit in
 		# LLVM to limit the text size increase. The default value is
 		# 100, and we change it to 30 to reduce the text size increase
@@ -621,12 +622,12 @@ setup_compile_flags() {
 		# on speedometer when changing import-instr-limit from 100 to 30.
 		# We need to further reduce it to 20 for arm to limit the size
 		# increase to 10%.
-		local thinlto_ldflag="-Wl,-plugin-opt=thinlto,-import-instr-limit=30"
+		local thinlto_ldflag="-Wl,-plugin-opt,-import-instr-limit=30"
 		if use arm; then
-			thinlto_ldflag="-Wl,-plugin-opt=thinlto,-import-instr-limit=20"
-			EBUILD_LDFLAGS+=( -gsplit-dwarf )
+			thinlto_ldflag="-Wl,-plugin-opt,-import-instr-limit=20"
+			append-ldflags "-gsplit-dwarf"
 		fi
-		EBUILD_LDFLAGS+=( ${thinlto_ldflag} )
+		append-ldflags "${thinlto_ldflag}"
 	fi
 	
 	# Enable std::vector []-operator bounds checking.
@@ -639,17 +640,17 @@ setup_compile_flags() {
 	# Turns out this is only really supported by Clang. See crosbug.com/615466
 	if use clang; then
 		append-flags -Wno-unknown-warning-option
-		export CXXFLAGS_host+=" -Wno-unknown-warning-option"
-		export CFLAGS_host+=" -Wno-unknown-warning-option"
+		#export CXXFLAGS_host+=" -Wno-unknown-warning-option"
+		#export CFLAGS_host+=" -Wno-unknown-warning-option"
 		# Facilitate deterministic builds (taken from build/config/compiler/BUILD.gn)
 		append-cflags -Wno-builtin-macro-redefined
 		append-cxxflags -Wno-builtin-macro-redefined
 		append-cppflags "-D__DATE__= -D__TIME__= -D__TIMESTAMP__="
-		#if use libcxx; then
-		#	append-cxxflags "-stdlib=libc++"
-		#	append-ldflags "-stdlib=libc++"
-		#fi
-		use debug && append-flags -fno-split-dwarf-inlining
+		if use libcxx; then
+			append-cxxflags "-stdlib=libc++"
+			append-ldflags "-stdlib=libc++"
+		fi
+		use debug && use arm && append-flags -fno-split-dwarf-inlining
 	fi
 	
 	# Workaround: Disable fatal linker warnings with asan/gold builds.
