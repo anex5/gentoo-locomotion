@@ -244,12 +244,11 @@ src_unpack() {
 	git-r3_fetch ${DEPOT_TOOLS_URI}
 	git-r3_checkout ${DEPOT_TOOLS_URI} depot_tools
 
-	REFS="refs/heads/stabilize-11005.B"
-	MINIGBM_URI="https://chromium.googlesource.com/chromiumos/platform/minigbm"
+	EGIT_BRANCH="release-R70-11021.B"
+	EGIT_REPO_URI="https://chromium.googlesource.com/chromiumos/platform/minigbm"
 	einfo "Fetching minigbm from googlesource"
-	git-r3_fetch ${MINIGBM_URI}
-	git-r3_checkout ${MINIGBM_URI} minigbm
-
+	git-r3_fetch
+	git-r3_checkout ${EGIT_REPO_URI} minigbm
 } 
 
 usetf() { usex $1 true false ; }
@@ -289,6 +288,7 @@ src_prepare() {
 	ln -s "${WORKDIR}/minigbm" third_party/minigbm/src || die
 
 	use gold && eapply "${FILESDIR}/chromium-compiler-gold.patch"
+	use wayland && eapply "${FILESDIR}/chromium-ozone-gbm-cc.patch" && eapply "${FILESDIR}/chromium-ozone-gbm-h.patch"
 
 	# From here we adapt ungoogled-chromium's patches to our needs
 	local ugc_cli="${UGC_WD}/run_buildkit_cli.py"
@@ -539,13 +539,14 @@ src_prepare() {
 }
 
 get_binutils_path_ld() {
-	ld_path=$(readlink -f $(which $(tc-getLD)))
+	ld_path=$(readlink -f /usr/bin/ld)
 	binutils_dir=$(dirname ${ld_path})
-	echo ${binutils_dir}
+	echo -e "${binutils_dir}"
 }
 
 get_binutils_path_gold() {
-	echo $(get_binutils_path_ld)-gold
+	local gold_path=$(get_binutils_path_ld)
+	echo -e "${gold_path%\/*}/lib/bfd_plugins"
 }
 
 # Handle all CFLAGS/CXXFLAGS/etc... munging here.
@@ -555,10 +556,7 @@ setup_compile_flags() {
 		replace-flags "-Os" "-O2"
 		strip-flags
 
-		# Prevent linker from running out of address space, bug #471810 .
-		if use x86; then
-			filter-flags "-g*"
-		fi
+		filter-flags "-g*"
 
 		# Prevent libvpx build failures (Bug #530248, #544702, #546984)
 		if [[ ${myarch} == amd64 || ${myarch} == x86 ]]; then
@@ -570,7 +568,7 @@ setup_compile_flags() {
 	# top of building Chrome with gcc. Since Chrome itself is clang clean,
 	# there is no need to check it again in Chrome OS land. And this flag has
 	# nothing to do with USE=clang.
-	use clang && filter-flags -clang-syntax
+	use clang && filter-flags -clang-syntax 
 
 	# Remove unsupported arm64 linker flag on arm32 builds.
 	# https://crbug.com/889079
@@ -614,7 +612,7 @@ setup_compile_flags() {
 	fi
 	
 	if use thinlto; then
-		append-ldflags "-fuse-linker-plugin"
+		#append-ldflags -fplugin=liblto_plugin.so
 		# We need to change the default value of import-instr-limit in
 		# LLVM to limit the text size increase. The default value is
 		# 100, and we change it to 30 to reduce the text size increase
@@ -641,8 +639,8 @@ setup_compile_flags() {
 	# Turns out this is only really supported by Clang. See crosbug.com/615466
 	if use clang; then
 		append-flags -Wno-unknown-warning-option
-		#export CXXFLAGS_host+=" -Wno-unknown-warning-option"
-		#export CFLAGS_host+=" -Wno-unknown-warning-option"
+		export CXXFLAGS_host+=" -Wno-unknown-warning-option"
+		export CFLAGS_host+=" -Wno-unknown-warning-option"
 		# Facilitate deterministic builds (taken from build/config/compiler/BUILD.gn)
 		append-cflags -Wno-builtin-macro-redefined
 		append-cxxflags -Wno-builtin-macro-redefined
@@ -651,12 +649,16 @@ setup_compile_flags() {
 			append-cxxflags "-stdlib=libc++"
 			append-ldflags "-stdlib=libc++"
 		fi
-		use debug && use arm && append-flags -fno-split-dwarf-inlining
+		use debug && append-flags -fno-split-dwarf-inlining
 	fi
 	
 	# Workaround: Disable fatal linker warnings with asan/gold builds.
 	# See https://crbug.com/823936
-	use gold && append-ldflags "-Wl,--no-fatal-warnings"
+	
+	if use gold; then 
+	    #append-ldflags "-fplugin=LLVMgold.so"
+		append-ldflags "-Wl,--no-fatal-warnings"
+	fi
 	
 	# Strip debug info
 	use debug || append-ldflags "-s"
@@ -678,16 +680,16 @@ src_configure() {
 	export CXX=$(usex clang "${CBUILD}-clang++" "$(tc-getBUILD_CXX)")
 	export NM=$(tc-getBUILD_NM)
 
-	if use gold ; then
-		if [[ "${GOLD_SET}" != "yes" ]]; then
-			export GOLD_SET="yes"
-			einfo "Using gold from the following location: $(get_binutils_path_gold)"
-			export CC="${CC} -B$(get_binutils_path_gold)"
-			export CXX="${CXX} -B$(get_binutils_path_gold)"
-		fi
-	elif ! use lld ; then
-		ewarn "gold and lld disabled. Using GNU ld."
-	fi
+	#if use gold ; then
+	#	if [[ "${GOLD_SET}" != "yes" ]]; then
+	#		export GOLD_SET="yes"
+	#		einfo "Using gold from the following location: $(get_binutils_path_gold)"
+	#		export CC="${CC} -B$(get_binutils_path_gold)"
+	#		export CXX="${CXX} -B$(get_binutils_path_gold)"
+	#	fi
+	#elif ! use lld ; then
+	#	ewarn "gold and lld disabled. Using GNU ld."
+	#fi
 	
 	# Use g++ as the linker driver.
 	export LD="${CXX}"
@@ -817,7 +819,7 @@ src_configure() {
 
 	# UGC's "linux_rooted" GN flags (config_bundles/linux_rooted/gn_flags.map)
 	myconf_gn+=" custom_toolchain=\"//build/toolchain/linux/unbundle:default\""
-	myconf_gn+=" gold_path=\"\""
+	myconf_gn+=" gold_path=\"$(get_binutils_path_gold)\""
 	myconf_gn+=" goma_dir=\"\""
 	if tc-is-cross-compiler; then
 		tc-export BUILD_{AR,CC,CXX,NM}
