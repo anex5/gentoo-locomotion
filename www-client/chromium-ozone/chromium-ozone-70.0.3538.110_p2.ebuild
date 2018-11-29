@@ -295,8 +295,10 @@ src_prepare() {
 	rm -r third_party/libdrm/src || die
 	ln -s "${WORKDIR}/libdrm" third_party/libdrm/src || die
 
+	eapply "${FILESDIR}/system-libdrm.patch" || die
+
 	use gold && eapply "${FILESDIR}/chromium-compiler-gold.patch"
-	use wayland && eapply "${FILESDIR}/chromium-ozone-gbm-cc.patch" && eapply "${FILESDIR}/chromium-ozone-gbm-h.patch"
+	use wayland && eapply "${FILESDIR}/chromium-70-ozone-gbm.patch"
 
 	# From here we adapt ungoogled-chromium's patches to our needs
 	local ugc_cli="${UGC_WD}/run_buildkit_cli.py"
@@ -872,8 +874,8 @@ src_configure() {
 		#myconf_gn+=" enable_package_mash_services=true"
 		#myconf_gn+=" enable_xdg_shell=true"
 		myconf_gn+=" enable_mus=true"
-		myconf_gn+=" use_system_minigbm=true"
-		myconf_gn+=" use_system_libdrm=true"
+		myconf_gn+=" use_system_minigbm=false"
+		myconf_gn+=" use_system_libdrm=false"
 	fi
 
 	# SC2155
