@@ -13,12 +13,22 @@ index 0eaf039..c37f1ca 100644
  
      cflags += [ "-flto=thin" ]
  
-@@ -673,7 +673,7 @@ config("compiler") {
+@@ -673,8 +673,15 @@ config("compiler") {
+               rebase_path("$root_out_dir/thinlto-cache", root_build_dir),	
            "-Wl,--thinlto-cache-policy,$cache_policy",
          ]
-       } else {
+-      } else {
 -        ldflags += [ "-Wl,-plugin-opt,jobs=8" ]
-+        ldflags += [ "" ]
++      }
++      if (use_gold) {
++        cache_policy =
++            "cache_size=10%:cache_size_bytes=10g:cache_size_files=100000"
++        ldflags += [ "-Wl,-plugin-opt,cache-dir="+
++            rebase_path("$root_out_dir/thinlto-cache", root_build_dir),
++            "-Wl,-plugin-opt,cache-policy=$cache_policy",
++            "-Wl,-plugin-opt,jobs=8"
++        ]
+
        }
  
        if (use_lld) {
