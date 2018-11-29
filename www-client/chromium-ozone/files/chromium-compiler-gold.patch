@@ -2,7 +2,7 @@ diff --git a/build/config/compiler/BUILD.gn b/build/config/compiler/BUILD.gn
 index 0eaf039..c37f1ca 100644
 --- a/build/config/compiler/BUILD.gn
 +++ b/build/config/compiler/BUILD.gn     
-@@ -636,8 +636,8 @@ config("compiler") {
+@@ -626,8 +626,8 @@ config("compiler") {
        (current_toolchain == default_toolchain ||
         (is_android && defined(android_secondary_abi_toolchain) &&
          current_toolchain == android_secondary_abi_toolchain))) {
@@ -13,7 +13,7 @@ index 0eaf039..c37f1ca 100644
  
      cflags += [ "-flto=thin" ]
  
-@@ -673,8 +673,15 @@ config("compiler") {
+@@ -662,8 +662,15 @@ config("compiler") {
                rebase_path("$root_out_dir/thinlto-cache", root_build_dir),	
            "-Wl,--thinlto-cache-policy,$cache_policy",
          ]
@@ -28,7 +28,6 @@ index 0eaf039..c37f1ca 100644
 +            "-Wl,-plugin-opt,cache-policy=$cache_policy",
 +            "-Wl,-plugin-opt,jobs=8"
 +        ]
-
        }
- 
+
        if (use_lld) {
