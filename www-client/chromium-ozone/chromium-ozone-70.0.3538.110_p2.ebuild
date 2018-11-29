@@ -795,7 +795,7 @@ src_configure() {
 	myconf_gn+=" use_cfi_cast=$(usetf cfi)"
 
 	myconf_gn+=" is_debug=$(usetf debug)"
-	myconf_gn+=" use_debug_fission=$(usetf debug)"
+	myconf_gn+=" use_debug_fission=false"
 	myconf_gn+=" is_java_debug=$(usetf debug)"
 	myconf_gn+=" closure_compile=$(usetf closure)"
 	myconf_gn+=" remove_webcore_debug_symbols=$(usex debug false true)"
@@ -808,7 +808,7 @@ src_configure() {
 	myconf_gn+=" treat_warnings_as_errors=false"
 	myconf_gn+=" use_gnome_keyring=false" # Deprecated by libsecret
 	myconf_gn+=" use_jumbo_build=$(usetf jumbo-build)"
-	myconf_gn+=" jumbo_file_merge_limit=3"
+	myconf_gn+=" jumbo_file_merge_limit=4"
 
 	myconf_gn+=" use_gtk3=$(usetf gtk)"
 	myconf_gn+=" rtc_use_gtk=$(usetf gtk)"
@@ -858,6 +858,9 @@ src_configure() {
 		myconf_gn+=" ozone_auto_platforms=false"
 		myconf_gn+=" ozone_platform_x11=$(usetf X)"
 		myconf_gn+=" ozone_platform_wayland=true"
+		myconf_gn+=" ozone_platform_gbm=true"
+		myconf_gn+=" ozone_platform_egltest=true"
+		myconf_gn+=" use_evdev_gestures=true"
 		#myconf_gn+=" enable_package_mash_services=true"
 		myconf_gn+=" enable_xdg_shell=true"
 		myconf_gn+=" enable_mus=true"
