@@ -32,7 +32,7 @@ VIDEO_CARDS="
 "
 
 IUSE="
-	cfi cups custom-cflags gnome jumbo-build kerberos new-tcmalloc +openh264 optimize-webui
+	cfi cups custom-cflags gnome jumbo-build kerberos new-tcmalloc +openh264 +optimize-webui
 	proprietary-codecs pulseaudio selinux +suid +system-ffmpeg +system-harfbuzz
 	+system-icu +system-libevent +system-libvpx +system-openjpeg +tcmalloc vaapi
 	widevine wayland X atk dbus gtk xkbcommon libcxx v4l2_codec v4lplugin
@@ -232,7 +232,7 @@ src_unpack() {
 
 	default
 	
-	# build tools  
+  	# build tools  
 	
 	# Prevents gclient from updating self.
 	export DEPOT_TOOLS_UPDATE=0
@@ -246,19 +246,21 @@ src_unpack() {
 
 	LIBDRM_URI="https://chromium.googlesource.com/chromiumos/third_party/libdrm"
 	einfo "Fetching libdrm from googlesource"
-	git-r3_fetch ${LIBDRM_URI}
+	git-r3_fetch ${LIBDRM_URI} 
 	git-r3_checkout ${LIBDRM_URI} libdrm
 
 	EGIT_BRANCH="release-R70-11021.B"
 	EGIT_REPO_URI="https://chromium.googlesource.com/chromiumos/platform/minigbm"
 	einfo "Fetching minigbm from googlesource"
 	git-r3_fetch
-	git-r3_checkout ${EGIT_REPO_URI} minigbm
+	git-r3_checkout ${EGIT_REPO_URI} minigbm 
+ 
 } 
 
 usetf() { usex $1 true false ; }
 
 src_prepare() {
+
 	if use custom-cflags; then
 		ewarn
 		ewarn "USE=custom-cflags bypass strip-flags; you are on your own."
@@ -295,11 +297,11 @@ src_prepare() {
 	rm -r third_party/libdrm/src || die
 	ln -s "${WORKDIR}/libdrm" third_party/libdrm/src || die
 
-	eapply "${FILESDIR}/system-libdrm.patch" || die
-
 	use gold && eapply "${FILESDIR}/chromium-compiler-gold.patch"
-	use wayland && eapply "${FILESDIR}/chromium-70-ozone-gbm.patch"
-
+	#use wayland && eapply "${FILESDIR}/chromium-70-ozone-gbm.patch"
+	
+	#eapply "${FILESDIR}/system-libdrm.patch" || die
+	
 	# From here we adapt ungoogled-chromium's patches to our needs
 	local ugc_cli="${UGC_WD}/run_buildkit_cli.py"
 	local ugc_config="${UGC_WD}/config_bundles/linux_rooted"
@@ -690,17 +692,6 @@ src_configure() {
 	export CXX=$(usex clang "${CBUILD}-clang++" "$(tc-getBUILD_CXX)")
 	export NM=$(tc-getBUILD_NM)
 
-	#if use gold ; then
-	#	if [[ "${GOLD_SET}" != "yes" ]]; then
-	#		export GOLD_SET="yes"
-	#		einfo "Using gold from the following location: $(get_binutils_path_gold)"
-	#		export CC="${CC} -B$(get_binutils_path_gold)"
-	#		export CXX="${CXX} -B$(get_binutils_path_gold)"
-	#	fi
-	#elif ! use lld ; then
-	#	ewarn "gold and lld disabled. Using GNU ld."
-	#fi
-	
 	# Use g++ as the linker driver.
 	export LD="${CXX}"
 	export LD_host=${CXX_host}
@@ -806,7 +797,7 @@ src_configure() {
 
 	myconf_gn+=" is_debug=$(usetf debug)"
 	myconf_gn+=" use_debug_fission=false"
-	myconf_gn+=" is_java_debug=$(usetf debug)"
+	#myconf_gn+=" is_java_debug=$(usetf debug)"
 	myconf_gn+=" closure_compile=$(usetf closure)"
 	myconf_gn+=" remove_webcore_debug_symbols=$(usex debug false true)"
 	myconf_gn+=" is_official_build=true"
@@ -868,8 +859,8 @@ src_configure() {
 		myconf_gn+=" ozone_auto_platforms=false"
 		myconf_gn+=" ozone_platform_x11=$(usetf X)"
 		myconf_gn+=" ozone_platform_wayland=true"
-		myconf_gn+=" ozone_platform_gbm=true"
-		myconf_gn+=" ozone_platform_egltest=true"
+		#myconf_gn+=" ozone_platform_gbm=true"
+		#myconf_gn+=" ozone_platform_egltest=true"
 		#myconf_gn+=" use_evdev_gestures=true"
 		#myconf_gn+=" enable_package_mash_services=true"
 		#myconf_gn+=" enable_xdg_shell=true"
@@ -914,18 +905,6 @@ src_compile() {
 	# Avoid falling back to preprocessor mode when sources contain time macros
 	# shellcheck disable=SC2086
 	(has ccache ${FEATURES}) && export CCACHE_SLOPPINESS=time_macros
-
-	# Build mksnapshot and pax-mark it
-	#local x
-	#for x in mksnapshot v8_context_snapshot_generator; do
-	#	if tc-is-cross-compiler; then
-	#		eninja -C out/Release "host/${x}"
-	#		pax-mark m "out/Release/host/${x}"
-	#	else
-	#		eninja -C out/Release "${x}"
-	#		pax-mark m "out/Release/${x}"
-	#	fi
-	#done
 
 	# Work around broken deps
 	eninja -C out/Release gen/ui/accessibility/ax_enums.mojom{,-shared}.h
