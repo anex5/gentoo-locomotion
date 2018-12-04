@@ -584,12 +584,6 @@ setup_compile_flags() {
 	# https://crbug.com/889079
 	use arm && filter-flags "-Wl,--fix-cortex-a53-843419"
 	
-	# There are some flags we want to only use in the ebuild.
-	# The rest will be exported to the simple chrome workflow.
-	EBUILD_CFLAGS=()
-	EBUILD_CXXFLAGS=()
-	EBUILD_LDFLAGS=()
-
 	use video_cards_amdgpu && append-cppflags -DDRV_AMDGPU && export DRV_AMDGPU=1
 	use video_cards_exynos && append-cppflags -DDRV_EXYNOS && export DRV_EXYNOS=1
 	use video_cards_intel && append-cppflags -DDRV_I915 && export DRV_I915=1
@@ -617,8 +611,8 @@ setup_compile_flags() {
 	# workaround. The generated symbol files are the same with/without this
 	# flag. See https://crbug.com/641188
 	if use debug && ( use x86 || use arm ) && ! use clang; then
-		EBUILD_CFLAGS+=( -femit-struct-debug-reduced )
-		EBUILD_CXXFLAGS+=( -femit-struct-debug-reduced )
+		append-cflags -femit-struct-debug-reduced
+		append-cxxflags -femit-struct-debug-reduced
 	fi
 	
 	if use thinlto; then
@@ -832,8 +826,9 @@ src_configure() {
 	myconf_gn+=" use_system_libcxx=$(usetf libcxx)"
 	myconf_gn+=" use_gio=$(usetf gnome)"
 	myconf_gn+=" use_kerberos=$(usetf kerberos)"
-	myconf_gn+=" use_openh264=$(usetf openh264)" # Enable this to
-	# build OpenH264 for encoding, hence the restriction: !openh264? ( bindist )
+	# If enabled, it will build the bundled OpenH264 for encoding,
+	# hence the restriction: !system-openh264? ( bindist )
+	myconf_gn+=" use_openh264=$(usetf !system-openh264)"
 	myconf_gn+=" use_pulseaudio=$(usetf pulseaudio)"
 	myconf_gn+=" use_cras=false"
 	myconf_gn+=" use_system_freetype=$(usetf system-harfbuzz)"
