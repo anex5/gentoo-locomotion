@@ -20,7 +20,7 @@ DEPOT_TOOLS="${WORKDIR}/depot_tools"
 DESCRIPTION="Modifications to Chromium for removing Google integration and enhancing privacy"
 HOMEPAGE="https://github.com/Eloston/ungoogled-chromium https://www.chromium.org/ https://github.com/Igalia/chromium"
 SRC_URI="
-	https://github.com/Eloston/ungoogled-chromium/archive/${UGC_PV}.tar.gz -> ${UGC_P}.tar.gz
+		https://github.com/xsmile/${PN}/archive/${UGC_PV}.tar.gz -> ${UGC_P}.tar.gz
 "
 
 LICENSE="BSD"
@@ -34,8 +34,8 @@ IUSE="
 	cfi cups custom-cflags gnome gold jumbo-build kerberos lld new-tcmalloc
 	+optimize-webui proprietary-codecs pulseaudio selinux +suid +system-ffmpeg
 	+system-harfbuzz +system-icu +system-libevent +system-libvpx +system-openh264
-	+system-openjpeg +tcmalloc thinlto vaapi widevine wayland X atk dbus gtk
-	xkbcommon libcxx v4l2_codec v4lplugin +clang clang_tidy closure debug
+	+system-openjpeg system-libdrm +tcmalloc thinlto vaapi widevine wayland X atk dbus gtk
+	xkbcommon libcxx v4l2 v4lplugin +clang clang_tidy closure debug
 "
 
 for card in ${VIDEO_CARDS}; do
@@ -87,6 +87,7 @@ COMMON_DEPEND="
 	system-libvpx? ( >=media-libs/libvpx-1.7.0:=[postproc,svc] )
 	system-openh264? ( >=media-libs/openh264-1.6.0:= )
 	system-openjpeg? ( media-libs/openjpeg:2 )
+	system-libdrm? ( x11-libs/libdrm )
 	pulseaudio? ( media-sound/pulseaudio:= )
 	system-ffmpeg? (
 		>=media-video/ffmpeg-4:=
@@ -174,7 +175,6 @@ BDEPEND="
 	dev-vcs/git
 "
 
-# shellcheck disable=SC2086
 if ! has chromium_pkg_die ${EBUILD_DEATH_HOOKS}; then
 	EBUILD_DEATH_HOOKS+=" chromium_pkg_die";
 fi
@@ -275,8 +275,8 @@ src_unpack() {
 		}}]; target_os = ["linux"]; target_os_only = True' || die
 	fi
 
-	depot_tools/gclient sync --no-history --with_branch_heads --jobs=1 --no-hooks || die
-	depot_tools/gclient runhooks --force || die	
+	depot_tools/gclient sync --no-history --with_branch_heads --with_tags -Rv --disable-syntax-validation --jobs=1 || die
+	#depot_tools/gclient runhooks --force || die	
 }
  
 usetf() { usex $1 true false ; }
@@ -299,25 +299,22 @@ src_prepare() {
 	ln -s "${EPREFIX%/}/usr/bin/node" third_party/node/linux/node-linux-x64/bin/node || die
 
 	# Fix build with harfbuzz-2 (Bug #669034)
-	use system-harfbuzz && eapply "${FILESDIR}/chromium-harfbuzz-r0.patch"
+	#use system-harfbuzz && eapply "${FILESDIR}/chromium-harfbuzz-r0.patch"
 
 	use gold && eapply "${FILESDIR}/ungoogledchromium-gold-r0.patch"
 
 	# Apply extra patches (taken from openSUSE)
-	local ep
-	for ep in "${FILESDIR}/extra-70"/*.patch; do
-		eapply "${ep}"
-	done
+	#local ep
+	#for ep in "${FILESDIR}/extra-70"/*.patch; do
+	#	eapply "${ep}"
+	#done
 
 	# Hack for libusb stuff (taken from openSUSE)
 	rm third_party/libusb/src/libusb/libusb.h || die
 	cp -a "${EPREFIX%/}/usr/include/libusb-1.0/libusb.h" \
 		third_party/libusb/src/libusb/libusb.h || die
 
-	rm -r third_party/minigbm/src || die
-	ln -s "${WORKDIR}/minigbm" third_party/minigbm/src || die
-
-	use gold && eapply "${FILESDIR}/chromium-compiler-gold.patch"
+	#use gold && eapply "${FILESDIR}/chromium-compiler-gold.patch"
 	
 	# From here we adapt ungoogled-chromium's patches to our needs
 	local ugc_cli="${UGC_WD}/run_buildkit_cli.py"
@@ -356,7 +353,7 @@ src_prepare() {
 	use system-icu || sed -i '/common\/icudtl.dat/d' "${ugc_rooted_dir}/pruning.list" || die
 	use system-libevent || sed -i '/system\/event.patch/d' "${ugc_rooted_dir}/patch_order.list" || die
 	use system-libvpx || sed -i '/system\/vpx.patch/d' "${ugc_rooted_dir}/patch_order.list" || die
-	use system-openjpeg && sed -i '/system\/nspr.patch/a debian/system/openjpeg.patch' "${ugc_rooted_dir}/patch_order.list" || die
+	use system-openjpeg && sed -i '/system\/nspr.patch/a debian_buster/system/openjpeg.patch' "${ugc_rooted_dir}/patch_order.list" || die
 
 	if ! use vaapi; then
 		sed -i '/chromium-vaapi-r18.patch/d' "${ugc_rooted_dir}/patch_order.list" || die
@@ -371,15 +368,13 @@ src_prepare() {
 	#"${ugc_cli}" prune -b "${ugc_config}" ./
 	#eend $? || die
 
-	ebegin "Applying ungoogled-chromium patches"
-	"${ugc_cli}" patches apply -b "${ugc_config}" ./
-	eend $? || die
+	#ebegin "Applying ungoogled-chromium patches"
+	#"${ugc_cli}" patches apply -b "${ugc_config}" ./
+	#eend $? || die
 
 	#ebegin "Applying domain substitution"
 	#"${ugc_cli}" domains apply -b "${ugc_config}" -c domainsubcache.tar.gz ./
 	#eend $? || die
-
-	python_setup 'python2*'
 
 	local keeplibs=(
 		base/third_party/dmg_fp
@@ -565,13 +560,13 @@ src_prepare() {
 	use tcmalloc && keeplibs+=( third_party/tcmalloc )
 
 	# Remove most bundled libraries, some are still needed
-	python_setup 'python2*'
-	build/linux/unbundle/remove_bundled_libraries.py "${keeplibs[@]}" --do-remove || die
+	#python_setup 'python2*'
+	#build/linux/unbundle/remove_bundled_libraries.py "${keeplibs[@]}" --do-remove || die
 }
 
 get_binutils_path_ld() {
-	ld_path=$(readlink -f $(which ld))
-	binutils_dir=$(dirname ${ld_path})
+	local ld_path=$(readlink -f $(which ld))
+	local binutils_dir=$(dirname ${ld_path})
 	echo -e "${binutils_dir}"
 }
 
@@ -655,13 +650,12 @@ setup_compile_flags() {
 		append-ldflags "${thinlto_ldflag}"
 	fi
 	
-	# Enable std::vector []-operator bounds checking.
+	# Enable std::vector []-operator bounds checking (https://crbug.com/333391)
 	append-cxxflags -D__google_stl_debug_vector=1
 	
 	# Don't complain if Chromium uses a diagnostic option that is not yet
 	# implemented in the compiler version used by the user. This is only
 	# supported by Clang.
-	# Turns out this is only really supported by Clang. See crosbug.com/615466
 	if use clang; then
 		append-flags -Wno-unknown-warning-option
 		# Facilitate deterministic builds (taken from build/config/compiler/BUILD.gn)
@@ -746,12 +740,12 @@ src_configure() {
 		zlib
 	)
 
-	use openh264 && gn_system_libraries+=( openh264 )
 	use system-ffmpeg && gn_system_libraries+=( ffmpeg opus )
 	use system-harfbuzz && gn_system_libraries+=( freetype harfbuzz-ng )
 	use system-icu && gn_system_libraries+=( icu )
 	use system-libevent && gn_system_libraries+=( libevent )
 	use system-libvpx && gn_system_libraries+=( libvpx )
+	use system-openh264 && gn_system_libraries+=( openh264 )
 
 	build/linux/unbundle/replace_gn_files.py --system-libraries "${gn_system_libraries[@]}" || die
 
@@ -858,7 +852,8 @@ src_configure() {
 	myconf_gn+=" use_system_zlib=true"
 	myconf_gn+=" use_vaapi=$(usetf vaapi)"
 	myconf_gn+=" use_xkbcommon=$(usetf xkbcommon)"
-	myconf_gn+=" use_v4l2_codec=$(usetf v4l2_codec)"
+	myconf_gn+=" use_v4l2_codec=$(usetf v4l2)"
+	myconf_gn+=" use_linux_v4l2=$(usetf v4l2)"
 	myconf_gn+=" use_v4lplugin=$(usetf v4lplugin)"
 
 	# wayland
@@ -869,6 +864,7 @@ src_configure() {
 		myconf_gn+=" ozone_auto_platforms=false"
 		myconf_gn+=" ozone_platform_x11=$(usetf X)"
 		myconf_gn+=" ozone_platform_wayland=true"
+		myconf_gn+=" ozone_platform_drm=true"
 		#myconf_gn+=" ozone_platform_gbm=true"
 		#myconf_gn+=" ozone_platform_egltest=true"
 		#myconf_gn+=" use_evdev_gestures=true"
@@ -876,18 +872,15 @@ src_configure() {
 		#myconf_gn+=" enable_xdg_shell=true"
 		myconf_gn+=" enable_mus=true"
 		myconf_gn+=" use_system_minigbm=false"
-		myconf_gn+=" use_system_libdrm=false"
+		myconf_gn+=" use_system_libdrm=$(usetf system-libdrm)"
 	fi
 
-	# SC2155
-	local myarch
-	myarch="$(tc-arch)"
-	if [[ $myarch = amd64 ]]; then
+	if [[ "${ARCH}" = amd64 ]]; then
 		myconf_gn+=" target_cpu=\"x64\""
-	elif [[ $myarch = x86 ]]; then
+	elif [[ "${ARCH}" = x86 ]]; then
 		myconf_gn+=" target_cpu=\"x86\""
 	else
-		die "Failed to determine target arch, got '$myarch'."
+		die "Failed to determine target arch, got '${ARCH}'."
 	fi
 
 	setup_compile_flags
@@ -1013,7 +1006,7 @@ src_install() {
 
 		# Install GNOME default application entry (Bug #303100)
 		insinto /usr/share/gnome-control-center/default-apps
-		doins "${FILESDIR}"/chromium-browser.xml
+		doins "${FILESDIR}/chromium-browser.xml"
 	fi
 
 	readme.gentoo_create_doc
