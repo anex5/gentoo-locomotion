@@ -12,7 +12,7 @@ CHROMIUM_LANGS="
 
 inherit git-r3 check-reqs chromium-2 desktop eapi7-ver flag-o-matic multilib ninja-utils pax-utils portability python-r1 readme.gentoo-r1 toolchain-funcs xdg-utils
 
-UGC_PV="${PV/_p/-}"
+UGC_PV="907d2a3f55c02f566d317f2ce817615ad2350f75"
 UGC_P="ungoogled-chromium-${UGC_PV}"
 UGC_WD="${WORKDIR}/${UGC_P}"
 DEPOT_TOOLS="${WORKDIR}/depot_tools"
@@ -21,7 +21,7 @@ DESCRIPTION="Modifications to Chromium for removing Google integration and enhan
 HOMEPAGE="https://github.com/Eloston/ungoogled-chromium https://www.chromium.org/ https://github.com/Igalia/chromium"
 SRC_URI="
 	https://commondatastorage.googleapis.com/chromium-browser-official/chromium-${PV/_*}.tar.xz
-	https://github.com/Eloston/ungoogled-chromium/archive/${UGC_PV}.tar.gz -> ${UGC_P}.tar.gz
+	https://github.com/xsmile/${PN}/archive/${UGC_PV}.tar.gz -> ${UGC_P}.tar.gz
 "
 
 LICENSE="BSD"
@@ -35,7 +35,7 @@ IUSE="
 	cfi cups custom-cflags gnome gold jumbo-build kerberos lld new-tcmalloc
 	+optimize-webui proprietary-codecs pulseaudio selinux +suid +system-ffmpeg
 	+system-harfbuzz +system-icu +system-libevent +system-libvpx +system-openh264
-	+system-openjpeg +tcmalloc thinlto vaapi widevine wayland X atk dbus gtk 
+	+system-openjpeg system-libdrm +tcmalloc thinlto vaapi widevine wayland X atk dbus gtk 
 	xkbcommon libcxx v4l2_codec v4lplugin +clang clang_tidy closure debug
 "
 
@@ -87,6 +87,7 @@ COMMON_DEPEND="
 	system-libvpx? ( >=media-libs/libvpx-1.7.0:=[postproc,svc] )
 	system-openh264? ( >=media-libs/openh264-1.6.0:= )
 	system-openjpeg? ( media-libs/openjpeg:2 )
+	system-libdrm? ( x11-libs/libdrm )
 	pulseaudio? ( media-sound/pulseaudio:= )
 	system-ffmpeg? (
 		>=media-video/ffmpeg-4:=
@@ -161,11 +162,10 @@ BDEPEND="
 	>=dev-util/ninja-1.7.2
 	>=net-libs/nodejs-7.6.0[inspector]
 	sys-apps/hwids[usb(+)]
-	>=sys-devel/bison-2.4.3
-	cfi? ( >=sys-devel/clang-runtime-7.0.0[sanitize] )
+	>=sys-devel/bison-2.4.3	
 	clang? (
 		>=sys-devel/clang-7.0.0
-		>=sys-devel/clang-runtime-7.0.0
+		>=sys-devel/clang-runtime-7.0.0[sanitize]
 		lld? ( >=sys-devel/lld-7.0.0 )
 		>=sys-devel/llvm-7.0.0[gold?]
 	)
@@ -249,7 +249,7 @@ src_unpack() {
 	git-r3_fetch ${DEPOT_TOOLS_URI}
 	git-r3_checkout ${DEPOT_TOOLS_URI} depot_tools
 
-	EGIT_BRANCH="release-R70-11021.B"
+	EGIT_BRANCH="release-R71-11151.B"
 	LIBDRM_URI="https://chromium.googlesource.com/chromiumos/third_party/libdrm"
 	einfo "Fetching libdrm from googlesource"
 	git-r3_fetch ${LIBDRM_URI} 
@@ -549,14 +549,14 @@ src_prepare() {
 }
 
 get_binutils_path_ld() {
-	ld_path=$(readlink -f $(which ld))
-	binutils_dir=$(dirname ${ld_path})
+	local ld_path=$(readlink -f $(which ld))
+	local binutils_dir=$(dirname ${ld_path})
 	echo -e "${binutils_dir}"
 }
 
 get_binutils_path_gold() {
-	local gold_path=$(get_binutils_path_ld)
-	echo -e "${gold_path%\/*}/lib/bfd_plugins"
+	local binutils_dir=$(get_binutils_path_ld)
+	echo -e "${binutils_dir%\/*}/lib/bfd_plugins"
 }
 
 # Handle all CFLAGS/CXXFLAGS/etc... munging here.
@@ -569,14 +569,14 @@ setup_compile_flags() {
 		filter-flags "-g*"
 
 		# Prevent libvpx build failures (Bug #530248, #544702, #546984)
-		if [[ ${myarch} == amd64 || ${myarch} == x86 ]]; then
+		if [[ ${ARCH} == amd64 || ${ARCH} == x86 ]]; then
 			filter-flags -mno-mmx -mno-sse2 -mno-ssse3 -mno-sse4.1 -mno-avx -mno-avx2
 		fi
 	fi
 
 	# -clang-syntax is a flag that enable us to do clang syntax checking on
 	# top of building Chrome with gcc. Since Chrome itself is clang clean,
-	# there is no need to check it again in Chrome OS land. And this flag has
+	# there is no need to check it again. And this flag has
 	# nothing to do with USE=clang.
 	use clang && filter-flags -clang-syntax 
 
@@ -633,13 +633,12 @@ setup_compile_flags() {
 		append-ldflags "${thinlto_ldflag}"
 	fi
 	
-	# Enable std::vector []-operator bounds checking.
+	# Enable std::vector []-operator bounds checking (https://crbug.com/333391)
 	append-cxxflags -D__google_stl_debug_vector=1
 	
 	# Don't complain if Chromium uses a diagnostic option that is not yet
 	# implemented in the compiler version used by the user. This is only
 	# supported by Clang.
-	# Turns out this is only really supported by Clang. See crosbug.com/615466
 	if use clang; then
 		append-flags -Wno-unknown-warning-option
 		# Facilitate deterministic builds (taken from build/config/compiler/BUILD.gn)
@@ -725,17 +724,17 @@ src_configure() {
 		zlib
 	)
 
-	use openh264 && gn_system_libraries+=( openh264 )
 	use system-ffmpeg && gn_system_libraries+=( ffmpeg opus )
 	use system-harfbuzz && gn_system_libraries+=( freetype harfbuzz-ng )
 	use system-icu && gn_system_libraries+=( icu )
 	use system-libevent && gn_system_libraries+=( libevent )
 	use system-libvpx && gn_system_libraries+=( libvpx )
+	use system-openh264 && gn_system_libraries+=( openh264 )
+
 
 	build/linux/unbundle/replace_gn_files.py --system-libraries "${gn_system_libraries[@]}" || die
 
 	local myconf_gn=""
-	# UGC's "common" GN flags (config_bundles/common/gn_flags.map)
 	myconf_gn+=" blink_symbol_level=$(usex debug 2 -1)"
 	myconf_gn+=" enable_ac3_eac3_audio_demuxing=true"
 	myconf_gn+=" enable_hangout_services_extension=false"
@@ -839,6 +838,7 @@ src_configure() {
 	myconf_gn+=" use_vaapi=$(usetf vaapi)"
 	myconf_gn+=" use_xkbcommon=$(usetf xkbcommon)"
 	myconf_gn+=" use_v4l2_codec=$(usetf v4l2_codec)"
+	myconf_gn+=" use_linux_v4l2=$(usetf v4l2_codec)"
 	myconf_gn+=" use_v4lplugin=$(usetf v4lplugin)"
 
 	# wayland
@@ -849,6 +849,7 @@ src_configure() {
 		myconf_gn+=" ozone_auto_platforms=false"
 		myconf_gn+=" ozone_platform_x11=$(usetf X)"
 		myconf_gn+=" ozone_platform_wayland=true"
+		myconf_gn+=" ozone_platform_drm=true"
 		#myconf_gn+=" ozone_platform_gbm=true"
 		#myconf_gn+=" ozone_platform_egltest=true"
 		#myconf_gn+=" use_evdev_gestures=true"
@@ -856,18 +857,15 @@ src_configure() {
 		#myconf_gn+=" enable_xdg_shell=true"
 		myconf_gn+=" enable_mus=true"
 		myconf_gn+=" use_system_minigbm=false"
-		myconf_gn+=" use_system_libdrm=false"
+		myconf_gn+=" use_system_libdrm=$(usetf system-libdrm)"
 	fi
 
-	# SC2155
-	local myarch
-	myarch="$(tc-arch)"
-	if [[ $myarch = amd64 ]]; then
+	if [[ "${ARCH}" = amd64 ]]; then
 		myconf_gn+=" target_cpu=\"x64\""
-	elif [[ $myarch = x86 ]]; then
+	elif [[ "${ARCH}" = x86 ]]; then
 		myconf_gn+=" target_cpu=\"x86\""
 	else
-		die "Failed to determine target arch, got '$myarch'."
+		die "Failed to determine target arch, got '${ARCH}'."
 	fi
 
 	setup_compile_flags
@@ -893,7 +891,6 @@ src_compile() {
 	python_setup 'python2*'
 
 	# Avoid falling back to preprocessor mode when sources contain time macros
-	# shellcheck disable=SC2086
 	(has ccache ${FEATURES}) && export CCACHE_SLOPPINESS=time_macros
 
 	# Work around broken deps
@@ -984,7 +981,7 @@ src_install() {
 		# Install GNOME default application entry (Bug #303100)
 	
 		insinto /usr/share/gnome-control-center/default-apps
-		doins "${FILESDIR}"/chromium-browser.xml
+		doins "${FILESDIR}/chromium-browser.xml"
 	fi
 
 	readme.gentoo_create_doc
