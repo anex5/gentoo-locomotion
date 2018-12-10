@@ -855,7 +855,7 @@ src_configure() {
 		myconf_gn+=" ozone_auto_platforms=false"
 		myconf_gn+=" ozone_platform_x11=$(usetf X)"
 		myconf_gn+=" ozone_platform_wayland=true"
-		myconf_gn+=" ozone_platform_drm=true"
+		#myconf_gn+=" ozone_platform_drm=true"
 		#myconf_gn+=" ozone_platform_gbm=true"
 		#myconf_gn+=" ozone_platform_egltest=true"
 		#myconf_gn+=" use_evdev_gestures=true"
@@ -864,7 +864,7 @@ src_configure() {
 		myconf_gn+=" enable_mus=true"
 		myconf_gn+=" use_system_minigbm=false"
 		myconf_gn+=" use_system_libdrm=$(usetf system-libdrm)"
-		myconf_gn+=" is_desktop_linux=false"
+		myconf_gn+=" is_desktop_linux=$(usetf dbus)"
 		myconf_gn+=" enable_background_mode=true"
 	fi
 
