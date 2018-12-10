@@ -275,7 +275,7 @@ src_unpack() {
 		}}]; target_os = ["linux"]; target_os_only = True' || die
 	fi
 
-	depot_tools/gclient sync --no-history --with_branch_heads --with_tags -Rv --disable-syntax-validation --jobs=1 || die
+	depot_tools/gclient sync --no-history --with_branch_heads --with_tags -wv --disable-syntax-validation --jobs=1 || die
 	#depot_tools/gclient runhooks --force || die	
 }
  
@@ -838,7 +838,10 @@ src_configure() {
 	myconf_gn+=" use_cups=$(usetf cups)"
 	myconf_gn+=" use_custom_libcxx=false"
 	myconf_gn+=" use_system_libcxx=$(usetf libcxx)"
+	
 	myconf_gn+=" use_gio=$(usetf gnome)"
+	myconf_gn+=" use_gconf=$(usetf gnome)"
+
 	myconf_gn+=" use_kerberos=$(usetf kerberos)"
 	# If enabled, it will build the bundled OpenH264 for encoding,
 	# hence the restriction: !system-openh264? ( bindist )
@@ -873,6 +876,8 @@ src_configure() {
 		myconf_gn+=" enable_mus=true"
 		myconf_gn+=" use_system_minigbm=false"
 		myconf_gn+=" use_system_libdrm=$(usetf system-libdrm)"
+		myconf_gn+=" is_desktop_linux=$(usetf dbus)"
+		myconf_gn+=" enable_background_mode=true"
 	fi
 
 	if [[ "${ARCH}" = amd64 ]]; then
