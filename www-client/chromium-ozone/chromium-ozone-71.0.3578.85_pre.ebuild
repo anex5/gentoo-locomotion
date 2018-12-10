@@ -249,16 +249,16 @@ src_unpack() {
 	git-r3_fetch ${DEPOT_TOOLS_URI}
 	git-r3_checkout ${DEPOT_TOOLS_URI} depot_tools
 
-	EGIT_BRANCH="release-R71-11151.B"
-	LIBDRM_URI="https://chromium.googlesource.com/chromiumos/third_party/libdrm"
-	einfo "Fetching libdrm from googlesource"
-	git-r3_fetch ${LIBDRM_URI} 
-	git-r3_checkout ${LIBDRM_URI} ${S}/third_party/libdrm/src
+	#EGIT_BRANCH="release-R71-11151.B"
+	#LIBDRM_URI="https://chromium.googlesource.com/chromiumos/third_party/libdrm"
+	#einfo "Fetching libdrm from googlesource"
+	#git-r3_fetch ${LIBDRM_URI} 
+	#git-r3_checkout ${LIBDRM_URI} ${S}/third_party/libdrm/src
 
-	EGIT_REPO_URI="https://chromium.googlesource.com/chromiumos/platform/minigbm"
-	einfo "Fetching minigbm from googlesource"
-	git-r3_fetch
-	git-r3_checkout ${EGIT_REPO_URI} ${S}/third_party/minigbm/src 
+	#MINIGBM_URI="https://chromium.googlesource.com/chromiumos/platform/minigbm"
+	#einfo "Fetching minigbm from googlesource"
+	#git-r3_fetch ${MINIGBM_URI}
+	#git-r3_checkout ${MINIGBM_URI} ${S}/third_party/minigbm/src 
 
 } 
 
@@ -295,7 +295,7 @@ src_prepare() {
 	cp -a "${EPREFIX%/}/usr/include/libusb-1.0/libusb.h" \
 		third_party/libusb/src/libusb/libusb.h || die
 
-	use gold && eapply "${FILESDIR}/ungoogledchromium-gold-r0.patch"
+	use gold && eapply "${FILESDIR}/ungoogled-chromium-gold-r0.patch"
 	#use wayland && eapply "${FILESDIR}/chromium-70-ozone-gbm.patch"
 	
 	#eapply "${FILESDIR}/system-libdrm.patch" || die
