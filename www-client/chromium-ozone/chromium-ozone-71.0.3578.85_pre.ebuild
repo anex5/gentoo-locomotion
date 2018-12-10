@@ -53,7 +53,7 @@ REQUIRED_USE="
 	libcxx? ( clang )
 	thinlto? ( clang || ( gold lld ) )
 	gtk? ( X )
-	gnome? ( gtk )
+	gnome? ( gtk dbus )
 "
 RESTRICT="
 	!system-ffmpeg? ( proprietary-codecs? ( bindist ) )
@@ -798,6 +798,7 @@ src_configure() {
 	myconf_gn+=" jumbo_file_merge_limit=4"
 
 	myconf_gn+=" use_dbus=$(usetf dbus)"
+
 	myconf_gn+=" rtc_use_gtk=$(usetf gtk)"
 	myconf_gn+=" rtc_use_x11=$(usetf X)"
 
@@ -823,7 +824,10 @@ src_configure() {
 	myconf_gn+=" use_cups=$(usetf cups)"
 	myconf_gn+=" use_custom_libcxx=false"
 	myconf_gn+=" use_system_libcxx=$(usetf libcxx)"
+
 	myconf_gn+=" use_gio=$(usetf gnome)"
+	myconf_gn+=" use_gconf=$(usetf gnome)"
+
 	myconf_gn+=" use_kerberos=$(usetf kerberos)"
 	# If enabled, it will build the bundled OpenH264 for encoding,
 	# hence the restriction: !system-openh264? ( bindist )
@@ -858,6 +862,8 @@ src_configure() {
 		myconf_gn+=" enable_mus=true"
 		myconf_gn+=" use_system_minigbm=false"
 		myconf_gn+=" use_system_libdrm=$(usetf system-libdrm)"
+		myconf_gn+=" is_desktop_linux=false"
+		myconf_gn+=" enable_background_mode=true"
 	fi
 
 	if [[ "${ARCH}" = amd64 ]]; then
