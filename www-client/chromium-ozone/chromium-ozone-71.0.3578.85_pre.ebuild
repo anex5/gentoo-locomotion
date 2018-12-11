@@ -68,7 +68,7 @@ COMMON_DEPEND="
 		app-accessibility/at-spi2-atk:2
 	)
 	dev-libs/expat:=
-	dev-libs/glib:2
+	
 	system-icu? ( >=dev-libs/icu-59:= )
 	system-libevent? ( dev-libs/libevent )
 	>=dev-libs/libxml2-2.9.4-r3:=[icu]
@@ -130,6 +130,7 @@ COMMON_DEPEND="
 	)
 	gnome? (
 		x11-misc/xdg-utils
+		dev-libs/glib:2
 	)
 	app-arch/snappy:=
 	media-libs/flac:=
