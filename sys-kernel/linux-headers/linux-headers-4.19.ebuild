@@ -80,3 +80,4 @@ src_test() {
 
 	emake ARCH=$(tc-arch-kernel) headers_check
 }
+
