@@ -1,0 +1,33 @@
+From 3238d40015b79297a604dd83ff3b0b6894e483ab Mon Sep 17 00:00:00 2001
+From: Pawel Osciak <posciak@chromium.org>
+Date: Fri, 19 Aug 2016 18:12:09 +0900
+Subject: [PATCH] CHROMIUM: v4l: Add
+ V4L2_CID_MPEG_VIDEO_H264_SPS_PPS_BEFORE_IDR
+
+When set, the V4L2_CID_MPEG_VIDEO_H264_SPS_PPS_BEFORE_IDR control requests
+an H.264 encoder to insert an SPS and PPS pair before each IDR.
+
+Signed-off-by: Pawel Osciak <posciak@chromium.org>
+
+BUG=chromium:639238
+TEST=veaunittest
+
+Change-Id: I17b41a8a3e228338f5c59dcdfb38ca04cfa5119b
+---
+
+diff --git a/include/uapi/linux/v4l2-controls.h b/include/uapi/linux/v4l2-controls.h
+index 23b11a2..d458219 100644
+--- include/uapi/linux/v4l2-controls.h
++++ include/uapi/linux/v4l2-controls.h
+@@ -526,7 +526,7 @@ enum v4l2_mpeg_video_h264_hierarchical_coding_type {
+ #define V4L2_CID_MPEG_VIDEO_H264_SCALING_MATRIX	(V4L2_CID_MPEG_BASE+385)
+ #define V4L2_CID_MPEG_VIDEO_H264_SLICE_PARAM	(V4L2_CID_MPEG_BASE+386)
+ #define V4L2_CID_MPEG_VIDEO_H264_DECODE_PARAM	(V4L2_CID_MPEG_BASE+387)
+-
++#define V4L2_CID_MPEG_VIDEO_H264_SPS_PPS_BEFORE_IDR		(V4L2_CID_MPEG_BASE+388)
+ #define V4L2_CID_MPEG_VIDEO_MPEG4_I_FRAME_QP	(V4L2_CID_MPEG_BASE+400)
+ #define V4L2_CID_MPEG_VIDEO_MPEG4_P_FRAME_QP	(V4L2_CID_MPEG_BASE+401)
+ #define V4L2_CID_MPEG_VIDEO_MPEG4_B_FRAME_QP	(V4L2_CID_MPEG_BASE+402)
+-- 
+2.8.0.rc3.226.g39d4020
+
