@@ -15,7 +15,7 @@ inherit git-r3 check-reqs chromium-2 desktop eapi7-ver flag-o-matic multilib nin
 UGC_PV="907d2a3f55c02f566d317f2ce817615ad2350f75"
 UGC_P="ungoogled-chromium-${UGC_PV}"
 UGC_WD="${WORKDIR}/${UGC_P}"
-DEPOT_TOOLS="${WORKDIR}/depot_tools"
+
 
 DESCRIPTION="Modifications to Chromium for removing Google integration and enhancing privacy"
 HOMEPAGE="https://github.com/Eloston/ungoogled-chromium https://www.chromium.org/ https://github.com/Igalia/chromium"
@@ -35,7 +35,7 @@ IUSE="
 	cfi cups custom-cflags gnome gold jumbo-build kerberos lld new-tcmalloc
 	+optimize-webui proprietary-codecs pulseaudio selinux +suid +system-ffmpeg
 	+system-harfbuzz +system-icu +system-libevent +system-libvpx +system-openh264
-	+system-openjpeg system-libdrm +tcmalloc thinlto vaapi widevine wayland X atk dbus gtk 
+	+system-openjpeg +system-jsoncpp system-libdrm +tcmalloc thinlto vaapi widevine wayland X atk dbus gtk 
 	xkbcommon libcxx v4l2_codec v4lplugin +clang clang_tidy closure debug
 "
 
@@ -69,6 +69,7 @@ COMMON_DEPEND="
 	)
 	dev-libs/expat:=
 	dev-libs/glib:2   
+	system-jsoncpp? ( dev-libs/jsoncpp )
 	system-icu? ( >=dev-libs/icu-59:= )
 	system-libevent? ( dev-libs/libevent )
 	>=dev-libs/libxml2-2.9.4-r3:=[icu]
@@ -200,7 +201,7 @@ GTK+ icon theme.
 
 PATCHES=(
 	"${FILESDIR}/ungoogled-chromium-compiler-r4.patch"
-	"${FILESDIR}/chromium-test-r0.patch"
+ 	"${FILESDIR}/chromium-test-r0.patch"
 	"${FILESDIR}/chromium-webrtc-r0.patch"
 	"${FILESDIR}/chromium-memcpy-r0.patch"
 	"${FILESDIR}/chromium-math.h-r0.patch"
@@ -231,7 +232,8 @@ pkg_setup() {
 	chromium_suid_sandbox_check_kernel_config
 }
 
-export PATH=${PATH}:${DEPOT_TOOLS}
+#DEPOT_TOOLS="${S}/third_party/depot_tools"   
+#export PATH=${PATH}:${DEPOT_TOOLS}
 
 src_unpack() {
 
@@ -240,14 +242,14 @@ src_unpack() {
   	# build tools  
 	
 	# Prevents gclient from updating self.
-	export DEPOT_TOOLS_UPDATE=0
+	#export DEPOT_TOOLS_UPDATE=0
 	# Prevent gclient metrics collection.
-	export DEPOT_TOOLS_METRICS=0
-	
-	DEPOT_TOOLS_URI="https://chromium.googlesource.com/chromium/tools/depot_tools.git"
-	einfo "Fetching depot_tools from googlesource"
-	git-r3_fetch ${DEPOT_TOOLS_URI}
-	git-r3_checkout ${DEPOT_TOOLS_URI} depot_tools
+	#export DEPOT_TOOLS_METRICS=0
+
+	#DEPOT_TOOLS_URI="https://chromium.googlesource.com/chromium/tools/depot_tools.git"
+	#einfo "Fetching depot_tools from googlesource"
+	#git-r3_fetch ${DEPOT_TOOLS_URI} depot_tools
+	#git-r3_checkout ${DEPOT_TOOLS_URI}
 
 	EGIT_BRANCH="release-R71-11151.B"
 	rm -r ${S}/third_party/libdrm/src
@@ -259,7 +261,7 @@ src_unpack() {
 	rm -r ${S}/third_party/minigbm/src
 	MINIGBM_URI="https://chromium.googlesource.com/chromiumos/platform/minigbm"
 	einfo "Fetching minigbm from googlesource"
-	git-r3_fetch ${MINIGBM_URI}
+	git-r3_fetch ${MINIGBM_URI} 
 	git-r3_checkout ${MINIGBM_URI} ${S}/third_party/minigbm/src 
 
 } 
@@ -336,6 +338,7 @@ src_prepare() {
 	sed -i '/system\/icu.patch/d' "${ugc_rooted_dir}/patch_order.list" || die
 	sed -i '/opensuse\/system-libdrm.patch/d' "${ugc_rooted_dir}/patch_order.list" || die
 
+ 	use system-jsoncpp || sed -i '/system\/jsoncpp.patch/d' "${ugc_rooted_dir}/pruning.list" || die
 	use system-icu || sed -i '/common\/icudtl.dat/d' "${ugc_rooted_dir}/pruning.list" || die
 	use system-libevent || sed -i '/system\/event.patch/d' "${ugc_rooted_dir}/patch_order.list" || die
 	use system-libvpx || sed -i '/system\/vpx.patch/d' "${ugc_rooted_dir}/patch_order.list" || die
@@ -441,7 +444,6 @@ src_prepare() {
 		third_party/iccjpeg
 		third_party/inspector_protocol
 		third_party/jinja2
-		third_party/jsoncpp
 		third_party/jstemplate
 		third_party/khronos
 		third_party/leveldatabase
@@ -465,6 +467,7 @@ src_prepare() {
 		third_party/markupsafe
 		third_party/mesa
 		third_party/metrics_proto
+		third_party/minigbm
 		third_party/modp_b64
 		third_party/node
 		third_party/node/node_modules/polymer-bundler/lib/third_party/UglifyJS2
@@ -535,7 +538,8 @@ src_prepare() {
 		third_party/xdg-utils
 		third_party/yasm/run_yasm.py
 	)
-
+	
+	use system-jsoncpp || keeplibs+=( third_party/jsoncpp )
 	use system-ffmpeg || keeplibs+=( third_party/ffmpeg third_party/opus )
 	use system-harfbuzz || keeplibs+=( third_party/freetype third_party/harfbuzz-ng )
 	use system-icu || keeplibs+=( third_party/icu )
@@ -836,6 +840,7 @@ src_configure() {
 	myconf_gn+=" use_openh264=$(usetf !system-openh264)"
 	myconf_gn+=" use_pulseaudio=$(usetf pulseaudio)"
 	myconf_gn+=" use_cras=false"
+    myconf_gn+=" use_system_jsoncpp=$(usetf system-jsoncpp)"
 	myconf_gn+=" use_system_freetype=$(usetf system-harfbuzz)"
 	myconf_gn+=" use_system_harfbuzz=$(usetf system-harfbuzz)"
 	myconf_gn+=" use_system_lcms2=true"
@@ -849,12 +854,15 @@ src_configure() {
 
 	# wayland
 	if use wayland; then
+		#myconf_gn+=" target_os=\"chromeos\""
+		myconf_gn+=" toolkit_views=true" 
 		myconf_gn+=" use_system_wayland=true"
 		myconf_gn+=" use_ozone=true"
 		myconf_gn+=" use_aura=true"
 		myconf_gn+=" ozone_auto_platforms=false"
 		myconf_gn+=" ozone_platform_x11=$(usetf X)"
 		myconf_gn+=" ozone_platform_wayland=true"
+		
 		#myconf_gn+=" ozone_platform_drm=true"
 		#myconf_gn+=" ozone_platform_gbm=true"
 		#myconf_gn+=" ozone_platform_egltest=true"
@@ -862,6 +870,21 @@ src_configure() {
 		#myconf_gn+=" enable_package_mash_services=true"
 		#myconf_gn+=" enable_xdg_shell=true"
 		myconf_gn+=" enable_mus=true"
+
+		myconf_gn+=" use_intel_minigbm=$(usetf video_cards_intel)" 
+		myconf_gn+=" use_radeon_minigbm=$(usetf video_cards_radeon)"
+	   	myconf_gn+=" use_amdgpu_minigbm=$(usetf video_cards_amdgpu)"
+		myconf_gn+=" use_exynos_minigbm=$(usetf video_cards_exynos)"
+		myconf_gn+=" use_marvell_minigbm=$(usetf video_cards_marvell)"
+		myconf_gn+=" use_mediatek_minigbm=$(usetf video_cards_mediatek)"
+		myconf_gn+=" use_msm_minigbm=$(usetf video_cards_msm)"
+		myconf_gn+=" use_radeonsi_minigbm=$(usetf video_cards_radeonsi)"
+		myconf_gn+=" use_rockchip_minigbm=$(usetf video_cards_rockchip)"
+		myconf_gn+=" use_tegra_minigbm=$(usetf video_cards_tegra)"
+		myconf_gn+=" use_vc4_minigbm=$(usetf video_cards_vc4)"
+ 
+		myconf_gn+=" use_nouveau_minigbm=true" 
+		myconf_gn+=" use_virgl_minigbm=$(usetf video_cards_virgl)" 
 		myconf_gn+=" use_system_minigbm=false"
 		myconf_gn+=" use_system_libdrm=$(usetf system-libdrm)"
 		myconf_gn+=" is_desktop_linux=$(usetf dbus)"
