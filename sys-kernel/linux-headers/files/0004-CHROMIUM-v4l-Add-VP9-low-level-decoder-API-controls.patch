@@ -17,20 +17,18 @@ Reviewed-by: Owen Lin <owenlin@chromium.org>
 
 diff --git a/include/uapi/linux/v4l2-controls.h b/include/uapi/linux/v4l2-controls.h
 index 895f849..23b11a2 100644
---- include/uapi/linux/v4l2-controls.h
-+++ include/uapi/linux/v4l2-controls.h
-@@ -587,7 +587,11 @@ enum v4l2_vp8_golden_frame_sel {
+--- a/include/uapi/linux/v4l2-controls.h
++++ b/include/uapi/linux/v4l2-controls.h
+@@ -598,6 +598,9 @@ enum v4l2_vp8_golden_frame_sel {
  
  /* Control IDs not existing in upstream */
  #define V4L2_CID_MPEG_VIDEO_VP8_FRAME_HDR		(V4L2_CID_MPEG_BASE+590)
- 
 +#define V4L2_CID_MPEG_VIDEO_VP9_FRAME_HDR		(V4L2_CID_MPEG_BASE+591)
 +#define V4L2_CID_MPEG_VIDEO_VP9_DECODE_PARAM		(V4L2_CID_MPEG_BASE+592)
 +#define V4L2_CID_MPEG_VIDEO_VP9_ENTROPY			(V4L2_CID_MPEG_BASE+593)
-+
- /*  MPEG-class control IDs specific to the CX2341x driver as defined by V4L2 */
- #define V4L2_CID_MPEG_CX2341X_BASE 				(V4L2_CTRL_CLASS_MPEG | 0x1000)
- #define V4L2_CID_MPEG_CX2341X_VIDEO_SPATIAL_FILTER_MODE 	(V4L2_CID_MPEG_CX2341X_BASE+0)
+ 
+ enum v4l2_mpeg_video_vp8_profile {
+ 	V4L2_MPEG_VIDEO_VP8_PROFILE_0				= 0,
 @@ -1213,4 +1217,147 @@ struct v4l2_ctrl_vp8_frame_hdr {
  	__u8 flags;
  };
@@ -181,27 +179,17 @@ index 895f849..23b11a2 100644
  /*  Detection-class control IDs defined by V4L2 */
 diff --git a/include/uapi/linux/videodev2.h b/include/uapi/linux/videodev2.h
 index c019187..1575c6c 100644
---- include/uapi/linux/videodev2.h
-+++ include/uapi/linux/videodev2.h
-@@ -596,6 +596,7 @@ struct v4l2_pix_format {
+--- a/include/uapi/linux/videodev2.h
++++ b/include/uapi/linux/videodev2.h
+@@ -643,6 +643,7 @@ struct v4l2_pix_format {
  #define V4L2_PIX_FMT_VP8      v4l2_fourcc('V', 'P', '8', '0') /* VP8 */
  #define V4L2_PIX_FMT_VP8_FRAME v4l2_fourcc('V', 'P', '8', 'F') /* VP8 parsed frames */
  #define V4L2_PIX_FMT_VP9      v4l2_fourcc('V', 'P', '9', '0') /* VP9 */
 +#define V4L2_PIX_FMT_VP9_FRAME v4l2_fourcc('V', 'P', '9', 'F') /* VP9 parsed frames */
- 
- /*  Vendor-specific formats   */
- #define V4L2_PIX_FMT_CPIA1    v4l2_fourcc('C', 'P', 'I', 'A') /* cpia1 YUV */
-@@ -1481,6 +1482,9 @@ struct v4l2_ext_control {
- 		struct v4l2_ctrl_h264_slice_param __user *p_h264_slice_param;
- 		struct v4l2_ctrl_h264_decode_param __user *p_h264_decode_param;
- 		struct v4l2_ctrl_vp8_frame_hdr __user *p_vp8_frame_hdr;
-+		struct v4l2_ctrl_vp9_frame_hdr __user *p_vp9_frame_hdr;
-+		struct v4l2_ctrl_vp9_decode_param __user *p_vp9_decode_param;
-+		struct v4l2_ctrl_vp9_entropy __user *p_vp9_entropy;
- 		void __user *ptr;
- 	};
- } __attribute__ ((packed));
-@@ -1523,6 +1527,9 @@ enum v4l2_ctrl_type {
+ #define V4L2_PIX_FMT_HEVC     v4l2_fourcc('H', 'E', 'V', 'C') /* HEVC aka H.265 */
+ #define V4L2_PIX_FMT_FWHT     v4l2_fourcc('F', 'W', 'H', 'T') /* Fast Walsh Hadamard Transform (vicodec) */
+ #define V4L2_PIX_FMT_VP8_FRAME v4l2_fourcc('V', 'P', '8', 'F') /* VP8 parsed frames */
+@@ -1645,6 +1648,9 @@ enum v4l2_ctrl_type {
  	V4L2_CTRL_TYPE_H264_SLICE_PARAM = 0x0106,
  	V4L2_CTRL_TYPE_H264_DECODE_PARAM = 0x0107,
  	V4L2_CTRL_TYPE_VP8_FRAME_HDR	= 0x108,

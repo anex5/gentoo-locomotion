@@ -18,19 +18,20 @@ Commit-Queue: Tomasz Figa <tfiga@chromium.org>
 Tested-by: Tomasz Figa <tfiga@chromium.org>
 ---
 
---- include/uapi/linux/v4l2-controls.h	2015-01-22 16:14:54.757773594 +0800
-+++ include/uapi/linux/v4l2-controls.h	2015-01-22 16:15:08.469632223 +0800
-@@ -574,6 +574,9 @@
+--- a/include/uapi/linux/v4l2-controls.h
++++ b/include/uapi/linux/v4l2-controls.h
+@@ -595,6 +595,10 @@ enum v4l2_vp8_golden_frame_sel {
  #define V4L2_CID_MPEG_VIDEO_VPX_P_FRAME_QP		(V4L2_CID_MPEG_BASE+510)
- #define V4L2_CID_MPEG_VIDEO_VPX_PROFILE			(V4L2_CID_MPEG_BASE+511)
  
+ #define V4L2_CID_MPEG_VIDEO_VP8_PROFILE			(V4L2_CID_MPEG_BASE+511)
++
 +/* Control IDs not existing in upstream */
 +#define V4L2_CID_MPEG_VIDEO_VP8_FRAME_HDR		(V4L2_CID_MPEG_BASE+590)
 +
- /*  MPEG-class control IDs specific to the CX2341x driver as defined by V4L2 */
- #define V4L2_CID_MPEG_CX2341X_BASE 				(V4L2_CTRL_CLASS_MPEG | 0x1000)
- #define V4L2_CID_MPEG_CX2341X_VIDEO_SPATIAL_FILTER_MODE 	(V4L2_CID_MPEG_CX2341X_BASE+0)
-@@ -1084,6 +1086,98 @@
+ enum v4l2_mpeg_video_vp8_profile {
+ 	V4L2_MPEG_VIDEO_VP8_PROFILE_0				= 0,
+ 	V4L2_MPEG_VIDEO_VP8_PROFILE_1				= 1,
+@@ -1230,6 +1232,98 @@
  	struct v4l2_h264_dpb_entry dpb[16];
  };
  
@@ -129,8 +130,8 @@ Tested-by: Tomasz Figa <tfiga@chromium.org>
  /*  Detection-class control IDs defined by V4L2 */
  #define V4L2_CID_DETECT_CLASS_BASE		(V4L2_CTRL_CLASS_DETECT | 0x900)
  #define V4L2_CID_DETECT_CLASS			(V4L2_CTRL_CLASS_DETECT | 1)
---- include/uapi/linux/videodev2.h	2015-01-22 16:14:46.261861188 +0800
-+++ include/uapi/linux/videodev2.h	2015-01-22 16:15:25.093460834 +0800
+--- a/include/uapi/linux/videodev2.h
++++ b/include/uapi/linux/videodev2.h
 @@ -422,6 +422,7 @@
  #define V4L2_PIX_FMT_VC1_ANNEX_G v4l2_fourcc('V', 'C', '1', 'G') /* SMPTE 421M Annex G compliant stream */
  #define V4L2_PIX_FMT_VC1_ANNEX_L v4l2_fourcc('V', 'C', '1', 'L') /* SMPTE 421M Annex L compliant stream */
