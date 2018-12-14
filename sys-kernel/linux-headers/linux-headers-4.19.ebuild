@@ -30,7 +30,7 @@ src_unpack() {
 
 src_prepare() {
 	default
-	[[ -n ${PATCH_VER} ]] && EPATCH_SUFFIX="patch" eapply "${WORKDIR}"/${PV}
+	[[ -n ${PATCH_VER} ]] && eapply "${WORKDIR}"/${PV}/*.patch
 	eapply "${FILESDIR}/0001-CHROMIUM-media-headers-Import-V4L2-headers-from-Chro.patch"
 	eapply "${FILESDIR}/0002-CHROMIUM-v4l-Add-VP8-low-level-decoder-API-controls.patch"
 	eapply "${FILESDIR}/0003-v4l-add-pixelformat-change-event.patch"
@@ -44,7 +44,6 @@ src_prepare() {
 	eapply "${FILESDIR}/0011-BACKPORT-FROMLIST-v4l-Add-support-for-V4L2_BUF_TYPE_.patch"
 	eapply "${FILESDIR}/0012-FROMLIST-media-rkisp1-Add-user-space-ABI-definitions.patch"
 	eapply "${FILESDIR}/0013-FROMLIST-media-videodev2.h-v4l2-ioctl-add-rkisp1-met.patch"
-	eapply "${FILESDIR}/0014-BACKPORT-add-qrtr-header-file.patch"
 	eapply "${FILESDIR}/0015-BACKPORT-FROMGIT-media-v4l2-ctrl-Change-control-for-.patch"
 	eapply "${FILESDIR}/0016-BACKPORT-FROMGIT-media-v4l2-ctrl-Add-control-for-VP9.patch"
 	eapply "${FILESDIR}/0017-BACKPORT-FROMLIST-media-v4l-Add-JPEG_RAW-format.patch"
