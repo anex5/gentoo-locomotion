@@ -10,7 +10,7 @@ CHROMIUM_LANGS="
 	th tr uk vi zh-CN zh-TW
 "
 
-inherit git-r3 check-reqs chromium-2 desktop eapi7-ver flag-o-matic multilib ninja-utils pax-utils portability python-r1 readme.gentoo-r1 toolchain-funcs xdg-utils
+inherit check-reqs chromium-2 desktop eapi7-ver flag-o-matic multilib ninja-utils pax-utils portability python-r1 readme.gentoo-r1 toolchain-funcs xdg-utils
 
 UGC_PV="9c8823d2b75e7dce06c445453657d7be8627120d"
 UGC_P="ungoogled-chromium-${UGC_PV}"
@@ -21,7 +21,7 @@ DESCRIPTION="Modifications to Chromium for removing Google integration and enhan
 HOMEPAGE="https://github.com/Eloston/ungoogled-chromium https://www.chromium.org/ https://github.com/Igalia/chromium"
 SRC_URI="
 	https://commondatastorage.googleapis.com/chromium-browser-official/chromium-${PV/_*}.tar.xz
-	https://github.com/Eloston/${PN}/archive/${UGC_PV}.tar.gz -> ${UGC_P}.tar.gz
+	https://github.com/Eloston/ungoogled-chromium/archive/${UGC_PV}.tar.gz -> ${UGC_P}.tar.gz
 "
 
 LICENSE="BSD"
@@ -44,13 +44,13 @@ for card in ${VIDEO_CARDS}; do
 done
 
 REQUIRED_USE="
+	^^ ( gold lld )
 	|| ( $(python_gen_useflags 'python3*') )
 	|| ( $(python_gen_useflags 'python2*') )
 	new-tcmalloc? ( tcmalloc )
-	^^ ( gold lld )
 	cfi? ( thinlto )
 	clang_tidy? ( clang )
-	libcxx? ( clang )
+	libcxx? ( clang new-tcmalloc )
 	thinlto? ( clang || ( gold lld ) )
 	gtk? ( X )
 	gnome? ( gtk dbus )
@@ -287,13 +287,13 @@ src_prepare() {
 		common:no-such-option-no-sysroot
 		common:parallel
 		rooted:libcxx
+		rooted:chromium-vaapi-r18
 	)
 
 	local ugc_use=(
 		system-jsoncpp:jsoncpp
 		system-libevent:event
 		system-libvpx:vpx
-		vaapi:chromium-vaapi-r18
 	)
 
 	local ugc_p ugc_dir
@@ -710,7 +710,6 @@ src_configure() {
 	use system-ffmpeg && gn_system_libraries+=( ffmpeg opus )
 	use system-harfbuzz && gn_system_libraries+=( freetype harfbuzz-ng )
 	use system-icu && gn_system_libraries+=( icu )
-	use system-jsoncpp && gn_system_libraries+=( jsoncpp )
 	use system-libdrm && gn_system_libraries+=( libdrm )
 	use system-libevent && gn_system_libraries+=( libevent )
 	use system-libvpx && gn_system_libraries+=( libvpx )
@@ -827,7 +826,7 @@ src_configure() {
 	myconf_gn+=" use_vaapi=$(usetf vaapi)"
 	myconf_gn+=" use_xkbcommon=$(usetf xkbcommon)"
 	myconf_gn+=" use_v4l2_codec=$(usetf v4l2_codec)"
-	myconf_gn+=" use_linux_v4l2=$(usetf v4l2_codec)"
+	myconf_gn+=" use_linux_v4l2_only=$(usetf v4l2_codec)"
 	myconf_gn+=" use_v4lplugin=$(usetf v4lplugin)"
 
 	# wayland
