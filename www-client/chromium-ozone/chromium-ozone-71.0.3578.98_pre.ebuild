@@ -1,7 +1,7 @@
 # Copyright 1999-2018 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI="6"
+EAPI="7"
 PYTHON_COMPAT=( python{2_7,3_{5,6,7}} )
 
 CHROMIUM_LANGS="
@@ -10,7 +10,7 @@ CHROMIUM_LANGS="
 	th tr uk vi zh-CN zh-TW
 "
 
-inherit check-reqs chromium-2 desktop eapi7-ver flag-o-matic multilib ninja-utils pax-utils portability python-r1 readme.gentoo-r1 toolchain-funcs xdg-utils
+inherit check-reqs chromium-2 desktop flag-o-matic multilib ninja-utils pax-utils portability python-r1 readme.gentoo-r1 toolchain-funcs xdg-utils
 
 UGC_PV="9c8823d2b75e7dce06c445453657d7be8627120d"
 UGC_P="ungoogled-chromium-${UGC_PV}"
@@ -806,10 +806,10 @@ src_configure() {
 	myconf_gn+=" use_new_tcmalloc=$(usetf new-tcmalloc)"
 	myconf_gn+=" use_cups=$(usetf cups)"
 	myconf_gn+=" use_custom_libcxx=false"
-	myconf_gn+=" use_system_libcxx=$(usetf libcxx)"
+	#myconf_gn+=" use_system_libcxx=$(usetf libcxx)"
 
 	myconf_gn+=" use_gio=$(usetf gnome)"
-	myconf_gn+=" use_gconf=$(usetf gnome)"
+	#myconf_gn+=" use_gconf=$(usetf gnome)"
 
 	myconf_gn+=" use_kerberos=$(usetf kerberos)"
 	# If enabled, it will build the bundled OpenH264 for encoding,
@@ -817,7 +817,7 @@ src_configure() {
 	myconf_gn+=" use_openh264=$(usetf !system-openh264)"
 	myconf_gn+=" use_pulseaudio=$(usetf pulseaudio)"
 	myconf_gn+=" use_cras=false"
-	myconf_gn+=" use_system_jsoncpp=$(usetf system-jsoncpp)"
+	#myconf_gn+=" use_system_jsoncpp=$(usetf system-jsoncpp)"
 	myconf_gn+=" use_system_freetype=$(usetf system-harfbuzz)"
 	myconf_gn+=" use_system_harfbuzz=$(usetf system-harfbuzz)"
 	myconf_gn+=" use_system_lcms2=true"
@@ -826,14 +826,14 @@ src_configure() {
 	myconf_gn+=" use_vaapi=$(usetf vaapi)"
 	myconf_gn+=" use_xkbcommon=$(usetf xkbcommon)"
 	myconf_gn+=" use_v4l2_codec=$(usetf v4l2_codec)"
-	myconf_gn+=" use_linux_v4l2_only=$(usetf v4l2_codec)"
+	#myconf_gn+=" use_linux_v4l2_only=$(usetf v4l2_codec)"
 	myconf_gn+=" use_v4lplugin=$(usetf v4lplugin)"
 
 	# wayland
 	if use wayland; then
 		#myconf_gn+=" target_os=\"chromeos\""
 		myconf_gn+=" toolkit_views=true" 
-		myconf_gn+=" use_system_wayland=true"
+		myconf_gn+=" use_system_libwayland=true"
 		myconf_gn+=" use_ozone=true"
 		myconf_gn+=" use_aura=true"
 		myconf_gn+=" ozone_auto_platforms=false"
@@ -855,15 +855,15 @@ src_configure() {
 		myconf_gn+=" use_marvell_minigbm=$(usetf video_cards_marvell)"
 		myconf_gn+=" use_mediatek_minigbm=$(usetf video_cards_mediatek)"
 		myconf_gn+=" use_msm_minigbm=$(usetf video_cards_msm)"
-		myconf_gn+=" use_radeonsi_minigbm=$(usetf video_cards_radeonsi)"
+		#myconf_gn+=" use_radeonsi_minigbm=$(usetf video_cards_radeonsi)"
 		myconf_gn+=" use_rockchip_minigbm=$(usetf video_cards_rockchip)"
 		myconf_gn+=" use_tegra_minigbm=$(usetf video_cards_tegra)"
 		myconf_gn+=" use_vc4_minigbm=$(usetf video_cards_vc4)"
  
-		myconf_gn+=" use_nouveau_minigbm=true" 
-		myconf_gn+=" use_virgl_minigbm=$(usetf video_cards_virgl)" 
+		#myconf_gn+=" use_nouveau_minigbm=true" 
+		#myconf_gn+=" use_virgl_minigbm=$(usetf video_cards_virgl)" 
 		myconf_gn+=" use_system_minigbm=false"
-		myconf_gn+=" use_system_libdrm=$(usetf system-libdrm)"
+		#myconf_gn+=" use_system_libdrm=$(usetf system-libdrm)"
 		myconf_gn+=" is_desktop_linux=$(usetf dbus)"
 		myconf_gn+=" enable_background_mode=true"
 	fi
