@@ -112,7 +112,7 @@ COMMON_DEPEND="
 		sys-libs/libcxxabi
 		sys-libs/libcxx
 	)
-	v4lplugin? ( media-libs/libv4lplugins )
+	v4lplugin? ( media-tv/v4l-utils )
 	gtk? ( x11-libs/gtk+:3[X] )
 	X? ( 
 		x11-libs/cairo:=
