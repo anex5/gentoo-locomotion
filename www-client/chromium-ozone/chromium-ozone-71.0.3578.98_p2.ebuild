@@ -734,7 +734,7 @@ src_configure() {
 	myconf_gn+=" enable_hangout_services_extension=false"
 	myconf_gn+=" enable_hevc_demuxing=true"
 	myconf_gn+=" enable_av1_decoder=true"
-	myconf_gn+=" enable_ac3_eac3_audio_demuxing = true"
+	myconf_gn+=" enable_ac3_eac3_audio_demuxing=true"
 	myconf_gn+=" enable_iterator_debugging=$(usetf debug)"
 	myconf_gn+=" enable_mdns=false"
 	myconf_gn+=" enable_mse_mpeg2ts_stream_parser=true"
