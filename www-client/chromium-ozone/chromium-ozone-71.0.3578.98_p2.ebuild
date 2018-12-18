@@ -32,7 +32,7 @@ VIDEO_CARDS="
 "
 
 IUSE="
-	cfi cups custom-cflags gnome gold jumbo-build kerberos libcxx lld new-tcmalloc
+	cfi component-build cups custom-cflags gnome gold jumbo-build kerberos libcxx lld new-tcmalloc
 	optimize-webui +proprietary-codecs pulseaudio selinux +suid +system-ffmpeg
 	+system-harfbuzz +system-icu +system-jsoncpp +system-libevent +system-libvpx 
 	+system-openh264 +system-openjpeg system-libdrm +tcmalloc thinlto vaapi widevine 
@@ -724,6 +724,10 @@ src_configure() {
 	build/linux/unbundle/replace_gn_files.py --system-libraries "${gn_system_libraries[@]}" || die
 
 	local myconf_gn=""
+	# Component build isn't generally intended for use by end users. It's mostly useful
+	# for development and debugging. Links faster.
+	myconf_gn+=" is_component_build=$(ustf component-build)"
+
 	myconf_gn+=" blink_symbol_level=$(usex debug 2 -1)"
 	myconf_gn+=" enable_ac3_eac3_audio_demuxing=true"
 	myconf_gn+=" enable_desktop_in_product_help=false"
