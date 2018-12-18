@@ -35,7 +35,7 @@ IUSE="
 	cfi component-build cups custom-cflags gnome gold jumbo-build kerberos libcxx lld new-tcmalloc
 	optimize-webui +proprietary-codecs pulseaudio selinux +suid +system-ffmpeg
 	+system-harfbuzz +system-icu +system-jsoncpp +system-libevent +system-libvpx 
-	+system-openh264 +system-openjpeg system-libdrm +tcmalloc thinlto vaapi widevine 
+	+system-openh264 +system-openjpeg system-libdrm system-wayland +tcmalloc thinlto vaapi widevine 
 	wayland X atk dbus pdf libvpx gtk xkbcommon v4l2 v4lplugin +clang clang_tidy 
 	closure swiftshader debug
 "
