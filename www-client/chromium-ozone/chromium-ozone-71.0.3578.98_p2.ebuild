@@ -726,7 +726,7 @@ src_configure() {
 	local myconf_gn=""
 	# Component build isn't generally intended for use by end users. It's mostly useful
 	# for development and debugging. Links faster.
-	myconf_gn+=" is_component_build=$(ustf component-build)"
+	myconf_gn+=" is_component_build=$(usetf component-build)"
 
 	myconf_gn+=" blink_symbol_level=$(usex debug 2 -1)"
 	myconf_gn+=" enable_ac3_eac3_audio_demuxing=true"
@@ -734,7 +734,7 @@ src_configure() {
 	myconf_gn+=" enable_hangout_services_extension=false"
 	myconf_gn+=" enable_hevc_demuxing=true"
 	myconf_gn+=" enable_av1_decoder=true"
-	myconf_gn+=" enable_ac3_eac3_audio_demuxing = true"
+	myconf_gn+=" enable_ac3_eac3_audio_demuxing=true"
 	myconf_gn+=" enable_iterator_debugging=$(usetf debug)"
 	myconf_gn+=" enable_mdns=false"
 	myconf_gn+=" enable_mse_mpeg2ts_stream_parser=true"
