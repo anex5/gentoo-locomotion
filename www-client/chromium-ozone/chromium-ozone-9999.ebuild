@@ -261,23 +261,10 @@ src_unpack() {
 		"managed": False,\
 		"name": "src",\
 		"deps_file": "DEPS",\
-		"custom_deps": {\
-			"src/build/third_party/cbuildbot_chromite": None,\
-			"src/chrome/tools/test/reference_build/chrome_linux": None,\
-			"src/chrome/tools/test/reference_build/chrome_mac": None,\
-			"src/chrome/tools/test/reference_build/chrome_win": None,\
-			"src/chrome/tools/test/reference_build/chrome": None,\
-			"src/chrome/test/data/perf/canvas_bench": None,\
-			"src/chrome/test/data/perf/frame_rate/content": None,\
-			"src/chrome/installer/mac/third_party/xz/xz": None,\
-			"src/third_party/WebKit/LayoutTests": None,\
-			"src/webkit/data/layout_tests/LayoutTests":None,\
-			"src/third_party/hunspell_dictionaries": None,\
-			"src/chrome/test/data/layout_tests/LayoutTests/platform/chromium-mac/http/tests/workers": None\
-		}}]; target_os = ["linux"]; target_os_only = True' || die
+		"custom_deps": {}}]; target_os = ["linux"]; target_os_only = True' || die
 	fi
 
-	depot_tools/gclient sync --no-history --with_branch_heads --with_tags -wv --disable-syntax-validation --jobs=1 || die
+	depot_tools/gclient sync --no-history --with_branch_heads --with_tags --disable-syntax-validation --jobs=1 || die
 	#depot_tools/gclient runhooks --force || die	
 }
  
