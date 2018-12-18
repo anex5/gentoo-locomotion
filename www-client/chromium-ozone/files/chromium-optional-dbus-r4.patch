@@ -26,15 +26,15 @@ diff --git a/chrome/browser/chrome_browser_main_linux.cc b/chrome/browser/chrome
 index 3a26947..50c9452 100644
 --- a/chrome/browser/chrome_browser_main_linux.cc
 +++ b/chrome/browser/chrome_browser_main_linux.cc
-@@ -93,7 +93,7 @@ void ChromeBrowserMainPartsLinux::PostProfileInit() {
+@@ -95,7 +95,7 @@ void ChromeBrowserMainPartsLinux::PostProfileInit() {
  }
  
  void ChromeBrowserMainPartsLinux::PostMainMessageLoopStart() {
 -#if !defined(OS_CHROMEOS)
 +#if !defined(OS_CHROMEOS) && defined(USE_DBUS)
-   bluez::DBusThreadManagerLinux::Initialize();
-   bluez::BluezDBusManager::Initialize(
-       bluez::DBusThreadManagerLinux::Get()->GetSystemBus(), false);
+   bluez::BluezDBusThreadManager::Initialize();
+   bluez::BluezDBusManager::Initialize();
+ #endif
 @@ -103,7 +103,7 @@ void ChromeBrowserMainPartsLinux::PostMainMessageLoopStart() {
  }
  
