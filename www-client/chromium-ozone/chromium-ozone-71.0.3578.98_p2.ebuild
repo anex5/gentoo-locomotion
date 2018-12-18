@@ -726,7 +726,7 @@ src_configure() {
 	local myconf_gn=""
 	# Component build isn't generally intended for use by end users. It's mostly useful
 	# for development and debugging. Links faster.
-	myconf_gn+=" is_component_build=$(ustf component-build)"
+	myconf_gn+=" is_component_build=$(usetf component-build)"
 
 	myconf_gn+=" blink_symbol_level=$(usex debug 2 -1)"
 	myconf_gn+=" enable_ac3_eac3_audio_demuxing=true"
