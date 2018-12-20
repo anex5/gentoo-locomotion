@@ -718,7 +718,7 @@ src_configure() {
 	use system-libdrm && gn_system_libraries+=( libdrm )
 	use system-libevent && gn_system_libraries+=( libevent )
 	use system-libvpx && gn_system_libraries+=( libvpx )
-	use system-wayland && gn_system_libraries+=( libwayland )
+	#use system-wayland && gn_system_libraries+=( libwayland )
 	use system-openh264 && gn_system_libraries+=( openh264 )
 
 	build/linux/unbundle/replace_gn_files.py --system-libraries "${gn_system_libraries[@]}" || die
@@ -727,8 +727,9 @@ src_configure() {
 	# Component build isn't generally intended for use by end users. It's mostly useful
 	# for development and debugging. Links faster.
 	myconf_gn+=" is_component_build=$(usetf component-build)"
-
 	myconf_gn+=" blink_symbol_level=$(usex debug 2 -1)"
+	
+	myconf_gn+=" use_atk=$(usetf atk)"
 	myconf_gn+=" enable_ac3_eac3_audio_demuxing=true"
 	myconf_gn+=" enable_desktop_in_product_help=false"
 	myconf_gn+=" enable_hangout_services_extension=false"
@@ -738,6 +739,10 @@ src_configure() {
 	myconf_gn+=" enable_iterator_debugging=$(usetf debug)"
 	myconf_gn+=" enable_mdns=false"
 	myconf_gn+=" enable_mse_mpeg2ts_stream_parser=true"
+	myconf_gn+=" media_use_ffmpeg=true"
+	myconf_gn+=" enable_ffmpeg_video_decoders=true"
+	#myconf_gn+=" enable_runtime_media_renderer_selection=true"
+	myconf_gn+=" enable_mpeg_h_audio_demuxing=true"
 	myconf_gn+=" enable_plugins=true"
 
 	# Disable nacl, we can't build without pnacl (http://crbug.com/269560).
@@ -754,7 +759,7 @@ src_configure() {
 	myconf_gn+=" enable_pdf=$(usetf pdf)"
 	myconf_gn+=" enable_swiftshader=$(usetf swiftshader)"
 	myconf_gn+=" enable_widevine=$(usetf widevine)"
-	myconf_gn+=" exclude_unwind_tables=true"
+	myconf_gn+=" exclude_unwind_tables=$(usetf debug)"
 	myconf_gn+=" fatal_linker_warnings=false"
 	myconf_gn+=" ffmpeg_branding=\"$(usex proprietary-codecs Chrome Chromium)\""
 	myconf_gn+=" fieldtrial_testing_like_official_build=true"
@@ -763,16 +768,13 @@ src_configure() {
 	# Note: these are for Gentoo use ONLY. For your own distribution,
 	# please get your own set of keys. Feel free to contact chromium@gentoo.org
 	# for more info.
-	local google_api_key="AIzaSyDEAOvatFo0eTgsV_ZlEzx0ObmepsMzfAc"
-	local google_default_client_id="329227923882.apps.googleusercontent.com"
-	local google_default_client_secret="vgKG0NNv7GoDpbtoFNLxCUXu"
-	#local google_api_key=""
-	#local google_default_client_id=""
-	#local google_default_client_secret=""
+	local google_api_key=""
+	local google_default_client_id=""
+	local google_default_client_secret=""
 	myconf_gn+=" google_api_key=\"${google_api_key}\""
 	myconf_gn+=" google_default_client_id=\"${google_default_client_id}\""
 	myconf_gn+=" google_default_client_secret=\"${google_default_client_secret}\""
-	myconf_gn+=" use_official_google_api_keys=true"
+	myconf_gn+=" use_official_google_api_keys=false"
 
 	# Clang features.
 	#myconf_gn+=" is_asan=$(usetf asan)"
@@ -848,19 +850,20 @@ src_configure() {
 	myconf_gn+=" use_v4l2_codec=$(usetf v4l2)"
 	#myconf_gn+=" use_linux_v4l2_only=$(usetf v4l2)"
 	myconf_gn+=" use_v4lplugin=$(usetf v4lplugin)"
-
+	myconf_gn+=" is_desktop_linux=true"
 	# wayland
 	if use wayland; then
-		#myconf_gn+=" target_os=\"chromeos\""
+	#	myconf_gn+=" target_os=\"chromeos\""
 		myconf_gn+=" toolkit_views=true" 
 		myconf_gn+=" use_system_libwayland=true"
 		myconf_gn+=" use_ozone=true"
 		myconf_gn+=" use_aura=true"
+		#myconf_gn+=" use_ash=false"
 		myconf_gn+=" ozone_auto_platforms=false"
 		myconf_gn+=" ozone_platform_x11=$(usetf X)"
 		myconf_gn+=" ozone_platform_wayland=true"
 		myconf_gn+=" ozone_platform=\"wayland\""
-		myconf_gn+=" enable_wayland_server=true"
+		#myconf_gn+=" enable_wayland_server=true"
 
 		#myconf_gn+=" ozone_platform_drm=true"
 		myconf_gn+=" ozone_platform_gbm=true"
@@ -885,9 +888,11 @@ src_configure() {
 		#myconf_gn+=" use_virgl_minigbm=$(usetf video_cards_virgl)" 
 		myconf_gn+=" use_system_minigbm=false"
 		#myconf_gn+=" use_system_libdrm=$(usetf system-libdrm)"
-		myconf_gn+=" is_desktop_linux=$(usetf dbus)"
+
 		myconf_gn+=" enable_background_mode=true"
-	fi
+		#myconf_gn+=" enable_cros_assistant=false"
+		myconf_gn+=" enable_resource_whitelist_generation=false"
+ 	fi
 
 	if [[ "${ARCH}" = amd64 ]]; then
 		myconf_gn+=" target_cpu=\"x64\""
