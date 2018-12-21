@@ -316,7 +316,7 @@ src_prepare() {
 	fi
     
     if ! use system-jsoncpp; then
-		sed -i '/debian-buster\/system\/jsoncpp.patch/d "${ugc_rooted_dir}/patch_order.list" || die
+		sed -i '/debian-buster\/system\/jsoncpp.patch/d' "${ugc_rooted_dir}/patch_order.list" || die
 	fi 
 	
 	if use system-openjpeg; then
