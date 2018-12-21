@@ -34,7 +34,7 @@ VIDEO_CARDS="
 IUSE="
 	cfi component-build cups custom-cflags gnome gold jumbo-build kerberos libcxx lld new-tcmalloc
 	optimize-webui +proprietary-codecs pulseaudio selinux +suid +system-ffmpeg
-	+system-harfbuzz +system-icu +system-jsoncpp +system-libevent +system-libvpx 
+	+system-harfbuzz +system-icu system-jsoncpp +system-libevent +system-libvpx 
 	+system-openh264 +system-openjpeg system-libdrm system-wayland +tcmalloc thinlto vaapi widevine 
 	wayland X atk dbus pdf libvpx gtk xkbcommon v4l2 v4lplugin +clang clang_tidy 
 	closure swiftshader debug
@@ -289,10 +289,9 @@ src_prepare() {
 		rooted:libcxx
 		rooted:chromium-vaapi-r18
 	)
-
+        #system-jsoncpp:jsoncpp
 	local ugc_use=(
 		system-icu:convertutf
-		system-jsoncpp:jsoncpp
 		system-libevent:event
 		system-libvpx:vpx
 	)
@@ -315,14 +314,18 @@ src_prepare() {
 	if ! use system-icu; then
 		sed -i '/common\/icudtl.dat/d' "${ugc_rooted_dir}/pruning.list" || die
 	fi
-
+    
+    if ! use system-jsoncpp; then
+		sed -i '/debian-buster\/system\/jsoncpp.patch/d "${ugc_rooted_dir}/patch_order.list" || die
+	fi 
+	
 	if use system-openjpeg; then
 		sed -i '/system\/nspr.patch/a debian_buster/system/openjpeg.patch' \
 			"${ugc_rooted_dir}/patch_order.list" || die
 	fi
 
 	if use vaapi && has_version '<x11-libs/libva-2.0.0'; then
-		sed -i "/build.patch/i ${PN}/linux/fix-libva1-compatibility.patch" \
+		sed -i "/build.patch/i ungoogled-chromium/linux/fix-libva1-compatibility.patch" \
 			"${ugc_rooted_dir}/patch_order.list" || die
 	fi
 
@@ -743,6 +746,7 @@ src_configure() {
 	myconf_gn+=" enable_ffmpeg_video_decoders=true"
 	#myconf_gn+=" enable_runtime_media_renderer_selection=true"
 	myconf_gn+=" enable_mpeg_h_audio_demuxing=true"
+	myconf_gn+=" enable_vulkan=false" 
 	myconf_gn+=" enable_plugins=true"
 
 	# Disable nacl, we can't build without pnacl (http://crbug.com/269560).
@@ -750,6 +754,7 @@ src_configure() {
 	myconf_gn+=" enable_nacl_nonsfi=false"
 	myconf_gn+=" enable_native_notifications=false"
 
+    myconf_gn+=" enable_offline_pages=false" 
 	myconf_gn+=" enable_one_click_signin=false"
 	myconf_gn+=" enable_reading_list=false"
 	myconf_gn+=" enable_remoting=false"
@@ -853,7 +858,7 @@ src_configure() {
 	myconf_gn+=" is_desktop_linux=true"
 	# wayland
 	if use wayland; then
-	#	myconf_gn+=" target_os=\"chromeos\""
+		#myconf_gn+=" target_os=\"chromeos\""
 		myconf_gn+=" toolkit_views=true" 
 		myconf_gn+=" use_system_libwayland=true"
 		myconf_gn+=" use_ozone=true"
@@ -891,7 +896,7 @@ src_configure() {
 
 		myconf_gn+=" enable_background_mode=true"
 		#myconf_gn+=" enable_cros_assistant=false"
-		myconf_gn+=" enable_resource_whitelist_generation=false"
+		#myconf_gn+=" enable_resource_whitelist_generation=false"
  	fi
 
 	if [[ "${ARCH}" = amd64 ]]; then
