@@ -20,7 +20,7 @@ DEPOT_TOOLS="${WORKDIR}/depot_tools"
 DESCRIPTION="Modifications to Chromium for removing Google integration and enhancing privacy"
 HOMEPAGE="https://github.com/Eloston/ungoogled-chromium https://www.chromium.org/ https://github.com/Igalia/chromium"
 SRC_URI="
-		https://github.com/xsmile/${PN}/archive/${UGC_PV}.tar.gz -> ${UGC_P}.tar.gz
+		https://github.com/Eloston/ungoogled-chromium/archive/${UGC_PV}.tar.gz -> ${UGC_P}.tar.gz
 "
 
 LICENSE="BSD"
