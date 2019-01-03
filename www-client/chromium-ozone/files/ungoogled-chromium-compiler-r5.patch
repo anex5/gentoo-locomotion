@@ -1,15 +1,22 @@
 --- a/build/config/compiler/BUILD.gn
 +++ b/build/config/compiler/BUILD.gn
-@@ -235,8 +235,6 @@
+@@ -236,7 +236,6 @@ config("compiler") {
  
    configs += [
      # See the definitions below.
 -    ":clang_revision",
--    ":compiler_cpu_abi",
+     ":compiler_cpu_abi",
      ":compiler_codegen",
    ]
- 
-@@ -1942,7 +1940,7 @@
+@@ -765,7 +764,6 @@ config("compiler_cpu_abi") {
+     if (current_cpu == "x64") {
+       cflags += [
+         "-m64",
+-        "-march=x86-64",
+       ]
+       ldflags += [ "-m64" ]
+     } else if (current_cpu == "x86") {
+@@ -1959,7 +1957,7 @@ config("optimize") {
        cflags = [ "-Os" ] + common_optimize_on_cflags
      }
    } else {
@@ -18,7 +25,7 @@
    }
    ldflags = common_optimize_on_ldflags
  }
-@@ -1965,7 +1963,7 @@
+@@ -1982,7 +1980,7 @@ config("optimize_no_wpo") {
    } else if (optimize_for_fuzzing) {
      cflags = [ "-O1" ] + common_optimize_on_cflags
    } else {
@@ -27,7 +34,7 @@
    }
    ldflags = common_optimize_on_ldflags
  }
-@@ -2030,7 +2028,7 @@
+@@ -2047,7 +2045,7 @@ config("optimize_max") {
      } else if (optimize_for_fuzzing) {
        cflags = [ "-O1" ] + common_optimize_on_cflags
      } else {
@@ -36,7 +43,7 @@
      }
    }
  }
-@@ -2075,7 +2073,7 @@
+@@ -2092,7 +2090,7 @@ config("optimize_speed") {
      } else if (optimize_for_fuzzing) {
        cflags = [ "-O1" ] + common_optimize_on_cflags
      } else {
