@@ -34,8 +34,8 @@ VIDEO_CARDS="
 IUSE="
 	atk +cfi component-build cups custom-cflags +dbus gnome gold jumbo-build kerberos libcxx
 	lld new-tcmalloc optimize-thinlto optimize-webui +pdf +proprietary-codecs
-	pulseaudio selinux +suid +system-ffmpeg system-harfbuzz +system-icu
-	+system-jsoncpp +system-libevent +system-libvpx +system-openh264
+	pulseaudio selinux +suid system-ffmpeg system-harfbuzz +system-icu
+	+system-jsoncpp +system-libevent +system-libvpx system-openh264
 	+system-openjpeg system-libdrm system-wayland +tcmalloc +thinlto vaapi widevine
 	wayland X libvpx gtk xkbcommon v4l2 v4lplugin +clang clang_tidy 
 	closure swiftshader debug

@@ -33,8 +33,8 @@ VIDEO_CARDS="
 IUSE="
 	atk +cfi component-build cups custom-cflags +dbus gnome gold jumbo-build kerberos libcxx
 	lld new-tcmalloc optimize-thinlto optimize-webui +pdf +proprietary-codecs
-	pulseaudio selinux +suid +system-ffmpeg system-harfbuzz +system-icu
-	+system-jsoncpp +system-libevent +system-libvpx +system-openh264
+	pulseaudio selinux +suid system-ffmpeg system-harfbuzz +system-icu
+	+system-jsoncpp +system-libevent +system-libvpx system-openh264
 	+system-openjpeg system-libdrm system-wayland +tcmalloc +thinlto vaapi widevine
 	wayland X libvpx gtk xkbcommon v4l2 v4lplugin +clang clang_tidy 
 	closure swiftshader debug
@@ -272,7 +272,7 @@ src_unpack() {
 
 	if ! [[ -f .gclient ]]; then
 		depot_tools/gclient config --name=src --spec 'solutions=[{\
-		"url": "https://github.com/Igalia/chromium.git@origin/ozone-wayland-dev",\
+		"url": "https://github.com/Igalia/chromium.git@origin/ozone-wayland-stable/71.0.3578.98",\
 		"managed": False,\
 		"name": "src",\
 		"deps_file": "DEPS",\
@@ -843,9 +843,6 @@ src_configure() {
 		"use_cups=$(usetf cups)"
 		"use_custom_libcxx=false"
 		"use_kerberos=$(usetf kerberos)"
-		# If enabled, it will build the bundled OpenH264 for encoding,
-		# hence the restriction: !system-openh264? ( bindist )
-		"use_openh264=$(usetf !system-openh264)"
 		"use_pulseaudio=$(usetf pulseaudio)"
 		# HarfBuzz and FreeType need to be built together in a specific way
 		# to get FreeType autohinting to work properly. Chromium bundles
@@ -880,7 +877,6 @@ src_configure() {
 		"use_v4l2_codec=$(usetf v4l2)"
 		"use_linux_v4l2_only=$(usetf v4l2)"
 		"use_v4lplugin=$(usetf v4lplugin)"
-
 		#"enable_runtime_media_renderer_selection=true"
 		"enable_mpeg_h_audio_demuxing=true"
 		"enable_vulkan=$(usetf vaapi)" 
@@ -923,7 +919,7 @@ src_configure() {
 		"use_system_libwayland=true"
 		"use_ozone=true"
 		"use_aura=true"
-		#"use_ash=false"
+		#"use_ash=true"
 		"ozone_auto_platforms=false"
 		"ozone_platform_x11=$(usetf X)"
 		"ozone_platform_wayland=true"
