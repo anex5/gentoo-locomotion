@@ -12,7 +12,7 @@ CHROMIUM_LANGS="
 
 inherit check-reqs chromium-2 desktop flag-o-matic ninja-utils pax-utils python-r1 readme.gentoo-r1 toolchain-funcs xdg-utils
 
-UGC_PV="${PV/_p/-}"
+UGC_PV="master" #"${PV/_p/-}"
 UGC_P="ungoogled-chromium-${UGC_PV}"
 UGC_WD="${WORKDIR}/${UGC_P}"
 
@@ -218,7 +218,7 @@ PATCHES=(
 	"${FILESDIR}/ungoogled-chromium-compiler-r5.patch"
  	"${FILESDIR}/chromium-test-r0.patch"
  	"${FILESDIR}/chromium-optional-atk-r0.patch"
-	"${FILESDIR}/chromium-optional-dbus-r4.patch"
+	"${FILESDIR}/chromium-optional-dbus-r5.patch"
 )
 
 S="${WORKDIR}/chromium-${PV/_*}"
@@ -261,26 +261,25 @@ src_prepare() {
 	fi
 
 	# Fix build with harfbuzz-2 (Bug #669034)
-	use system-harfbuzz && eapply "${FILESDIR}/chromium-harfbuzz-r0.patch"
+	#use system-harfbuzz && eapply "${FILESDIR}/chromium-harfbuzz-r1.patch"
 
 	# Apply extra patches (taken from openSUSE)
 	local p
-	for p in "${FILESDIR}/extra-$(ver_cut 1-1)"/*.patch; do
+	for p in "${FILESDIR}/extra-70"/*.patch; do
 		eapply "${p}"
 	done
     
     # Apply extra patches (taken from Igalia)
-	local p
-	for p in "${FILESDIR}/igalia-$(ver_cut 1-1)"/*.patch; do
+	for p in "${FILESDIR}/igalia"/*.patch; do
 		eapply "${p}"
-	done
-	
+	done 
+
 	# Hack for libusb stuff (taken from openSUSE)
 	rm third_party/libusb/src/libusb/libusb.h || die
 	cp -a "${EPREFIX%/}/usr/include/libusb-1.0/libusb.h" \
 		third_party/libusb/src/libusb/libusb.h || die
 
-	use gold && eapply "${FILESDIR}/ungoogled-chromium-gold-r0.patch"
+	use gold && eapply "${FILESDIR}/ungoogled-chromium-gold-r1.patch"
 		
 	# From here we adapt ungoogled-chromium's patches to our needs
 	local ugc_cli="${UGC_WD}/run_buildkit_cli.py"
@@ -360,17 +359,17 @@ src_prepare() {
 
 	use widevine || sed -i '/inox-patchset\/chromium-widevine-r2.patch/d' "${ugc_common_dir}/patch_order.list" || die 
 
-	ebegin "Pruning binaries"
-	"${ugc_cli}" prune -b "${ugc_config}" ./
-	eend $? || die
+	#ebegin "Pruning binaries"
+	#"${ugc_cli}" prune -b "${ugc_config}" ./
+	#eend $? || die
 
-	ebegin "Applying ungoogled-chromium patches"
-	"${ugc_cli}" patches apply -b "${ugc_config}" ./
-	eend $? || die
+	#ebegin "Applying ungoogled-chromium patches"
+	#"${ugc_cli}" patches apply -b "${ugc_config}" ./
+	#eend $? || die
 
-	ebegin "Applying domain substitution"
-	"${ugc_cli}" domains apply -b "${ugc_config}" -c domainsubcache.tar.gz ./
-	eend $? || die
+	#ebegin "Applying domain substitution"
+	#"${ugc_cli}" domains apply -b "${ugc_config}" -c domainsubcache.tar.gz ./
+	#eend $? || die
 
 	local keeplibs=(
 		base/third_party/dmg_fp
@@ -384,13 +383,13 @@ src_prepare() {
 		base/third_party/xdg_user_dirs
 		chrome/third_party/mozilla_security_manager
 		courgette/third_party
-		net/third_party/http2
+		#net/third_party/http2
 		net/third_party/mozilla_security_manager
 		net/third_party/nss
 		net/third_party/quic
 		net/third_party/spdy
 		net/third_party/uri_template
-		third_party/WebKit
+		#third_party/WebKit
 		third_party/abseil-cpp
 		third_party/adobe
 		third_party/angle
@@ -439,7 +438,7 @@ src_prepare() {
 		third_party/flatbuffers
 		third_party/flot
 		third_party/glslang
-		third_party/glslang-angle
+		#third_party/glslang-angle
 		third_party/google_input_tools
 		third_party/google_input_tools/third_party/closure_library
 		third_party/google_input_tools/third_party/closure_library/third_party/closure
@@ -494,14 +493,14 @@ src_prepare() {
 		third_party/speech-dispatcher
 		third_party/spirv-headers
 		third_party/SPIRV-Tools
-		third_party/spirv-tools-angle
+		#third_party/spirv-tools-angle
 		third_party/sqlite
-		third_party/ungoogled
+		#third_party/ungoogled
 		third_party/usb_ids
 		third_party/unrar
 		third_party/usrsctp
 		third_party/vulkan
-		third_party/vulkan-validation-layers
+		#third_party/vulkan-validation-layers
 		third_party/web-animations-js
 		third_party/webdriver
 		third_party/webrtc
@@ -557,8 +556,7 @@ src_prepare() {
 	use system-libdrm || keeplibs+=( third_party/libdrm )
 	use system-libevent || keeplibs+=( base/third_party/libevent )
 	use system-libvpx || keeplibs+=( third_party/libvpx third_party/libvpx/source/libvpx/third_party/x86inc )
-	#use system-wayland || 
-	keeplibs+=( third_party/wayland third_party/wayland-protocols )
+	use system-wayland || keeplibs+=( third_party/wayland third_party/wayland-protocols )
 	use system-openh264 || keeplibs+=( third_party/openh264 )
 	use system-openjpeg || keeplibs+=( third_party/pdfium/third_party/libopenjpeg20 )
 	use tcmalloc && keeplibs+=( third_party/tcmalloc )
@@ -755,7 +753,7 @@ src_configure() {
 	use system-ffmpeg && gn_system_libraries+=( ffmpeg opus )
 	use system-harfbuzz && gn_system_libraries+=( freetype harfbuzz-ng )
 	use system-icu && gn_system_libraries+=( icu )
-	:use system-libdrm && gn_system_libraries+=( libdrm )
+	use system-libdrm && gn_system_libraries+=( libdrm )
 	use system-libevent && gn_system_libraries+=( libevent )
 	use system-libvpx && gn_system_libraries+=( libvpx )
 	#use system-wayland && gn_system_libraries+=( libwayland )
@@ -790,13 +788,13 @@ src_configure() {
 		"enable_remoting=false"
 		"enable_reporting=false"
 		"enable_service_discovery=false"
-		"exclude_unwind_tables=true"
+		#"exclude_unwind_tables=true"
 		"fatal_linker_warnings=false"
 		"fieldtrial_testing_like_official_build=true"
 		"google_api_key=\"\""
 		"google_default_client_id=\"\""
 		"google_default_client_secret=\"\""
-		"is_official_build=true"
+		"is_official_build=false"
 		"optimize_webui=$(usetf optimize-webui)"
 		"proprietary_codecs=$(usetf proprietary-codecs)"
 		"safe_browsing_mode=0"
@@ -855,7 +853,7 @@ src_configure() {
 		"use_v4l2_codec=$(usetf v4l2)"
 		"use_linux_v4l2_only=$(usetf v4l2)"
 		"use_v4lplugin=$(usetf v4lplugin)"
-		"rtc_build_libvpx=$(usetf libvpx)"
+        "rtc_build_libvpx=$(usetf libvpx)"
         "rtc_libvpx_build_vp9=false"
 		#"enable_runtime_media_renderer_selection=true"
 		"enable_mpeg_h_audio_demuxing=true"
@@ -925,7 +923,7 @@ src_configure() {
 		#"use_nouveau_minigbm=true" 
 		#"use_virgl_minigbm=$(usetf video_cards_virgl)" 
 		"use_system_minigbm=false"
-		"use_system_libdrm=$(usetf system-libdrm)"
+		#"use_system_libdrm=$(usetf system-libdrm)"
 		"enable_background_mode=true"
 		#"enable_resource_whitelist_generation=false"
 		)
@@ -962,7 +960,7 @@ src_compile() {
 	python_setup 'python2*'
 
 	# Avoid falling back to preprocessor mode when sources contain time macros
-	(has ccache ${FEATURES}) && export CCACHE_SLOPPINESS=time_macros
+	has ccache ${FEATURES} && export CCACHE_SLOPPINESS=time_macros
 
 	# Work around broken deps
 	eninja -C out/Release gen/ui/accessibility/ax_enums.mojom{,-shared}.h
@@ -981,7 +979,7 @@ src_install() {
 	exeinto "${CHROMIUM_HOME}"
 	doexe out/Release/chrome
 
-	if use suid; then                   
+	if use suid; then
 		newexe out/Release/chrome_sandbox chrome-sandbox
 		fperms 4755 "${CHROMIUM_HOME}/chrome-sandbox"
 	fi

@@ -31,7 +31,7 @@ VIDEO_CARDS="
 "
 
 IUSE="
-	atk +cfi component-build cups custom-cflags +dbus gnome gold jumbo-build kerberos libcxx
+	atk cfi component-build cups custom-cflags +dbus gnome gold jumbo-build kerberos libcxx
 	lld new-tcmalloc optimize-thinlto optimize-webui +pdf +proprietary-codecs
 	pulseaudio selinux +suid system-ffmpeg system-harfbuzz +system-icu
 	+system-jsoncpp +system-libevent +system-libvpx system-openh264
@@ -215,10 +215,10 @@ GTK+ icon theme.
 "
 
 PATCHES=(
-	"${FILESDIR}/ungoogled-chromium-compiler-r5.patch"
- 	"${FILESDIR}/chromium-test-r0.patch"
- 	"${FILESDIR}/chromium-optional-atk-r0.patch"
-	"${FILESDIR}/chromium-optional-dbus-r4.patch"
+#	"${FILESDIR}/ungoogled-chromium-compiler-r5.patch"
+# 	"${FILESDIR}/chromium-test-r0.patch"
+# 	"${FILESDIR}/chromium-optional-atk-r0.patch"
+#	"${FILESDIR}/chromium-optional-dbus-r4.patch"
 )
 
 S="${WORKDIR}/src"
@@ -270,20 +270,52 @@ src_unpack() {
 	
 	python_setup 'python2*'
 
+	#EGIT_NONSHALLOW=false
+	#EGIT_BRANCH="ozone-wayland-dev-try-hw-video-acceleration"
+	#git-r3_smart_fetch "https://github.com/Igalia/chromium.git"
+	#git-r3_checkout "https://github.com/Igalia/chromium.git" src
+
 	if ! [[ -f .gclient ]]; then
 		depot_tools/gclient config --name=src --spec 'solutions=[{\
-		"url": "https://github.com/Igalia/chromium.git@origin/ozone-wayland-stable/71.0.3578.98",\
+		"url": "https://github.com/Igalia/chromium.git@origin/ozone-wayland-dev",\
 		"managed": False,\
 		"name": "src",\
 		"deps_file": "DEPS",\
+		"custom_deps": {\
+			"src/content/test/data/layout_tests/LayoutTests": None,\
+			"src/chrome/tools/test/reference_build/chrome_win": None,\
+			"src/chrome_frame/tools/test/reference_build/chrome_win": None,\
+			"src/chrome/tools/test/reference_build/chrome_linux": None,\
+			"src/chrome/tools/test/reference_build/chrome_mac": None,\
+			"src/native_client_sdk/src/build_tools/toolchain_archives": None,\
+			"src/chrome/test/data/extensions/api_test/permissions/nacl_enabled/bin": None,\
+			"src/chrome/test/data/layout_tests": None,\
+			"src/chrome/tools/test/reference_build": None,\
+			"src/third_party/ffmpeg/binaries": None,\
+			"src/chrome/test/data/layout_tests": None,\
+			"src/chrome/tools/test/reference_build/chrome_linux": None,\
+			"src/third_party/ffmpeg/source/patched-ffmpeg-mt": None,\
+			"src/third_party/hunspell_dictionaries": None,\
+			"src/third_party/yasm/source/patched-yasm": None,\
+			"src/native_client/toolchain": None,\
+	   		},\
 		}]; target_os = ["linux"]; target_os_only = True' || die
 	fi
 
-	depot_tools/gclient sync --no-history --with_branch_heads --with_tags --disable-syntax-validation --jobs=1 || die
+	depot_tools/gclient sync --nohooks --no-history --with_branch_heads --with_tags --disable-syntax-validation --jobs=1 || die
 	#depot_tools/gclient runhooks --force || die	
+	die
+	#tar xjf ${}/ozone.tar.xz -C ${WORKDIR}/src	
 }
  
 src_prepare() {
+	
+	#python_setup 'python2*'
+    #export DEPOT_TOOLS_UPDATE=0 
+	#export DEPOT_TOOLS_METRICS=0
+	#${WORKDIR}/depot_tools/gclient sync --nohooks --no-history --with_branch_heads --with_tags --disable-syntax-validation --jobs=1 || die
+	#die
+	
 	# Calling this here supports resumption via FEATURES=keepwork
 	python_setup 'python3*'
 
@@ -296,20 +328,20 @@ src_prepare() {
 	fi
 
 	# Fix build with harfbuzz-2 (Bug #669034)
-		use system-harfbuzz && eapply "${FILESDIR}/chromium-harfbuzz-r0.patch"
+	#use system-harfbuzz && eapply "${FILESDIR}/chromium-harfbuzz-r0.patch"
 
 	# Apply extra patches (taken from openSUSE)
-	local ep
-	for ep in "${FILESDIR}/extra-70"/*.patch; do
-		eapply "${ep}"
-	done
+	#local ep
+	#for ep in "${FILESDIR}/extra-70"/*.patch; do
+	#	eapply "${ep}"
+	#done
 
 	# Hack for libusb stuff (taken from openSUSE)
 	rm third_party/libusb/src/libusb/libusb.h || die
 	cp -a "${EPREFIX%/}/usr/include/libusb-1.0/libusb.h" \
 		third_party/libusb/src/libusb/libusb.h || die
 
-	use gold && eapply "${FILESDIR}/ungoogled-chromium-gold-r0.patch"
+	#use gold && eapply "${FILESDIR}/ungoogled-chromium-gold-r0.patch"
 		
 	# From here we adapt ungoogled-chromium's patches to our needs
 	local ugc_cli="${UGC_WD}/run_buildkit_cli.py"
@@ -389,17 +421,17 @@ src_prepare() {
 
 	use widevine || sed -i '/inox-patchset\/chromium-widevine-r2.patch/d' "${ugc_common_dir}/patch_order.list" || die 
 
-	ebegin "Pruning binaries"
-	"${ugc_cli}" prune -b "${ugc_config}" ./
-	eend $? || die
+	#ebegin "Pruning binaries"
+	#"${ugc_cli}" prune -b "${ugc_config}" ./
+	#eend $? || die
 
-	ebegin "Applying ungoogled-chromium patches"
-	"${ugc_cli}" patches apply -b "${ugc_config}" ./
-	eend $? || die
+	#ebegin "Applying ungoogled-chromium patches"
+	#"${ugc_cli}" patches apply -b "${ugc_config}" ./
+	#eend $? || die
 
-	ebegin "Applying domain substitution"
-	"${ugc_cli}" domains apply -b "${ugc_config}" -c domainsubcache.tar.gz ./
-	eend $? || die
+	#ebegin "Applying domain substitution"
+	#"${ugc_cli}" domains apply -b "${ugc_config}" -c domainsubcache.tar.gz ./
+	#eend $? || die
 
 	local keeplibs=(
 		base/third_party/dmg_fp
@@ -767,7 +799,7 @@ src_configure() {
 		fontconfig
 		libjpeg
 		libpng
-		libusb
+		#libusb
 		libwebp
 		libxml
 		libxslt
@@ -792,9 +824,7 @@ src_configure() {
 		# Clang features
 		"is_cfi=$(usetf cfi)" # Implies use_cfi_icall=true
 		"use_cfi_cast=$(usetf cfi)"
-		# use_cfi_icall only works with LLD
-		"use_cfi_icall=$(usetf $(cfi && lld))" 
-		"is_clang=(usetf clang)"
+		"is_clang=$(usetf clang)"
 		"clang_use_chrome_plugins=false"
 		"thin_lto_enable_optimizations=$(usetf optimize-thinlto)"
 		"use_lld=$(usetf lld)"
@@ -815,7 +845,7 @@ src_configure() {
 		"enable_remoting=false"
 		"enable_reporting=false"
 		"enable_service_discovery=false"
-		"exclude_unwind_tables=true"
+		#"exclude_unwind_tables=true"
 		"fatal_linker_warnings=false"
 		"fieldtrial_testing_like_official_build=true"
 		"google_api_key=\"\""
@@ -828,7 +858,7 @@ src_configure() {
 		"treat_warnings_as_errors=false"
 		"use_gnome_keyring=false" # Deprecated by libsecret
 		"use_jumbo_build=$(usetf jumbo-build)"
-		"jumbo_file_merge_limit=4"
+		"jumbo_file_merge_limit=7"
 		"use_official_google_api_keys=false"
 		"use_sysroot=false"
 		"use_unofficial_version_number=false"
@@ -874,6 +904,8 @@ src_configure() {
 		"enable_mse_mpeg2ts_stream_parser=true"
 		"media_use_ffmpeg=true"
 		"enable_ffmpeg_video_decoders=true"
+		"rtc_build_libvpx=$(usetf libvpx)"
+		"rtc_libvpx_build_vp9=$(usetf libvpx)" 
 		"use_v4l2_codec=$(usetf v4l2)"
 		"use_linux_v4l2_only=$(usetf v4l2)"
 		"use_v4lplugin=$(usetf v4lplugin)"
@@ -911,21 +943,25 @@ src_configure() {
 		#"use_gconf=$(usetf gnome)"
 		"use_xkbcommon=$(usetf xkbcommon)"
 	)
+	# use_cfi_icall only works with LLD
+	use cfi && myconf_gn+=( "use_cfi_icall=$(usetf lld)" )
 
 	# wayland
-	if use wayland; then	
-		#"target_os=\"chromeos\""
+	if use wayland; then
+	    myconf_gn+=(
+	    #"target_os=\"chromeos\""
 		"toolkit_views=true" 
-		"use_system_libwayland=true"
+		"use_system_libwayland=$(usetf system-wayland)"
 		"use_ozone=true"
 		"use_aura=true"
 		#"use_ash=true"
 		"ozone_auto_platforms=false"
 		"ozone_platform_x11=$(usetf X)"
+		"ozone_platform_headless=true"
 		"ozone_platform_wayland=true"
 		"ozone_platform=\"wayland\""
 		#"enable_wayland_server=true"
-		"ozone_platform_gbm=true"
+		"ozone_wayland_gbm=false"
 		#"use_evdev_gestures=true"
 		#"enable_package_mash_services=true"
 		#"enable_xdg_shell=true"
@@ -946,15 +982,16 @@ src_configure() {
 		#"use_system_libdrm=$(usetf system-libdrm)"
 		"enable_background_mode=true"
 		#"enable_resource_whitelist_generation=false"
+		)
  	fi
 
-	if [[ "${ARCH}" = amd64 ]]; then
-		myconf_gn+=" target_cpu=\"x64\""
-	elif [[ "${ARCH}" = x86 ]]; then
-		myconf_gn+=" target_cpu=\"x86\""
-	else
-		die "Failed to determine target arch, got '${ARCH}'."
-	fi
+	#if [[ "${ARCH}" = amd64 ]]; then
+	#	myconf_gn+=" target_cpu=\"x64\""
+	#elif [[ "${ARCH}" = x86 ]]; then
+	#	myconf_gn+=" target_cpu=\"x86\""
+	#else
+	#	die "Failed to determine target arch, got '${ARCH}'."
+	#fi
 
 	setup_compile_flags
 
@@ -966,7 +1003,7 @@ src_configure() {
 	addpredict /dev/dri/ #nowarn
 
 	einfo "Configuring Chromium..."
-	set -- gn gen --args="${myconf_gn} ${EXTRA_GN}" out/Release
+	set -- gn gen --args="${myconf_gn[*]} ${EXTRA_GN}" out/Release
 	echo "$@"
 	"$@" || die	
 }
