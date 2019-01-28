@@ -1,0 +1,567 @@
+--- a/components/bookmarks/browser/bookmark_node_data.cc	2018-12-13 00:56:06.000000000 +0300
++++ b/components/bookmarks/browser/bookmark_node_data.cc	2019-01-24 15:33:33.544000000 +0300
+@@ -123,7 +123,7 @@
+ // static
+ bool BookmarkNodeData::ClipboardContainsBookmarks() {
+   return ui::Clipboard::GetForCurrentThread()->IsFormatAvailable(
+-      ui::Clipboard::GetFormatType(kClipboardFormatString),
++      ui::GetClipboardFormatType(kClipboardFormatString),
+       ui::CLIPBOARD_TYPE_COPY_PASTE);
+ }
+ #endif
+@@ -209,14 +209,14 @@
+   base::Pickle pickle;
+   WriteToPickle(base::FilePath(), &pickle);
+   scw.WritePickledData(pickle,
+-                       ui::Clipboard::GetFormatType(kClipboardFormatString));
++                       ui::GetClipboardFormatType(kClipboardFormatString));
+ }
+ 
+ bool BookmarkNodeData::ReadFromClipboard(ui::ClipboardType type) {
+   DCHECK_EQ(type, ui::CLIPBOARD_TYPE_COPY_PASTE);
+   std::string data;
+   ui::Clipboard* clipboard = ui::Clipboard::GetForCurrentThread();
+-  clipboard->ReadData(ui::Clipboard::GetFormatType(kClipboardFormatString),
++  clipboard->ReadData(ui::GetClipboardFormatType(kClipboardFormatString),
+                       &data);
+ 
+   if (!data.empty()) {
+--- a/components/bookmarks/browser/bookmark_node_data.h	2018-12-13 00:56:06.000000000 +0300
++++ b/components/bookmarks/browser/bookmark_node_data.h	2019-01-24 15:33:33.544000000 +0300
+@@ -19,7 +19,7 @@
+ #include "url/gurl.h"
+ 
+ #if defined(TOOLKIT_VIEWS)
+-#include "ui/base/clipboard/clipboard.h"
++#include "ui/base/clipboard/clipboard_format_type.h"
+ #endif
+ 
+ namespace base {
+@@ -115,7 +115,7 @@
+   ~BookmarkNodeData();
+ 
+ #if defined(TOOLKIT_VIEWS)
+-  static const ui::Clipboard::FormatType& GetBookmarkFormatType();
++  static const ui::ClipboardFormatType& GetBookmarkClipboardFormatType();
+ #endif
+ 
+   static bool ClipboardContainsBookmarks();
+--- a/components/bookmarks/browser/bookmark_node_data_mac.mm	2018-12-13 00:56:06.000000000 +0300
++++ b/components/bookmarks/browser/bookmark_node_data_mac.mm	2019-01-24 15:33:33.544000000 +0300
+@@ -16,9 +16,10 @@
+ #if defined(TOOLKIT_VIEWS)
+ 
+ // static
+-const ui::Clipboard::FormatType& BookmarkNodeData::GetBookmarkFormatType() {
+-  static const base::NoDestructor<ui::Clipboard::FormatType> format(
+-      ui::Clipboard::GetFormatType(
++const ui::ClipboardFormatType&
++BookmarkNodeData::GetBookmarkClipboardFormatType() {
++  static const base::NoDestructor<ui::ClipboardFormatType> format(
++      ui::Clipboard::GetClipboardFormatType(
+           base::SysNSStringToUTF8(kUTTypeChromiumBookmarkDictionaryList)));
+ 
+   return *format;
+--- a/components/bookmarks/browser/bookmark_node_data_views.cc	2018-12-13 00:56:06.000000000 +0300
++++ b/components/bookmarks/browser/bookmark_node_data_views.cc	2019-01-24 15:33:33.544000000 +0300
+@@ -9,15 +9,17 @@
+ #include "base/pickle.h"
+ #include "base/strings/utf_string_conversions.h"
+ #include "build/build_config.h"
++#include "ui/base/clipboard/clipboard_format_type.h"
+ #include "ui/base/dragdrop/os_exchange_data.h"
+ #include "url/url_constants.h"
+ 
+ namespace bookmarks {
+ 
+ // static
+-const ui::Clipboard::FormatType& BookmarkNodeData::GetBookmarkFormatType() {
+-  static const base::NoDestructor<ui::Clipboard::FormatType> format(
+-      ui::Clipboard::GetFormatType(BookmarkNodeData::kClipboardFormatString));
++const ui::ClipboardFormatType&
++BookmarkNodeData::GetBookmarkClipboardFormatType() {
++  static const base::NoDestructor<ui::ClipboardFormatType> format(
++      ui::GetClipboardFormatType(BookmarkNodeData::kClipboardFormatString));
+ 
+   return *format;
+ }
+@@ -39,7 +41,7 @@
+   base::Pickle data_pickle;
+   WriteToPickle(profile_path, &data_pickle);
+ 
+-  data->SetPickledData(GetBookmarkFormatType(), data_pickle);
++  data->SetPickledData(GetBookmarkClipboardFormatType(), data_pickle);
+ }
+ 
+ bool BookmarkNodeData::Read(const ui::OSExchangeData& data) {
+@@ -47,9 +49,10 @@
+ 
+   profile_path_.clear();
+ 
+-  if (data.HasCustomFormat(GetBookmarkFormatType())) {
++  if (data.HasCustomFormat(GetBookmarkClipboardFormatType())) {
+     base::Pickle drag_data_pickle;
+-    if (data.GetPickledData(GetBookmarkFormatType(), &drag_data_pickle)) {
++    if (data.GetPickledData(GetBookmarkClipboardFormatType(),
++                            &drag_data_pickle)) {
+       if (!ReadFromPickle(&drag_data_pickle))
+         return false;
+     }
+--- a/components/bookmarks/browser/BUILD.gn	2018-12-13 00:56:06.000000000 +0300
++++ b/components/bookmarks/browser/BUILD.gn	2019-01-24 15:33:33.540000000 +0300
+@@ -68,6 +68,7 @@
+     "//net",
+     "//third_party/icu",
+     "//ui/base",
++    "//ui/base/clipboard",
+     "//ui/gfx",
+     "//url",
+   ]
+@@ -135,6 +136,7 @@
+     "//components/prefs:test_support",
+     "//testing/gtest",
+     "//ui/base",
++    "//ui/base/clipboard",
+     "//url",
+   ]
+ }
+--- a/components/exo/data_offer.cc	2018-12-13 00:56:06.000000000 +0300
++++ b/components/exo/data_offer.cc	2019-01-24 15:33:36.792000000 +0300
+@@ -13,7 +13,8 @@
+ #include "components/exo/data_offer_delegate.h"
+ #include "components/exo/data_offer_observer.h"
+ #include "components/exo/file_helper.h"
+-#include "ui/base/clipboard/clipboard.h"
++#include "ui/base/clipboard/clipboard_constants.h"
++#include "ui/base/clipboard/clipboard_types.h"
+ #include "ui/base/dragdrop/file_info.h"
+ #include "ui/base/dragdrop/os_exchange_data.h"
+ #include "url/gurl.h"
+@@ -76,10 +77,10 @@
+   return !url_list_string->empty();
+ }
+ 
+-ui::Clipboard::FormatType GetClipboardFormatType() {
++ui::ClipboardFormatType GetClipboardFormatType() {
+   static const char kFormatString[] = "chromium/x-file-system-files";
+-  static base::NoDestructor<ui::Clipboard::FormatType> format_type(
+-      ui::Clipboard::GetFormatType(kFormatString));
++  static base::NoDestructor<ui::ClipboardFormatType> format_type(
++      ui::GetClipboardFormatType(kFormatString));
+   return *format_type;
+ }
+ 
+@@ -167,7 +168,7 @@
+   base::string16 string_content;
+   if (data.HasString() && data.GetString(&string_content)) {
+     const std::string text_mime_type =
+-        std::string(ui::Clipboard::kMimeTypeText);
++        std::string(ui::kMimeTypeText);
+     data_.emplace(text_mime_type,
+                   RefCountedString16::TakeString(std::move(string_content)));
+     delegate_->OnOffer(text_mime_type);
+@@ -178,7 +179,7 @@
+ void DataOffer::SetClipboardData(FileHelper* file_helper,
+                                  const ui::Clipboard& data) {
+   DCHECK_EQ(0u, data_.size());
+-  if (data.IsFormatAvailable(ui::Clipboard::GetPlainTextWFormatType(),
++  if (data.IsFormatAvailable(ui::GetPlainTextWClipboardFormatType(),
+                              ui::CLIPBOARD_TYPE_COPY_PASTE)) {
+     base::string16 content;
+     data.ReadText(ui::CLIPBOARD_TYPE_COPY_PASTE, &content);
+--- a/components/exo/data_offer_unittest.cc	2018-12-13 00:56:06.000000000 +0300
++++ b/components/exo/data_offer_unittest.cc	2019-01-24 15:33:36.792000000 +0300
+@@ -184,7 +184,7 @@
+   pickle.WriteInt64(1000);   // file size
+   pickle.WriteString("id");  // filesystem id
+   data.SetPickledData(
+-      ui::Clipboard::GetFormatType("chromium/x-file-system-files"), pickle);
++      ui::GetClipboardFormatType("chromium/x-file-system-files"), pickle);
+   data_offer.SetDropData(&file_helper, data);
+ 
+   EXPECT_EQ(1u, delegate.mime_types().size());
+@@ -242,7 +242,7 @@
+   pickle.WriteInt64(1000);   // file size
+   pickle.WriteString("id");  // filesystem id
+   data.SetPickledData(
+-      ui::Clipboard::GetFormatType("chromium/x-file-system-files"), pickle);
++      ui::GetClipboardFormatType("chromium/x-file-system-files"), pickle);
+   data_offer.SetDropData(&file_helper, data);
+ 
+   // Run callback with a resolved URL.
+@@ -278,7 +278,7 @@
+   pickle.WriteInt64(1000);   // file size
+   pickle.WriteString("id");  // filesystem id
+   data.SetPickledData(
+-      ui::Clipboard::GetFormatType("chromium/x-file-system-files"), pickle);
++      ui::GetClipboardFormatType("chromium/x-file-system-files"), pickle);
+   data_offer.SetDropData(&file_helper, data);
+ 
+   base::ScopedFD read_pipe1;
+@@ -326,7 +326,7 @@
+   pickle.WriteInt64(1000);   // file size
+   pickle.WriteString("id");  // filesystem id
+   data.SetPickledData(
+-      ui::Clipboard::GetFormatType("chromium/x-file-system-files"), pickle);
++      ui::GetClipboardFormatType("chromium/x-file-system-files"), pickle);
+   data_offer.SetDropData(&file_helper, data);
+ 
+   base::ScopedFD read_pipe;
+--- a/components/exo/wayland/BUILD.gn	2018-12-13 00:56:06.000000000 +0300
++++ b/components/exo/wayland/BUILD.gn	2019-01-24 15:33:54.100000000 +0300
+@@ -20,9 +20,6 @@
+ }
+ 
+ if (use_ozone) {
+-  pkg_config("libdrm") {
+-    packages = [ "libdrm" ]
+-  }
+   if (enable_vulkan_wayland_client) {
+     pkg_config("vulkan") {
+       packages = [ "vulkan" ]
+@@ -77,8 +74,10 @@
+   ]
+ 
+   if (use_ozone) {
+-    deps += [ "//third_party/wayland-protocols:linux_dmabuf_protocol" ]
+-    configs += [ ":libdrm" ]
++    deps += [
++      "//build/config/linux/libdrm",
++      "//third_party/wayland-protocols:linux_dmabuf_protocol",
++    ]
+ 
+     if (is_chromeos) {
+       deps += [ "//ui/events/ozone:events_ozone_layout" ]
+@@ -142,14 +141,14 @@
+   ]
+ 
+   if (ozone_platform_gbm) {
+-    configs += [
+-      ":libdrm",
+-      "//ui/gl:gl_config",
+-    ]
++    configs += [ "//ui/gl:gl_config" ]
+     if (enable_vulkan_wayland_client) {
+       configs += [ ":vulkan" ]
+     }
+-    deps += [ "//ui/ozone" ]
++    deps += [
++      "//build/config/linux/libdrm",
++      "//ui/ozone",
++    ]
+     public_deps += [ "//third_party/minigbm" ]
+   }
+ 
+@@ -174,12 +173,12 @@
+   ]
+ 
+   if (ozone_platform_gbm) {
+-    configs += [
+-      ":libdrm",
+-      "//ui/gl:gl_config",
+-    ]
++    configs += [ "//ui/gl:gl_config" ]
+     defines = [ "USE_GBM" ]
+-    deps += [ "//third_party/minigbm" ]
++    deps += [
++      "//build/config/linux/libdrm",
++      "//third_party/minigbm",
++    ]
+   }
+ }
+ 
+@@ -192,6 +191,7 @@
+   deps = [
+     ":client_support",
+     "//base",
++    "//build/config/linux/libdrm",
+     "//skia",
+     "//third_party/wayland:wayland_client",
+     "//third_party/wayland-protocols:linux_dmabuf_protocol",
+@@ -201,10 +201,7 @@
+   ]
+ 
+   if (ozone_platform_gbm) {
+-    configs += [
+-      ":libdrm",
+-      "//ui/gl:gl_config",
+-    ]
++    configs += [ "//ui/gl:gl_config" ]
+   }
+ }
+ 
+@@ -227,6 +224,7 @@
+   deps = [
+     ":client_support",
+     "//base",
++    "//build/config/linux/libdrm",
+     "//skia",
+     "//third_party/wayland:wayland_client",
+     "//third_party/wayland-protocols:linux_dmabuf_protocol",
+@@ -236,10 +234,7 @@
+   ]
+ 
+   if (ozone_platform_gbm) {
+-    configs += [
+-      ":libdrm",
+-      "//ui/gl:gl_config",
+-    ]
++    configs += [ "//ui/gl:gl_config" ]
+   }
+ }
+ 
+@@ -252,6 +247,7 @@
+   deps = [
+     ":client_support",
+     "//base",
++    "//build/config/linux/libdrm",
+     "//skia",
+     "//third_party/wayland:wayland_client",
+     "//ui/gfx/geometry",
+@@ -259,10 +255,7 @@
+   ]
+ 
+   if (ozone_platform_gbm) {
+-    configs += [
+-      ":libdrm",
+-      "//ui/gl:gl_config",
+-    ]
++    configs += [ "//ui/gl:gl_config" ]
+   }
+ }
+ 
+@@ -340,6 +333,7 @@
+     deps = [
+       ":client_support",
+       "//base",
++      "//build/config/linux/libdrm",
+       "//skia",
+       "//third_party/wayland:wayland_client",
+       "//third_party/wayland-protocols:linux_dmabuf_protocol",
+@@ -347,10 +341,7 @@
+       "//ui/gfx/geometry",
+     ]
+ 
+-    configs += [
+-      ":libdrm",
+-      "//ui/gl:gl_config",
+-    ]
++    configs += [ "//ui/gl:gl_config" ]
+     deps += [ "//third_party/minigbm" ]
+   }
+   if (enable_vulkan_wayland_client) {
+@@ -362,6 +353,7 @@
+       deps = [
+         ":client_support",
+         "//base",
++        "//build/config/linux/libdrm",
+         "//skia",
+         "//third_party/wayland:wayland_client",
+         "//third_party/wayland-protocols:linux_dmabuf_protocol",
+@@ -369,10 +361,7 @@
+         "//ui/gfx/geometry",
+       ]
+ 
+-      configs += [
+-        ":libdrm",
+-        "//ui/gl:gl_config",
+-      ]
++      configs += [ "//ui/gl:gl_config" ]
+       deps += [ "//third_party/minigbm" ]
+     }
+   }
+--- a/components/open_from_clipboard/BUILD.gn	2018-12-13 00:56:06.000000000 +0300
++++ b/components/open_from_clipboard/BUILD.gn	2019-01-24 15:33:58.244000000 +0300
+@@ -10,13 +10,6 @@
+     "clipboard_recent_content_ios.mm",
+   ]
+ 
+-  if (!is_ios) {
+-    sources += [
+-      "clipboard_recent_content_generic.cc",
+-      "clipboard_recent_content_generic.h",
+-    ]
+-  }
+-
+   deps = [
+     ":open_from_clipboard_impl",
+     "//base",
+@@ -25,6 +18,14 @@
+     "//ui/base:base",
+     "//url",
+   ]
++
++  if (!is_ios) {
++    sources += [
++      "clipboard_recent_content_generic.cc",
++      "clipboard_recent_content_generic.h",
++    ]
++    deps += [ "//ui/base/clipboard" ]
++  }
+ }
+ 
+ # Helper classes used by "open_from_clipboard" target. These classes must have
+@@ -63,10 +64,6 @@
+     "clipboard_recent_content_ios_unittest.mm",
+   ]
+ 
+-  if (!is_ios) {
+-    sources += [ "clipboard_recent_content_generic_unittest.cc" ]
+-  }
+-
+   deps = [
+     ":open_from_clipboard",
+     ":open_from_clipboard_impl",
+@@ -75,4 +72,9 @@
+     "//ui/base:test_support",
+     "//url",
+   ]
++
++  if (!is_ios) {
++    sources += [ "clipboard_recent_content_generic_unittest.cc" ]
++    deps += [ "//ui/base/clipboard:clipboard_test_support" ]
++  }
+ }
+--- a/components/open_from_clipboard/clipboard_recent_content_generic_unittest.cc	2018-12-13 00:56:06.000000000 +0300
++++ b/components/open_from_clipboard/clipboard_recent_content_generic_unittest.cc	2019-01-24 15:33:58.244000000 +0300
+@@ -10,7 +10,7 @@
+ #include "base/strings/string16.h"
+ #include "base/time/time.h"
+ #include "testing/gtest/include/gtest/gtest.h"
+-#include "ui/base/test/test_clipboard.h"
++#include "ui/base/clipboard/test/test_clipboard.h"
+ #include "url/gurl.h"
+ 
+ class ClipboardRecentContentGenericTest : public testing::Test {
+--- a/components/viz/host/host_gpu_memory_buffer_manager_unittest.cc	2018-12-13 00:56:07.000000000 +0300
++++ b/components/viz/host/host_gpu_memory_buffer_manager_unittest.cc	2019-01-24 15:34:07.536000000 +0300
+@@ -15,6 +15,10 @@
+ #include "testing/gtest/include/gtest/gtest.h"
+ #include "ui/gfx/client_native_pixmap_factory.h"
+ 
++#if defined(USE_OZONE)
++#include "ui/ozone/public/ozone_platform.h"
++#endif
++
+ namespace viz {
+ 
+ namespace {
+@@ -171,34 +175,6 @@
+   DISALLOW_COPY_AND_ASSIGN(TestGpuService);
+ };
+ 
+-// It is necessary to install a custom pixmap factory which claims to support
+-// all native configurations, so that code that deals with this can be tested
+-// correctly.
+-class FakeClientNativePixmapFactory : public gfx::ClientNativePixmapFactory {
+- public:
+-  explicit FakeClientNativePixmapFactory(bool allow_native_buffers)
+-      : allow_native_buffers_(allow_native_buffers) {}
+-  ~FakeClientNativePixmapFactory() override {}
+-
+-  // gfx::ClientNativePixmapFactory:
+-  bool IsConfigurationSupported(gfx::BufferFormat format,
+-                                gfx::BufferUsage usage) const override {
+-    return allow_native_buffers_;
+-  }
+-  std::unique_ptr<gfx::ClientNativePixmap> ImportFromHandle(
+-      const gfx::NativePixmapHandle& handle,
+-      const gfx::Size& size,
+-      gfx::BufferUsage usage) override {
+-    NOTREACHED();
+-    return nullptr;
+-  }
+-
+- private:
+-  bool allow_native_buffers_ = false;
+-
+-  DISALLOW_COPY_AND_ASSIGN(FakeClientNativePixmapFactory);
+-};
+-
+ }  // namespace
+ 
+ class HostGpuMemoryBufferManagerTest : public ::testing::Test {
+@@ -232,32 +208,33 @@
+   DISALLOW_COPY_AND_ASSIGN(HostGpuMemoryBufferManagerTest);
+ };
+ 
+-std::unique_ptr<gpu::GpuMemoryBufferSupport> MakeGpuMemoryBufferSupport(
+-    bool allow_native_buffers) {
+-#if defined(OS_LINUX)
+-  return std::make_unique<gpu::GpuMemoryBufferSupport>(
+-      std::make_unique<FakeClientNativePixmapFactory>(allow_native_buffers));
+-#else
+-  return std::make_unique<gpu::GpuMemoryBufferSupport>();
+-#endif
+-}
+-
+ // Tests that allocation requests from a client that goes away before allocation
+ // completes are cleaned up correctly.
+ TEST_F(HostGpuMemoryBufferManagerTest, AllocationRequestsForDestroyedClient) {
+-#if !defined(USE_OZONE) && !defined(OS_MACOSX) && !defined(OS_WIN)
+-  // Not all platforms support native configurations (currently only ozone and
+-  // mac support it). Abort the test in those platforms.
++  // Not all platforms support native configurations (currently only Windows,
++  // Mac and some Ozone platforms). Abort the test in those platforms.
++  bool native_pixmap_supported = false;
++#if defined(USE_OZONE)
++  native_pixmap_supported =
++      ui::OzonePlatform::GetInstance()->IsNativePixmapConfigSupported(
++          gfx::BufferFormat::RGBA_8888, gfx::BufferUsage::GPU_READ);
++#elif defined(OS_MACOSX) || defined(OS_WIN)
++  native_pixmap_supported = true;
++#endif
++
++  if (!native_pixmap_supported) {
+   gpu::GpuMemoryBufferSupport support;
+   DCHECK(gpu::GetNativeGpuMemoryBufferConfigurations(&support).empty());
+   return;
+-#else
++  }
++
+   // Note: HostGpuMemoryBufferManager normally operates on a mojom::GpuService
+   // implementation over mojo. Which means the communication from SGMBManager to
+   // GpuService is asynchronous. In this test, the mojom::GpuService is not
+   // bound to a mojo pipe, which means those calls are all synchronous.
+   TestGpuService gpu_service;
+-  auto gpu_memory_buffer_support = MakeGpuMemoryBufferSupport(true);
++  auto gpu_memory_buffer_support =
++      std::make_unique<gpu::GpuMemoryBufferSupport>();
+   HostGpuMemoryBufferManager manager(gpu_service.CreateProvider(), 1,
+                                      std::move(gpu_memory_buffer_support),
+                                      base::ThreadTaskRunnerHandle::Get());
+@@ -282,12 +259,12 @@
+   // should request the allocated memory to be freed.
+   gpu_service.SatisfyAllocationRequest(buffer_id, client_id);
+   EXPECT_TRUE(gpu_service.HasDestructionRequest(buffer_id, client_id));
+-#endif
+ }
+ 
+ TEST_F(HostGpuMemoryBufferManagerTest, RequestsFromUntrustedClientsValidated) {
+   TestGpuService gpu_service;
+-  auto gpu_memory_buffer_support = MakeGpuMemoryBufferSupport(false);
++  auto gpu_memory_buffer_support =
++      std::make_unique<gpu::GpuMemoryBufferSupport>();
+   HostGpuMemoryBufferManager manager(gpu_service.CreateProvider(), 1,
+                                      std::move(gpu_memory_buffer_support),
+                                      base::ThreadTaskRunnerHandle::Get());
+@@ -332,7 +309,8 @@
+ 
+ TEST_F(HostGpuMemoryBufferManagerTest, GpuMemoryBufferDestroyed) {
+   TestGpuService gpu_service;
+-  auto gpu_memory_buffer_support = MakeGpuMemoryBufferSupport(false);
++  auto gpu_memory_buffer_support =
++      std::make_unique<gpu::GpuMemoryBufferSupport>();
+   HostGpuMemoryBufferManager manager(gpu_service.CreateProvider(), 1,
+                                      std::move(gpu_memory_buffer_support),
+                                      base::ThreadTaskRunnerHandle::Get());
+@@ -344,7 +322,8 @@
+ TEST_F(HostGpuMemoryBufferManagerTest,
+        GpuMemoryBufferDestroyedOnDifferentThread) {
+   TestGpuService gpu_service;
+-  auto gpu_memory_buffer_support = MakeGpuMemoryBufferSupport(false);
++  auto gpu_memory_buffer_support =
++      std::make_unique<gpu::GpuMemoryBufferSupport>();
+   HostGpuMemoryBufferManager manager(gpu_service.CreateProvider(), 1,
+                                      std::move(gpu_memory_buffer_support),
+                                      base::ThreadTaskRunnerHandle::Get());
