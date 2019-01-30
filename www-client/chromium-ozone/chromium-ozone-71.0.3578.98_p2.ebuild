@@ -226,7 +226,7 @@ S="${WORKDIR}/chromium-${PV/_*}"
 pre_build_checks() {
 	# Check build requirements (Bug #541816)
 	CHECKREQS_MEMORY="3G"
-	CHECKREQS_DISK_BUILD="8G"
+	CHECKREQS_DISK_BUILD="5G"
 	if use custom-cflags && ( shopt -s extglob; is-flagq '-g?(gdb)?([1-9])' ); then
 		CHECKREQS_DISK_BUILD="25G"
 	fi
@@ -545,16 +545,16 @@ src_prepare() {
 		third_party/swiftshader/third_party/llvm-subzero
 		third_party/swiftshader/third_party/subzero
 	)
-	use closure && keeplibs+=(
-		third_party/closure_compiler
-	)
-
+	use closure && keeplibs+=( third_party/closure_compiler )
+	use v4lplugin && keeplibs+=( third_party/v4l-utils )
+	
+	use system-libdrm || keeplibs+=( third_party/libdrm )
 	use system-ffmpeg || keeplibs+=( third_party/ffmpeg third_party/opus )
 	use system-harfbuzz || keeplibs+=( third_party/freetype third_party/harfbuzz-ng )
 	use system-icu || keeplibs+=( third_party/icu )
 	use system-jsoncpp || keeplibs+=( third_party/jsoncpp )
 	use libcxx || keeplibs+=( buildtools/third_party/libc++ buildtools/third_party/libc++abi )
-	use system-libdrm || keeplibs+=( third_party/libdrm )
+
 	use system-libevent || keeplibs+=( base/third_party/libevent )
 	use system-libvpx || keeplibs+=( third_party/libvpx third_party/libvpx/source/libvpx/third_party/x86inc )
 	#use system-wayland || 
@@ -755,7 +755,7 @@ src_configure() {
 	use system-ffmpeg && gn_system_libraries+=( ffmpeg opus )
 	use system-harfbuzz && gn_system_libraries+=( freetype harfbuzz-ng )
 	use system-icu && gn_system_libraries+=( icu )
-	:use system-libdrm && gn_system_libraries+=( libdrm )
+	use system-libdrm && gn_system_libraries+=( libdrm )
 	use system-libevent && gn_system_libraries+=( libevent )
 	use system-libvpx && gn_system_libraries+=( libvpx )
 	#use system-wayland && gn_system_libraries+=( libwayland )
