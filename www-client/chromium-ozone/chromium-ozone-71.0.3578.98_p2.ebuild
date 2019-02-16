@@ -1,4 +1,4 @@
-# Copyright 1999-2018 Gentoo Authors
+# Copyright 1999-2019 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI="7"
@@ -144,12 +144,11 @@ COMMON_DEPEND="
 	v4lplugin? ( media-tv/v4l-utils )
 	gtk? ( x11-libs/gtk+:3[X] )
 "
-# For nvidia-drivers blocker (Bug #413637)
+
 RDEPEND="${COMMON_DEPEND}
 	virtual/opengl
 	virtual/ttf-fonts
 	selinux? ( sec-policy/selinux-chromium )
-	tcmalloc? ( !<x11-drivers/nvidia-drivers-331.20 )
 	widevine? ( !x86? ( www-plugins/chrome-binary-plugins[widevine(-)] ) )
 	!www-client/chromium
 	!www-client/ungoogled-chromium-bin
@@ -219,6 +218,9 @@ PATCHES=(
  	"${FILESDIR}/chromium-test-r0.patch"
  	"${FILESDIR}/chromium-optional-atk-r0.patch"
 	"${FILESDIR}/chromium-optional-dbus-r4.patch"
+	# Extra patches taken from openSUSE
+	"${FILESDIR}/ungoogled-chromium-libusb-interrupt-event-handler-r0.patch"
+	"${FILESDIR}/ungoogled-chromium-system-libusb-r0.patch"
 )
 
 S="${WORKDIR}/chromium-${PV/_*}"
@@ -226,7 +228,7 @@ S="${WORKDIR}/chromium-${PV/_*}"
 pre_build_checks() {
 	# Check build requirements (Bug #541816)
 	CHECKREQS_MEMORY="3G"
-	CHECKREQS_DISK_BUILD="5G"
+	CHECKREQS_DISK_BUILD="6G"
 	if use custom-cflags && ( shopt -s extglob; is-flagq '-g?(gdb)?([1-9])' ); then
 		CHECKREQS_DISK_BUILD="25G"
 	fi
@@ -262,14 +264,8 @@ src_prepare() {
 
 	# Fix build with harfbuzz-2 (Bug #669034)
 	use system-harfbuzz && eapply "${FILESDIR}/chromium-harfbuzz-r0.patch"
-
-	# Apply extra patches (taken from openSUSE)
-	local p
-	for p in "${FILESDIR}/extra-$(ver_cut 1-1)"/*.patch; do
-		eapply "${p}"
-	done
     
-    # Apply extra patches (taken from Igalia)
+	# Apply extra patches (taken from Igalia)
 	local p
 	for p in "${FILESDIR}/igalia-$(ver_cut 1-1)"/*.patch; do
 		eapply "${p}"
@@ -537,9 +533,6 @@ src_prepare() {
 		third_party/pdfium/third_party/libtiff
 		third_party/pdfium/third_party/skia_shared
 	)
-	use pdf && use system-openjpeg || keeplibs+=(
-		third_party/pdfium/third_party/libopenjpeg20
-	)
 	use swiftshader && keeplibs+=(
 		third_party/swiftshader
 		third_party/swiftshader/third_party/llvm-subzero
@@ -636,7 +629,6 @@ setup_compile_flags() {
 	fi
 	
 	if use thinlto; then
-		#append-ldflags -fplugin=liblto_plugin.so
 		# We need to change the default value of import-instr-limit in
 		# LLVM to limit the text size increase. The default value is
 		# 100, and we change it to 30 to reduce the text size increase
@@ -646,15 +638,21 @@ setup_compile_flags() {
 		# We need to further reduce it to 20 for arm to limit the size
 		# increase to 10%.
 		local thinlto_ldflag="-Wl,-plugin-opt,-import-instr-limit=30"
-		if use arm; then
-			thinlto_ldflag="-Wl,-plugin-opt,-import-instr-limit=20"
-			append-ldflags "-gsplit-dwarf"
-		fi
-		append-ldflags "${thinlto_ldflag}"
+		use arm && thinlto_ldflag+=(
+			"-Wl,-plugin-opt,-import-instr-limit=20"
+			"-gsplit-dwarf"
+		)
+		use gold && thinlto_ldflag+=(
+			"-Wl,-plugin-opt=thinlto"
+			"-Wl,-plugin-opt,jobs=$(makeopts_jobs)"
+		)
+
+		use lld && thinlto_ldflag+=( "-Wl,--thinlto-jobs=$(makeopts_jobs)" )
+
+		append-ldflags "${thinlto_ldflag[*]}"
+	else
+		use gold && append-ldflags "-Wl,--threads -Wl,--thread-count=$(makeopts_jobs)"
 	fi
-	
-	# Enable std::vector []-operator bounds checking (https://crbug.com/333391)
-	append-cxxflags -D__google_stl_debug_vector=1
 	
 	# Don't complain if Chromium uses a diagnostic option that is not yet
 	# implemented in the compiler version used by the user. This is only
@@ -669,23 +667,18 @@ setup_compile_flags() {
 			append-cxxflags "-stdlib=libc++"
 			append-ldflags "-stdlib=libc++ -Wl,-lc++abi"
 		else
-		has_version 'sys-devel/clang[default-libcxx]' && \
-			append-cxxflags "-stdlib=libstdc++"
-	fi
+			has_version 'sys-devel/clang[default-libcxx]' && \
+				append-cxxflags "-stdlib=libstdc++"
+		fi
 
-	# 'gcc_s' is still required if 'compiler-rt' is Clang's default rtlib
-	has_version 'sys-devel/clang[default-compiler-rt]' && \
-		append-ldflags "-Wl,-lgcc_s"
-		use debug && append-flags -fno-split-dwarf-inlining
+		# 'gcc_s' is still required if 'compiler-rt' is Clang's default rtlib
+		has_version 'sys-devel/clang[default-compiler-rt]' && \
+			append-ldflags "-Wl,-lgcc_s"
+		fi
 	fi
 	
-	# Workaround: Disable fatal linker warnings with asan/gold builds.
-	# See https://crbug.com/823936
-	if use gold; then 
-	    #append-ldflags "-fplugin=LLVMgold.so"
-		append-ldflags "-Wl,--no-fatal-warnings"
-	fi
-	
+	use debug && append-flags -fno-split-dwarf-inlining
+
 	# Strip debug info
 	use debug || append-ldflags "-s"
 	# These can cause the final link to take several hours.
@@ -873,6 +866,7 @@ src_configure() {
 		"enable_widevine=$(usetf widevine)"
 		"enable_pdf=$(usetf pdf)"
 		"enable_print_preview=$(usetf pdf)"
+		"rtc_build_examples=false"
 		"use_atk=$(usetf atk)"
 		"use_dbus=$(usetf dbus)"
 		"use_icf=true"
@@ -931,14 +925,6 @@ src_configure() {
 		)
 	fi
 
-	#if [[ "${ARCH}" = amd64 ]]; then
-	#	myconf_gn+=" target_cpu=\"x64\""
-	#elif [[ "${ARCH}" = x86 ]]; then
-	#	myconf_gn+=" target_cpu=\"x86\""
-	#else
-	#	die "Failed to determine target arch, got '${ARCH}'."
-	#fi
-
 	setup_compile_flags
 
 	# Bug #491582
@@ -962,7 +948,7 @@ src_compile() {
 	python_setup 'python2*'
 
 	# Avoid falling back to preprocessor mode when sources contain time macros
-	(has ccache ${FEATURES}) && export CCACHE_SLOPPINESS=time_macros
+	has ccache ${FEATURES} && export CCACHE_SLOPPINESS=time_macros
 
 	# Work around broken deps
 	eninja -C out/Release gen/ui/accessibility/ax_enums.mojom{,-shared}.h

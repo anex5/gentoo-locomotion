@@ -1,4 +1,4 @@
-# Copyright 1999-2018 Gentoo Authors
+# Copyright 1999-2019 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI="7"
@@ -74,7 +74,7 @@ COMMON_DEPEND="
 	dev-libs/libxslt:=
 	dev-libs/nspr:=
 	>=dev-libs/nss-3.26:=
-	>=dev-libs/re2-0.2016.11.01:=
+	>=dev-libs/re2-0.2018.10.01:=
 	>=media-libs/alsa-lib-1.0.19:=
 	media-libs/flac:=
 	media-libs/fontconfig:=
@@ -144,12 +144,11 @@ COMMON_DEPEND="
 	v4lplugin? ( media-tv/v4l-utils )
 	gtk? ( x11-libs/gtk+:3[X] )
 "
-# For nvidia-drivers blocker (Bug #413637)
+
 RDEPEND="${COMMON_DEPEND}
 	virtual/opengl
 	virtual/ttf-fonts
 	selinux? ( sec-policy/selinux-chromium )
-	tcmalloc? ( !<x11-drivers/nvidia-drivers-331.20 )
 	widevine? ( !x86? ( www-plugins/chrome-binary-plugins[widevine(-)] ) )
 	!www-client/chromium
 	!www-client/ungoogled-chromium-bin
@@ -215,10 +214,13 @@ GTK+ icon theme.
 "
 
 PATCHES=(
-#	"${FILESDIR}/ungoogled-chromium-compiler-r5.patch"
-# 	"${FILESDIR}/chromium-test-r0.patch"
-# 	"${FILESDIR}/chromium-optional-atk-r0.patch"
-#	"${FILESDIR}/chromium-optional-dbus-r4.patch"
+	"${FILESDIR}/ungoogled-chromium-compiler-r5.patch"
+ 	"${FILESDIR}/chromium-test-r0.patch"
+ 	"${FILESDIR}/chromium-optional-atk-r0.patch"
+	"${FILESDIR}/chromium-optional-dbus-r5.patch"
+	# Extra patches taken from openSUSE
+	"${FILESDIR}/ungoogled-chromium-libusb-interrupt-event-handler-r0.patch"
+	"${FILESDIR}/ungoogled-chromium-system-libusb-r0.patch"
 )
 
 S="${WORKDIR}/src"
@@ -226,7 +228,7 @@ S="${WORKDIR}/src"
 pre_build_checks() {
 	# Check build requirements (Bug #541816)
 	CHECKREQS_MEMORY="3G"
-	CHECKREQS_DISK_BUILD="8G"
+	CHECKREQS_DISK_BUILD="12G"
 	if use custom-cflags && ( shopt -s extglob; is-flagq '-g?(gdb)?([1-9])' ); then
 		CHECKREQS_DISK_BUILD="25G"
 	fi
@@ -260,6 +262,9 @@ src_unpack() {
 	export DEPOT_TOOLS_UPDATE=0
 	# Prevent gclient metrics collection.
 	export DEPOT_TOOLS_METRICS=0
+	# Prevent gclient use windows toolchain.
+	export DEPOT_TOOLS_WIN_TOOLCHAIN=0
+
 	
 	DEPOT_TOOLS_URI="https://chromium.googlesource.com/chromium/tools/depot_tools.git"
 	einfo "Fetching depot_tools from googlesource"
@@ -302,10 +307,7 @@ src_unpack() {
 		}]; target_os = ["linux"]; target_os_only = True' || die
 	fi
 
-	depot_tools/gclient sync --nohooks --no-history --with_branch_heads --with_tags --disable-syntax-validation --jobs=1 || die
-	#depot_tools/gclient runhooks --force || die	
-	die
-	#tar xjf ${}/ozone.tar.xz -C ${WORKDIR}/src	
+	depot_tools/gclient sync --no-history --with_branch_heads --with_tags --disable-syntax-validation --jobs=1 || die
 }
  
 src_prepare() {
@@ -327,15 +329,6 @@ src_prepare() {
 			third_party/node/linux/node-linux-x64/bin/node || die
 	fi
 
-	# Fix build with harfbuzz-2 (Bug #669034)
-	#use system-harfbuzz && eapply "${FILESDIR}/chromium-harfbuzz-r0.patch"
-
-	# Apply extra patches (taken from openSUSE)
-	#local ep
-	#for ep in "${FILESDIR}/extra-70"/*.patch; do
-	#	eapply "${ep}"
-	#done
-
 	# Hack for libusb stuff (taken from openSUSE)
 	rm third_party/libusb/src/libusb/libusb.h || die
 	cp -a "${EPREFIX%/}/usr/include/libusb-1.0/libusb.h" \
@@ -350,8 +343,10 @@ src_prepare() {
 	local ugc_rooted_dir="${UGC_WD}/config_bundles/linux_rooted"
 
 	local ugc_unneeded=(
-		# ARM related patch
+		# ARM related patches
+		common:crashpad
 		common:gcc_skcms_ice
+		common:skia-aarch64-buildfix
 		# GCC specific fixes/warnings
 		common:alignof
 		common:as-needed
@@ -363,16 +358,10 @@ src_prepare() {
 		common:multichar
 		common:null-destination
 		common:printf
-		common:sizet
 		rooted:attribute
-		# We already have "-Wno-unknown-warning-option" defined below
-		common:clang-compiler-flags
 		# GN bootstrap
-		common:no-such-option-no-sysroot
 		common:parallel
 		rooted:libcxx
-		# Remove "optimize_for_size" redundancy
-		common:optimize
 	)
 
 	local ugc_use=(
@@ -381,7 +370,7 @@ src_prepare() {
 		system-jsoncpp:jsoncpp
 		system-libevent:event
 		system-libvpx:vpx
-		vaapi:chromium-vaapi-r18
+		vaapi:enable-vaapi
 	)
 
 	local ugc_p ugc_dir
@@ -400,6 +389,11 @@ src_prepare() {
 		fi
 	done
 
+	if use system-ffmpeg && has_version '<media-video/ffmpeg-4.0.0'; then
+		sed -i '/jpeg.patch/i debian_buster/system/ffmpeg34.patch' \
+			"${ugc_rooted_dir}/patch_order.list" || die
+	fi
+
 	if ! use system-icu; then
 		sed -i '/icudtl.dat/d' "${ugc_rooted_dir}/pruning.list" || die
 	fi
@@ -409,7 +403,7 @@ src_prepare() {
 	fi 
 	
 	if use system-openjpeg; then
-		sed -i '/system\/nspr.patch/a debian_buster/system/openjpeg.patch' \
+		sed -i '/jpeg.patch/a debian_buster/system/openjpeg.patch' \
 			"${ugc_rooted_dir}/patch_order.list" || die
 	fi
 
@@ -421,17 +415,17 @@ src_prepare() {
 
 	use widevine || sed -i '/inox-patchset\/chromium-widevine-r2.patch/d' "${ugc_common_dir}/patch_order.list" || die 
 
-	#ebegin "Pruning binaries"
-	#"${ugc_cli}" prune -b "${ugc_config}" ./
-	#eend $? || die
+	ebegin "Pruning binaries"
+	"${ugc_cli}" prune -b "${ugc_config}" ./
+	eend $? || die
 
-	#ebegin "Applying ungoogled-chromium patches"
-	#"${ugc_cli}" patches apply -b "${ugc_config}" ./
-	#eend $? || die
+	ebegin "Applying ungoogled-chromium patches"
+	"${ugc_cli}" patches apply -b "${ugc_config}" ./
+	eend $? || die
 
-	#ebegin "Applying domain substitution"
-	#"${ugc_cli}" domains apply -b "${ugc_config}" -c domainsubcache.tar.gz ./
-	#eend $? || die
+	ebegin "Applying domain substitution"
+	"${ugc_cli}" domains apply -b "${ugc_config}" -c domainsubcache.tar.gz ./
+	eend $? || die
 
 	local keeplibs=(
 		base/third_party/dmg_fp
@@ -457,6 +451,7 @@ src_prepare() {
 		third_party/angle
 		third_party/angle/src/common/third_party/base
 		third_party/angle/src/common/third_party/smhasher
+		third_party/angle/src/common/third_party/xxhash
 		third_party/angle/src/third_party/compiler
 		third_party/angle/src/third_party/libXNVCtrl
 		third_party/angle/src/third_party/trace_event
@@ -500,7 +495,6 @@ src_prepare() {
 		third_party/flatbuffers
 		third_party/flot
 		third_party/glslang
-		third_party/glslang-angle
 		third_party/google_input_tools
 		third_party/google_input_tools/third_party/closure_library
 		third_party/google_input_tools/third_party/closure_library/third_party/closure
@@ -555,14 +549,12 @@ src_prepare() {
 		third_party/speech-dispatcher
 		third_party/spirv-headers
 		third_party/SPIRV-Tools
-		third_party/spirv-tools-angle
 		third_party/sqlite
 		third_party/ungoogled
 		third_party/usb_ids
 		third_party/unrar
 		third_party/usrsctp
 		third_party/vulkan
-		third_party/vulkan-validation-layers
 		third_party/web-animations-js
 		third_party/webdriver
 		third_party/webrtc
@@ -595,10 +587,11 @@ src_prepare() {
 		third_party/pdfium/third_party/base
 		third_party/pdfium/third_party/bigint
 		third_party/pdfium/third_party/freetype
+		third_party/pdfium/third_party/lcms
 		third_party/pdfium/third_party/libtiff
 		third_party/pdfium/third_party/skia_shared
 	)
-	use pdf && use system-openjpeg || keeplibs+=(
+	use system-openjpeg || keeplibs+=(
 		third_party/pdfium/third_party/libopenjpeg20
 	)
 	use swiftshader && keeplibs+=(
@@ -618,14 +611,14 @@ src_prepare() {
 	use system-libdrm || keeplibs+=( third_party/libdrm )
 	use system-libevent || keeplibs+=( base/third_party/libevent )
 	use system-libvpx || keeplibs+=( third_party/libvpx third_party/libvpx/source/libvpx/third_party/x86inc )
-	use system-wayland || keeplibs+=( third_party/wayland third_party/wayland-protocols )
+	#use system-wayland || 
+	keeplibs+=( third_party/wayland third_party/wayland-protocols )
 	use system-openh264 || keeplibs+=( third_party/openh264 )
-	use system-openjpeg || keeplibs+=( third_party/pdfium/third_party/libopenjpeg20 )
 	use tcmalloc && keeplibs+=( third_party/tcmalloc )
 
 	# Remove most bundled libraries, some are still needed
-	#python_setup 'python2*'
-	#build/linux/unbundle/remove_bundled_libraries.py "${keeplibs[@]}" --do-remove || die
+	python_setup 'python2*'
+	build/linux/unbundle/remove_bundled_libraries.py "${keeplibs[@]}" --do-remove || die
 }
 
 get_binutils_path_ld() {
@@ -704,16 +697,22 @@ setup_compile_flags() {
 		# We need to further reduce it to 20 for arm to limit the size
 		# increase to 10%.
 		local thinlto_ldflag="-Wl,-plugin-opt,-import-instr-limit=30"
-		if use arm; then
-			thinlto_ldflag="-Wl,-plugin-opt,-import-instr-limit=20"
-			append-ldflags "-gsplit-dwarf"
-		fi
-		append-ldflags "${thinlto_ldflag}"
+		use arm && thinlto_ldflag+=(
+			"-Wl,-plugin-opt,-import-instr-limit=20"
+			"-gsplit-dwarf"
+		)
+		use gold && thinlto_ldflag+=(
+			"-Wl,-plugin-opt=thinlto"
+			"-Wl,-plugin-opt,jobs=$(makeopts_jobs)"
+		)
+
+		use lld && thinlto_ldflag+=( "-Wl,--thinlto-jobs=$(makeopts_jobs)" )
+
+		append-ldflags "${thinlto_ldflag[*]}"
+	else
+		use gold && append-ldflags "-Wl,--threads -Wl,--thread-count=$(makeopts_jobs)"
 	fi
-	
-	# Enable std::vector []-operator bounds checking (https://crbug.com/333391)
-	append-cxxflags -D__google_stl_debug_vector=1
-	
+
 	# Don't complain if Chromium uses a diagnostic option that is not yet
 	# implemented in the compiler version used by the user. This is only
 	# supported by Clang.
@@ -729,20 +728,14 @@ setup_compile_flags() {
 		else
 		has_version 'sys-devel/clang[default-libcxx]' && \
 			append-cxxflags "-stdlib=libstdc++"
+		fi
+		# 'gcc_s' is still required if 'compiler-rt' is Clang's default rtlib
+		has_version 'sys-devel/clang[default-compiler-rt]' && \
+			append-ldflags "-Wl,-lgcc_s"
+		fi
 	fi
 
-	# 'gcc_s' is still required if 'compiler-rt' is Clang's default rtlib
-	has_version 'sys-devel/clang[default-compiler-rt]' && \
-		append-ldflags "-Wl,-lgcc_s"
-		use debug && append-flags -fno-split-dwarf-inlining
-	fi
-	
-	# Workaround: Disable fatal linker warnings with asan/gold builds.
-	# See https://crbug.com/823936
-	if use gold; then 
-	    #append-ldflags "-fplugin=LLVMgold.so"
-		append-ldflags "-Wl,--no-fatal-warnings"
-	fi
+	use debug && append-flags -fno-split-dwarf-inlining
 
 	# Strip debug info
 	use debug || append-ldflags "-s"
@@ -823,11 +816,13 @@ src_configure() {
 	local myconf_gn=(
 		# Clang features
 		"is_cfi=$(usetf cfi)" # Implies use_cfi_icall=true
-		"use_cfi_cast=$(usetf cfi)"
+		# use_cfi_icall only works with LLD
+		"use_cfi_icall=$(usetf lld)" 
 		"is_clang=$(usetf clang)"
 		"clang_use_chrome_plugins=false"
 		"thin_lto_enable_optimizations=$(usetf optimize-thinlto)"
 		"use_lld=$(usetf lld)"
+		"rtc_use_lto=$(usetf thinlto)"
 		"use_thin_lto=$(usetf thinlto)"
 		#"use_system_libcxx=$(usetf libcxx)"
 
@@ -925,6 +920,7 @@ src_configure() {
 		"enable_widevine=$(usetf widevine)"
 		"enable_pdf=$(usetf pdf)"
 		"enable_print_preview=$(usetf pdf)"
+		"rtc_build_examples=false"
 		"use_atk=$(usetf atk)"
 		"use_dbus=$(usetf dbus)"
 		"use_icf=true"
@@ -985,14 +981,6 @@ src_configure() {
 		)
  	fi
 
-	#if [[ "${ARCH}" = amd64 ]]; then
-	#	myconf_gn+=" target_cpu=\"x64\""
-	#elif [[ "${ARCH}" = x86 ]]; then
-	#	myconf_gn+=" target_cpu=\"x86\""
-	#else
-	#	die "Failed to determine target arch, got '${ARCH}'."
-	#fi
-
 	setup_compile_flags
 
 	# Bug #491582
@@ -1016,19 +1004,7 @@ src_compile() {
 	python_setup 'python2*'
 
 	# Avoid falling back to preprocessor mode when sources contain time macros
-	(has ccache ${FEATURES}) && export CCACHE_SLOPPINESS=time_macros
-
-	# Build mksnapshot and pax-mark it
-	#local x
-	#for x in mksnapshot v8_context_snapshot_generator; do
-	#	if tc-is-cross-compiler; then
-	#		eninja -C out/Release "host/${x}"
-	#		pax-mark m "out/Release/host/${x}"
-	#	else
-	#		eninja -C out/Release "${x}"
-	#		pax-mark m "out/Release/${x}"
-	#	fi
-	#done
+	has ccache ${FEATURES} && export CCACHE_SLOPPINESS=time_macros
 
 	# Work around broken deps
 	eninja -C out/Release gen/ui/accessibility/ax_enums.mojom{,-shared}.h
