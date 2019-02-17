@@ -732,7 +732,7 @@ setup_compile_flags() {
 		# 'gcc_s' is still required if 'compiler-rt' is Clang's default rtlib
 		has_version 'sys-devel/clang[default-compiler-rt]' && \
 			append-ldflags "-Wl,-lgcc_s"
-		fi
+		
 	fi
 
 	use debug && append-flags -fno-split-dwarf-inlining
