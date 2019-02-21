@@ -218,7 +218,7 @@ PATCHES=(
 	"${FILESDIR}/ungoogled-chromium-compiler-r5.patch"
  	"${FILESDIR}/chromium-test-r0.patch"
  	"${FILESDIR}/chromium-optional-atk-r0.patch"
-	"${FILESDIR}/chromium-optional-dbus-r5.patch"
+	"${FILESDIR}/chromium-optional-dbus-r4.patch"
 	# Extra patches taken from openSUSE
 	"${FILESDIR}/ungoogled-chromium-libusb-interrupt-event-handler-r0.patch"
 	"${FILESDIR}/ungoogled-chromium-system-libusb-r0.patch"
@@ -278,7 +278,7 @@ src_prepare() {
 	cp -a "${EPREFIX%/}/usr/include/libusb-1.0/libusb.h" \
 		third_party/libusb/src/libusb/libusb.h || die
 
-	use gold && eapply "${FILESDIR}/ungoogled-chromium-gold-r1.patch"
+	use gold && eapply "${FILESDIR}/ungoogled-chromium-gold-r2.patch"
 		
 	# From here we adapt ungoogled-chromium's patches to our needs
 	local ugc_cli="${UGC_WD}/run_buildkit_cli.py"
@@ -519,7 +519,9 @@ src_prepare() {
 		v8/third_party/inspector_protocol
 		v8/third_party/v8
 	)
-	
+	use v4l2 && keeplibs+=(
+		third_party/v4l-utils
+	)
 	use optimize-webui && keeplibs+=(
 		third_party/node
 		third_party/node/node_modules/polymer-bundler/lib/third_party/UglifyJS2
@@ -918,7 +920,7 @@ src_configure() {
 		#"use_nouveau_minigbm=true" 
 		#"use_virgl_minigbm=$(usetf video_cards_virgl)" 
 		"use_system_minigbm=false"
-		#"use_system_libdrm=$(usetf system-libdrm)"
+		"use_system_libdrm=$(usetf system-libdrm)"
 		"enable_background_mode=true"
 		#"enable_resource_whitelist_generation=false"
 		)
