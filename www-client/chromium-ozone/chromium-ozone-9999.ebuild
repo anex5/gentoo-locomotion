@@ -275,9 +275,7 @@ src_unpack() {
 	
 	python_setup 'python2*'
 
-	#EGIT_NONSHALLOW=false
-	#EGIT_BRANCH="ozone-wayland-dev-try-hw-video-acceleration"
-	#git-r3_smart_fetch "https://github.com/Igalia/chromium.git"
+	git clone --depth=1 --single-branch --branch ozone-wayland-dev "https://github.com/Igalia/chromium.git" ${WORKDIR}/src
 	#git-r3_checkout "https://github.com/Igalia/chromium.git" src
 
 	if ! [[ -f .gclient ]]; then
@@ -303,15 +301,16 @@ src_unpack() {
 			"src/third_party/hunspell_dictionaries": None,\
 			"src/third_party/yasm/source/patched-yasm": None,\
 			"src/native_client/toolchain": None,\
+			"src/ios": None
 	   		},\
 		}]; target_os = ["linux"]; target_os_only = True' || die
 	fi
 
-	depot_tools/gclient sync --no-history --with_branch_heads --with_tags --disable-syntax-validation --jobs=1 || die
+	depot_tools/gclient sync --nohooks --noprehooks --no-history --disable-syntax-validation --jobs=1 || die
 }
  
 src_prepare() {
-	
+	die	
 	#python_setup 'python2*'
     #export DEPOT_TOOLS_UPDATE=0 
 	#export DEPOT_TOOLS_METRICS=0
@@ -334,7 +333,7 @@ src_prepare() {
 	cp -a "${EPREFIX%/}/usr/include/libusb-1.0/libusb.h" \
 		third_party/libusb/src/libusb/libusb.h || die
 
-	#use gold && eapply "${FILESDIR}/ungoogled-chromium-gold-r0.patch"
+	use gold && eapply "${FILESDIR}/ungoogled-chromium-gold-r2.patch"
 		
 	# From here we adapt ungoogled-chromium's patches to our needs
 	local ugc_cli="${UGC_WD}/run_buildkit_cli.py"
