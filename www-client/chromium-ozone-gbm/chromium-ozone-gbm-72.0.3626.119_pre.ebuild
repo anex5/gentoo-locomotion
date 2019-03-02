@@ -859,10 +859,10 @@ src_configure() {
 		"use_allocator_shim=$(usetf tcmalloc)"
 
 		"rtc_use_gtk=$(usetf gtk)"
-		"rtc_use_x11=$(usetf X)"
+		#"rtc_use_x11=$(usetf X)"
 		"rtc_build_examples=false"
-		"use_gio=$(usetf gnome)"
-		#"use_gconf=$(usetf gnome)"
+		"use_gio=false"
+		#"use_gconf=false"
 		"use_xkbcommon=$(usetf xkbcommon)"
 	)
 	
@@ -998,26 +998,6 @@ src_install() {
 			chromium-browser.png
 	done
 
-	if use gnome; then
-		local mime_types="text/html;text/xml;application/xhtml+xml;"
-		mime_types+="x-scheme-handler/http;x-scheme-handler/https;" # Bug #360797
-		mime_types+="x-scheme-handler/ftp;" # Bug #412185
-		mime_types+="x-scheme-handler/mailto;x-scheme-handler/webcal;" # Bug #416393
-
-		make_desktop_entry \
-			chromium-browser \
-			"Chromium" \
-			chromium-browser \
-			"Network;WebBrowser" \
-			"MimeType=${mime_types}\\nStartupWMClass=chromium-browser"
-		sed -i "/^Exec/s/$/ %U/" "${ED%/}"/usr/share/applications/*.desktop || die
-
-		# Install GNOME default application entry (Bug #303100)
-	
-		insinto /usr/share/gnome-control-center/default-apps
-		doins "${FILESDIR}/chromium-browser.xml"
-	fi
-
 	readme.gentoo_create_doc
 }
 
@@ -1034,11 +1014,6 @@ update_caches() {
 	xdg_desktop_database_update
 }
 
-pkg_postrm() {
-	use gnome && update_caches
-}
-
 pkg_postinst() {
-	use gnome && update_caches
 	readme.gentoo_print_elog
 }
