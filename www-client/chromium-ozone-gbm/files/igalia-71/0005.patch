@@ -1,0 +1,47 @@
+--- a/gpu/ipc/common/gpu_memory_buffer_support.cc	2018-12-13 00:56:08.000000000 +0300
++++ b/gpu/ipc/common/gpu_memory_buffer_support.cc	2019-01-24 15:34:41.036000000 +0300
+@@ -20,6 +20,7 @@
+ 
+ #if defined(USE_OZONE)
+ #include "ui/ozone/public/client_native_pixmap_factory_ozone.h"
++#include "ui/ozone/public/ozone_platform.h"
+ #endif
+ 
+ #if defined(OS_WIN)
+@@ -42,13 +43,6 @@
+ #endif
+ }
+ 
+-#if defined(OS_LINUX) || defined(USE_OZONE)
+-GpuMemoryBufferSupport::GpuMemoryBufferSupport(
+-    std::unique_ptr<gfx::ClientNativePixmapFactory>
+-        client_native_pixmap_factory)
+-    : client_native_pixmap_factory_(std::move(client_native_pixmap_factory)) {}
+-#endif
+-
+ GpuMemoryBufferSupport::~GpuMemoryBufferSupport() {}
+ 
+ gfx::GpuMemoryBufferType
+@@ -113,7 +107,8 @@
+   NOTREACHED();
+   return false;
+ #elif defined(USE_OZONE)
+-  return client_native_pixmap_factory_->IsConfigurationSupported(format, usage);
++  return ui::OzonePlatform::EnsureInstance()->IsNativePixmapConfigSupported(
++      format, usage);
+ #elif defined(OS_LINUX)
+   return false;  // TODO(julian.isorce): Add linux support.
+ #elif defined(OS_WIN)
+--- a/gpu/ipc/common/gpu_memory_buffer_support.h	2018-12-13 00:56:08.000000000 +0300
++++ b/gpu/ipc/common/gpu_memory_buffer_support.h	2019-01-24 15:34:41.036000000 +0300
+@@ -28,10 +28,6 @@
+ class GPU_EXPORT GpuMemoryBufferSupport {
+  public:
+   GpuMemoryBufferSupport();
+-#if defined(OS_LINUX) || defined(USE_OZONE)
+-  GpuMemoryBufferSupport(std::unique_ptr<gfx::ClientNativePixmapFactory>
+-                             client_native_pixmap_factory);
+-#endif
+   ~GpuMemoryBufferSupport();
+ 
+   // Returns the native GPU memory buffer factory type. Returns EMPTY_BUFFER
