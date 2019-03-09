@@ -44,19 +44,6 @@ index f352fc8..46b3020 100644
        <part file="media_router_resources.grdp" />
        <if expr="chromeos or is_win or is_macosx">
          <include name="IDR_CAST_HTML" file="resources\cast\cast.html" type="BINDATA" />
-diff --git a/chrome/browser/download/save_package_file_picker.cc b/chrome/browser/download/save_package_file_picker.cc
-index f45440c..7c4c1d3 100644
---- a/chrome/browser/download/save_package_file_picker.cc
-+++ b/chrome/browser/download/save_package_file_picker.cc
-@@ -216,7 +216,7 @@ SavePackageFilePicker::SavePackageFilePicker(
-         file_type_index,
-         default_extension_copy,
-         platform_util::GetTopLevel(web_contents->GetNativeView()),
--        NULL);
-+        web_contents);
-   } else {
-     // Just use 'suggested_path_copy' instead of opening the dialog prompt.
-     // Go through FileSelected() for consistency.
 diff --git a/chrome/browser/resources/file_picker/file_picker.css b/chrome/browser/resources/file_picker/file_picker.css
 new file mode 100644
 index 0000000..a675d89
