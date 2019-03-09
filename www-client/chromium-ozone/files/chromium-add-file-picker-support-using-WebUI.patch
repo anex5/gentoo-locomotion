@@ -10,28 +10,6 @@ This implementation allows for oz-wl to show a web based file picker UI.
 Currently, the WebUI only supports basic functionality for opening a file.
 File browsing UI will be added later.
 ---
- chrome/app/generated_resources.grd                 |    8 +
- chrome/browser/browser_resources.grd               |    3 +
- .../browser/download/save_package_file_picker.cc   |    2 +-
- .../browser/resources/file_picker/file_picker.css  |   72 +++++++++
- .../browser/resources/file_picker/file_picker.html |   37 +++++
- .../browser/resources/file_picker/file_picker.js   |   51 ++++++
- .../aura/chrome_browser_main_extra_parts_aura.cc   |   13 +-
- .../ui/webui/chrome_web_ui_controller_factory.cc   |    5 +
- .../browser/ui/webui/file_picker/file_picker_ui.cc |   47 ++++++
- .../browser/ui/webui/file_picker/file_picker_ui.h  |   24 +++
- .../ui/webui/file_picker/file_picker_web_dialog.cc |  165 ++++++++++++++++++++
- chrome/chrome_browser_ui.gypi                      |    4 +
- chrome/common/url_constants.cc                     |    3 +
- chrome/common/url_constants.h                      |    2 +
- tools/gritsettings/resource_ids                    |    2 +-
- 15 files changed, 434 insertions(+), 4 deletions(-)
- create mode 100644 chrome/browser/resources/file_picker/file_picker.css
- create mode 100644 chrome/browser/resources/file_picker/file_picker.html
- create mode 100644 chrome/browser/resources/file_picker/file_picker.js
- create mode 100644 chrome/browser/ui/webui/file_picker/file_picker_ui.cc
- create mode 100644 chrome/browser/ui/webui/file_picker/file_picker_ui.h
- create mode 100644 chrome/browser/ui/webui/file_picker/file_picker_web_dialog.cc
 
 diff --git a/chrome/app/generated_resources.grd b/chrome/app/generated_resources.grd
 index 9732bb1..37dce66 100644
@@ -591,54 +569,40 @@ index c57b1a0..4463e31 100644
      "webui/flags_ui.cc",
      "webui/flags_ui.h",
      "webui/gcm_internals_ui.cc",
-diff --git a/chrome/common/url_constants.cc b/chrome/common/url_constants.cc
-index 6ac57c5..138c718 100644
---- a/chrome/common/url_constants.cc
-+++ b/chrome/common/url_constants.cc
-@@ -49,6 +49,7 @@ const char kChromeUIExtensionsFrameURL[] = "chrome://extensions-frame/";
+diff --git a/chrome/common/webui_url_constants.cc b/chrome/common/webui_url_constants.cc
+index 8c22f2a..fa02b48 100644
+--- a/chrome/common/webui_url_constants.cc
++++ b/chrome/common/webui_url_constants.cc
+@@ -69,6 +69,8 @@ const char kChromeUIExtensionsInternalsHost[] = "extensions-internals";
  const char kChromeUIExtensionsURL[] = "chrome://extensions/";
- const char kChromeUIFaviconURL[] = "chrome://favicon/";
- const char kChromeUIFeedbackURL[] = "chrome://feedback/";
-+const char kChromeUIFilePickerURL[] = "chrome://file-picker/";
- const char kChromeUIFlagsURL[] = "chrome://flags/";
- const char kChromeUIFlashURL[] = "chrome://flash/";
- const char kChromeUIGCMInternalsURL[] = "chrome://gcm-internals/";
-@@ -187,6 +188,7 @@ const char kChromeUIExtensionsFrameHost[] = "extensions-frame";
- const char kChromeUIExtensionsHost[] = "extensions";
  const char kChromeUIFaviconHost[] = "favicon";
- const char kChromeUIFeedbackHost[] = "feedback";
+ const char kChromeUIFaviconURL[] = "chrome://favicon/";
 +const char kChromeUIFilePickerHost[] = "file-picker";
++const char kChromeUIFilePickerURL[] = "chrome://file-picker/";
  const char kChromeUIFlagsHost[] = "flags";
+ const char kChromeUIFlagsURL[] = "chrome://flags/";
  const char kChromeUIFlashHost[] = "flash";
- const char kChromeUIGCMInternalsHost[] = "gcm-internals";
-@@ -574,6 +576,7 @@ const char* const kChromeHostURLs[] = {
-   kChromeUICrashesHost,
-   kChromeUICreditsHost,
-   kChromeUIDNSHost,
-+  kChromeUIFilePickerHost,
-   kChromeUIFlagsHost,
-   kChromeUIHistoryHost,
-   kChromeUIInvalidationsHost,
-diff --git a/chrome/common/url_constants.h b/chrome/common/url_constants.h
-index 0f59363..856eda7 100644
---- a/chrome/common/url_constants.h
-+++ b/chrome/common/url_constants.h
-@@ -43,6 +43,7 @@ extern const char kChromeUIExtensionsFrameURL[];
+@@ -329,6 +331,7 @@ const char* const kChromeHostURLs[] = {
+ #endif
+     kChromeUIDeviceLogHost,
+     kChromeUIDownloadInternalsHost,
++    kChromeUIFilePickerHost,
+     kChromeUIFlagsHost,
+     kChromeUIGCMInternalsHost,
+     kChromeUIHistoryHost,
+diff --git a/chrome/common/webui_url_constants.h b/chrome/common/webui_url_constants.h
+index c1de504..577c686 100644
+--- a/chrome/common/webui_url_constants.h
++++ b/chrome/common/webui_url_constants.h
+@@ -74,6 +74,8 @@ extern const char kChromeUIExtensionsInternalsHost[];
  extern const char kChromeUIExtensionsURL[];
- extern const char kChromeUIFaviconURL[];
- extern const char kChromeUIFeedbackURL[];
-+extern const char kChromeUIFilePickerURL[];
- extern const char kChromeUIFlagsURL[];
- extern const char kChromeUIFlashURL[];
- extern const char kChromeUIGCMInternalsURL[];
-@@ -176,6 +177,7 @@ extern const char kChromeUIExtensionsFrameHost[];
- extern const char kChromeUIExtensionsHost[];
  extern const char kChromeUIFaviconHost[];
- extern const char kChromeUIFeedbackHost[];
+ extern const char kChromeUIFaviconURL[];
 +extern const char kChromeUIFilePickerHost[];
++extern const char kChromeUIFilePickerURL[];
  extern const char kChromeUIFlagsHost[];
+ extern const char kChromeUIFlagsURL[];
  extern const char kChromeUIFlashHost[];
- extern const char kChromeUIGCMInternalsHost[];
 -- 
 1.7.9.5
 
