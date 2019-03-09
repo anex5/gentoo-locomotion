@@ -279,28 +279,27 @@ index d44c7fe..22ba213 100644
 
  void ChromeBrowserMainExtraPartsViewsLinux::ToolkitInitialized() {
 diff --git a/chrome/browser/ui/webui/chrome_web_ui_controller_factory.cc b/chrome/browser/ui/webui/chrome_web_ui_controller_factory.cc
-index b4acde4..f3774a2 100644
+index 5d978a4..f6782d7 100644
 --- a/chrome/browser/ui/webui/chrome_web_ui_controller_factory.cc
 +++ b/chrome/browser/ui/webui/chrome_web_ui_controller_factory.cc
-@@ -27,6 +27,9 @@
- #include "chrome/browser/ui/webui/devtools_ui.h"
+@@ -31,6 +31,8 @@
  #include "chrome/browser/ui/webui/domain_reliability_internals_ui.h"
- #include "chrome/browser/ui/webui/downloads_ui.h"
-+#include "chrome/browser/ui/webui/extensions/extension_info_ui.h"
+ #include "chrome/browser/ui/webui/download_internals/download_internals_ui.h"
+ #include "chrome/browser/ui/webui/engagement/site_engagement_ui.h"
 +#include "chrome/browser/ui/webui/extensions/extensions_ui.h"
 +#include "chrome/browser/ui/webui/file_picker/file_picker_ui.h"
  #include "chrome/browser/ui/webui/flags_ui.h"
  #include "chrome/browser/ui/webui/flash_ui.h"
  #include "chrome/browser/ui/webui/gcm_internals_ui.h"
-@@ -285,6 +288,8 @@ WebUIFactoryFunction GetWebUIFactoryFunction(WebUI* web_ui,
-     return &NewWebUI<DomainReliabilityInternalsUI>;
-   if (url.host() == chrome::kChromeUIFlagsHost)
+@@ -359,6 +362,8 @@ WebUIFactoryFunction GetWebUIFactoryFunction(WebUI* web_ui,
+     return &NewWebUI<DownloadInternalsUI>;
+   if (url.host_piece() == chrome::kChromeUIFlagsHost)
      return &NewWebUI<FlagsUI>;
-+  if (url.host() == chrome::kChromeUIFilePickerHost)
-+      return &NewWebUI<ui::FilePickerUI>;
-   if (url.host() == chrome::kChromeUIHistoryFrameHost)
-     return &NewWebUI<HistoryUI>;
-   if (url.host() == chrome::kChromeUIInstantHost)
++  if (url.host_piece() == chrome::kChromeUIFilePickerHost)
++    return &NewWebUI<ui::FilePickerUI>;
+   if (url.host_piece() == chrome::kChromeUIGCMInternalsHost)
+     return &NewWebUI<GCMInternalsUI>;
+   if (url.host_piece() == chrome::kChromeUIInterstitialHost)
 diff --git a/chrome/browser/ui/webui/file_picker/file_picker_ui.cc b/chrome/browser/ui/webui/file_picker/file_picker_ui.cc
 new file mode 100644
 index 0000000..9663fbb
