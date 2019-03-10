@@ -766,7 +766,7 @@ src_configure() {
 
 	local myconf_gn=(
 		# Clang features
-		"use_clang_coverage=true"
+		"use_clang_coverage=false"
 		"is_cfi=$(usetf cfi)" # Implies use_cfi_icall=true
 		# use_cfi_icall only works with LLD
 		"use_cfi_icall=$(usetf lld)" 
@@ -776,6 +776,7 @@ src_configure() {
 		"use_lld=$(usetf lld)"
 		"use_thin_lto=$(usetf thinlto)"
 		"rtc_use_lto=$(usetf thinlto)"
+		"clang_use_default_sample_profile=false"
 
 		#"use_system_libcxx=$(usetf libcxx)"
 
