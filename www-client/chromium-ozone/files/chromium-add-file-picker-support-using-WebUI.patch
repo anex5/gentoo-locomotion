@@ -345,7 +345,7 @@ new file mode 100644
 index 0000000..908eb06
 --- /dev/null
 +++ b/chrome/browser/ui/webui/file_picker/file_picker_ui.h
-@@ -0,0 +1,24 @@
+@@ -0,0 +1,23 @@
 +// Copyright 2014 The Chromium Authors. All rights reserved.
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
@@ -353,7 +353,6 @@ index 0000000..908eb06
 +#ifndef CHROME_BROWSER_UI_WEBUI_FILE_PICKER_UI_H_
 +#define CHROME_BROWSER_UI_WEBUI_FILE_PICKER_UI_H_
 +
-+#include "base/basictypes.h"
 +#include "ui/web_dialogs/web_dialog_ui.h"
 +
 +namespace ui {
