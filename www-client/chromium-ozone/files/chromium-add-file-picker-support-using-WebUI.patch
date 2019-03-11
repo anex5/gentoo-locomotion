@@ -1,12 +1,12 @@
-From 0ae9a183f4e7de8d3d2601f180d1751b19abb1dc Mon Sep 17 00:00:00 2001
+From e3956cea61b64f7be441d646559937b9bc7311c6 Mon Sep 17 00:00:00 2001
 From: Joone Hur <joone.hur@intel.com>
-Date: Thu, 26 Jun 2014 17:11:00 -0700
-Subject: [PATCH] Add file picker support using WebUI
+Date: Fri, 11 Sep 2015 18:45:01 -0700
+Subject: [PATCH 08/14] Add file picker support using WebUI
 
 File-picker has not been supported in oz-wl because Gtk+2 does not work under
-Wayland. Chromium Linux version still uses Gtk+ for file-picker.
+Wayland, but Chromium Linux version still uses Gtk+2 for file-picker.
 
-This implementation allows for oz-wl to show a web based file picker UI.
+This implementation allows oz-wl to show a web based file picker UI.
 Currently, the WebUI only supports basic functionality for opening a file.
 File browsing UI will be added later.
 ---
@@ -292,7 +292,7 @@ new file mode 100644
 index 0000000..9663fbb
 --- /dev/null
 +++ b/chrome/browser/ui/webui/file_picker/file_picker_ui.cc
-@@ -0,0 +1,47 @@
+@@ -0,0 +1,46 @@
 +// Copyright 2014 The Chromium Authors. All rights reserved.
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
@@ -316,7 +316,6 @@ index 0000000..9663fbb
 +  : WebDialogUI(web_ui) {
 +  content::WebUIDataSource* html_source = content::WebUIDataSource::Create(
 +      chrome::kChromeUIFilePickerHost);
-+  html_source->SetUseJsonJSFormatV2();
 +
 +  html_source->AddLocalizedString(
 +       "filePickerFileNameLabel",
@@ -360,7 +359,7 @@ index 0000000..908eb06
 +class FilePickerUI : public WebDialogUI {
 + public:
 +  explicit FilePickerUI(content::WebUI* web_ui);
-+  virtual ~FilePickerUI();
++  ~FilePickerUI() override;
 +
 + private:
 +  DISALLOW_COPY_AND_ASSIGN(FilePickerUI);
@@ -374,7 +373,7 @@ new file mode 100644
 index 0000000..7711b44
 --- /dev/null
 +++ b/chrome/browser/ui/webui/file_picker/file_picker_web_dialog.cc
-@@ -0,0 +1,165 @@
+@@ -0,0 +1,164 @@
 +// Copyright (c) 2014 The Chromium Authors. All rights reserved.
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
@@ -390,9 +389,9 @@ index 0000000..7711b44
 +#include "chrome/grit/generated_resources.h"
 +#include "content/public/browser/web_ui.h"
 +#include "content/public/browser/web_ui_message_handler.h"
-+#include "grit/ui_strings.h"
++#include "ui/strings/grit/ui_strings.h"
 +#include "ui/base/l10n/l10n_util.h"
-+#include "ui/gfx/size.h"
++#include "ui/gfx/geometry/size.h"
 +
 +using content::WebContents;
 +using content::WebUIMessageHandler;
@@ -410,8 +409,8 @@ index 0000000..7711b44
 + public:
 +  FilePickerMessageHandler(
 +      const ui::FilePickerWebDialog* dialog);
-+  virtual ~FilePickerMessageHandler();
-+  virtual void RegisterMessages() OVERRIDE;
++  ~FilePickerMessageHandler() override;
++  void RegisterMessages() override;
 +
 + private:
 +  // content::WebUIMessageHandler implementation.
@@ -466,7 +465,7 @@ index 0000000..7711b44
 +                        new FilePickerWebDialog(type, listener));
 +}
 +
-+void FilePickerWebDialog::Close(std::string& file_path) const {
++void FilePickerWebDialog::Close(const std::string& file_path) const {
 +  if (!file_path.empty())
 +    listener_->FileSelected(base::FilePath(file_path), 0 , NULL);
 +  else
@@ -514,12 +513,11 @@ index 0000000..7711b44
 +
 +  // FIXME(joone): Pass the home directory
 +  file_info.SetString("filePath",  "/home/app");
-+  base::JSONWriter::Write(&file_info, &data);
++  base::JSONWriter::Write(file_info, &data);
 +  return data;
 +}
 +
 +void FilePickerWebDialog::OnDialogClosed(const std::string& json_retval) {
-+  listener_->FileSelectionCanceled(NULL);
 +  delete this;
 +}
 +
@@ -589,5 +587,5 @@ index c1de504..577c686 100644
  extern const char kChromeUIFlagsURL[];
  extern const char kChromeUIFlashHost[];
 -- 
-1.7.9.5
+1.9.1
 
