@@ -225,7 +225,7 @@ index 0000000..4161330
 diff --git a/chrome/browser/ui/views/chrome_browser_main_extra_parts_views_linux.cc b/chrome/browser/ui/views/chrome_browser_main_extra_parts_views_linux.cc
 index d44c7fe..22ba213 100644
 --- a/chrome/browser/ui/views/chrome_browser_main_extra_parts_views_linux.cc
-+++ b/chrome/browser/ui/views/chrome_browser_main_extra_parts_views_linux.cc1
++++ b/chrome/browser/ui/views/chrome_browser_main_extra_parts_views_linux.cc
 @@ -10,11 +10,11 @@
  #include "chrome/browser/themes/theme_service.h"
  #include "chrome/browser/themes/theme_service_factory.h"
@@ -235,7 +235,7 @@ index d44c7fe..22ba213 100644
  #include "chrome/browser/ui/views/theme_profile_key.h"
  #include "chrome/common/pref_names.h"
  #include "components/prefs/pref_service.h"
-+#include "ozone/ui/webui/ozone_webui.h"
++// #include "ozone/ui/webui/ozone_webui.h"
  #include "ui/aura/env.h"
  #include "ui/aura/window.h"
  #include "ui/base/ime/input_method_initializer.h"
@@ -378,7 +378,7 @@ index 0000000..7711b44
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
 +
-+#include "ozone/ui/webui/file_picker_web_dialog.h"
++#include "chrome/browser/ui/webui/file_picker/file_picker_web_dialog.h"
 +
 +#include "base/json/json_writer.h"
 +#include "chrome/browser/profiles/profile_manager.h"
@@ -538,17 +538,79 @@ index 0000000..7711b44
 +}
 +
 +}  // namespace ui
+diff --git a/chrome/browser/ui/webui/file_picker/file_picker_web_dialog.h b/chrome/browser/ui/webui/file_picker/file_picker_web_dialog.h
+new file mode 100644
+index 0000000..56203f1
+--- /dev/null
++++ b/chrome/browser/ui/webui/file_picker/file_picker_web_dialog.h
+@@ -0,0 +1,55 @@
++// Copyright (c) 2014 The Chromium Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#ifndef FILE_PICKER_WEB_DIALOG_H_
++#define FILE_PICKER_WEB_DIALOG_H_
++
++#include <string>
++#include <vector>
++
++#include "base/compiler_specific.h"
++#include "ui/gfx/native_widget_types.h"
++#include "ui/shell_dialogs/select_file_dialog.h"
++#include "ui/web_dialogs/web_dialog_delegate.h"
++
++namespace ui {
++
++// Launches a web dialog for file picker with specified URL and title.
++class FilePickerWebDialog : public ui::WebDialogDelegate {
++ public:
++  // Shows the dialog box.
++  static void ShowDialog(SelectFileDialog::Type type,
++                         gfx::NativeWindow owning_window,
++                         content::WebContents* contents,
++                         SelectFileDialog::Listener* listener);
++  // Closes the dialog, which will delete itself.
++  void Close(const std::string& file_path) const;
++
++ private:
++  FilePickerWebDialog(SelectFileDialog::Type type, SelectFileDialog::Listener*);
++
++  // Overridden from ui::WebDialogDelegate:
++  ui::ModalType GetDialogModalType() const override;
++  base::string16 GetDialogTitle() const override;
++  GURL GetDialogContentURL() const override;
++  void GetWebUIMessageHandlers(
++      std::vector<content::WebUIMessageHandler*>* handlers) const override;
++  void GetDialogSize(gfx::Size* size) const override;
++  std::string GetDialogArgs() const override;
++  void OnDialogClosed(const std::string& json_retval) override;
++  void OnCloseContents(content::WebContents* source,
++                       bool* out_close_dialog) override;
++  bool ShouldShowDialogTitle() const override;
++  bool HandleContextMenu(const content::ContextMenuParams& params) override;
++
++  SelectFileDialog::Type type_;
++  SelectFileDialog::Listener* listener_;
++
++  DISALLOW_COPY_AND_ASSIGN(FilePickerWebDialog);
++};
++
++}  // namespace ui
++
++
++#endif  // FILE_PICKER_WEB_DIALOG_H_ 
 diff --git a/chrome/browser/ui/BUILD.gn b/chrome/browser/ui/BUILD.gn
 index c57b1a0..4463e31 100644
 --- a/chrome/browser/ui/BUILD.gn
 +++ b/chrome/browser/ui/BUILD.gn
-@@ -245,6 +245,9 @@ jumbo_split_static_library("ui") {
+@@ -245,6 +245,10 @@ jumbo_split_static_library("ui") {
      "webui/favicon_source.h",
      "webui/fileicon_source.cc",
      "webui/fileicon_source.h",
 +    "webui/file_picker/file_picker_ui.cc",
 +    "webui/file_picker/file_picker_ui.h",
 +    "webui/file_picker/file_picker_web_dialog.cc",
++    "webui/file_picker/file_picker_web_dialog.h",
      "webui/flags_ui.cc",
      "webui/flags_ui.h",
      "webui/gcm_internals_ui.cc",
@@ -588,4 +650,5 @@ index c1de504..577c686 100644
  extern const char kChromeUIFlashHost[];
 -- 
 1.9.1
+
 
