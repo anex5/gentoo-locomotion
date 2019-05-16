@@ -1,0 +1,55 @@
+From fe6f930ce923fd47e884c5fa549697a28e799ec8 Mon Sep 17 00:00:00 2001
+From: Kristian H. Kristensen <hoegsberg@chromium.org>
+Date: Tue, 06 Sep 2016 15:20:25 -0700
+Subject: [PATCH] CHROMIUM: drm_fourcc.h: Add Rockchip AFBC modifier
+
+BUG=chrome-os-partner:56407
+TEST=drm-tests null_platform_test with AFBC support
+
+Reviewed-on: https://chromium-review.googlesource.com/387205
+Commit-Ready: Kristian H. Kristensen <hoegsberg@chromium.org>
+Tested-by: Kristian H. Kristensen <hoegsberg@chromium.org>
+Reviewed-by: Stéphane Marchesin <marcheu@chromium.org>
+Reviewed-by: Anders Pedersen <anders.pedersen@arm.com>
+(rebased from chromeos-2.4.70)
+
+BUG=b:63153737
+TEST=Kevin boots to UI.
+
+Signed-off-by: Tomasz Figa <tfiga@chromium.org>
+Change-Id: I70b4a0e321f86cb64a444e8470f457b87e414ace
+---
+
+diff --git a/include/drm/drm_fourcc.h b/include/drm/drm_fourcc.h
+index 7ce1a6f..d26d01b 100644
+--- a/include/drm/drm_fourcc.h
++++ b/include/drm/drm_fourcc.h
+@@ -159,6 +159,9 @@
+ #define DRM_FORMAT_MOD_VENDOR_QCOM    0x05
+ /* add more to the end as needed */
+ 
++/* Vendor ID for downstream, interim ChromeOS specific modifiers. */
++#define DRM_FORMAT_MOD_VENDOR_CHROMEOS 0xf0
++
+ #define fourcc_mod_code(vendor, val) \
+ 	((((__u64)DRM_FORMAT_MOD_VENDOR_## vendor) << 56) | (val & 0x00ffffffffffffffULL))
+ 
+@@ -231,4 +234,18 @@
+  */
+ #define DRM_FORMAT_MOD_SAMSUNG_64_32_TILE	fourcc_mod_code(SAMSUNG, 1)
+ 
++/*
++ * Rockchip ARM Framebuffer Compression (AFBC)
++ *
++ * This modifier identifies the specific variant of AFBC supported by the
++ * Rockchip display hardware. It's technically a two-plane format: first a
++ * header with 16 bytes per block, followed by the block data aligned to 1024
++ * bytes. Each block is 16x16 pixels.
++ *
++ * Eventually ARM should define modifiers for the various AFBC types, but
++ * we'll use this in the meantime. We use the CHROMEOS vendor ID to make sure
++ * we don't clash with future vendor modifiers.
++ */
++#define DRM_FORMAT_MOD_CHROMEOS_ROCKCHIP_AFBC	fourcc_mod_code(CHROMEOS, 1)
++
+ #endif /* DRM_FOURCC_H */

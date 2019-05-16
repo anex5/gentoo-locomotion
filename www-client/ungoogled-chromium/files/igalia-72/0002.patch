@@ -1,0 +1,786 @@
+--- a/chrome/browser/chrome_content_browser_client.cc	2019-02-14 01:14:15.000000000 +0300
++++ b/chrome/browser/chrome_content_browser_client.cc	2019-02-20 20:43:49.052000000 +0300
+@@ -205,8 +205,6 @@
+ #include "components/policy/content/policy_blacklist_navigation_throttle.h"
+ #include "components/policy/content/policy_blacklist_service.h"
+ #include "components/policy/core/common/cloud/policy_header_service.h"
+-#include "components/policy/core/common/policy_service.h"
+-#include "components/policy/policy_constants.h"
+ #include "components/pref_registry/pref_registry_syncable.h"
+ #include "components/prefs/pref_registry_simple.h"
+ #include "components/prefs/pref_service.h"
+@@ -273,7 +271,6 @@
+ #include "content/public/common/content_features.h"
+ #include "content/public/common/content_switches.h"
+ #include "content/public/common/renderer_preferences.h"
+-#include "content/public/common/network_service_util.h"
+ #include "content/public/common/service_manager_connection.h"
+ #include "content/public/common/service_names.mojom.h"
+ #include "content/public/common/url_constants.h"
+@@ -3778,23 +3775,6 @@
+ 
+ void ChromeContentBrowserClient::RegisterOutOfProcessServices(
+     OutOfProcessServiceMap* services) {
+-#if defined(OS_WIN)
+-  if (chrome_feature_list_creator_) {
+-    // This has to run very early before ServiceManagerContext is created.
+-    const base::Value* force_network_in_process_value =
+-        chrome_feature_list_creator_->browser_policy_connector()
+-            ->GetPolicyService()
+-            ->GetPolicies(policy::PolicyNamespace(policy::POLICY_DOMAIN_CHROME,
+-                                                  std::string()))
+-            .GetValue(policy::key::kForceNetworkInProcess);
+-    bool force_network_in_process = false;
+-    if (force_network_in_process_value)
+-      force_network_in_process_value->GetAsBoolean(&force_network_in_process);
+-    if (force_network_in_process)
+-      content::ForceInProcessNetworkService(true);
+-  }
+-#endif
+-
+ #if BUILDFLAG(ENABLE_ISOLATED_XR_SERVICE)
+   (*services)[device::mojom::kVrIsolatedServiceName] = base::BindRepeating(
+       &l10n_util::GetStringUTF16, IDS_ISOLATED_XR_PROCESS_NAME);
+--- a/chrome/browser/chromeos/drive/drive_integration_service.cc	2019-02-14 01:14:15.000000000 +0300
++++ b/chrome/browser/chromeos/drive/drive_integration_service.cc	2019-02-20 20:43:49.156000000 +0300
+@@ -306,7 +306,7 @@
+   DeleteDirectoryContents(cache_directory);
+ }
+ 
+-std::vector<base::FilePath> GetPinnedAndDirtyFiles(
++std::vector<base::FilePath> GetPinnedFiles(
+     std::unique_ptr<internal::ResourceMetadataStorage, util::DestroyHelper>
+         metadata_storage,
+     base::FilePath cache_directory,
+@@ -331,7 +331,6 @@
+           GetFullPath(metadata_storage.get(), value), value.local_id()));
+     }
+   }
+-  UMA_HISTOGRAM_COUNTS("Drive.MigrateDirtyFilesCount", dirty_files.size());
+   // Destructing |metadata_storage| requires a posted task to run, so defer
+   // deleting its data until after it's been destructed. This also returns the
+   // list of files to pin to the UI thread without waiting for the remaining
+@@ -1236,8 +1235,7 @@
+   base::PostTaskAndReplyWithResult(
+       blocking_task_runner_.get(), FROM_HERE,
+       base::BindOnce(
+-          &GetPinnedAndDirtyFiles, std::move(metadata_storage_),
+-          cache_root_directory_,
++          &GetPinnedFiles, std::move(metadata_storage_), cache_root_directory_,
+           file_manager::util::GetDownloadsFolderForProfile(profile_)),
+       base::BindOnce(&DriveIntegrationService::PinFiles,
+                      weak_ptr_factory_.GetWeakPtr()));
+--- a/chrome/browser/chromeos/login/lock/screen_locker.cc	2019-02-14 01:14:15.000000000 +0300
++++ b/chrome/browser/chromeos/login/lock/screen_locker.cc	2019-02-20 20:43:49.336000000 +0300
+@@ -710,8 +710,6 @@
+ void ScreenLocker::OnAuthScanDone(
+     uint32_t scan_result,
+     const base::flat_map<std::string, std::vector<std::string>>& matches) {
+-  RefreshPinAndFingerprintTimeout();
+-
+   VLOG(1) << "Receive fingerprint auth scan result. scan_result="
+           << scan_result;
+   unlock_attempt_type_ = AUTH_FINGERPRINT;
+--- a/chrome/browser/extensions/api/web_request/web_request_apitest.cc	2019-02-14 01:14:15.000000000 +0300
++++ b/chrome/browser/extensions/api/web_request/web_request_apitest.cc	2019-02-20 20:43:49.896000000 +0300
+@@ -552,6 +552,14 @@
+       << message_;
+ }
+ 
++IN_PROC_BROWSER_TEST_F(ExtensionWebRequestApiTest,
++                       WebRequestRedirectsWithExtraHeaders) {
++  ASSERT_TRUE(StartEmbeddedTestServer());
++  ASSERT_TRUE(RunExtensionSubtestWithArg("webrequest", "test_redirects.html",
++                                         "useExtraHeaders"))
++      << message_;
++}
++
+ // Tests that redirects from secure to insecure don't send the referrer header.
+ IN_PROC_BROWSER_TEST_F(ExtensionWebRequestApiTest,
+                        WebRequestRedirectsToInsecure) {
+@@ -584,6 +592,14 @@
+       << message_;
+ }
+ 
++IN_PROC_BROWSER_TEST_F(ExtensionWebRequestApiTest,
++                       WebRequestSubresourceRedirectsWithExtraHeaders) {
++  ASSERT_TRUE(StartEmbeddedTestServer());
++  ASSERT_TRUE(RunExtensionSubtestWithArg(
++      "webrequest", "test_subresource_redirects.html", "useExtraHeaders"))
++      << message_;
++}
++
+ // Fails often on Windows dbg bots. http://crbug.com/177163
+ #if defined(OS_WIN)
+ #define MAYBE_WebRequestNewTab DISABLED_WebRequestNewTab
+--- a/chrome/browser/extensions/BUILD.gn	2019-02-14 01:14:15.000000000 +0300
++++ b/chrome/browser/extensions/BUILD.gn	2019-02-20 20:43:49.692000000 +0300
+@@ -883,6 +883,7 @@
+     "//third_party/zlib/google:zip",
+     "//ui/accessibility:ax_enums_mojo",
+     "//ui/base",
++    "//ui/base/clipboard",
+     "//ui/base/ime",
+     "//ui/display/manager",
+     "//ui/gfx",
+--- a/chrome/browser/pdf/pdf_extension_test.cc	2019-02-14 01:14:16.000000000 +0300
++++ b/chrome/browser/pdf/pdf_extension_test.cc	2019-02-20 20:43:50.468000000 +0300
+@@ -79,8 +79,8 @@
+ #include "ui/accessibility/ax_node.h"
+ #include "ui/accessibility/ax_tree.h"
+ #include "ui/base/clipboard/clipboard.h"
++#include "ui/base/clipboard/test/test_clipboard.h"
+ #include "ui/base/resource/resource_bundle.h"
+-#include "ui/base/test/test_clipboard.h"
+ #include "ui/events/keycodes/dom/keycode_converter.h"
+ #include "ui/gfx/geometry/point.h"
+ #include "url/gurl.h"
+--- a/chrome/browser/policy/policy_browsertest.cc	2019-02-14 01:14:16.000000000 +0300
++++ b/chrome/browser/policy/policy_browsertest.cc	2019-02-20 20:43:50.540000000 +0300
+@@ -6492,39 +6492,6 @@
+   EXPECT_EQ(policy_app_url_, installed_app_url);
+ }
+ 
+-#if defined(OS_WIN)
+-
+-class ForceNetworkInProcessTest : public InProcessBrowserTest {
+- public:
+-  // InProcessBrowserTest implementation:
+-  void SetUp() override {
+-    EXPECT_CALL(policy_provider_, IsInitializationComplete(testing::_))
+-        .WillRepeatedly(testing::Return(true));
+-    policy::PolicyMap values;
+-    values.Set(policy::key::kForceNetworkInProcess,
+-               policy::POLICY_LEVEL_MANDATORY, policy::POLICY_SCOPE_MACHINE,
+-               policy::POLICY_SOURCE_CLOUD, std::make_unique<base::Value>(true),
+-               nullptr);
+-    policy_provider_.UpdateChromePolicy(values);
+-    policy::BrowserPolicyConnector::SetPolicyProviderForTesting(
+-        &policy_provider_);
+-
+-    InProcessBrowserTest::SetUp();
+-  }
+-
+- private:
+-  policy::MockConfigurationPolicyProvider policy_provider_;
+-};
+-
+-IN_PROC_BROWSER_TEST_F(ForceNetworkInProcessTest, Enabled) {
+-  if (!base::FeatureList::IsEnabled(network::features::kNetworkService))
+-    return;
+-
+-  ASSERT_TRUE(content::IsInProcessNetworkService());
+-}
+-
+-#endif  // defined(OS_WIN)
+-
+ #if !defined(OS_ANDROID)
+ 
+ // The possibilities for a boolean policy.
+--- a/chrome/browser/renderer_context_menu/render_view_context_menu.cc	2019-02-14 01:14:16.000000000 +0300
++++ b/chrome/browser/renderer_context_menu/render_view_context_menu.cc	2019-02-20 20:43:50.648000000 +0300
+@@ -2294,7 +2294,7 @@
+     return false;
+ 
+   return ui::Clipboard::GetForCurrentThread()->IsFormatAvailable(
+-      ui::Clipboard::GetPlainTextFormatType(),
++      ui::ClipboardFormatType::GetPlainTextType(),
+       ui::CLIPBOARD_TYPE_COPY_PASTE);
+ }
+ 
+--- a/chrome/browser/renderer_host/pepper/pepper_flash_clipboard_message_filter.cc	2019-02-14 01:14:16.000000000 +0300
++++ b/chrome/browser/renderer_host/pepper/pepper_flash_clipboard_message_filter.cc	2019-02-20 20:43:50.656000000 +0300
+@@ -164,19 +164,19 @@
+   switch (format) {
+     case PP_FLASH_CLIPBOARD_FORMAT_PLAINTEXT: {
+       bool plain = clipboard->IsFormatAvailable(
+-          ui::Clipboard::GetPlainTextFormatType(), type);
++          ui::ClipboardFormatType::GetPlainTextType(), type);
+       bool plainw = clipboard->IsFormatAvailable(
+-          ui::Clipboard::GetPlainTextWFormatType(), type);
++          ui::ClipboardFormatType::GetPlainTextWType(), type);
+       available = plain || plainw;
+       break;
+     }
+     case PP_FLASH_CLIPBOARD_FORMAT_HTML:
+       available = clipboard->IsFormatAvailable(
+-          ui::Clipboard::GetHtmlFormatType(), type);
++          ui::ClipboardFormatType::GetHtmlType(), type);
+       break;
+     case PP_FLASH_CLIPBOARD_FORMAT_RTF:
+-      available =
+-          clipboard->IsFormatAvailable(ui::Clipboard::GetRtfFormatType(), type);
++      available = clipboard->IsFormatAvailable(
++          ui::ClipboardFormatType::GetRtfType(), type);
+       break;
+     case PP_FLASH_CLIPBOARD_FORMAT_INVALID:
+       break;
+@@ -184,7 +184,7 @@
+       if (custom_formats_.IsFormatRegistered(format)) {
+         std::string format_name = custom_formats_.GetFormatName(format);
+         std::string clipboard_data;
+-        clipboard->ReadData(ui::Clipboard::GetPepperCustomDataFormatType(),
++        clipboard->ReadData(ui::ClipboardFormatType::GetPepperCustomDataType(),
+                             &clipboard_data);
+         base::Pickle pickle(clipboard_data.data(), clipboard_data.size());
+         available =
+@@ -211,8 +211,8 @@
+   int32_t result = PP_ERROR_FAILED;
+   switch (format) {
+     case PP_FLASH_CLIPBOARD_FORMAT_PLAINTEXT: {
+-      if (clipboard->IsFormatAvailable(ui::Clipboard::GetPlainTextWFormatType(),
+-                                       type)) {
++      if (clipboard->IsFormatAvailable(
++              ui::ClipboardFormatType::GetPlainTextWType(), type)) {
+         base::string16 text;
+         clipboard->ReadText(type, &text);
+         if (!text.empty()) {
+@@ -223,15 +223,15 @@
+       }
+       // If the PlainTextW format isn't available or is empty, take the
+       // ASCII text format.
+-      if (clipboard->IsFormatAvailable(ui::Clipboard::GetPlainTextFormatType(),
+-                                       type)) {
++      if (clipboard->IsFormatAvailable(
++              ui::ClipboardFormatType::GetPlainTextType(), type)) {
+         result = PP_OK;
+         clipboard->ReadAsciiText(type, &clipboard_string);
+       }
+       break;
+     }
+     case PP_FLASH_CLIPBOARD_FORMAT_HTML: {
+-      if (!clipboard->IsFormatAvailable(ui::Clipboard::GetHtmlFormatType(),
++      if (!clipboard->IsFormatAvailable(ui::ClipboardFormatType::GetHtmlType(),
+                                         type)) {
+         break;
+       }
+@@ -247,7 +247,7 @@
+       break;
+     }
+     case PP_FLASH_CLIPBOARD_FORMAT_RTF: {
+-      if (!clipboard->IsFormatAvailable(ui::Clipboard::GetRtfFormatType(),
++      if (!clipboard->IsFormatAvailable(ui::ClipboardFormatType::GetRtfType(),
+                                         type)) {
+         break;
+       }
+@@ -262,7 +262,7 @@
+         base::string16 format_name =
+             base::UTF8ToUTF16(custom_formats_.GetFormatName(format));
+         std::string clipboard_data;
+-        clipboard->ReadData(ui::Clipboard::GetPepperCustomDataFormatType(),
++        clipboard->ReadData(ui::ClipboardFormatType::GetPepperCustomDataType(),
+                             &clipboard_data);
+         base::Pickle pickle(clipboard_data.data(), clipboard_data.size());
+         if (IsFormatAvailableInPickle(format_name, pickle)) {
+@@ -342,7 +342,7 @@
+     base::Pickle pickle;
+     WriteDataToPickle(custom_data_map, &pickle);
+     scw.WritePickledData(pickle,
+-                         ui::Clipboard::GetPepperCustomDataFormatType());
++                         ui::ClipboardFormatType::GetPepperCustomDataType());
+   }
+ 
+   if (res != PP_OK) {
+--- a/chrome/browser/resources/chromeos/login/screen_gaia_signin.js	2019-02-14 01:14:16.000000000 +0300
++++ b/chrome/browser/resources/chromeos/login/screen_gaia_signin.js	2019-02-20 20:43:51.016000000 +0300
+@@ -635,6 +635,7 @@
+      */
+     onBeforeHide: function() {
+       chrome.send('loginUIStateChanged', ['gaia-signin', false]);
++      $('login-header-bar').signinUIState = SIGNIN_UI_STATE.HIDDEN;
+       $('offline-gaia').switchToEmailCard(false /* animated */);
+     },
+ 
+--- a/chrome/browser/resources/chromeos/login/screen_sync_consent.js	2019-02-14 01:14:16.000000000 +0300
++++ b/chrome/browser/resources/chromeos/login/screen_sync_consent.js	2019-02-20 20:43:51.016000000 +0300
+@@ -23,7 +23,6 @@
+      */
+     onBeforeShow: function(data) {
+       Oobe.getInstance().headerHidden = true;
+-      $('login-header-bar').signinUIState = SIGNIN_UI_STATE.SYNC_CONSENT;
+     },
+ 
+     /**
+@@ -31,7 +30,6 @@
+      */
+     onBeforeHide: function() {
+       this.setThrobberVisible(false /*visible*/);
+-      $('login-header-bar').signinUIState = SIGNIN_UI_STATE.HIDDEN;
+     },
+ 
+     /**
+--- a/chrome/browser/ui/ash/chrome_screenshot_grabber_browsertest.cc	2019-02-14 01:14:16.000000000 +0300
++++ b/chrome/browser/ui/ash/chrome_screenshot_grabber_browsertest.cc	2019-02-20 20:43:51.908000000 +0300
+@@ -67,7 +67,8 @@
+ 
+   bool IsImageClipboardAvailable() {
+     return ui::Clipboard::GetForCurrentThread()->IsFormatAvailable(
+-        ui::Clipboard::GetBitmapFormatType(), ui::CLIPBOARD_TYPE_COPY_PASTE);
++        ui::ClipboardFormatType::GetBitmapType(),
++        ui::CLIPBOARD_TYPE_COPY_PASTE);
+   }
+ 
+   scoped_refptr<content::MessageLoopRunner> message_loop_runner_;
+--- a/chrome/browser/ui/BUILD.gn	2019-02-14 01:14:16.000000000 +0300
++++ b/chrome/browser/ui/BUILD.gn	2019-02-20 20:43:51.820000000 +0300
+@@ -532,6 +532,7 @@
+     "//third_party/zlib",
+     "//ui/accessibility",
+     "//ui/base",
++    "//ui/base/clipboard",
+     "//ui/base/ime",
+     "//ui/compositor",
+     "//ui/content_accelerators",
+--- a/chrome/browser/ui/login/login_handler.cc	2019-02-14 01:14:16.000000000 +0300
++++ b/chrome/browser/ui/login/login_handler.cc	2019-02-20 20:43:52.088000000 +0300
+@@ -651,8 +651,7 @@
+   DCHECK_CURRENTLY_ON(BrowserThread::UI);
+ 
+   WebContents* parent_contents = handler->GetWebContentsForLogin();
+-  if (!parent_contents || !parent_contents->GetDelegate() ||
+-      handler->WasAuthHandled()) {
++  if (!parent_contents || handler->WasAuthHandled()) {
+     // The request may have been canceled, or it may be for a renderer not
+     // hosted by a tab (e.g. an extension). Cancel just in case (canceling twice
+     // is a no-op).
+--- a/chrome/browser/ui/omnibox/clipboard_utils.cc	2019-02-14 01:14:16.000000000 +0300
++++ b/chrome/browser/ui/omnibox/clipboard_utils.cc	2019-02-20 20:43:52.116000000 +0300
+@@ -12,7 +12,7 @@
+ base::string16 GetClipboardText() {
+   // Try text format.
+   ui::Clipboard* clipboard = ui::Clipboard::GetForCurrentThread();
+-  if (clipboard->IsFormatAvailable(ui::Clipboard::GetPlainTextWFormatType(),
++  if (clipboard->IsFormatAvailable(ui::ClipboardFormatType::GetPlainTextWType(),
+                                    ui::CLIPBOARD_TYPE_COPY_PASTE)) {
+     base::string16 text;
+     clipboard->ReadText(ui::CLIPBOARD_TYPE_COPY_PASTE, &text);
+@@ -26,7 +26,7 @@
+   // and pastes from the URL bar to itself, the text will get fixed up and
+   // cannonicalized, which is not what the user expects.  By pasting in this
+   // order, we are sure to paste what the user copied.
+-  if (clipboard->IsFormatAvailable(ui::Clipboard::GetUrlWFormatType(),
++  if (clipboard->IsFormatAvailable(ui::ClipboardFormatType::GetUrlWType(),
+                                    ui::CLIPBOARD_TYPE_COPY_PASTE)) {
+     std::string url_str;
+     clipboard->ReadBookmark(NULL, &url_str);
+--- a/chrome/browser/ui/views/bookmarks/bookmark_bar_view.cc	2019-02-14 01:14:16.000000000 +0300
++++ b/chrome/browser/ui/views/bookmarks/bookmark_bar_view.cc	2019-02-20 20:43:52.236000000 +0300
+@@ -1000,7 +1000,7 @@
+ 
+ bool BookmarkBarView::GetDropFormats(
+     int* formats,
+-    std::set<ui::Clipboard::FormatType>* format_types) {
++    std::set<ui::ClipboardFormatType>* format_types) {
+   if (!model_ || !model_->loaded())
+     return false;
+   *formats = ui::OSExchangeData::URL;
+--- a/chrome/browser/ui/views/bookmarks/bookmark_bar_view.h	2019-02-14 01:14:16.000000000 +0300
++++ b/chrome/browser/ui/views/bookmarks/bookmark_bar_view.h	2019-02-20 20:43:52.236000000 +0300
+@@ -164,9 +164,8 @@
+   void ViewHierarchyChanged(
+       const ViewHierarchyChangedDetails& details) override;
+   void PaintChildren(const views::PaintInfo& paint_info) override;
+-  bool GetDropFormats(
+-      int* formats,
+-      std::set<ui::Clipboard::FormatType>* format_types) override;
++  bool GetDropFormats(int* formats,
++                      std::set<ui::ClipboardFormatType>* format_types) override;
+   bool AreDropTypesRequired() override;
+   bool CanDrop(const ui::OSExchangeData& data) override;
+   void OnDragEntered(const ui::DropTargetEvent& event) override;
+--- a/chrome/browser/ui/views/bookmarks/bookmark_bar_view_test.cc	2019-02-14 01:14:16.000000000 +0300
++++ b/chrome/browser/ui/views/bookmarks/bookmark_bar_view_test.cc	2019-02-20 20:43:52.236000000 +0300
+@@ -47,7 +47,7 @@
+ #include "ui/aura/env_observer.h"
+ #include "ui/aura/window.h"
+ #include "ui/base/clipboard/clipboard.h"
+-#include "ui/base/test/test_clipboard.h"
++#include "ui/base/clipboard/test/test_clipboard.h"
+ #include "ui/base/test/ui_controls.h"
+ #include "ui/events/keycodes/keyboard_codes.h"
+ #include "ui/views/background.h"
+--- a/chrome/browser/ui/views/bookmarks/bookmark_menu_controller_views.cc	2019-02-14 01:14:16.000000000 +0300
++++ b/chrome/browser/ui/views/bookmarks/bookmark_menu_controller_views.cc	2019-02-20 20:43:52.240000000 +0300
+@@ -99,7 +99,7 @@
+ bool BookmarkMenuController::GetDropFormats(
+     MenuItemView* menu,
+     int* formats,
+-    std::set<ui::Clipboard::FormatType>* format_types) {
++    std::set<ui::ClipboardFormatType>* format_types) {
+   return menu_delegate_->GetDropFormats(menu, formats, format_types);
+ }
+ 
+--- a/chrome/browser/ui/views/bookmarks/bookmark_menu_controller_views.h	2019-02-14 01:14:16.000000000 +0300
++++ b/chrome/browser/ui/views/bookmarks/bookmark_menu_controller_views.h	2019-02-20 20:43:52.240000000 +0300
+@@ -85,10 +85,9 @@
+   void ExecuteCommand(int id, int mouse_event_flags) override;
+   bool ShouldExecuteCommandWithoutClosingMenu(int id,
+                                               const ui::Event& e) override;
+-  bool GetDropFormats(
+-      views::MenuItemView* menu,
++  bool GetDropFormats(views::MenuItemView* menu,
+       int* formats,
+-      std::set<ui::Clipboard::FormatType>* format_types) override;
++                      std::set<ui::ClipboardFormatType>* format_types) override;
+   bool AreDropTypesRequired(views::MenuItemView* menu) override;
+   bool CanDrop(views::MenuItemView* menu,
+                const ui::OSExchangeData& data) override;
+--- a/chrome/browser/ui/views/bookmarks/bookmark_menu_delegate.cc	2019-02-14 01:14:16.000000000 +0300
++++ b/chrome/browser/ui/views/bookmarks/bookmark_menu_delegate.cc	2019-02-20 20:43:52.240000000 +0300
+@@ -199,7 +199,7 @@
+ bool BookmarkMenuDelegate::GetDropFormats(
+     MenuItemView* menu,
+     int* formats,
+-    std::set<ui::Clipboard::FormatType>* format_types) {
++    std::set<ui::ClipboardFormatType>* format_types) {
+   *formats = ui::OSExchangeData::URL;
+   format_types->insert(BookmarkNodeData::GetBookmarkFormatType());
+   return true;
+--- a/chrome/browser/ui/views/bookmarks/bookmark_menu_delegate.h	2019-02-14 01:14:16.000000000 +0300
++++ b/chrome/browser/ui/views/bookmarks/bookmark_menu_delegate.h	2019-02-20 20:43:52.240000000 +0300
+@@ -109,10 +109,9 @@
+                           const ui::Event& e);
+   void ExecuteCommand(int id, int mouse_event_flags);
+   bool ShouldExecuteCommandWithoutClosingMenu(int id, const ui::Event& e);
+-  bool GetDropFormats(
+-      views::MenuItemView* menu,
++  bool GetDropFormats(views::MenuItemView* menu,
+       int* formats,
+-      std::set<ui::Clipboard::FormatType>* format_types);
++                      std::set<ui::ClipboardFormatType>* format_types);
+   bool AreDropTypesRequired(views::MenuItemView* menu);
+   bool CanDrop(views::MenuItemView* menu, const ui::OSExchangeData& data);
+   int GetDropOperation(views::MenuItemView* item,
+--- a/chrome/browser/ui/views/extensions/browser_action_drag_data.cc	2019-02-14 01:14:16.000000000 +0300
++++ b/chrome/browser/ui/views/extensions/browser_action_drag_data.cc	2019-02-20 20:43:52.296000000 +0300
+@@ -30,7 +30,7 @@
+ }
+ 
+ bool BrowserActionDragData::GetDropFormats(
+-    std::set<ui::Clipboard::FormatType>* format_types) {
++    std::set<ui::ClipboardFormatType>* format_types) {
+   format_types->insert(GetBrowserActionFormatType());
+   return true;
+ }
+@@ -73,10 +73,10 @@
+ }
+ 
+ // static
+-const ui::Clipboard::FormatType&
++const ui::ClipboardFormatType&
+ BrowserActionDragData::GetBrowserActionFormatType() {
+-  static base::NoDestructor<ui::Clipboard::FormatType> format(
+-      ui::Clipboard::GetFormatType(kClipboardFormatString));
++  static base::NoDestructor<ui::ClipboardFormatType> format(
++      ui::ClipboardFormatType::GetType(kClipboardFormatString));
+ 
+   return *format;
+ }
+--- a/chrome/browser/ui/views/extensions/browser_action_drag_data.h	2019-02-14 01:14:16.000000000 +0300
++++ b/chrome/browser/ui/views/extensions/browser_action_drag_data.h	2019-02-20 20:43:52.296000000 +0300
+@@ -29,7 +29,7 @@
+   // These mirror the views::View and views::MenuDelegate methods for dropping,
+   // and return the appropriate results for being able to drop an extension's
+   // BrowserAction view.
+-  static bool GetDropFormats(std::set<ui::Clipboard::FormatType>* format_types);
++  static bool GetDropFormats(std::set<ui::ClipboardFormatType>* format_types);
+   static bool AreDropTypesRequired();
+   static bool CanDrop(const ui::OSExchangeData& data, const Profile* profile);
+ 
+@@ -46,8 +46,8 @@
+   // Restores this data from the clipboard, returning true on success.
+   bool Read(const ui::OSExchangeData& data);
+ 
+-  // Returns the FormatType this class supports (for Browser Actions).
+-  static const ui::Clipboard::FormatType& GetBrowserActionFormatType();
++  // Returns the ClipboardFormatType this class supports (for Browser Actions).
++  static const ui::ClipboardFormatType& GetBrowserActionFormatType();
+ #endif
+ 
+  private:
+--- a/chrome/browser/ui/views/frame/browser_root_view.cc	2019-02-14 01:14:16.000000000 +0300
++++ b/chrome/browser/ui/views/frame/browser_root_view.cc	2019-02-20 20:43:52.312000000 +0300
+@@ -113,7 +113,7 @@
+ 
+ bool BrowserRootView::GetDropFormats(
+     int* formats,
+-    std::set<ui::Clipboard::FormatType>* format_types) {
++    std::set<ui::ClipboardFormatType>* format_types) {
+   if (tabstrip()->visible() || toolbar()->visible()) {
+     *formats = ui::OSExchangeData::URL | ui::OSExchangeData::STRING;
+     return true;
+--- a/chrome/browser/ui/views/frame/browser_root_view.h	2019-02-14 01:14:16.000000000 +0300
++++ b/chrome/browser/ui/views/frame/browser_root_view.h	2019-02-20 20:43:52.312000000 +0300
+@@ -58,9 +58,8 @@
+   ~BrowserRootView() override;
+ 
+   // views::View:
+-  bool GetDropFormats(
+-      int* formats,
+-      std::set<ui::Clipboard::FormatType>* format_types) override;
++  bool GetDropFormats(int* formats,
++                      std::set<ui::ClipboardFormatType>* format_types) override;
+   bool AreDropTypesRequired() override;
+   bool CanDrop(const ui::OSExchangeData& data) override;
+   void OnDragEntered(const ui::DropTargetEvent& event) override;
+--- a/chrome/browser/ui/views/location_bar/location_bar_view.cc	2019-02-14 01:14:16.000000000 +0300
++++ b/chrome/browser/ui/views/location_bar/location_bar_view.cc	2019-02-20 20:43:52.356000000 +0300
+@@ -81,6 +81,7 @@
+ #include "extensions/common/feature_switch.h"
+ #include "third_party/metrics_proto/omnibox_event.pb.h"
+ #include "ui/accessibility/ax_node_data.h"
++#include "ui/base/clipboard/clipboard.h"
+ #include "ui/base/dragdrop/drag_drop_types.h"
+ #include "ui/base/ime/input_method.h"
+ #include "ui/base/ime/input_method_keyboard_controller.h"
+--- a/chrome/browser/ui/views/location_bar/location_icon_view.cc	2019-02-14 01:14:16.000000000 +0300
++++ b/chrome/browser/ui/views/location_bar/location_icon_view.cc	2019-02-20 20:43:52.356000000 +0300
+@@ -19,6 +19,7 @@
+ #include "content/public/common/url_constants.h"
+ #include "extensions/common/constants.h"
+ #include "ui/accessibility/ax_node_data.h"
++#include "ui/base/clipboard/clipboard.h"
+ #include "ui/base/l10n/l10n_util.h"
+ #include "ui/views/controls/label.h"
+ 
+--- a/chrome/browser/ui/views/menu_view_drag_and_drop_test.cc	2019-02-14 01:14:16.000000000 +0300
++++ b/chrome/browser/ui/views/menu_view_drag_and_drop_test.cc	2019-02-20 20:43:52.364000000 +0300
+@@ -64,9 +64,8 @@
+ 
+  private:
+   // views::View:
+-  bool GetDropFormats(
+-      int* formats,
+-      std::set<ui::Clipboard::FormatType>* format_types) override;
++  bool GetDropFormats(int* formats,
++                      std::set<ui::ClipboardFormatType>* format_types) override;
+   bool AreDropTypesRequired() override;
+   bool CanDrop(const OSExchangeData& data) override;
+   void OnDragEntered(const ui::DropTargetEvent& event) override;
+@@ -105,7 +104,7 @@
+ 
+ bool TestTargetView::GetDropFormats(
+     int* formats,
+-    std::set<ui::Clipboard::FormatType>* format_types) {
++    std::set<ui::ClipboardFormatType>* format_types) {
+   *formats = ui::OSExchangeData::STRING;
+   return true;
+ }
+@@ -155,10 +154,9 @@
+   void BuildMenu(views::MenuItemView* menu) override;
+ 
+   // views::MenuDelegate:
+-  bool GetDropFormats(
+-      views::MenuItemView* menu,
++  bool GetDropFormats(views::MenuItemView* menu,
+       int* formats,
+-      std::set<ui::Clipboard::FormatType>* format_types) override;
++                      std::set<ui::ClipboardFormatType>* format_types) override;
+   bool AreDropTypesRequired(views::MenuItemView* menu) override;
+   bool CanDrop(views::MenuItemView* menu,
+                const ui::OSExchangeData& data) override;
+@@ -213,7 +211,7 @@
+ bool MenuViewDragAndDropTest::GetDropFormats(
+     views::MenuItemView* menu,
+     int* formats,
+-    std::set<ui::Clipboard::FormatType>* format_types) {
++    std::set<ui::ClipboardFormatType>* format_types) {
+   *formats = ui::OSExchangeData::STRING;
+   return true;
+ }
+--- a/chrome/browser/ui/views/omnibox/omnibox_view_views.cc	2019-02-14 01:14:16.000000000 +0300
++++ b/chrome/browser/ui/views/omnibox/omnibox_view_views.cc	2019-02-20 20:43:52.368000000 +0300
+@@ -1541,7 +1541,7 @@
+ 
+ void OmniboxViewViews::AppendDropFormats(
+     int* formats,
+-    std::set<ui::Clipboard::FormatType>* format_types) {
++    std::set<ui::ClipboardFormatType>* format_types) {
+   *formats = *formats | ui::OSExchangeData::URL;
+ }
+ 
+--- a/chrome/browser/ui/views/omnibox/omnibox_view_views.h	2019-02-14 01:14:16.000000000 +0300
++++ b/chrome/browser/ui/views/omnibox/omnibox_view_views.h	2019-02-20 20:43:52.368000000 +0300
+@@ -285,7 +285,7 @@
+   void OnGetDragOperationsForTextfield(int* drag_operations) override;
+   void AppendDropFormats(
+       int* formats,
+-      std::set<ui::Clipboard::FormatType>* format_types) override;
++      std::set<ui::ClipboardFormatType>* format_types) override;
+   int OnDrop(const ui::OSExchangeData& data) override;
+   void UpdateContextMenu(ui::SimpleMenuModel* menu_contents) override;
+ 
+--- a/chrome/browser/ui/views/tabs/tab_strip.cc	2019-02-14 01:14:16.000000000 +0300
++++ b/chrome/browser/ui/views/tabs/tab_strip.cc	2019-02-20 20:43:52.452000000 +0300
+@@ -44,6 +44,7 @@
+ #include "third_party/skia/include/effects/SkLayerDrawLooper.h"
+ #include "third_party/skia/include/pathops/SkPathOps.h"
+ #include "ui/accessibility/ax_node_data.h"
++#include "ui/base/clipboard/clipboard.h"
+ #include "ui/base/default_theme_provider.h"
+ #include "ui/base/dragdrop/drag_drop_types.h"
+ #include "ui/base/l10n/l10n_util.h"
+--- a/chrome/browser/ui/views/toolbar/app_menu.cc	2019-02-14 01:14:16.000000000 +0300
++++ b/chrome/browser/ui/views/toolbar/app_menu.cc	2019-02-20 20:43:52.456000000 +0300
+@@ -871,10 +871,9 @@
+       MenuDelegate::IsTriggerableEvent(menu, e);
+ }
+ 
+-bool AppMenu::GetDropFormats(
+-    MenuItemView* menu,
++bool AppMenu::GetDropFormats(MenuItemView* menu,
+     int* formats,
+-    std::set<ui::Clipboard::FormatType>* format_types) {
++                             std::set<ui::ClipboardFormatType>* format_types) {
+   CreateBookmarkMenu();
+   return bookmark_menu_delegate_.get() &&
+       bookmark_menu_delegate_->GetDropFormats(menu, formats, format_types);
+--- a/chrome/browser/ui/views/toolbar/app_menu.h	2019-02-14 01:14:16.000000000 +0300
++++ b/chrome/browser/ui/views/toolbar/app_menu.h	2019-02-20 20:43:52.456000000 +0300
+@@ -68,10 +68,9 @@
+                                 const gfx::Point& p) const override;
+   bool IsTriggerableEvent(views::MenuItemView* menu,
+                           const ui::Event& e) override;
+-  bool GetDropFormats(
+-      views::MenuItemView* menu,
++  bool GetDropFormats(views::MenuItemView* menu,
+       int* formats,
+-      std::set<ui::Clipboard::FormatType>* format_types) override;
++                      std::set<ui::ClipboardFormatType>* format_types) override;
+   bool AreDropTypesRequired(views::MenuItemView* menu) override;
+   bool CanDrop(views::MenuItemView* menu,
+                const ui::OSExchangeData& data) override;
+--- a/chrome/browser/ui/views/toolbar/browser_actions_container.cc	2019-02-14 01:14:16.000000000 +0300
++++ b/chrome/browser/ui/views/toolbar/browser_actions_container.cc	2019-02-20 20:43:52.456000000 +0300
+@@ -463,7 +463,7 @@
+ 
+ bool BrowserActionsContainer::GetDropFormats(
+     int* formats,
+-    std::set<ui::Clipboard::FormatType>* format_types) {
++    std::set<ui::ClipboardFormatType>* format_types) {
+   return BrowserActionDragData::GetDropFormats(format_types);
+ }
+ 
+--- a/chrome/browser/ui/views/toolbar/browser_actions_container.h	2019-02-14 01:14:16.000000000 +0300
++++ b/chrome/browser/ui/views/toolbar/browser_actions_container.h	2019-02-20 20:43:52.456000000 +0300
+@@ -193,9 +193,8 @@
+   int GetHeightForWidth(int width) const override;
+   gfx::Size GetMinimumSize() const override;
+   void Layout() override;
+-  bool GetDropFormats(
+-      int* formats,
+-      std::set<ui::Clipboard::FormatType>* format_types) override;
++  bool GetDropFormats(int* formats,
++                      std::set<ui::ClipboardFormatType>* format_types) override;
+   bool AreDropTypesRequired() override;
+   bool CanDrop(const ui::OSExchangeData& data) override;
+   int OnDragUpdated(const ui::DropTargetEvent& event) override;
+--- a/chrome/browser/ui/views/toolbar/browser_app_menu_button.cc	2019-02-14 01:14:16.000000000 +0300
++++ b/chrome/browser/ui/views/toolbar/browser_app_menu_button.cc	2019-02-20 20:43:52.456000000 +0300
+@@ -205,7 +205,7 @@
+ 
+ bool BrowserAppMenuButton::GetDropFormats(
+     int* formats,
+-    std::set<ui::Clipboard::FormatType>* format_types) {
++    std::set<ui::ClipboardFormatType>* format_types) {
+   return BrowserActionDragData::GetDropFormats(format_types);
+ }
+ 
+--- a/chrome/browser/ui/views/toolbar/browser_app_menu_button.h	2019-02-14 01:14:16.000000000 +0300
++++ b/chrome/browser/ui/views/toolbar/browser_app_menu_button.h	2019-02-20 20:43:52.456000000 +0300
+@@ -65,9 +65,8 @@
+ 
+   // views::MenuButton:
+   const char* GetClassName() const override;
+-  bool GetDropFormats(
+-      int* formats,
+-      std::set<ui::Clipboard::FormatType>* format_types) override;
++  bool GetDropFormats(int* formats,
++                      std::set<ui::ClipboardFormatType>* format_types) override;
+   bool AreDropTypesRequired() override;
+   bool CanDrop(const ui::OSExchangeData& data) override;
+   void OnDragEntered(const ui::DropTargetEvent& event) override;
+--- a/chrome/browser/ui/views/toolbar/home_button.cc	2019-02-14 01:14:16.000000000 +0300
++++ b/chrome/browser/ui/views/toolbar/home_button.cc	2019-02-20 20:43:52.456000000 +0300
+@@ -159,7 +159,7 @@
+ 
+ bool HomeButton::GetDropFormats(
+     int* formats,
+-    std::set<ui::Clipboard::FormatType>* format_types) {
++    std::set<ui::ClipboardFormatType>* format_types) {
+   *formats = ui::OSExchangeData::URL;
+   return true;
+ }
+--- a/chrome/browser/ui/views/toolbar/home_button.h	2019-02-14 01:14:16.000000000 +0300
++++ b/chrome/browser/ui/views/toolbar/home_button.h	2019-02-20 20:43:52.456000000 +0300
+@@ -19,9 +19,8 @@
+  private:
+   // ToolbarButton:
+   const char* GetClassName() const override;
+-  bool GetDropFormats(
+-      int* formats,
+-      std::set<ui::Clipboard::FormatType>* format_types) override;
++  bool GetDropFormats(int* formats,
++                      std::set<ui::ClipboardFormatType>* format_types) override;
+   bool CanDrop(const OSExchangeData& data) override;
+   int OnDragUpdated(const ui::DropTargetEvent& event) override;
+   int OnPerformDrop(const ui::DropTargetEvent& event) override;
+--- a/chrome/test/base/interactive_ui_tests_main.cc	2019-02-14 01:14:17.000000000 +0300
++++ b/chrome/test/base/interactive_ui_tests_main.cc	2019-02-20 20:43:54.632000000 +0300
+@@ -15,6 +15,9 @@
+ #if defined(USE_AURA)
+ #include "ui/aura/test/ui_controls_factory_aura.h"
+ #include "ui/base/test/ui_controls_aura.h"
++#if defined(USE_OZONE) && defined(OS_LINUX) && !defined(OS_CHROMEOS)
++#include "ui/ozone/public/ozone_platform.h"
++#endif
+ #if defined(USE_X11)
+ #include "ui/views/test/ui_controls_factory_desktop_aurax11.h"
+ #endif
+@@ -51,12 +54,15 @@
+ #endif
+ 
+ #if defined(OS_LINUX)
+-#if defined(USE_OZONE)
+-    NOTIMPLEMENTED();
++#if defined(USE_OZONE) && !defined(OS_CHROMEOS)
++    ui::OzonePlatform::InitParams params;
++    params.single_process = true;
++    params.using_mojo = false;
++    ui::OzonePlatform::EnsureInstance()->InitializeForUI(std::move(params));
+ #else
+     ui_controls::InstallUIControlsAura(
+         views::test::CreateUIControlsDesktopAura());
+-#endif  // defined(USE_OZONE)
++#endif  // defined(USE_OZONE) && !defined(OS_CHROMEOS)
+ #else
+     ui_controls::InstallUIControlsAura(aura::test::CreateUIControlsAura(NULL));
+ #endif  // defined(OS_LINUX)
+--- a/chrome/test/base/view_event_test_base.cc	2019-02-14 01:14:17.000000000 +0300
++++ b/chrome/test/base/view_event_test_base.cc	2019-02-20 20:43:54.640000000 +0300
+@@ -14,6 +14,7 @@
+ #include "chrome/test/base/testing_browser_process.h"
+ #include "chrome/test/base/view_event_test_platform_part.h"
+ #include "mojo/core/embedder/embedder.h"
++#include "ui/base/clipboard/clipboard.h"
+ #include "ui/base/ime/input_method_initializer.h"
+ #include "ui/base/test/ui_controls.h"
+ #include "ui/compositor/test/context_factories_for_test.h"
+--- a/chrome/test/BUILD.gn	2019-02-14 01:14:17.000000000 +0300
++++ b/chrome/test/BUILD.gn	2019-02-20 20:43:54.600000000 +0300
+@@ -1084,6 +1084,7 @@
+       "//third_party/widevine/cdm:headers",
+       "//ui/accessibility:test_support",
+       "//ui/base:test_support",
++      "//ui/base/clipboard:clipboard_test_support",
+       "//ui/compositor:test_support",
+       "//ui/resources",
+       "//ui/web_dialogs:test_support",
+@@ -4837,6 +4838,7 @@
+       "//third_party/libpng",
+       "//third_party/zlib",
+       "//ui/base:test_support",
++      "//ui/base/clipboard:clipboard_test_support",
+       "//ui/events:events_interactive_ui_tests",
+       "//ui/resources:ui_test_pak",
+       "//ui/web_dialogs:test_support",

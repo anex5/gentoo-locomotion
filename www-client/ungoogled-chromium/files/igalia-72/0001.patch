@@ -1,0 +1,326 @@
+--- a/ash/accelerators/accelerator_controller_unittest.cc	2019-02-14 01:14:14.000000000 +0300
++++ b/ash/accelerators/accelerator_controller_unittest.cc	2019-02-20 20:43:45.740000000 +0300
+@@ -940,7 +940,7 @@
+ 
+ namespace {
+ 
+-// Tests the TOGGLE_CAPS_LOCK accelerator.
++// Tests the four combinations of the TOGGLE_CAPS_LOCK accelerator.
+ TEST_F(AcceleratorControllerTest, ToggleCapsLockAccelerators) {
+   ImeController* controller = Shell::Get()->ime_controller();
+ 
+@@ -1001,57 +1001,6 @@
+   controller->FlushMojoForTesting();
+   EXPECT_FALSE(controller->IsCapsLockEnabled());
+   controller->UpdateCapsLockState(false);
+-  generator->ReleaseKey(ui::VKEY_M, ui::EF_NONE);
+-  generator->ReleaseKey(ui::VKEY_LWIN, ui::EF_ALT_DOWN);
+-
+-  // 6. Toggle CapsLock shortcut should still work after the partial screenshot
+-  // shortcut is used. (https://crbug.com/920030)
+-  {
+-    TestScreenshotDelegate* delegate = GetScreenshotDelegate();
+-    delegate->set_can_take_screenshot(true);
+-
+-    EXPECT_EQ(0, delegate->handle_take_partial_screenshot_count());
+-
+-    // Press Ctrl+Shift+F5 then release to enter the partial screenshot session.
+-    const ui::Accelerator press_partial_screenshot_shortcut(
+-        ui::VKEY_MEDIA_LAUNCH_APP1, ui::EF_SHIFT_DOWN | ui::EF_CONTROL_DOWN);
+-    EXPECT_TRUE(ProcessInController(press_partial_screenshot_shortcut));
+-    const ui::Accelerator release_partial_screenshot_shortcut =
+-        CreateReleaseAccelerator(ui::VKEY_MEDIA_LAUNCH_APP1,
+-                                 ui::EF_SHIFT_DOWN | ui::EF_CONTROL_DOWN);
+-    EXPECT_FALSE(ProcessInController(release_partial_screenshot_shortcut));
+-
+-    // Press mouse left button, move mouse and release mouse button. Then
+-    // the partial screenshot is taken.
+-    generator->MoveMouseTo(0, 0);
+-    generator->PressLeftButton();
+-    generator->MoveMouseTo(10, 10);
+-    generator->ReleaseLeftButton();
+-    EXPECT_EQ(1, delegate->handle_take_partial_screenshot_count());
+-
+-    // Press Search, Press Alt, Release Search, Release Alt. CapsLock should be
+-    // triggered.
+-    EXPECT_FALSE(ProcessInController(press_search_then_alt));
+-    EXPECT_TRUE(ProcessInController(release_search_before_alt));
+-    controller->FlushMojoForTesting();
+-    EXPECT_EQ(5, client.set_caps_lock_count_);
+-    EXPECT_TRUE(controller->IsCapsLockEnabled());
+-    controller->UpdateCapsLockState(false);
+-  }
+-
+-  // 7. Toggle CapsLock shortcut should still work after fake events generated.
+-  // (https://crbug.com/918317).
+-  generator->PressKey(ui::VKEY_PROCESSKEY, ui::EF_IME_FABRICATED_KEY);
+-  generator->ReleaseKey(ui::VKEY_UNKNOWN, ui::EF_IME_FABRICATED_KEY);
+-
+-  // Press Search, Press Alt, Release Search, Release Alt. CapsLock should be
+-  // triggered.
+-  EXPECT_FALSE(ProcessInController(press_search_then_alt));
+-  EXPECT_TRUE(ProcessInController(release_search_before_alt));
+-  controller->FlushMojoForTesting();
+-  EXPECT_EQ(6, client.set_caps_lock_count_);
+-  EXPECT_TRUE(controller->IsCapsLockEnabled());
+-  controller->UpdateCapsLockState(false);
+ }
+ 
+ class PreferredReservedAcceleratorsTest : public AshTestBase {
+--- a/ash/app_list/views/apps_grid_view.cc	2019-02-14 01:14:14.000000000 +0300
++++ b/ash/app_list/views/apps_grid_view.cc	2019-02-20 20:43:45.760000000 +0300
+@@ -887,7 +887,7 @@
+ 
+ bool AppsGridView::GetDropFormats(
+     int* formats,
+-    std::set<ui::Clipboard::FormatType>* format_types) {
++    std::set<ui::ClipboardFormatType>* format_types) {
+   // TODO(koz): Only accept a specific drag type for app shortcuts.
+   *formats = OSExchangeData::FILE_NAME;
+   return true;
+--- a/ash/app_list/views/apps_grid_view.h	2019-02-14 01:14:14.000000000 +0300
++++ b/ash/app_list/views/apps_grid_view.h	2019-02-20 20:43:45.760000000 +0300
+@@ -181,9 +181,8 @@
+   bool OnKeyPressed(const ui::KeyEvent& event) override;
+   void ViewHierarchyChanged(
+       const ViewHierarchyChangedDetails& details) override;
+-  bool GetDropFormats(
+-      int* formats,
+-      std::set<ui::Clipboard::FormatType>* format_types) override;
++  bool GetDropFormats(int* formats,
++                      std::set<ui::ClipboardFormatType>* format_types) override;
+   bool CanDrop(const OSExchangeData& data) override;
+   int OnDragUpdated(const ui::DropTargetEvent& event) override;
+   const char* GetClassName() const override;
+--- a/ash/display/display_configuration_observer.cc	2019-02-14 01:14:14.000000000 +0300
++++ b/ash/display/display_configuration_observer.cc	2019-02-20 20:43:45.812000000 +0300
+@@ -28,11 +28,14 @@
+   Shell::Get()->tablet_mode_controller()->AddObserver(this);
+   // Update the display pref with the initial power state.
+   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+-  if (command_line->HasSwitch(chromeos::switches::kFirstExecAfterBoot))
++  if (command_line->HasSwitch(chromeos::switches::kFirstExecAfterBoot) &&
++      save_preference_) {
+     Shell::Get()->display_prefs()->MaybeStoreDisplayPrefs();
++  }
+ }
+ 
+ void DisplayConfigurationObserver::OnDisplayConfigurationChanged() {
++  if (save_preference_)
+   Shell::Get()->display_prefs()->MaybeStoreDisplayPrefs();
+ }
+ 
+@@ -59,8 +62,8 @@
+   save_preference_ = false;
+   display::DisplayManager* display_manager = Shell::Get()->display_manager();
+   was_in_mirror_mode_ = display_manager->IsInMirrorMode();
+-  display_manager->layout_store()->set_forced_mirror_mode_for_tablet(true);
+   display_manager->SetMirrorMode(display::MirrorMode::kNormal, base::nullopt);
++  display_manager->layout_store()->set_forced_mirror_mode_for_tablet(true);
+ }
+ 
+ void DisplayConfigurationObserver::EndMirrorMode() {
+--- a/ash/display/display_configuration_observer.h	2019-02-14 01:14:14.000000000 +0300
++++ b/ash/display/display_configuration_observer.h	2019-02-20 20:43:45.812000000 +0300
+@@ -23,8 +23,6 @@
+   DisplayConfigurationObserver();
+   ~DisplayConfigurationObserver() override;
+ 
+-  bool save_preference() const { return save_preference_; }
+-
+  protected:
+   // WindowTreeHostManager::Observer:
+   void OnDisplaysInitialized() override;
+--- a/ash/display/display_manager_unittest.cc	2019-02-14 01:14:14.000000000 +0300
++++ b/ash/display/display_manager_unittest.cc	2019-02-20 20:43:45.812000000 +0300
+@@ -3088,43 +3088,6 @@
+   EXPECT_FALSE(app_list_controller->IsVisible());
+ }
+ 
+-TEST_F(DisplayManagerTest, DisplayPrefsAndForcedMirrorMode) {
+-  UpdateDisplay("400x300,800x800");
+-  base::RunLoop().RunUntilIdle();
+-
+-  // Set the first display as internal display so that the tablet mode can be
+-  // enabled.
+-  display::test::DisplayManagerTestApi(display_manager())
+-      .SetFirstDisplayAsInternalDisplay();
+-
+-  // Initially we can save display prefs ...
+-  EXPECT_TRUE(Shell::Get()->ShouldSaveDisplaySettings());
+-  // ... and there are no external displays that are candidates for mirror
+-  // restore.
+-  EXPECT_TRUE(display_manager()->external_display_mirror_info().empty());
+-
+-  // Turn on tablet mode, and expect that it's not possible to persist the
+-  // display prefs while forced mirror mode is active.
+-  Shell::Get()->tablet_mode_controller()->EnableTabletModeWindowManager(true);
+-  base::RunLoop().RunUntilIdle();
+-  EXPECT_TRUE(display_manager()->IsInSoftwareMirrorMode());
+-  EXPECT_TRUE(
+-      display_manager()->layout_store()->forced_mirror_mode_for_tablet());
+-  EXPECT_FALSE(Shell::Get()->ShouldSaveDisplaySettings());
+-  // Forced mirror mode does not add external displays as candidates for mirror
+-  // restore.
+-  EXPECT_TRUE(display_manager()->external_display_mirror_info().empty());
+-
+-  // Exit tablet mode and expect everything is back to normal.
+-  Shell::Get()->tablet_mode_controller()->EnableTabletModeWindowManager(false);
+-  base::RunLoop().RunUntilIdle();
+-  EXPECT_FALSE(display_manager()->IsInSoftwareMirrorMode());
+-  EXPECT_FALSE(
+-      display_manager()->layout_store()->forced_mirror_mode_for_tablet());
+-  EXPECT_TRUE(Shell::Get()->ShouldSaveDisplaySettings());
+-  EXPECT_TRUE(display_manager()->external_display_mirror_info().empty());
+-}
+-
+ TEST_F(DisplayManagerTest, DockMode) {
+   const int64_t internal_id = 1;
+   const int64_t external_id = 2;
+--- a/ash/drag_drop/drag_drop_controller_unittest.cc	2019-02-14 01:14:14.000000000 +0300
++++ b/ash/drag_drop/drag_drop_controller_unittest.cc	2019-02-20 20:43:45.824000000 +0300
+@@ -90,7 +90,7 @@
+ 
+   bool GetDropFormats(
+       int* formats,
+-      std::set<ui::Clipboard::FormatType>* format_types) override {
++      std::set<ui::ClipboardFormatType>* format_types) override {
+     *formats = ui::OSExchangeData::STRING;
+     return true;
+   }
+@@ -614,7 +614,7 @@
+     ui::ScopedClipboardWriter scw(ui::CLIPBOARD_TYPE_COPY_PASTE);
+     scw.WriteText(base::ASCIIToUTF16(clip_str));
+   }
+-  EXPECT_TRUE(cb->IsFormatAvailable(ui::Clipboard::GetPlainTextFormatType(),
++  EXPECT_TRUE(cb->IsFormatAvailable(ui::ClipboardFormatType::GetPlainTextType(),
+                                     ui::CLIPBOARD_TYPE_COPY_PASTE));
+ 
+   std::unique_ptr<views::Widget> widget = CreateTestWidget();
+@@ -635,7 +635,7 @@
+ 
+   // Verify the clipboard contents haven't changed
+   std::string result;
+-  EXPECT_TRUE(cb->IsFormatAvailable(ui::Clipboard::GetPlainTextFormatType(),
++  EXPECT_TRUE(cb->IsFormatAvailable(ui::ClipboardFormatType::GetPlainTextType(),
+                                     ui::CLIPBOARD_TYPE_COPY_PASTE));
+   cb->ReadAsciiText(ui::CLIPBOARD_TYPE_COPY_PASTE, &result);
+   EXPECT_EQ(clip_str, result);
+--- a/ash/drag_drop/drag_drop_interactive_uitest.cc	2019-02-14 01:14:14.000000000 +0300
++++ b/ash/drag_drop/drag_drop_interactive_uitest.cc	2019-02-20 20:43:45.824000000 +0300
+@@ -44,7 +44,7 @@
+   // views::View overrides:
+   bool GetDropFormats(
+       int* formats,
+-      std::set<ui::Clipboard::FormatType>* format_types) override {
++      std::set<ui::ClipboardFormatType>* format_types) override {
+     *formats = ui::OSExchangeData::STRING;
+     return true;
+   }
+--- a/ash/public/interfaces/login_screen.mojom	2019-02-14 01:14:14.000000000 +0300
++++ b/ash/public/interfaces/login_screen.mojom	2019-02-20 20:43:45.880000000 +0300
+@@ -19,36 +19,31 @@
+ enum OobeDialogState {
+   // Showing other screen, which does not impact the visibility of login shelf
+   // buttons.
+-  NONE = 0,
++  NONE,
+ 
+   // Showing gaia signin screen.
+-  GAIA_SIGNIN = 1,
+-
+-  // AccountPicker = 2, not currently used
++  GAIA_SIGNIN,
+ 
+   // Showing wrong hardware identification screen.
+-  WRONG_HWID_WARNING = 3,
++  WRONG_HWID_WARNING,
+ 
+   // Showing supervised user creation screen.
+-  SUPERVISED_USER_CREATION_FLOW = 4,
++  SUPERVISED_USER_CREATION_FLOW,
+ 
+   // Showing SAML password confirmation screen.
+-  SAML_PASSWORD_CONFIRM = 5,
++  SAML_PASSWORD_CONFIRM,
+ 
+   // Showing password changed screen.
+-  PASSWORD_CHANGED = 6,
++  PASSWORD_CHANGED,
+ 
+   // Showing device enrollment screen.
+-  ENROLLMENT = 7,
++  ENROLLMENT,
+ 
+   // Showing error screen.
+-  ERROR = 8,
+-
+-  // Showing sync consent screen.
+-  SYNC_CONSENT = 9,
++  ERROR,
+ 
+   // Oobe UI dialog is currently hidden.
+-  HIDDEN = 10,
++  HIDDEN,
+ };
+ 
+ // Allows clients (e.g. the browser process) to send messages to the ash
+--- a/ash/shelf/login_shelf_view.cc	2019-02-14 01:14:14.000000000 +0300
++++ b/ash/shelf/login_shelf_view.cc	2019-02-20 20:43:45.904000000 +0300
+@@ -562,7 +562,6 @@
+           allow_guest_ &&
+           dialog_state_ != mojom::OobeDialogState::WRONG_HWID_WARNING &&
+           dialog_state_ != mojom::OobeDialogState::SAML_PASSWORD_CONFIRM &&
+-          dialog_state_ != mojom::OobeDialogState::SYNC_CONSENT &&
+           (dialog_state_ != mojom::OobeDialogState::GAIA_SIGNIN ||
+            allow_guest_during_gaia_) &&
+           is_login_primary);
+--- a/ash/shell.cc	2019-02-14 01:14:14.000000000 +0300
++++ b/ash/shell.cc	2019-02-20 20:43:45.916000000 +0300
+@@ -481,8 +481,7 @@
+ bool Shell::ShouldSaveDisplaySettings() {
+   return !(
+       screen_orientation_controller_->ignore_display_configuration_updates() ||
+-      resolution_notification_controller_->DoesNotificationTimeout() ||
+-      !display_configuration_observer_->save_preference());
++      resolution_notification_controller_->DoesNotificationTimeout());
+ }
+ 
+ DockedMagnifierController* Shell::docked_magnifier_controller() {
+--- a/ash/utility/screenshot_controller.cc	2019-02-14 01:14:14.000000000 +0300
++++ b/ash/utility/screenshot_controller.cc	2019-02-20 20:43:46.008000000 +0300
+@@ -7,7 +7,6 @@
+ #include <cmath>
+ #include <memory>
+ 
+-#include "ash/accelerators/accelerator_controller.h"
+ #include "ash/display/mouse_cursor_event_filter.h"
+ #include "ash/public/cpp/shell_window_ids.h"
+ #include "ash/screenshot_delegate.h"
+@@ -24,7 +23,6 @@
+ #include "ui/events/event_handler.h"
+ #include "ui/gfx/canvas.h"
+ #include "ui/views/widget/widget.h"
+-#include "ui/wm/core/accelerator_filter.h"
+ #include "ui/wm/core/cursor_manager.h"
+ 
+ namespace ash {
+@@ -462,18 +460,6 @@
+   // they should be able to continue manipulating the screen.
+   if (!pen_events_only_)
+     event->StopPropagation();
+-
+-  // Key event is blocked. So have to record current accelerator here.
+-  if (event->stopped_propagation()) {
+-    if (::wm::AcceleratorFilter::ShouldFilter(event))
+-      return;
+-
+-    ui::Accelerator accelerator(*event);
+-    ash::Shell::Get()
+-        ->accelerator_controller()
+-        ->accelerator_history()
+-        ->StoreCurrentAccelerator(accelerator);
+-  }
+ }
+ 
+ void ScreenshotController::OnMouseEvent(ui::MouseEvent* event) {

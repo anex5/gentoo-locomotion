@@ -1,0 +1,65 @@
+--- a/ash/app_list/views/apps_grid_view.cc	2018-12-13 00:56:01.000000000 +0300
++++ b/ash/app_list/views/apps_grid_view.cc	2019-01-24 15:31:13.588000000 +0300
+@@ -874,7 +874,7 @@
+ 
+ bool AppsGridView::GetDropFormats(
+     int* formats,
+-    std::set<ui::Clipboard::FormatType>* format_types) {
++    std::set<ui::ClipboardFormatType>* format_types) {
+   // TODO(koz): Only accept a specific drag type for app shortcuts.
+   *formats = OSExchangeData::FILE_NAME;
+   return true;
+--- a/ash/app_list/views/apps_grid_view.h	2018-12-13 00:56:01.000000000 +0300
++++ b/ash/app_list/views/apps_grid_view.h	2019-01-24 15:31:13.592000000 +0300
+@@ -181,9 +181,8 @@
+   bool OnKeyPressed(const ui::KeyEvent& event) override;
+   void ViewHierarchyChanged(
+       const ViewHierarchyChangedDetails& details) override;
+-  bool GetDropFormats(
+-      int* formats,
+-      std::set<ui::Clipboard::FormatType>* format_types) override;
++  bool GetDropFormats(int* formats,
++                      std::set<ui::ClipboardFormatType>* format_types) override;
+   bool CanDrop(const OSExchangeData& data) override;
+   int OnDragUpdated(const ui::DropTargetEvent& event) override;
+   const char* GetClassName() const override;
+--- a/ash/drag_drop/drag_drop_controller_unittest.cc	2018-12-13 00:56:01.000000000 +0300
++++ b/ash/drag_drop/drag_drop_controller_unittest.cc	2019-01-24 15:31:16.012000000 +0300
+@@ -90,7 +90,7 @@
+ 
+   bool GetDropFormats(
+       int* formats,
+-      std::set<ui::Clipboard::FormatType>* format_types) override {
++      std::set<ui::ClipboardFormatType>* format_types) override {
+     *formats = ui::OSExchangeData::STRING;
+     return true;
+   }
+@@ -614,7 +614,7 @@
+     ui::ScopedClipboardWriter scw(ui::CLIPBOARD_TYPE_COPY_PASTE);
+     scw.WriteText(base::ASCIIToUTF16(clip_str));
+   }
+-  EXPECT_TRUE(cb->IsFormatAvailable(ui::Clipboard::GetPlainTextFormatType(),
++  EXPECT_TRUE(cb->IsFormatAvailable(ui::GetPlainTextClipboardFormatType(),
+                                     ui::CLIPBOARD_TYPE_COPY_PASTE));
+ 
+   std::unique_ptr<views::Widget> widget = CreateTestWidget();
+@@ -635,7 +635,7 @@
+ 
+   // Verify the clipboard contents haven't changed
+   std::string result;
+-  EXPECT_TRUE(cb->IsFormatAvailable(ui::Clipboard::GetPlainTextFormatType(),
++  EXPECT_TRUE(cb->IsFormatAvailable(ui::GetPlainTextClipboardFormatType(),
+                                     ui::CLIPBOARD_TYPE_COPY_PASTE));
+   cb->ReadAsciiText(ui::CLIPBOARD_TYPE_COPY_PASTE, &result);
+   EXPECT_EQ(clip_str, result);
+--- a/ash/drag_drop/drag_drop_interactive_uitest.cc	2018-12-13 00:56:01.000000000 +0300
++++ b/ash/drag_drop/drag_drop_interactive_uitest.cc	2019-01-24 15:31:16.012000000 +0300
+@@ -44,7 +44,7 @@
+   // views::View overrides:
+   bool GetDropFormats(
+       int* formats,
+-      std::set<ui::Clipboard::FormatType>* format_types) override {
++      std::set<ui::ClipboardFormatType>* format_types) override {
+     *formats = ui::OSExchangeData::STRING;
+     return true;
+   }
