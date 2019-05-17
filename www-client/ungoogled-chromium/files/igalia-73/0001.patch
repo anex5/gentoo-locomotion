@@ -1,0 +1,143 @@
+--- a/ash/media/media_controller.cc	2019-04-05 03:48:53.000000000 +0300
++++ b/ash/media/media_controller.cc	2019-05-17 18:53:08.184000000 +0300
+@@ -116,7 +116,7 @@
+ void MediaController::SetMediaSessionControllerForTest(
+     media_session::mojom::MediaControllerPtr controller) {
+   media_session_controller_ptr_ = std::move(controller);
+-  BindMediaControllerObserver();
++  BindMediaSessionObserver();
+ }
+ 
+ void MediaController::FlushForTesting() {
+@@ -138,7 +138,7 @@
+         base::BindRepeating(&MediaController::OnMediaSessionControllerError,
+                             base::Unretained(this)));
+ 
+-    BindMediaControllerObserver();
++    BindMediaSessionObserver();
+   }
+ 
+   return media_session_controller_ptr_.get();
+@@ -149,12 +149,12 @@
+   supported_media_session_action_ = false;
+ }
+ 
+-void MediaController::BindMediaControllerObserver() {
++void MediaController::BindMediaSessionObserver() {
+   if (!media_session_controller_ptr_.is_bound())
+     return;
+ 
+-  media_session::mojom::MediaControllerObserverPtr observer;
+-  media_controller_observer_binding_.Bind(mojo::MakeRequest(&observer));
++  media_session::mojom::MediaSessionObserverPtr observer;
++  media_session_observer_binding_.Bind(mojo::MakeRequest(&observer));
+   media_session_controller_ptr_->AddObserver(std::move(observer));
+ }
+ 
+--- a/ash/media/media_controller.h	2019-04-05 03:48:53.000000000 +0300
++++ b/ash/media/media_controller.h	2019-05-17 18:53:08.184000000 +0300
+@@ -13,6 +13,7 @@
+ #include "mojo/public/cpp/bindings/associated_binding.h"
+ #include "mojo/public/cpp/bindings/binding_set.h"
+ #include "services/media_session/public/mojom/media_controller.mojom.h"
++#include "services/media_session/public/mojom/media_session.mojom.h"
+ 
+ namespace service_manager {
+ class Connector;
+@@ -37,7 +38,7 @@
+ // been provided to us.
+ class ASH_EXPORT MediaController
+     : public mojom::MediaController,
+-      public media_session::mojom::MediaControllerObserver {
++      public media_session::mojom::MediaSessionObserver {
+  public:
+   // |connector| can be null in tests.
+   explicit MediaController(service_manager::Connector* connector);
+@@ -65,7 +66,7 @@
+   void RequestCaptureState();
+   void SuspendMediaSessions();
+ 
+-  // media_session::mojom::MediaControllerObserver:
++  // media_session::mojom::MediaSessionObserver:
+   void MediaSessionInfoChanged(
+       media_session::mojom::MediaSessionInfoPtr session_info) override {}
+   void MediaSessionMetadataChanged(
+@@ -98,7 +99,7 @@
+ 
+   void OnMediaSessionControllerError();
+ 
+-  void BindMediaControllerObserver();
++  void BindMediaSessionObserver();
+ 
+   // Returns true if we should use the media session service for key handling.
+   bool ShouldUseMediaSession();
+@@ -112,8 +113,8 @@
+ 
+   service_manager::Connector* const connector_;
+ 
+-  mojo::Binding<media_session::mojom::MediaControllerObserver>
+-      media_controller_observer_binding_{this};
++  mojo::Binding<media_session::mojom::MediaSessionObserver>
++      media_session_observer_binding_{this};
+ 
+   // Bindings for users of the mojo interface.
+   mojo::BindingSet<mojom::MediaController> bindings_;
+--- a/ash/media/media_notification_item.cc	2019-04-05 03:48:53.000000000 +0300
++++ b/ash/media/media_notification_item.cc	2019-05-17 18:53:08.184000000 +0300
+@@ -39,9 +39,9 @@
+       session_info_(std::move(session_info)) {
+   // Bind an observer to the associated media session.
+   if (media_controller_ptr_.is_bound()) {
+-    media_session::mojom::MediaControllerObserverPtr media_controller_observer;
+-    observer_binding_.Bind(mojo::MakeRequest(&media_controller_observer));
+-    media_controller_ptr_->AddObserver(std::move(media_controller_observer));
++    media_session::mojom::MediaSessionObserverPtr media_session_observer;
++    observer_binding_.Bind(mojo::MakeRequest(&media_session_observer));
++    media_controller_ptr_->AddObserver(std::move(media_session_observer));
+   }
+ 
+   MaybeHideOrShowNotification();
+--- a/ash/media/media_notification_item.h	2019-04-05 03:48:53.000000000 +0300
++++ b/ash/media/media_notification_item.h	2019-05-17 18:53:08.184000000 +0300
+@@ -21,14 +21,14 @@
+ // MediaNotificationItem manages hiding/showing a media notification and
+ // updating the metadata for a single media session.
+ class ASH_EXPORT MediaNotificationItem
+-    : public media_session::mojom::MediaControllerObserver {
++    : public media_session::mojom::MediaSessionObserver {
+  public:
+   MediaNotificationItem(const std::string& id,
+                         media_session::mojom::MediaControllerPtr controller,
+                         media_session::mojom::MediaSessionInfoPtr session_info);
+   ~MediaNotificationItem() override;
+ 
+-  // media_session::mojom::MediaControllerObserver:
++  // media_session::mojom::MediaSessionObserver:
+   void MediaSessionInfoChanged(
+       media_session::mojom::MediaSessionInfoPtr session_info) override;
+   void MediaSessionMetadataChanged(
+@@ -69,8 +69,8 @@
+ 
+   std::set<media_session::mojom::MediaSessionAction> session_actions_;
+ 
+-  mojo::Binding<media_session::mojom::MediaControllerObserver>
+-      observer_binding_{this};
++  mojo::Binding<media_session::mojom::MediaSessionObserver> observer_binding_{
++      this};
+ 
+   base::WeakPtrFactory<MediaNotificationItem> weak_ptr_factory_{this};
+ 
+--- a/ash/wm/tablet_mode/tablet_mode_window_manager.cc	2019-04-05 03:48:54.000000000 +0300
++++ b/ash/wm/tablet_mode/tablet_mode_window_manager.cc	2019-05-17 18:53:08.384000000 +0300
+@@ -428,10 +428,8 @@
+ 
+   // If the changing bounds in the maximized/fullscreen is allowed, then
+   // let the client manage it even in tablet mode.
+-  if (!wm::GetWindowState(window) ||
+-      wm::GetWindowState(window)->allow_set_bounds_direct()) {
++  if (wm::GetWindowState(window)->allow_set_bounds_direct())
+     return false;
+-  }
+ 
+   return window->type() == aura::client::WINDOW_TYPE_NORMAL;
+ }

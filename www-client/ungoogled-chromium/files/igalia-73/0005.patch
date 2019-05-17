@@ -1,0 +1,57 @@
+--- a/gpu/config/gpu_driver_bug_list.json	2019-04-05 03:49:19.000000000 +0300
++++ b/gpu/config/gpu_driver_bug_list.json	2019-05-17 18:53:33.052000000 +0300
+@@ -3102,6 +3102,30 @@
+       "features": [
+         "disable_direct_composition_layers"
+       ]
++    },
++    {
++      "id": 295,
++      "description": "Avoid waiting on a egl fence before swapping buffers and rely on implicit sync on Intel GPUs",
++      "cr_bugs": [938286],
++      "os": {
++        "type": "linux"
++      },
++      "gl_vendor": "Intel.*",
++      "features": [
++        "rely_on_implicit_sync_for_swap_buffers"
++      ]
++    },
++    {
++      "id": 296,
++      "description": "Avoid waiting on a egl fence before swapping buffers and rely on implicit sync on Broadcom GPUs",
++      "cr_bugs": [938286],
++      "os": {
++        "type": "linux"
++      },
++      "gl_vendor": "Broadcom.*",
++      "features": [
++        "rely_on_implicit_sync_for_swap_buffers"
++      ]
+     }
+   ]
+ }
+--- a/gpu/ipc/client/command_buffer_proxy_impl.cc	2019-04-05 03:49:19.000000000 +0300
++++ b/gpu/ipc/client/command_buffer_proxy_impl.cc	2019-05-17 18:53:33.064000000 +0300
+@@ -637,10 +637,7 @@
+   if (last_state_.error != gpu::error::kNoError)
+     return;
+ 
+-  // TakeFrontBuffer should be a deferred message so that it's sequenced
+-  // correctly with respect to preceding ReturnFrontBuffer messages.
+-  last_flush_id_ = channel_->EnqueueDeferredMessage(
+-      GpuCommandBufferMsg_TakeFrontBuffer(route_id_, mailbox));
++  Send(new GpuCommandBufferMsg_TakeFrontBuffer(route_id_, mailbox));
+ }
+ 
+ void CommandBufferProxyImpl::ReturnFrontBuffer(const gpu::Mailbox& mailbox,
+--- a/gpu/ipc/service/gpu_channel.cc	2019-04-05 03:49:19.000000000 +0300
++++ b/gpu/ipc/service/gpu_channel.cc	2019-05-17 18:53:33.080000000 +0300
+@@ -237,7 +237,6 @@
+     case GpuCommandBufferMsg_AsyncFlush::ID:
+     case GpuCommandBufferMsg_DestroyTransferBuffer::ID:
+     case GpuCommandBufferMsg_ReturnFrontBuffer::ID:
+-    case GpuCommandBufferMsg_TakeFrontBuffer::ID:
+     case GpuChannelMsg_CreateSharedImage::ID:
+     case GpuChannelMsg_DestroySharedImage::ID:
+       return MessageErrorHandler(message, "Invalid message");

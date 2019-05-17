@@ -1,0 +1,736 @@
+--- a/services/media_session/media_controller.cc	2019-04-05 03:49:26.000000000 +0300
++++ b/services/media_session/media_controller.cc	2019-05-17 18:53:37.868000000 +0300
+@@ -49,10 +49,12 @@
+   }
+ }
+ 
+-void MediaController::AddObserver(mojom::MediaControllerObserverPtr observer) {
++void MediaController::AddObserver(mojom::MediaSessionObserverPtr observer) {
+   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+ 
+-  // Flush the new observer with the current state.
++  // Flush the new observer with the state. We always flush the metadata as that
++  // is optional so null is a valid value whereas the session info is required.
++  if (!session_info_.is_null())
+   observer->MediaSessionInfoChanged(session_info_.Clone());
+   observer->MediaSessionMetadataChanged(session_metadata_);
+   observer->MediaSessionActionsChanged(session_actions_);
+@@ -63,7 +65,7 @@
+ void MediaController::MediaSessionInfoChanged(mojom::MediaSessionInfoPtr info) {
+   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+ 
+-  observers_.ForAllPtrs([&info](mojom::MediaControllerObserver* observer) {
++  observers_.ForAllPtrs([&info](mojom::MediaSessionObserver* observer) {
+     observer->MediaSessionInfoChanged(info.Clone());
+   });
+ 
+@@ -74,7 +76,7 @@
+     const base::Optional<MediaMetadata>& metadata) {
+   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+ 
+-  observers_.ForAllPtrs([&metadata](mojom::MediaControllerObserver* observer) {
++  observers_.ForAllPtrs([&metadata](mojom::MediaSessionObserver* observer) {
+     observer->MediaSessionMetadataChanged(metadata);
+   });
+ 
+@@ -85,7 +87,7 @@
+     const std::vector<mojom::MediaSessionAction>& actions) {
+   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+ 
+-  observers_.ForAllPtrs([&actions](mojom::MediaControllerObserver* observer) {
++  observers_.ForAllPtrs([&actions](mojom::MediaSessionObserver* observer) {
+     observer->MediaSessionActionsChanged(actions);
+   });
+ 
+@@ -129,15 +131,6 @@
+       mojom::MediaSessionObserverPtr observer;
+       session_binding_.Bind(mojo::MakeRequest(&observer));
+       session->AddObserver(std::move(observer));
+-    } else {
+-      // If we are no longer bound to a session we should flush the observers
+-      // with empty data.
+-      observers_.ForAllPtrs([](mojom::MediaControllerObserver* observer) {
+-        observer->MediaSessionInfoChanged(nullptr);
+-        observer->MediaSessionMetadataChanged(base::nullopt);
+-        observer->MediaSessionActionsChanged(
+-            std::vector<mojom::MediaSessionAction>());
+-      });
+     }
+   }
+ 
+--- a/services/media_session/media_controller.h	2019-04-05 03:49:26.000000000 +0300
++++ b/services/media_session/media_controller.h	2019-05-17 18:53:37.868000000 +0300
+@@ -33,7 +33,7 @@
+   void Resume() override;
+   void Stop() override;
+   void ToggleSuspendResume() override;
+-  void AddObserver(mojom::MediaControllerObserverPtr observer) override;
++  void AddObserver(mojom::MediaSessionObserverPtr observer) override;
+   void PreviousTrack() override;
+   void NextTrack() override;
+   void Seek(base::TimeDelta seek_time) override;
+@@ -70,8 +70,8 @@
+   // the underlying MediaSession.
+   mojom::MediaSession* session_ = nullptr;
+ 
+-  // Observers that are observing |this|.
+-  mojo::InterfacePtrSet<mojom::MediaControllerObserver> observers_;
++  // Observers that are observing |session_|.
++  mojo::InterfacePtrSet<mojom::MediaSessionObserver> observers_;
+ 
+   // Binding for |this| to act as an observer to |session_|.
+   mojo::Binding<mojom::MediaSessionObserver> session_binding_{this};
+--- a/services/media_session/media_controller_unittest.cc	2019-04-05 03:49:26.000000000 +0300
++++ b/services/media_session/media_controller_unittest.cc	2019-05-17 18:53:37.868000000 +0300
+@@ -16,7 +16,6 @@
+ #include "services/media_session/media_session_service.h"
+ #include "services/media_session/public/cpp/media_metadata.h"
+ #include "services/media_session/public/cpp/test/mock_media_session.h"
+-#include "services/media_session/public/cpp/test/test_media_controller.h"
+ #include "services/media_session/public/mojom/constants.mojom.h"
+ #include "services/service_manager/public/cpp/test/test_connector_factory.h"
+ #include "testing/gtest/include/gtest/gtest.h"
+@@ -417,18 +416,18 @@
+   }
+ 
+   {
+-    test::TestMediaControllerObserver observer(controller());
++    test::MockMediaSessionMojoObserver observer(controller());
+     observer.WaitForState(mojom::MediaSessionInfo::SessionState::kActive);
+   }
+ 
+   {
+-    test::TestMediaControllerObserver observer(controller());
++    test::MockMediaSessionMojoObserver observer(controller());
+     controller()->Suspend();
+     observer.WaitForState(mojom::MediaSessionInfo::SessionState::kSuspended);
+   }
+ 
+   {
+-    test::TestMediaControllerObserver observer(controller());
++    test::MockMediaSessionMojoObserver observer(controller());
+     RequestAudioFocus(media_session_2, mojom::AudioFocusType::kGain);
+     observer.WaitForState(mojom::MediaSessionInfo::SessionState::kActive);
+   }
+@@ -440,7 +439,7 @@
+   }
+ 
+   {
+-    test::TestMediaControllerObserver observer(controller());
++    test::MockMediaSessionMojoObserver observer(controller());
+     observer.WaitForState(mojom::MediaSessionInfo::SessionState::kActive);
+   }
+ }
+@@ -524,8 +523,8 @@
+   media_session.AbandonAudioFocusFromClient();
+ 
+   {
+-    test::TestMediaControllerObserver observer(controller());
+-    observer.WaitForEmptyMetadata();
++    test::MockMediaSessionMojoObserver observer(controller());
++    EXPECT_FALSE(observer.WaitForMetadata());
+   }
+ }
+ 
+@@ -542,9 +541,9 @@
+   }
+ 
+   {
+-    test::TestMediaControllerObserver observer(controller());
++    test::MockMediaSessionMojoObserver observer(controller());
+     media_session.SimulateMetadataChanged(test_metadata);
+-    observer.WaitForEmptyMetadata();
++    EXPECT_EQ(test_metadata, observer.WaitForMetadata());
+   }
+ }
+ 
+@@ -566,10 +565,9 @@
+   }
+ 
+   {
+-    test::TestMediaControllerObserver observer(controller());
++    test::MockMediaSessionMojoObserver observer(controller());
+     media_session.SimulateMetadataChanged(test_metadata);
+-    observer.WaitForNonEmptyMetadata();
+-    EXPECT_EQ(metadata, observer.session_metadata());
++    EXPECT_EQ(metadata, observer.WaitForNonEmptyMetadata());
+   }
+ }
+ 
+@@ -588,8 +586,8 @@
+   media_session.SimulateMetadataChanged(test_metadata);
+ 
+   {
+-    test::TestMediaControllerObserver observer(controller());
+-    observer.WaitForEmptyMetadata();
++    test::MockMediaSessionMojoObserver observer(controller());
++    EXPECT_EQ(test_metadata, observer.WaitForMetadata());
+   }
+ }
+ 
+@@ -613,9 +611,8 @@
+   media_session.SimulateMetadataChanged(test_metadata);
+ 
+   {
+-    test::TestMediaControllerObserver observer(controller());
+-    observer.WaitForNonEmptyMetadata();
+-    EXPECT_EQ(metadata, observer.session_metadata());
++    test::MockMediaSessionMojoObserver observer(controller());
++    EXPECT_EQ(metadata, *observer.WaitForMetadata());
+   }
+ }
+ 
+@@ -743,7 +740,7 @@
+   }
+ 
+   {
+-    test::TestMediaControllerObserver observer(controller());
++    test::MockMediaSessionMojoObserver observer(controller());
+     observer.WaitForActions();
+     EXPECT_TRUE(observer.actions().empty());
+   }
+@@ -762,7 +759,7 @@
+   media_session.EnableAction(mojom::MediaSessionAction::kPlay);
+ 
+   {
+-    test::TestMediaControllerObserver observer(controller());
++    test::MockMediaSessionMojoObserver observer(controller());
+     observer.WaitForActions();
+ 
+     EXPECT_EQ(1u, observer.actions().size());
+@@ -782,7 +779,9 @@
+   }
+ 
+   {
+-    test::TestMediaControllerObserver observer(controller());
++    test::MockMediaSessionMojoObserver observer(controller());
++    observer.WaitForActions();
++
+     media_session.DisableAction(mojom::MediaSessionAction::kPlay);
+     observer.WaitForActions();
+ 
+@@ -801,7 +800,9 @@
+   }
+ 
+   {
+-    test::TestMediaControllerObserver observer(controller());
++    test::MockMediaSessionMojoObserver observer(controller());
++    observer.WaitForActions();
++
+     media_session.EnableAction(mojom::MediaSessionAction::kPlay);
+     observer.WaitForActions();
+ 
+@@ -824,54 +825,7 @@
+   media_session.AbandonAudioFocusFromClient();
+ 
+   {
+-    test::TestMediaControllerObserver observer(controller());
+-    observer.WaitForActions();
+-    EXPECT_TRUE(observer.actions().empty());
+-  }
+-}
+-
+-TEST_F(MediaControllerTest, ActiveController_Observer_Abandoned) {
+-  test::MockMediaSession media_session;
+-  media_session.SetIsControllable(true);
+-
+-  {
+-    test::MockMediaSessionMojoObserver observer(media_session);
+-    RequestAudioFocus(media_session, mojom::AudioFocusType::kGain);
+-    observer.WaitForState(mojom::MediaSessionInfo::SessionState::kActive);
+-  }
+-
+-  {
+-    test::TestMediaControllerObserver observer(controller());
+-    media_session.AbandonAudioFocusFromClient();
+-
+-    // We should see empty info, metadata and actions flushed since the active
+-    // controller is no longer bound to a media session.
+-    observer.WaitForEmptyInfo();
+-    observer.WaitForEmptyMetadata();
+-    observer.WaitForActions();
+-    EXPECT_TRUE(observer.actions().empty());
+-  }
+-}
+-
+-TEST_F(MediaControllerTest, ActiveController_AddObserver_Abandoned) {
+-  test::MockMediaSession media_session;
+-  media_session.SetIsControllable(true);
+-
+-  {
+-    test::MockMediaSessionMojoObserver observer(media_session);
+-    RequestAudioFocus(media_session, mojom::AudioFocusType::kGain);
+-    observer.WaitForState(mojom::MediaSessionInfo::SessionState::kActive);
+-  }
+-
+-  media_session.AbandonAudioFocusFromClient();
+-
+-  {
+-    test::TestMediaControllerObserver observer(controller());
+-
+-    // We should see empty info, metadata and actions since the active
+-    // controller is no longer bound to a media session.
+-    observer.WaitForEmptyInfo();
+-    observer.WaitForEmptyMetadata();
++    test::MockMediaSessionMojoObserver observer(controller());
+     observer.WaitForActions();
+     EXPECT_TRUE(observer.actions().empty());
+   }
+--- a/services/media_session/public/cpp/media_metadata.cc	2019-04-05 03:49:26.000000000 +0300
++++ b/services/media_session/public/cpp/media_metadata.cc	2019-05-17 18:53:37.872000000 +0300
+@@ -36,9 +36,4 @@
+   return !(*this == other);
+ }
+ 
+-bool MediaMetadata::IsEmpty() const {
+-  return title.empty() && artist.empty() && album.empty() &&
+-         source_title.empty() && artwork.empty();
+-}
+-
+ }  // namespace media_session
+--- a/services/media_session/public/cpp/media_metadata.h	2019-04-05 03:49:26.000000000 +0300
++++ b/services/media_session/public/cpp/media_metadata.h	2019-05-17 18:53:37.872000000 +0300
+@@ -80,9 +80,6 @@
+   // session. This could be the name of the app or the name of the site playing
+   // media.
+   base::string16 source_title;
+-
+-  // Returns whether |this| contains no metadata.
+-  bool IsEmpty() const;
+ };
+ 
+ }  // namespace media_session
+--- a/services/media_session/public/cpp/test/mock_media_session.cc	2019-04-05 03:49:26.000000000 +0300
++++ b/services/media_session/public/cpp/test/mock_media_session.cc	2019-05-17 18:53:37.872000000 +0300
+@@ -11,6 +11,19 @@
+ namespace media_session {
+ namespace test {
+ 
++namespace {
++
++bool IsMetadataNonEmpty(const base::Optional<MediaMetadata>& metadata) {
++  if (!metadata.has_value())
++    return false;
++
++  return !metadata->title.empty() || !metadata->artist.empty() ||
++         !metadata->album.empty() || !metadata->source_title.empty() ||
++         !metadata->artwork.empty();
++}
++
++}  // namespace
++
+ MockMediaSessionMojoObserver::MockMediaSessionMojoObserver(
+     mojom::MediaSession& media_session)
+     : binding_(this) {
+@@ -19,6 +32,14 @@
+   media_session.AddObserver(std::move(observer));
+ }
+ 
++MockMediaSessionMojoObserver::MockMediaSessionMojoObserver(
++    mojom::MediaControllerPtr& controller)
++    : binding_(this) {
++  mojom::MediaSessionObserverPtr observer;
++  binding_.Bind(mojo::MakeRequest(&observer));
++  controller->AddObserver(std::move(observer));
++}
++
+ MockMediaSessionMojoObserver::~MockMediaSessionMojoObserver() = default;
+ 
+ void MockMediaSessionMojoObserver::MediaSessionInfoChanged(
+@@ -38,8 +59,7 @@
+   if (waiting_for_metadata_) {
+     run_loop_->Quit();
+     waiting_for_metadata_ = false;
+-  } else if (waiting_for_non_empty_metadata_ && metadata.has_value() &&
+-             !metadata->IsEmpty()) {
++  } else if (waiting_for_non_empty_metadata_ && IsMetadataNonEmpty(metadata)) {
+     run_loop_->Quit();
+     waiting_for_non_empty_metadata_ = false;
+   }
+--- a/services/media_session/public/cpp/test/mock_media_session.h	2019-04-05 03:49:26.000000000 +0300
++++ b/services/media_session/public/cpp/test/mock_media_session.h	2019-05-17 18:53:37.872000000 +0300
+@@ -27,7 +27,10 @@
+ class COMPONENT_EXPORT(MEDIA_SESSION_TEST_SUPPORT_CPP)
+     MockMediaSessionMojoObserver : public mojom::MediaSessionObserver {
+  public:
++  // A MediaSessionObserver can observe a MediaSession directly or through a
++  // MediaController.
+   explicit MockMediaSessionMojoObserver(mojom::MediaSession& media_session);
++  explicit MockMediaSessionMojoObserver(mojom::MediaControllerPtr& controller);
+ 
+   ~MockMediaSessionMojoObserver() override;
+ 
+--- a/services/media_session/public/cpp/test/test_media_controller.cc	2019-04-05 03:49:26.000000000 +0300
++++ b/services/media_session/public/cpp/test/test_media_controller.cc	2019-05-17 18:53:37.872000000 +0300
+@@ -7,116 +7,6 @@
+ namespace media_session {
+ namespace test {
+ 
+-TestMediaControllerObserver::TestMediaControllerObserver(
+-    mojom::MediaControllerPtr& media_controller)
+-    : binding_(this) {
+-  mojom::MediaControllerObserverPtr observer;
+-  binding_.Bind(mojo::MakeRequest(&observer));
+-  media_controller->AddObserver(std::move(observer));
+-}
+-
+-TestMediaControllerObserver::~TestMediaControllerObserver() = default;
+-
+-void TestMediaControllerObserver::MediaSessionInfoChanged(
+-    mojom::MediaSessionInfoPtr session) {
+-  session_info_ = std::move(session);
+-
+-  if (session_info_.has_value() && !session_info_->is_null()) {
+-    if (wanted_state_ == session_info()->state ||
+-        session_info()->playback_state == wanted_playback_state_) {
+-      run_loop_->Quit();
+-    }
+-  } else if (waiting_for_empty_info_) {
+-    waiting_for_empty_info_ = false;
+-    run_loop_->Quit();
+-  }
+-}
+-
+-void TestMediaControllerObserver::MediaSessionMetadataChanged(
+-    const base::Optional<MediaMetadata>& metadata) {
+-  session_metadata_ = metadata;
+-
+-  if (waiting_for_empty_metadata_ &&
+-      (!metadata.has_value() || metadata->IsEmpty())) {
+-    run_loop_->Quit();
+-    waiting_for_empty_metadata_ = false;
+-  } else if (waiting_for_non_empty_metadata_ && metadata.has_value() &&
+-             !metadata->IsEmpty()) {
+-    run_loop_->Quit();
+-    waiting_for_non_empty_metadata_ = false;
+-  }
+-}
+-
+-void TestMediaControllerObserver::MediaSessionActionsChanged(
+-    const std::vector<mojom::MediaSessionAction>& actions) {
+-  session_actions_ = actions;
+-  session_actions_set_ =
+-      std::set<mojom::MediaSessionAction>(actions.begin(), actions.end());
+-
+-  if (waiting_for_actions_) {
+-    run_loop_->Quit();
+-    waiting_for_actions_ = false;
+-  }
+-}
+-
+-void TestMediaControllerObserver::WaitForState(
+-    mojom::MediaSessionInfo::SessionState wanted_state) {
+-  if (session_info_ && session_info()->state == wanted_state)
+-    return;
+-
+-  wanted_state_ = wanted_state;
+-  StartWaiting();
+-}
+-
+-void TestMediaControllerObserver::WaitForPlaybackState(
+-    mojom::MediaPlaybackState wanted_state) {
+-  if (session_info_ && session_info()->playback_state == wanted_state)
+-    return;
+-
+-  wanted_playback_state_ = wanted_state;
+-  StartWaiting();
+-}
+-
+-void TestMediaControllerObserver::WaitForEmptyInfo() {
+-  if (session_info_.has_value() && session_info_->is_null())
+-    return;
+-
+-  waiting_for_empty_info_ = true;
+-  StartWaiting();
+-}
+-
+-void TestMediaControllerObserver::WaitForEmptyMetadata() {
+-  if (session_metadata_.has_value())
+-    return;
+-
+-  waiting_for_empty_metadata_ = true;
+-  StartWaiting();
+-}
+-
+-void TestMediaControllerObserver::WaitForNonEmptyMetadata() {
+-  if (session_metadata_.has_value() && !session_metadata_.value()->IsEmpty())
+-    return;
+-
+-  waiting_for_non_empty_metadata_ = true;
+-  StartWaiting();
+-}
+-
+-void TestMediaControllerObserver::WaitForActions() {
+-  if (session_actions_.has_value())
+-    return;
+-
+-  waiting_for_actions_ = true;
+-  StartWaiting();
+-}
+-
+-void TestMediaControllerObserver::StartWaiting() {
+-  DCHECK(!run_loop_);
+-
+-  run_loop_ = std::make_unique<base::RunLoop>();
+-  run_loop_->Run();
+-  run_loop_.reset();
+-}
+-
+ TestMediaController::TestMediaController() = default;
+ 
+ TestMediaController::~TestMediaController() = default;
+@@ -139,8 +29,7 @@
+   ++toggle_suspend_resume_count_;
+ }
+ 
+-void TestMediaController::AddObserver(
+-    mojom::MediaControllerObserverPtr observer) {
++void TestMediaController::AddObserver(mojom::MediaSessionObserverPtr observer) {
+   ++add_observer_count_;
+   observers_.AddPtr(std::move(observer));
+ }
+@@ -165,7 +54,7 @@
+ 
+ void TestMediaController::SimulateMediaSessionActionsChanged(
+     const std::vector<mojom::MediaSessionAction>& actions) {
+-  observers_.ForAllPtrs([&actions](mojom::MediaControllerObserver* observer) {
++  observers_.ForAllPtrs([&actions](mojom::MediaSessionObserver* observer) {
+     observer->MediaSessionActionsChanged(actions);
+   });
+ }
+--- a/services/media_session/public/cpp/test/test_media_controller.h	2019-04-05 03:49:26.000000000 +0300
++++ b/services/media_session/public/cpp/test/test_media_controller.h	2019-05-17 18:53:37.872000000 +0300
+@@ -6,7 +6,6 @@
+ #define SERVICES_MEDIA_SESSION_PUBLIC_CPP_TEST_TEST_MEDIA_CONTROLLER_H_
+ 
+ #include "base/component_export.h"
+-#include "base/run_loop.h"
+ #include "mojo/public/cpp/bindings/binding.h"
+ #include "mojo/public/cpp/bindings/interface_ptr_set.h"
+ #include "services/media_session/public/mojom/media_controller.mojom.h"
+@@ -14,70 +13,6 @@
+ namespace media_session {
+ namespace test {
+ 
+-// A mock MediaControllerObsever that can be used for waiting for state changes.
+-class COMPONENT_EXPORT(MEDIA_SESSION_TEST_SUPPORT_CPP)
+-    TestMediaControllerObserver : public mojom::MediaControllerObserver {
+- public:
+-  explicit TestMediaControllerObserver(
+-      mojom::MediaControllerPtr& media_controller);
+-
+-  ~TestMediaControllerObserver() override;
+-
+-  // mojom::MediaControllerObserver overrides.
+-  void MediaSessionInfoChanged(mojom::MediaSessionInfoPtr session) override;
+-  void MediaSessionMetadataChanged(
+-      const base::Optional<MediaMetadata>& metadata) override;
+-  void MediaSessionActionsChanged(
+-      const std::vector<mojom::MediaSessionAction>& actions) override;
+-
+-  void WaitForState(mojom::MediaSessionInfo::SessionState wanted_state);
+-  void WaitForPlaybackState(mojom::MediaPlaybackState wanted_state);
+-  void WaitForEmptyInfo();
+-
+-  void WaitForEmptyMetadata();
+-  void WaitForNonEmptyMetadata();
+-
+-  void WaitForActions();
+-
+-  const mojom::MediaSessionInfoPtr& session_info() const {
+-    return *session_info_;
+-  }
+-
+-  const base::Optional<base::Optional<MediaMetadata>>& session_metadata()
+-      const {
+-    return session_metadata_;
+-  }
+-
+-  const std::vector<mojom::MediaSessionAction>& actions() const {
+-    return *session_actions_;
+-  }
+-
+-  const std::set<mojom::MediaSessionAction>& actions_set() const {
+-    return session_actions_set_;
+-  }
+-
+- private:
+-  void StartWaiting();
+-
+-  base::Optional<mojom::MediaSessionInfoPtr> session_info_;
+-  base::Optional<base::Optional<MediaMetadata>> session_metadata_;
+-  base::Optional<std::vector<mojom::MediaSessionAction>> session_actions_;
+-  std::set<mojom::MediaSessionAction> session_actions_set_;
+-
+-  bool waiting_for_empty_metadata_ = false;
+-  bool waiting_for_non_empty_metadata_ = false;
+-
+-  bool waiting_for_actions_ = false;
+-
+-  bool waiting_for_empty_info_ = false;
+-  base::Optional<mojom::MediaSessionInfo::SessionState> wanted_state_;
+-  base::Optional<mojom::MediaPlaybackState> wanted_playback_state_;
+-
+-  std::unique_ptr<base::RunLoop> run_loop_;
+-
+-  mojo::Binding<mojom::MediaControllerObserver> binding_;
+-};
+-
+ // Implements the MediaController mojo interface for tests.
+ class COMPONENT_EXPORT(MEDIA_SESSION_TEST_SUPPORT_CPP) TestMediaController
+     : public mojom::MediaController {
+@@ -92,7 +27,7 @@
+   void Resume() override;
+   void Stop() override {}
+   void ToggleSuspendResume() override;
+-  void AddObserver(mojom::MediaControllerObserverPtr observer) override;
++  void AddObserver(mojom::MediaSessionObserverPtr observer) override;
+   void PreviousTrack() override;
+   void NextTrack() override;
+   void Seek(base::TimeDelta seek_time) override;
+@@ -123,7 +58,7 @@
+   int seek_backward_count_ = 0;
+   int seek_forward_count_ = 0;
+ 
+-  mojo::InterfacePtrSet<mojom::MediaControllerObserver> observers_;
++  mojo::InterfacePtrSet<mojom::MediaSessionObserver> observers_;
+ 
+   mojo::Binding<mojom::MediaController> binding_{this};
+ 
+--- a/services/media_session/public/mojom/media_controller.mojom	2019-04-05 03:49:26.000000000 +0300
++++ b/services/media_session/public/mojom/media_controller.mojom	2019-05-17 18:53:37.872000000 +0300
+@@ -40,7 +40,7 @@
+   // Adds an observer that will forward events from the active media session.
+   // If the active session changes then observers do not need to be readded.
+   // Adding the observer will update the observer with the latest state.
+-  AddObserver(MediaControllerObserver observer);
++  AddObserver(MediaSessionObserver observer);
+ 
+   // Skip to the previous track. If there is no previous track then this will be
+   // a no-op.
+@@ -57,22 +57,3 @@
+   // few seconds.
+   Seek(mojo_base.mojom.TimeDelta seek_time);
+ };
+-
+-// The observer for observing media controller events. This is different to a
+-// MediaSessionObserver because a media controller can have nullable session
+-// info which will be null if it is not bound to a media session. This would
+-// be invalid for a media session because it must always have some state.
+-interface MediaControllerObserver {
+-  // Called when the state of the bound media session changes. If |info| is
+-  // empty then the controller is no longer bound to a media session.
+-  MediaSessionInfoChanged(MediaSessionInfo? info);
+-
+-  // Called when the bound media session has changed metadata. If |metadata|
+-  // is null then it can be reset, e.g. the media that ws being played has
+-  // been stopped.
+-  MediaSessionMetadataChanged(MediaMetadata? metadata);
+-
+-  // Called when the bound media session action list has changed. This tells
+-  // the observer which actions can be used to control the session.
+-  MediaSessionActionsChanged(array<MediaSessionAction> action);
+-};
+--- a/services/network/network_service.cc	2019-04-05 03:49:26.000000000 +0300
++++ b/services/network/network_service.cc	2019-05-17 18:53:37.896000000 +0300
+@@ -10,7 +10,6 @@
+ 
+ #include "base/bind.h"
+ #include "base/command_line.h"
+-#include "base/environment.h"
+ #include "base/logging.h"
+ #include "base/memory/ptr_util.h"
+ #include "base/metrics/histogram_macros.h"
+@@ -262,9 +261,6 @@
+                         CRYPTO_needs_hwcap2_workaround());
+ #endif
+ 
+-  if (!params->environment.empty())
+-    SetEnvironment(std::move(params->environment));
+-
+   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+ 
+   // Set-up the global port overrides.
+@@ -650,13 +646,6 @@
+ }
+ #endif
+ 
+-void NetworkService::SetEnvironment(
+-    std::vector<mojom::EnvironmentVariablePtr> environment) {
+-  std::unique_ptr<base::Environment> env(base::Environment::Create());
+-  for (const auto& variable : environment)
+-    env->SetVar(variable->name, variable->value);
+-}
+-
+ net::HttpAuthHandlerFactory* NetworkService::GetHttpAuthHandlerFactory() {
+   if (!http_auth_handler_factory_) {
+     http_auth_handler_factory_ = net::HttpAuthHandlerFactory::CreateDefault(
+--- a/services/network/network_service.h	2019-04-05 03:49:26.000000000 +0300
++++ b/services/network/network_service.h	2019-05-17 18:53:37.896000000 +0300
+@@ -199,8 +199,6 @@
+ #if defined(OS_ANDROID)
+   void OnApplicationStateChange(base::android::ApplicationState state) override;
+ #endif
+-  void SetEnvironment(
+-      std::vector<mojom::EnvironmentVariablePtr> environment) override;
+ 
+   // Returns the shared HttpAuthHandlerFactory for the NetworkService, creating
+   // one if needed.
+--- a/services/network/public/mojom/network_service.mojom	2019-04-05 03:49:26.000000000 +0300
++++ b/services/network/public/mojom/network_service.mojom	2019-05-17 18:53:37.924000000 +0300
+@@ -235,20 +235,10 @@
+   mojo_base.mojom.FilePath user_data_path;
+ };
+ 
+-// Represents the value of a single environment variable.
+-struct EnvironmentVariable {
+-  string name;
+-  string value;
+-};
+-
+ // Parameters needed to initialize the network service.
+ struct NetworkServiceParams {
+   ConnectionType initial_connection_type = CONNECTION_UNKNOWN;
+   ConnectionSubtype initial_connection_subtype = SUBTYPE_UNKNOWN;
+-
+-  // A set of environment variables that should be set in the network
+-  // service when starting up.
+-  array<EnvironmentVariable> environment;
+ };
+ 
+ // Browser interface to the network service.
+@@ -391,9 +381,4 @@
+   // Called on state changes of the Android application.
+   [EnableIf=is_android]
+   OnApplicationStateChange(mojo_base.mojom.ApplicationState state);
+-
+-  // Sets the given environment variables in the network service's process.
+-  // This method won't modify variables that aren't present in the
+-  // |environment| array.
+-  SetEnvironment(array<EnvironmentVariable> environment);
+ };
+--- a/services/tracing/public/cpp/traced_process_impl.cc	2019-04-05 03:49:26.000000000 +0300
++++ b/services/tracing/public/cpp/traced_process_impl.cc	2019-05-17 18:53:38.016000000 +0300
+@@ -105,10 +105,4 @@
+       tracing::mojom::PerfettoServicePtr(std::move(request->perfetto_service)));
+ }
+ 
+-void TracedProcessImpl::GetCategories(std::set<std::string>* category_set) {
+-  for (auto* agent : agents_) {
+-    agent->GetCategories(category_set);
+-  }
+-}
+-
+ }  // namespace tracing
+--- a/services/tracing/public/cpp/traced_process_impl.h	2019-04-05 03:49:26.000000000 +0300
++++ b/services/tracing/public/cpp/traced_process_impl.h	2019-05-17 18:53:38.016000000 +0300
+@@ -35,9 +35,6 @@
+   void RegisterAgent(BaseAgent* agent);
+   void UnregisterAgent(BaseAgent* agent);
+ 
+-  // Populate categories from all of the registered agents.
+-  void GetCategories(std::set<std::string>* category_set);
+-
+  private:
+   friend class base::NoDestructor<TracedProcessImpl>;
+   TracedProcessImpl();

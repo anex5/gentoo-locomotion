@@ -1,0 +1,10 @@
+--- a/build/config/linux/gtk/BUILD.gn	2019-05-01 01:22:28.000000000 +0300
++++ b/build/config/linux/gtk/BUILD.gn	2019-05-17 18:53:08.740000000 +0300
+@@ -32,7 +32,6 @@
+     "//remoting/host/it2me:common",
+     "//remoting/host/it2me:remote_assistance_host",
+     "//remoting/host:common",
+-    "//remoting/host/file_transfer",
+     "//remoting/host:remoting_me2me_host_static",
+     "//remoting/test:it2me_standalone_host_main",
+     "//webrtc/examples:peerconnection_client",

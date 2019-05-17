@@ -1,0 +1,1550 @@
+--- a/chrome/browser/chromeos/authpolicy/auth_policy_credentials_manager.cc	2019-04-05 03:49:00.000000000 +0300
++++ b/chrome/browser/chromeos/authpolicy/auth_policy_credentials_manager.cc	2019-05-17 18:53:10.132000000 +0300
+@@ -36,10 +36,7 @@
+ #include "chromeos/network/network_state.h"
+ #include "chromeos/network/network_state_handler.h"
+ #include "components/keyed_service/content/browser_context_dependency_manager.h"
+-#include "content/public/browser/network_service_instance.h"
+-#include "content/public/common/network_service_util.h"
+ #include "dbus/message.h"
+-#include "services/network/public/mojom/network_service.mojom.h"
+ #include "ui/base/l10n/l10n_util.h"
+ #include "ui/base/resource/resource_bundle.h"
+ #include "ui/message_center/public/cpp/notification.h"
+@@ -138,22 +135,9 @@
+   base::FilePath path;
+   base::PathService::Get(base::DIR_HOME, &path);
+   path = path.Append(kKrb5Directory);
+-  std::string krb5cc_env_value =
+-      kKrb5CCFilePrefix + path.Append(kKrb5CCFile).value();
+-  std::string krb5conf_env_value = path.Append(kKrb5ConfFile).value();
+-  env->SetVar(kKrb5CCEnvName, krb5cc_env_value);
+-  env->SetVar(kKrb5ConfEnvName, krb5conf_env_value);
+-
+-  // Send the environment variables to the network service if it's running
+-  // out of process.
+-  if (content::IsOutOfProcessNetworkService()) {
+-    std::vector<network::mojom::EnvironmentVariablePtr> environment;
+-    environment.push_back(network::mojom::EnvironmentVariable::New(
+-        kKrb5CCEnvName, krb5cc_env_value));
+-    environment.push_back(network::mojom::EnvironmentVariable::New(
+-        kKrb5ConfEnvName, krb5conf_env_value));
+-    content::GetNetworkService()->SetEnvironment(std::move(environment));
+-  }
++  env->SetVar(kKrb5CCEnvName,
++              kKrb5CCFilePrefix + path.Append(kKrb5CCFile).value());
++  env->SetVar(kKrb5ConfEnvName, path.Append(kKrb5ConfFile).value());
+ 
+   negotiate_disable_cname_lookup_.Init(
+       prefs::kDisableAuthNegotiateCnameLookup, g_browser_process->local_state(),
+--- a/chrome/browser/chromeos/events/event_rewriter_unittest.cc	2019-04-05 03:49:00.000000000 +0300
++++ b/chrome/browser/chromeos/events/event_rewriter_unittest.cc	2019-05-17 18:53:10.160000000 +0300
+@@ -1056,7 +1056,7 @@
+     CheckKeyTestCase(rewriter_, test);
+ }
+ 
+-TEST_F(EventRewriterTest, TestRewriteModifiersRemapMany) {
++TEST_F(EventRewriterTest, TestRewriteModifiersRemapEscapeToAlt) {
+   // Remap Escape to Alt.
+   chromeos::Preferences::RegisterProfilePrefs(prefs()->registry());
+   IntegerPrefMember escape;
+@@ -1079,13 +1078,17 @@
+ 
+   for (const auto& test : e2a_tests)
+     CheckKeyTestCase(rewriter_, test);
++}
+ 
++TEST_F(EventRewriterTest, TestRewriteModifiersRemapAltToControl) {
+   // Remap Alt to Control.
++  chromeos::Preferences::RegisterProfilePrefs(prefs()->registry());
+   IntegerPrefMember alt;
+   InitModifierKeyPref(&alt, prefs::kLanguageRemapAltKeyTo,
+                       ui::chromeos::ModifierKey::kControlKey);
++  rewriter_->KeyboardDeviceAddedForTesting(kKeyboardDeviceId, "PC Keyboard");
+ 
+-  KeyTestCase a2c_tests[] = {
++  std::vector<KeyTestCase> a2c_tests = {
+       // Press left Alt. Confirm the event is now VKEY_CONTROL.
+       {ui::ET_KEY_PRESSED,
+        {ui::VKEY_MENU, ui::DomCode::ALT_LEFT, ui::EF_ALT_DOWN, ui::DomKey::ALT},
+@@ -1109,13 +1112,29 @@
+ 
+   for (const auto& test : a2c_tests)
+     CheckKeyTestCase(rewriter_, test);
++}
++
++TEST_F(EventRewriterTest, TestRewriteModifiersRemapUnderEscapeControlAlt) {
++  chromeos::Preferences::RegisterProfilePrefs(prefs()->registry());
++
++  // Remap Escape to Alt.
++  IntegerPrefMember escape;
++  InitModifierKeyPref(&escape, prefs::kLanguageRemapEscapeKeyTo,
++                      ui::chromeos::ModifierKey::kAltKey);
++
++  // Remap Alt to Control.
++  IntegerPrefMember alt;
++  InitModifierKeyPref(&alt, prefs::kLanguageRemapAltKeyTo,
++                      ui::chromeos::ModifierKey::kControlKey);
+ 
+   // Remap Control to Search.
+   IntegerPrefMember control;
+   InitModifierKeyPref(&control, prefs::kLanguageRemapControlKeyTo,
+                       ui::chromeos::ModifierKey::kSearchKey);
+ 
+-  KeyTestCase c2s_tests[] = {
++  rewriter_->KeyboardDeviceAddedForTesting(kKeyboardDeviceId, "PC Keyboard");
++
++  std::vector<KeyTestCase> c2s_tests = {
+       // Press left Control. Confirm the event is now VKEY_LWIN.
+       {ui::ET_KEY_PRESSED,
+        {ui::VKEY_CONTROL, ui::DomCode::CONTROL_LEFT, ui::EF_CONTROL_DOWN,
+@@ -1154,15 +1173,46 @@
+ 
+   for (const auto& test : c2s_tests)
+     CheckKeyTestCase(rewriter_, test);
++}
++
++TEST_F(EventRewriterTest,
++       TestRewriteModifiersRemapUnderEscapeControlAltSearch) {
++  chromeos::Preferences::RegisterProfilePrefs(prefs()->registry());
++
++  // Remap Escape to Alt.
++  IntegerPrefMember escape;
++  InitModifierKeyPref(&escape, prefs::kLanguageRemapEscapeKeyTo,
++                      ui::chromeos::ModifierKey::kAltKey);
++
++  // Remap Alt to Control.
++  IntegerPrefMember alt;
++  InitModifierKeyPref(&alt, prefs::kLanguageRemapAltKeyTo,
++                      ui::chromeos::ModifierKey::kControlKey);
++
++  // Remap Control to Search.
++  IntegerPrefMember control;
++  InitModifierKeyPref(&control, prefs::kLanguageRemapControlKeyTo,
++                      ui::chromeos::ModifierKey::kSearchKey);
+ 
+   // Remap Search to Backspace.
+   IntegerPrefMember search;
+   InitModifierKeyPref(&search, prefs::kLanguageRemapSearchKeyTo,
+                       ui::chromeos::ModifierKey::kBackspaceKey);
+ 
+-  KeyTestCase s2b_tests[] = {
++  rewriter_->KeyboardDeviceAddedForTesting(kKeyboardDeviceId, "PC Keyboard");
++
++  std::vector<KeyTestCase> s2b_tests = {
+       // Release Control and Escape, as Search and Alt would transform Backspace
+       // to Delete.
++      {ui::ET_KEY_PRESSED,
++       {ui::VKEY_CONTROL, ui::DomCode::CONTROL_LEFT, ui::EF_NONE,
++        ui::DomKey::CONTROL},
++       {ui::VKEY_LWIN, ui::DomCode::META_LEFT, ui::EF_COMMAND_DOWN,
++        ui::DomKey::META}},
++      {ui::ET_KEY_PRESSED,
++       {ui::VKEY_ESCAPE, ui::DomCode::ESCAPE, ui::EF_NONE, ui::DomKey::ESCAPE},
++       {ui::VKEY_MENU, ui::DomCode::ALT_LEFT, ui::EF_ALT_DOWN,
++        ui::DomKey::ALT}},
+       {ui::ET_KEY_RELEASED,
+        {ui::VKEY_CONTROL, ui::DomCode::CONTROL_LEFT, ui::EF_NONE,
+         ui::DomKey::CONTROL},
+@@ -1181,13 +1231,18 @@
+ 
+   for (const auto& test : s2b_tests)
+     CheckKeyTestCase(rewriter_, test);
++}
+ 
++TEST_F(EventRewriterTest, TestRewriteModifiersRemapBackspaceToEscape) {
+   // Remap Backspace to Escape.
++  chromeos::Preferences::RegisterProfilePrefs(prefs()->registry());
+   IntegerPrefMember backspace;
+   InitModifierKeyPref(&backspace, prefs::kLanguageRemapBackspaceKeyTo,
+                       ui::chromeos::ModifierKey::kEscapeKey);
+ 
+-  KeyTestCase b2e_tests[] = {
++  rewriter_->KeyboardDeviceAddedForTesting(kKeyboardDeviceId, "PC Keyboard");
++
++  std::vector<KeyTestCase> b2e_tests = {
+       // Press Backspace. Confirm the event is now VKEY_ESCAPE.
+       {ui::ET_KEY_PRESSED,
+        {ui::VKEY_BACK, ui::DomCode::BACKSPACE, ui::EF_NONE,
+@@ -2378,8 +2433,15 @@
+                     ui::KeyboardCode key_code,
+                     ui::DomCode code,
+                     ui::DomKey key) {
+-    ui::KeyEvent press(type, key_code, code, ui::EF_NONE, key,
+-                       ui::EventTimeForNow());
++    SendKeyEvent(type, key_code, code, key, ui::EF_NONE);
++  }
++
++  void SendKeyEvent(ui::EventType type,
++                    ui::KeyboardCode key_code,
++                    ui::DomCode code,
++                    ui::DomKey key,
++                    int flags) {
++    ui::KeyEvent press(type, key_code, code, flags, key, ui::EventTimeForNow());
+     ui::EventDispatchDetails details = Send(&press);
+     CHECK(!details.dispatcher_destroyed);
+   }
+@@ -2755,6 +2817,55 @@
+   EXPECT_TRUE(events[0]->flags() & ui::EF_ALT_DOWN);
+ }
+ 
++// Tests edge cases of key event rewriting (see https://crbug.com/913209).
++TEST_F(EventRewriterAshTest, KeyEventRewritingEdgeCases) {
++  std::vector<std::unique_ptr<ui::Event>> events;
++
++  // Edge case 1: Press the Launcher button first. Then press the Up Arrow
++  // button.
++  SendKeyEvent(ui::ET_KEY_PRESSED, ui::VKEY_COMMAND, ui::DomCode::META_LEFT,
++               ui::DomKey::META);
++  SendKeyEvent(ui::ET_KEY_PRESSED, ui::VKEY_UP, ui::DomCode::ARROW_UP,
++               ui::DomKey::ARROW_UP, ui::EF_COMMAND_DOWN);
++
++  PopEvents(&events);
++  EXPECT_EQ(2u, events.size());
++  events.clear();
++
++  SendKeyEvent(ui::ET_KEY_RELEASED, ui::VKEY_COMMAND, ui::DomCode::META_LEFT,
++               ui::DomKey::META);
++  PopEvents(&events);
++
++  // When releasing the Launcher button, the rewritten event should be released
++  // as well.
++  EXPECT_EQ(2u, events.size());
++  EXPECT_EQ(ui::VKEY_COMMAND,
++            static_cast<ui::KeyEvent*>(events[0].get())->key_code());
++  EXPECT_EQ(ui::VKEY_PRIOR,
++            static_cast<ui::KeyEvent*>(events[1].get())->key_code());
++
++  events.clear();
++
++  // Edge case 2: Press the Up Arrow button first. Then press the Launch button.
++  SendKeyEvent(ui::ET_KEY_PRESSED, ui::VKEY_UP, ui::DomCode::ARROW_UP,
++               ui::DomKey::ARROW_UP);
++  SendKeyEvent(ui::ET_KEY_PRESSED, ui::VKEY_COMMAND, ui::DomCode::META_LEFT,
++               ui::DomKey::META);
++
++  PopEvents(&events);
++  EXPECT_EQ(2u, events.size());
++  events.clear();
++
++  SendKeyEvent(ui::ET_KEY_RELEASED, ui::VKEY_UP, ui::DomCode::ARROW_UP,
++               ui::DomKey::ARROW_UP, ui::EF_COMMAND_DOWN);
++  PopEvents(&events);
++
++  // When releasing the Up Arrow button, the rewritten event should be blocked.
++  EXPECT_EQ(1u, events.size());
++  EXPECT_EQ(ui::VKEY_UP,
++            static_cast<ui::KeyEvent*>(events[0].get())->key_code());
++}
++
+ class StickyKeysOverlayTest : public EventRewriterAshTest {
+  public:
+   StickyKeysOverlayTest() : overlay_(NULL) {}
+--- a/chrome/browser/extensions/api/desktop_capture/desktop_capture_base.cc	2019-04-05 03:49:01.000000000 +0300
++++ b/chrome/browser/extensions/api/desktop_capture/desktop_capture_base.cc	2019-05-17 18:53:10.488000000 +0300
+@@ -154,7 +154,6 @@
+   picker_params.app_name = base::UTF8ToUTF16(GetCallerDisplayName());
+   picker_params.target_name = target_name;
+   picker_params.request_audio = request_audio;
+-  picker_params.created_by_extension = true;
+   picker_->Show(picker_params, std::move(source_lists), callback);
+   origin_ = origin;
+   return true;
+--- a/chrome/browser/extensions/api/web_request/web_request_api_unittest.cc	2019-04-05 03:49:02.000000000 +0300
++++ b/chrome/browser/extensions/api/web_request/web_request_api_unittest.cc	2019-05-17 18:53:10.552000000 +0300
+@@ -113,7 +113,7 @@
+     ExtensionWebRequestEventRouter::EventResponse* response) {
+   ExtensionWebRequestEventRouter::GetInstance()->OnEventHandled(
+       profile, extension_id, event_name, sub_event_name, request_id,
+-      0 /* embedder_process_id */, 0 /* web_view_instance_id */, response);
++      response);
+ }
+ 
+ // Returns whether |warnings| contains an extension for |extension_id|.
+@@ -1080,8 +1080,7 @@
+   response->cancel = true;
+   ExtensionWebRequestEventRouter::GetInstance()->OnEventHandled(
+       &profile_, extension_id, kEventName, kEventName + "/1",
+-      request->identifier(), 0 /* embedder_process_id */,
+-      0 /* web_view_instance_id */, response);
++      request->identifier(), response);
+   {
+     base::RunLoop run_loop;
+     run_loop.RunUntilIdle();
+--- a/chrome/browser/extensions/global_shortcut_listener_win.cc	2019-04-05 03:49:02.000000000 +0300
++++ b/chrome/browser/extensions/global_shortcut_listener_win.cc	2019-05-17 18:53:10.608000000 +0300
+@@ -93,18 +93,12 @@
+     return success;
+   }
+ 
+-  // Convert Accelerator modifiers to OS modifiers.
+-  int modifiers = 0;
+-  modifiers |= accelerator.IsShiftDown() ? MOD_SHIFT : 0;
+-  modifiers |= accelerator.IsCtrlDown() ? MOD_CONTROL : 0;
+-  modifiers |= accelerator.IsAltDown() ? MOD_ALT : 0;
+-
+   // Create an observer that registers a hot key for |accelerator|.
+   std::unique_ptr<gfx::SingletonHwndHotKeyObserver> observer =
+       gfx::SingletonHwndHotKeyObserver::Create(
+           base::BindRepeating(&GlobalShortcutListenerWin::OnWndProc,
+                               base::Unretained(this)),
+-          accelerator.key_code(), modifiers);
++          accelerator.key_code(), accelerator.modifiers());
+ 
+   if (!observer) {
+     // Most likely error: 1409 (Hotkey already registered).
+--- a/chrome/browser/media/media_engagement_score.cc	2019-04-05 03:49:02.000000000 +0300
++++ b/chrome/browser/media/media_engagement_score.cc	2019-05-17 18:53:10.692000000 +0300
+@@ -57,13 +57,6 @@
+   return std::make_unique<base::DictionaryValue>();
+ }
+ 
+-void GetIntegerFromScore(base::DictionaryValue* dict,
+-                         base::StringPiece key,
+-                         int* out) {
+-  if (base::Value* v = dict->FindKeyOfType(key, base::Value::Type::INTEGER))
+-    *out = v->GetInt();
+-}
+-
+ }  // namespace
+ 
+ // static.
+@@ -108,31 +101,21 @@
+   if (!score_dict_)
+     return;
+ 
+-  GetIntegerFromScore(score_dict_.get(), kVisitsKey, &visits_);
+-  GetIntegerFromScore(score_dict_.get(), kMediaPlaybacksKey, &media_playbacks_);
+-  GetIntegerFromScore(score_dict_.get(), kAudiblePlaybacksKey,
+-                      &audible_playbacks_);
+-  GetIntegerFromScore(score_dict_.get(), kSignificantPlaybacksKey,
+-                      &significant_playbacks_);
+-  GetIntegerFromScore(score_dict_.get(), kVisitsWithMediaTagKey,
+-                      &visits_with_media_tag_);
+-  GetIntegerFromScore(score_dict_.get(), kHighScoreChanges,
+-                      &high_score_changes_);
+-  GetIntegerFromScore(score_dict_.get(), kSignificantMediaPlaybacksKey,
++  score_dict_->GetInteger(kVisitsKey, &visits_);
++  score_dict_->GetInteger(kMediaPlaybacksKey, &media_playbacks_);
++  score_dict_->GetBoolean(kHasHighScoreKey, &is_high_);
++  score_dict_->GetInteger(kAudiblePlaybacksKey, &audible_playbacks_);
++  score_dict_->GetInteger(kSignificantPlaybacksKey, &significant_playbacks_);
++  score_dict_->GetInteger(kVisitsWithMediaTagKey, &visits_with_media_tag_);
++  score_dict_->GetInteger(kHighScoreChanges, &high_score_changes_);
++  score_dict_->GetInteger(kSignificantMediaPlaybacksKey,
+                       &media_element_playbacks_);
+-  GetIntegerFromScore(score_dict_.get(), kSignificantAudioContextPlaybacksKey,
++  score_dict_->GetInteger(kSignificantAudioContextPlaybacksKey,
+                       &audio_context_playbacks_);
+ 
+-  if (base::Value* value = score_dict_->FindKeyOfType(
+-          kHasHighScoreKey, base::Value::Type::BOOLEAN)) {
+-    is_high_ = value->GetBool();
+-  }
+-
+-  if (base::Value* value = score_dict_->FindKeyOfType(
+-          kLastMediaPlaybackTimeKey, base::Value::Type::DOUBLE)) {
+-    last_media_playback_time_ =
+-        base::Time::FromInternalValue(value->GetDouble());
+-  }
++  double internal_time;
++  if (score_dict_->GetDouble(kLastMediaPlaybackTimeKey, &internal_time))
++    last_media_playback_time_ = base::Time::FromInternalValue(internal_time);
+ 
+   // Recalculate the total score and high bit. If the high bit changed we
+   // should commit this. This should only happen if we change the threshold
+@@ -201,33 +184,20 @@
+   int stored_media_element_playbacks = 0;
+   int stored_audio_context_playbacks = 0;
+ 
+-  if (!score_dict_)
+-    return false;
+-
+-  if (base::Value* value = score_dict_->FindKeyOfType(
+-          kHasHighScoreKey, base::Value::Type::BOOLEAN)) {
+-    is_high = value->GetBool();
+-  }
+-
+-  if (base::Value* value = score_dict_->FindKeyOfType(
+-          kLastMediaPlaybackTimeKey, base::Value::Type::DOUBLE)) {
+-    stored_last_media_playback_internal = value->GetDouble();
+-  }
+-
+-  GetIntegerFromScore(score_dict_.get(), kVisitsKey, &stored_visits);
+-  GetIntegerFromScore(score_dict_.get(), kMediaPlaybacksKey,
+-                      &stored_media_playbacks);
+-  GetIntegerFromScore(score_dict_.get(), kAudiblePlaybacksKey,
+-                      &stored_audible_playbacks);
+-  GetIntegerFromScore(score_dict_.get(), kSignificantPlaybacksKey,
++  score_dict_->GetInteger(kVisitsKey, &stored_visits);
++  score_dict_->GetInteger(kMediaPlaybacksKey, &stored_media_playbacks);
++  score_dict_->GetDouble(kLastMediaPlaybackTimeKey,
++                         &stored_last_media_playback_internal);
++  score_dict_->GetBoolean(kHasHighScoreKey, &is_high);
++  score_dict_->GetInteger(kAudiblePlaybacksKey, &stored_audible_playbacks);
++  score_dict_->GetInteger(kSignificantPlaybacksKey,
+                       &stored_significant_playbacks);
+-  GetIntegerFromScore(score_dict_.get(), kVisitsWithMediaTagKey,
++  score_dict_->GetInteger(kVisitsWithMediaTagKey,
+                       &stored_visits_with_media_tag);
+-  GetIntegerFromScore(score_dict_.get(), kHighScoreChanges,
+-                      &high_score_changes);
+-  GetIntegerFromScore(score_dict_.get(), kSignificantMediaPlaybacksKey,
++  score_dict_->GetInteger(kHighScoreChanges, &high_score_changes);
++  score_dict_->GetInteger(kSignificantMediaPlaybacksKey,
+                       &stored_media_element_playbacks);
+-  GetIntegerFromScore(score_dict_.get(), kSignificantAudioContextPlaybacksKey,
++  score_dict_->GetInteger(kSignificantAudioContextPlaybacksKey,
+                       &stored_audio_context_playbacks);
+ 
+   bool changed = stored_visits != visits() ||
+--- a/chrome/browser/media/webrtc/desktop_media_picker.h	2019-04-05 03:49:02.000000000 +0300
++++ b/chrome/browser/media/webrtc/desktop_media_picker.h	2019-05-17 18:53:10.724000000 +0300
+@@ -47,8 +47,6 @@
+     base::string16 target_name;
+     // Whether audio capture should be shown as an option in the picker.
+     bool request_audio = false;
+-    // Whether the picker is created by extension desktopCapture API.
+-    bool created_by_extension = false;
+   };
+ 
+   // Creates default implementation of DesktopMediaPicker for the current
+--- a/chrome/browser/metrics/chrome_stability_metrics_provider.cc	2019-04-05 03:49:02.000000000 +0300
++++ b/chrome/browser/metrics/chrome_stability_metrics_provider.cc	2019-05-17 18:53:10.760000000 +0300
+@@ -103,12 +103,9 @@
+       break;
+     }
+ 
+-    case content::NOTIFICATION_RENDER_WIDGET_HOST_HANG: {
+-      const metrics::RendererHangCause* hang_cause =
+-          content::Details<metrics::RendererHangCause>(details).ptr();
+-      helper_.LogRendererHang(*hang_cause);
++    case content::NOTIFICATION_RENDER_WIDGET_HOST_HANG:
++      helper_.LogRendererHang();
+       break;
+-    }
+ 
+     case content::NOTIFICATION_RENDERER_PROCESS_CREATED: {
+       bool was_extension_process = false;
+--- a/chrome/browser/printing/print_preview_dialog_controller.cc	2019-04-05 03:49:02.000000000 +0300
++++ b/chrome/browser/printing/print_preview_dialog_controller.cc	2019-05-17 18:53:10.920000000 +0300
+@@ -71,7 +71,6 @@
+       std::vector<WebUIMessageHandler*>* handlers) const override;
+   void GetDialogSize(gfx::Size* size) const override;
+   std::string GetDialogArgs() const override;
+-  void OnDialogClosingFromKeyEvent() override;
+   void OnDialogClosed(const std::string& json_retval) override;
+   void OnCloseContents(WebContents* source, bool* out_close_dialog) override;
+   bool ShouldShowDialogTitle() const override;
+@@ -79,8 +78,6 @@
+  private:
+   WebContents* initiator() const { return web_contents(); }
+ 
+-  bool on_dialog_closed_called_ = false;
+-
+   DISALLOW_COPY_AND_ASSIGN(PrintPreviewDialogDelegate);
+ };
+ 
+@@ -148,17 +145,11 @@
+   return std::string();
+ }
+ 
+-void PrintPreviewDialogDelegate::OnDialogClosingFromKeyEvent() {
+-  OnDialogClosed(std::string());
+-}
+-
+ void PrintPreviewDialogDelegate::OnDialogClosed(
+     const std::string& /* json_retval */) {
+-  if (on_dialog_closed_called_ || !initiator())
++  if (!initiator())
+     return;
+ 
+-  on_dialog_closed_called_ = true;
+-
+   auto* print_view_manager = PrintViewManager::FromWebContents(initiator());
+   if (print_view_manager)
+     print_view_manager->PrintPreviewAlmostDone();
+--- a/chrome/browser/resources/local_ntp/local_ntp.css	2019-04-05 03:49:04.000000000 +0300
++++ b/chrome/browser/resources/local_ntp/local_ntp.css	2019-05-17 18:53:11.240000000 +0300
+@@ -130,18 +130,6 @@
+   width: var(--content-width);
+ }
+ 
+-.alternate-fakebox #fakebox-container {
+-  /* Increase min-width to account for larger font + increased padding: 341px
+-   * min-width + 50px */
+-  min-width: 390px;
+-}
+-
+-.show-fakebox-icon.alternate-fakebox #fakebox-container {
+-  /* Increase min-width again to account for the search icon: 390px new
+-   * min-width + additional 20px */
+-  min-width: 410px;
+-}
+-
+ #fakebox {
+   background-color: rgb(var(--GG100-rgb));
+   border-radius: 22px;
+@@ -157,45 +145,18 @@
+   transition: background-color 300ms ease-in-out, opacity 200ms
+ }
+ 
+-html[darkmode=true] body:not(.alternate-fakebox) #fakebox {
++html[darkmode=true] #fakebox {
+   background-color: rgb(var(--GG900-rgb));
+ }
+ 
+-.alternate-fakebox #fakebox {
+-  background: white;
+-  border: 1px solid rgb(223, 225, 229);
+-  box-sizing: border-box;
+-  font-size: 16px;
+-  height: 46px;
+-  line-height: 21px;
+-  max-width: 584px;
+-  transition: none;
+-}
+-
+-html[darkmode=true] .alternate-fakebox #fakebox {
+-  border-color: transparent;
+-}
+-
+ #fakebox:hover {
+   background-color: rgb(var(--GG200-rgb));
+ }
+ 
+-html[darkmode=true] body:not(.alternate-fakebox) #fakebox:hover {
++html[darkmode=true] #fakebox:hover {
+   background-color: rgb(42, 43, 46);
+ }
+ 
+-.alternate-fakebox #fakebox:hover,
+-.alternate-fakebox.fakebox-focused #fakebox {
+-  background: white;
+-  border-color: transparent;
+-  box-shadow: 0 1px 6px 0 rgba(32, 33, 36, .28);
+-}
+-
+-html[darkmode=true] .alternate-fakebox #fakebox:hover,
+-html[darkmode=true] .alternate-fakebox.fakebox-focused #fakebox {
+-  box-shadow: 0 1px 6px 0 rgba(32, 33, 36, .78);
+-}
+-
+ .non-google-page #fakebox-container {
+   display: none;
+ }
+@@ -216,31 +177,6 @@
+   right: 0;
+ }
+ 
+-#fakebox-search-icon {
+-  -webkit-mask-image:
+-      url(../../../../ui/webui/resources/images/icon_search.svg);
+-  -webkit-mask-repeat: no-repeat;
+-  -webkit-mask-size: 100%;
+-  background: 24px 24px rgb(128, 134, 139);
+-  bottom: 0;
+-  display: none;
+-  height: 24px;
+-  left: 0;
+-  margin: auto 0;
+-  margin-inline-start: 16px;
+-  position: absolute;
+-  top: 0;
+-  width: 24px;
+-}
+-
+-.show-fakebox-icon #fakebox-search-icon {
+-  display: block;
+-}
+-
+-html[dir=rtl] #fakebox-search-icon {
+-  right: 0;
+-}
+-
+ #fakebox-text {
+   bottom: 4px;
+   color: rgb(var(--GG600-rgb));
+@@ -260,7 +196,7 @@
+   white-space: nowrap;
+ }
+ 
+-html[darkmode=true] body:not(.alternate-fakebox) #fakebox-text {
++html[darkmode=true] #fakebox-text {
+   color: rgb(var(--GG200-rgb));
+ }
+ 
+@@ -269,25 +205,6 @@
+   right: 0;
+ }
+ 
+-.alternate-fakebox #fakebox-text {
+-  bottom: 0;
+-  color: rgb(128, 134, 139);
+-  font-size: 16px;
+-  height: 21px;
+-  margin: auto 0;
+-  right: 44px;
+-  top: 0;
+-}
+-
+-.show-fakebox-icon.alternate-fakebox #fakebox-text {
+-  padding-inline-start: 48px;
+-}
+-
+-html[dir=rtl] #fakebox-text {
+-  left: 44px;
+-  right: 0;
+-}
+-
+ #fakebox-cursor {
+   background: #333;
+   bottom: 12px;
+@@ -303,25 +220,10 @@
+   right: 20px;
+ }
+ 
+-html[darkmode=true] body:not(.alternate-fakebox) #fakebox-cursor {
++html[darkmode=true] #fakebox-cursor {
+   background: rgb(var(--GB300-rgb));
+ }
+ 
+-.alternate-fakebox #fakebox-cursor {
+-  /* Total 16px height: 46px fakebox height - 15px top - 15px bottom */
+-  bottom: 15px;
+-  top: 15px;
+-}
+-
+-.show-fakebox-icon.alternate-fakebox #fakebox-cursor {
+-  left: 48px;
+-}
+-
+-html[dir=rtl] .show-fakebox-icon.alternate-fakebox #fakebox-cursor {
+-  left: auto;
+-  right: 48px;
+-}
+-
+ #fakebox-microphone {
+   background: url(icons/googlemic_clr_24px.svg) no-repeat center;
+   background-size: 24px 24px;
+@@ -335,12 +237,6 @@
+   width: 28px;
+ }
+ 
+-.alternate-fakebox #fakebox-microphone {
+-  margin-inline-end: 16px;
+-  padding: 11px 0 0;
+-  width: 24px;
+-}
+-
+ html[dir=rtl] #fakebox-microphone {
+   left: 0;
+   right: auto;
+@@ -369,11 +265,6 @@
+   visibility: inherit;
+ }
+ 
+-.alternate-fakebox #user-content-wrapper {
+-  /* Reduce margin by new height of fakebox (46px) - old height (44px) = 2px */
+-  margin-top: -2px;
+-}
+-
+ #most-visited {
+   margin-top: 56px;
+   text-align: -webkit-center;
+--- a/chrome/browser/resources/local_ntp/local_ntp.html	2019-04-05 03:49:04.000000000 +0300
++++ b/chrome/browser/resources/local_ntp/local_ntp.html	2019-05-17 18:53:11.240000000 +0300
+@@ -63,7 +63,6 @@
+ 
+     <div id="fakebox-container">
+       <div id="fakebox">
+-        <div id="fakebox-search-icon"></div>
+         <div id="fakebox-text"></div>
+         <input id="fakebox-input" autocomplete="off" tabindex="-1" type="url"
+             aria-hidden="true">
+@@ -72,8 +71,6 @@
+       </div>
+     </div>
+ 
+-    <!-- TODO(crbug/944624): Remove wrapper after experiment is complete. -->
+-    <div id="user-content-wrapper">
+       <div id="most-visited">
+         <!-- The container for the tiles. The MV iframe goes in here. -->
+         <div id="mv-tiles"></div>
+@@ -91,7 +88,6 @@
+           </div>
+         </div>
+       </div>
+-    </div>
+     <div id="attribution"><div id="attribution-text"></div></div>
+ 
+     <div id="error-notice-container">
+--- a/chrome/browser/resources/local_ntp/local_ntp.js	2019-04-05 03:49:04.000000000 +0300
++++ b/chrome/browser/resources/local_ntp/local_ntp.js	2019-05-17 18:53:11.240000000 +0300
+@@ -70,8 +70,6 @@
+  * @const
+  */
+ var CLASSES = {
+-  // Shows a Google search style fakebox.
+-  ALTERNATE_FAKEBOX: 'alternate-fakebox',
+   ALTERNATE_LOGO: 'alternate-logo',  // Shows white logo if required by theme
+   // Applies styles to dialogs used in customization.
+   CUSTOMIZE_DIALOG: 'customize-dialog',
+@@ -79,8 +77,6 @@
+   DEFAULT_THEME: 'default-theme',
+   DELAYED_HIDE_NOTIFICATION: 'mv-notice-delayed-hide',
+   FAKEBOX_FOCUS: 'fakebox-focused',  // Applies focus styles to the fakebox
+-  // Shows a search icon in the fakebox.
+-  SHOW_FAKEBOX_ICON: 'show-fakebox-icon',
+   SHOW_EDIT_DIALOG: 'show',      // Displays the edit custom link dialog.
+   HIDE_BODY_OVERFLOW: 'hidden',  // Prevents scrolling while the edit custom
+                                  // link dialog is open.
+@@ -1067,13 +1063,6 @@
+ 
+     customBackgrounds.init(showErrorNotification, hideNotification);
+ 
+-    if (configData.alternateFakebox) {
+-      document.body.classList.add(CLASSES.ALTERNATE_FAKEBOX);
+-    }
+-    if (configData.fakeboxSearchIcon) {
+-      document.body.classList.add(CLASSES.SHOW_FAKEBOX_ICON);
+-    }
+-
+     // Set up the fakebox (which only exists on the Google NTP).
+     ntpApiHandle.oninputstart = onInputStart;
+     ntpApiHandle.oninputcancel = onInputCancel;
+@@ -1304,9 +1293,7 @@
+   suggestionsContainer.id = IDS.SUGGESTIONS;
+   suggestionsContainer.style.visibility = 'hidden';
+   suggestionsContainer.innerHTML += suggestions.suggestionsHtml;
+-  // TODO(crbug/944624): Revert after experiment is complete.
+-  $('user-content-wrapper')
+-      .insertAdjacentElement('afterbegin', suggestionsContainer);
++  $(IDS.NTP_CONTENTS).insertBefore(suggestionsContainer, $('most-visited'));
+ 
+   let endOfBodyScript = document.createElement('script');
+   endOfBodyScript.type = 'text/javascript';
+--- a/chrome/browser/resources/pdf/pdf_viewer.js	2019-04-05 03:49:04.000000000 +0300
++++ b/chrome/browser/resources/pdf/pdf_viewer.js	2019-05-17 18:53:11.272000000 +0300
+@@ -1464,8 +1464,7 @@
+         this.viewer_.setIsSelecting(message.data.isSelecting);
+         break;
+       case 'getNamedDestinationReply':
+-        this.viewer_.paramsParser_.onNamedDestinationReceived(
+-            message.data.pageNumber);
++        this.paramsParser_.onNamedDestinationReceived(message.data.pageNumber);
+         break;
+       case 'formFocusChange':
+         this.viewer_.setIsFormFieldFocused(message.data.focused);
+--- a/chrome/browser/resources/safe_browsing/download_file_types.asciipb	2019-04-05 03:49:04.000000000 +0300
++++ b/chrome/browser/resources/safe_browsing/download_file_types.asciipb	2019-05-17 18:53:11.292000000 +0300
+@@ -8,7 +8,7 @@
+ ##
+ ## Top level settings
+ ##
+-version_id: 33
++version_id: 27
+ sampled_ping_probability: 0.01
+ max_archived_binaries_to_report: 10
+ default_file_type {
+@@ -636,9 +636,6 @@
+   is_archive: true
+   ping_setting: FULL_PING
+   inspection_type: ZIP
+-  platform_settings {
+-    max_file_size_to_analyze: 52428800 # 50MB
+-  }
+ }
+ file_types {
+   extension: "zipx"
+--- a/chrome/browser/safe_browsing/download_protection/file_analyzer_unittest.cc	2019-04-05 03:49:04.000000000 +0300
++++ b/chrome/browser/safe_browsing/download_protection/file_analyzer_unittest.cc	2019-05-17 18:53:11.376000000 +0300
+@@ -767,47 +767,4 @@
+   EXPECT_TRUE(result_.archived_binaries.Get(0).digests().sha256().empty());
+ }
+ 
+-TEST_F(FileAnalyzerTest, LargeZipSkipsContentInspection) {
+-  scoped_refptr<MockBinaryFeatureExtractor> extractor =
+-      new testing::StrictMock<MockBinaryFeatureExtractor>();
+-  FileAnalyzer analyzer(extractor);
+-  base::RunLoop run_loop;
+-
+-  FileTypePoliciesTestOverlay overlay;
+-  std::unique_ptr<DownloadFileTypeConfig> config = overlay.DuplicateConfig();
+-  for (DownloadFileType& file_type : *config->mutable_file_types()) {
+-    if (file_type.extension() == "zip") {
+-      // All archives will skip content inspection.
+-      file_type.mutable_platform_settings(0)->set_max_file_size_to_analyze(0);
+-      break;
+-    }
+-  }
+-  overlay.SwapConfig(config);
+-
+-  base::FilePath target_path(FILE_PATH_LITERAL("target.zip"));
+-  base::FilePath tmp_path =
+-      temp_dir_.GetPath().Append(FILE_PATH_LITERAL("tmp.crdownload"));
+-
+-  base::ScopedTempDir zip_source_dir;
+-  ASSERT_TRUE(zip_source_dir.CreateUniqueTempDir());
+-  std::string file_contents = "dummy file";
+-  ASSERT_EQ(static_cast<int>(file_contents.size()),
+-            base::WriteFile(
+-                zip_source_dir.GetPath().Append(FILE_PATH_LITERAL("file.exe")),
+-                file_contents.data(), file_contents.size()));
+-  ASSERT_TRUE(zip::Zip(zip_source_dir.GetPath(), tmp_path,
+-                       /* include_hidden_files= */ false));
+-
+-  analyzer.Start(
+-      target_path, tmp_path,
+-      base::BindOnce(&FileAnalyzerTest::DoneCallback, base::Unretained(this),
+-                     run_loop.QuitClosure()));
+-  run_loop.Run();
+-
+-  ASSERT_TRUE(has_result_);
+-  EXPECT_EQ(result_.type, ClientDownloadRequest::ZIPPED_EXECUTABLE);
+-  EXPECT_EQ(result_.archive_is_valid, FileAnalyzer::ArchiveValid::VALID);
+-  ASSERT_EQ(0, result_.archived_binaries.size());
+-}
+-
+ }  // namespace safe_browsing
+--- a/chrome/browser/safe_browsing/telemetry/android/android_telemetry_service.cc	2019-04-05 03:49:04.000000000 +0300
++++ b/chrome/browser/safe_browsing/telemetry/android/android_telemetry_service.cc	2019-05-17 18:53:11.392000000 +0300
+@@ -247,8 +247,18 @@
+ }
+ 
+ void AndroidTelemetryService::MaybeCaptureSafetyNetId() {
+-  // NO-OP on M73.
++  DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
++  DCHECK(sb_service_->database_manager());
++  if (!safety_net_id_on_ui_thread_.empty()) {
+   return;
++  }
++
++  base::PostTaskWithTraitsAndReplyWithResult(
++      FROM_HERE, {content::BrowserThread::IO},
++      base::BindOnce(&SafeBrowsingDatabaseManager::GetSafetyNetId,
++                     sb_service_->database_manager()),
++      base::BindOnce(&AndroidTelemetryService::SetSafetyNetIdOnUIThread,
++                     weak_ptr_factory_.GetWeakPtr()));
+ }
+ 
+ void AndroidTelemetryService::MaybeSendApkDownloadReport(
+--- a/chrome/browser/search/local_ntp_source.cc	2019-04-05 03:49:04.000000000 +0300
++++ b/chrome/browser/search/local_ntp_source.cc	2019-05-17 18:53:11.400000000 +0300
+@@ -592,14 +592,6 @@
+                            content::BrowserAccessibilityState::GetInstance()
+                                ->IsAccessibleBrowser());
+ 
+-    if (is_google) {
+-      config_data.SetBoolean("alternateFakebox",
+-                             features::IsUseAlternateFakeboxOnNtpEnabled());
+-      config_data.SetBoolean(
+-          "fakeboxSearchIcon",
+-          base::FeatureList::IsEnabled(features::kFakeboxSearchIconOnNtp));
+-    }
+-
+     // Serialize the dictionary.
+     std::string js_text;
+     JSONStringValueSerializer serializer(&js_text);
+--- a/chrome/browser/search/ntp_features.cc	2019-04-05 03:49:04.000000000 +0300
++++ b/chrome/browser/search/ntp_features.cc	2019-05-17 18:53:11.400000000 +0300
+@@ -25,18 +25,4 @@
+ const base::Feature kUseGoogleLocalNtp{"UseGoogleLocalNtp",
+                                        base::FEATURE_DISABLED_BY_DEFAULT};
+ 
+-// If enabled, show a search icon (magnifier glass) in the NTP fakebox.
+-const base::Feature kFakeboxSearchIconOnNtp{"FakeboxSearchIconOnNtp",
+-                                            base::FEATURE_DISABLED_BY_DEFAULT};
+-
+-// If enabled, the NTP fakebox will be changed to the Google search style. Also
+-// implicitly enabled by |kFakeboxSearchIconOnNtp|.
+-const base::Feature kUseAlternateFakeboxOnNtp{
+-    "UseAlternateFakeboxOnNtp", base::FEATURE_DISABLED_BY_DEFAULT};
+-
+-bool IsUseAlternateFakeboxOnNtpEnabled() {
+-  return base::FeatureList::IsEnabled(kFakeboxSearchIconOnNtp) ||
+-         base::FeatureList::IsEnabled(kUseAlternateFakeboxOnNtp);
+-}
+-
+ }  // namespace features
+--- a/chrome/browser/search/ntp_features.h	2019-04-05 03:49:04.000000000 +0300
++++ b/chrome/browser/search/ntp_features.h	2019-05-17 18:53:11.400000000 +0300
+@@ -17,12 +17,6 @@
+ extern const base::Feature kSearchSuggestionsOnLocalNtp;
+ extern const base::Feature kUseGoogleLocalNtp;
+ 
+-extern const base::Feature kFakeboxSearchIconOnNtp;
+-extern const base::Feature kUseAlternateFakeboxOnNtp;
+-
+-// Returns whether the Google search style fakebox is enabled.
+-bool IsUseAlternateFakeboxOnNtpEnabled();
+-
+ }  // namespace features
+ 
+ #endif  // CHROME_BROWSER_SEARCH_NTP_FEATURES_H_
+--- a/chrome/browser/themes/browser_theme_pack.cc	2019-04-05 03:49:04.000000000 +0300
++++ b/chrome/browser/themes/browser_theme_pack.cc	2019-05-17 18:53:11.520000000 +0300
+@@ -634,10 +634,6 @@
+ 
+   pack->CropImages(&pack->images_);
+ 
+-  // Set toolbar related elements' colors (e.g. status bubble, info bar,
+-  // download shelf, detached bookmark bar) to toolbar color.
+-  pack->SetToolbarRelatedColors();
+-
+   // Create toolbar image, and generate toolbar color from image where relevant.
+   // This must be done after reading colors from JSON (so they can be used for
+   // compositing the image).
+@@ -1276,19 +1272,6 @@
+   }
+ }
+ 
+-void BrowserThemePack::SetToolbarRelatedColors() {
+-  // Propagate the user-specified Toolbar Color to similar elements (for
+-  // backwards-compatibility with themes written before this toolbar processing
+-  // was introduced).
+-  SkColor toolbar_color;
+-  if (GetColor(TP::COLOR_TOOLBAR, &toolbar_color)) {
+-    SetColor(TP::COLOR_DETACHED_BOOKMARK_BAR_BACKGROUND, toolbar_color);
+-    SetColor(TP::COLOR_INFOBAR, toolbar_color);
+-    SetColor(TP::COLOR_DOWNLOAD_SHELF, toolbar_color);
+-    SetColor(TP::COLOR_STATUS_BUBBLE, toolbar_color);
+-  }
+-}
+-
+ void BrowserThemePack::CreateToolbarImageAndColors(ImageCache* images) {
+   ImageCache temp_output;
+ 
+@@ -1302,7 +1285,15 @@
+ 
+   constexpr int kToolbarColorId = TP::COLOR_TOOLBAR;
+   SkColor toolbar_color;
+-  if (!GetColor(kToolbarColorId, &toolbar_color)) {
++  // Propagate the user-specified Toolbar Color to similar elements (for
++  // backwards-compatibility with themes written before this toolbar processing
++  // was introduced).
++  if (GetColor(kToolbarColorId, &toolbar_color)) {
++    SetColor(TP::COLOR_DETACHED_BOOKMARK_BAR_BACKGROUND, toolbar_color);
++    SetColor(TP::COLOR_INFOBAR, toolbar_color);
++    SetColor(TP::COLOR_DOWNLOAD_SHELF, toolbar_color);
++    SetColor(TP::COLOR_STATUS_BUBBLE, toolbar_color);
++  } else {
+     toolbar_color = TP::GetDefaultColor(kToolbarColorId, false);
+   }
+ 
+--- a/chrome/browser/themes/browser_theme_pack.h	2019-04-05 03:49:04.000000000 +0300
++++ b/chrome/browser/themes/browser_theme_pack.h	2019-05-17 18:53:11.520000000 +0300
+@@ -167,10 +167,6 @@
+   // can be of any size. Source and destination is |images|.
+   void CropImages(ImageCache* images) const;
+ 
+-  // Set toolbar related elements' colors (e.g. status bubble, info bar,
+-  // download shelf, detached bookmark bar) to toolbar color.
+-  void SetToolbarRelatedColors();
+-
+   // Creates a composited toolbar image. Source and destination is |images|.
+   // Also sets toolbar color corresponding to this image.
+   void CreateToolbarImageAndColors(ImageCache* images);
+--- a/chrome/browser/themes/browser_theme_pack_unittest.cc	2019-04-05 03:49:04.000000000 +0300
++++ b/chrome/browser/themes/browser_theme_pack_unittest.cc	2019-05-17 18:53:11.520000000 +0300
+@@ -1014,30 +1014,6 @@
+   EXPECT_EQ(infobar_color, status_bubble_color);
+ }
+ 
+-// Ensure that a specified 'toolbar' color is propagated to other 'bar' and
+-// 'shelf' colors (before a new color is computed from the toolbar image).
+-TEST_F(BrowserThemePackTest, TestToolbarColorPropagationNoImage) {
+-  scoped_refptr<BrowserThemePack> pack;
+-  BuildTestExtensionTheme("theme_test_toolbar_color_no_image", &pack);
+-
+-  SkColor infobar_color;
+-  SkColor bookmark_bar_color;
+-  SkColor download_shelf_color;
+-  SkColor status_bubble_color;
+-
+-  EXPECT_TRUE(pack->GetColor(TP::COLOR_INFOBAR, &infobar_color));
+-  EXPECT_TRUE(pack->GetColor(TP::COLOR_DETACHED_BOOKMARK_BAR_BACKGROUND,
+-                             &bookmark_bar_color));
+-  EXPECT_TRUE(pack->GetColor(TP::COLOR_DOWNLOAD_SHELF, &download_shelf_color));
+-  EXPECT_TRUE(pack->GetColor(TP::COLOR_STATUS_BUBBLE, &status_bubble_color));
+-
+-  constexpr SkColor kExpectedColor = SkColorSetRGB(0, 255, 0);
+-  EXPECT_EQ(infobar_color, kExpectedColor);
+-  EXPECT_EQ(infobar_color, bookmark_bar_color);
+-  EXPECT_EQ(infobar_color, download_shelf_color);
+-  EXPECT_EQ(infobar_color, status_bubble_color);
+-}
+-
+ // Ensure that, given an explicit toolbar color and a toolbar image, the output
+ // color in COLOR_TOOLBAR reflects the color of the image (not the explicit
+ // color).
+--- a/chrome/browser/ui/browser.cc	2019-04-05 03:49:05.000000000 +0300
++++ b/chrome/browser/ui/browser.cc	2019-05-17 18:53:11.612000000 +0300
+@@ -1967,7 +1967,7 @@
+   switch (type) {
+ #if !defined(OS_ANDROID)
+     case chrome::NOTIFICATION_BROWSER_THEME_CHANGED:
+-      window()->UserChangedTheme(BrowserThemeChangeType::kBrowserTheme);
++      window()->UserChangedTheme();
+       break;
+ #endif
+ 
+--- a/chrome/browser/ui/browser_window.h	2019-04-05 03:49:05.000000000 +0300
++++ b/chrome/browser/ui/browser_window.h	2019-05-17 18:53:11.620000000 +0300
+@@ -89,8 +89,6 @@
+   EDITABLE_FIELD_IS_ACTIVE,
+ };
+ 
+-enum class BrowserThemeChangeType { kBrowserTheme, kNativeTheme };
+-
+ #if !defined(OS_CHROMEOS)
+ class BadgeServiceDelegate;
+ #endif
+@@ -374,7 +372,7 @@
+ 
+   // ThemeService calls this when a user has changed their theme, indicating
+   // that it's time to redraw everything.
+-  virtual void UserChangedTheme(BrowserThemeChangeType theme_change_type) = 0;
++  virtual void UserChangedTheme() = 0;
+ 
+   // Shows the app menu (for accessibility).
+   virtual void ShowAppMenu() = 0;
+--- a/chrome/browser/ui/cocoa/chrome_command_dispatcher_delegate.mm	2019-04-05 03:49:05.000000000 +0300
++++ b/chrome/browser/ui/cocoa/chrome_command_dispatcher_delegate.mm	2019-05-17 18:53:11.628000000 +0300
+@@ -101,7 +101,6 @@
+           true /* is_before_first_responder */, &was_executed);
+       if (was_executed)
+         return ui::PerformKeyEquivalentResult::kHandled;
+-      bridge->SaveKeyEventForRedispatch(event);
+     }
+   }
+ 
+--- a/chrome/browser/ui/cocoa/media_picker/desktop_media_picker_cocoa.mm	2019-04-05 03:49:05.000000000 +0300
++++ b/chrome/browser/ui/cocoa/media_picker/desktop_media_picker_cocoa.mm	2019-05-17 18:53:11.636000000 +0300
+@@ -20,8 +20,11 @@
+     const DoneCallback& done_callback) {
+   controller_.reset([[DesktopMediaPickerController alloc]
+       initWithSourceLists:std::move(source_lists)
++                   parent:params.parent.GetNativeNSWindow()
+                  callback:done_callback
+-                   params:params]);
++                  appName:params.app_name
++               targetName:params.target_name
++             requestAudio:params.request_audio]);
+   [controller_ showWindow:nil];
+ }
+ 
+--- a/chrome/browser/ui/cocoa/media_picker/desktop_media_picker_controller.h	2019-04-05 03:49:05.000000000 +0300
++++ b/chrome/browser/ui/cocoa/media_picker/desktop_media_picker_controller.h	2019-05-17 18:53:11.636000000 +0300
+@@ -64,22 +64,22 @@
+ 
+   // Used to create |DesktopMediaPickerItem|s with unique IDs.
+   int lastImageUID_;
+-
+-  // Save input |params| for future use.
+-  DesktopMediaPicker::Params params_;
+ }
+ 
+ // Designated initializer.
+ // To show the dialog, use |NSWindowController|'s |showWindow:|.
+ // |callback| will be called to report the user's selection.
+-// |params| will be used to customize the dialog. |params.app_name| will be used
+-// to format the dialog's title and the label, where it appears as the initiator
+-// of the request. |params.target_name| will be used to format the dialog's
+-// label and appear as the consumer of the requested stream.
++// |appName| will be used to format the dialog's title and the label, where it
++// appears as the initiator of the request.
++// |targetName| will be used to format the dialog's label and appear as the
++// consumer of the requested stream.
+ - (id)initWithSourceLists:
+           (std::vector<std::unique_ptr<DesktopMediaList>>)sourceLists
++                   parent:(NSWindow*)parent
+                  callback:(const DesktopMediaPicker::DoneCallback&)callback
+-                   params:(const DesktopMediaPicker::Params&)params;
++                  appName:(const base::string16&)appName
++               targetName:(const base::string16&)targetName
++             requestAudio:(bool)requestAudio;
+ 
+ @end
+ 
+--- a/chrome/browser/ui/cocoa/media_picker/desktop_media_picker_controller.mm	2019-04-05 03:49:05.000000000 +0300
++++ b/chrome/browser/ui/cocoa/media_picker/desktop_media_picker_controller.mm	2019-05-17 18:53:11.636000000 +0300
+@@ -63,7 +63,9 @@
+ @interface DesktopMediaPickerController ()
+ 
+ // Populate the window with controls and views.
+-- (void)initializeContentsWithParams:(const DesktopMediaPicker::Params&)params;
++- (void)initializeContentsWithAppName:(const base::string16&)appName
++                           targetName:(const base::string16&)targetName
++                         requestAudio:(bool)requestAudio;
+ 
+ // Add |NSSegmentControl| for source type switch.
+ - (void)createTypeButtonAtOrigin:(NSPoint)origin;
+@@ -111,8 +113,11 @@
+ 
+ - (id)initWithSourceLists:
+           (std::vector<std::unique_ptr<DesktopMediaList>>)sourceLists
++                   parent:(NSWindow*)parent
+                  callback:(const DesktopMediaPicker::DoneCallback&)callback
+-                   params:(const DesktopMediaPicker::Params&)params {
++                  appName:(const base::string16&)appName
++               targetName:(const base::string16&)targetName
++             requestAudio:(bool)requestAudio {
+   const NSUInteger kStyleMask =
+       NSTitledWindowMask | NSClosableWindowMask | NSResizableWindowMask;
+   base::scoped_nsobject<NSWindow> window(
+@@ -120,8 +125,8 @@
+                                   styleMask:kStyleMask
+                                     backing:NSBackingStoreBuffered
+                                       defer:NO]);
++
+   if ((self = [super initWithWindow:window])) {
+-    NSWindow* parent = params.parent.GetNativeNSWindow();
+     [parent addChildWindow:window ordered:NSWindowAbove];
+     [window setDelegate:self];
+ 
+@@ -145,9 +150,10 @@
+       }
+     }
+ 
+-    [self initializeContentsWithParams:params];
++    [self initializeContentsWithAppName:appName
++                             targetName:targetName
++                           requestAudio:requestAudio];
+     doneCallback_ = callback;
+-    params_ = params;
+ 
+     bridge_.reset(new DesktopMediaPickerBridge(self));
+   }
+@@ -167,7 +173,9 @@
+   [super dealloc];
+ }
+ 
+-- (void)initializeContentsWithParams:(const DesktopMediaPicker::Params&)params {
++- (void)initializeContentsWithAppName:(const base::string16&)appName
++                           targetName:(const base::string16&)targetName
++                         requestAudio:(bool)requestAudio {
+   // Use flipped coordinates to facilitate manual layout.
+   base::scoped_nsobject<FlippedView> content(
+       [[FlippedView alloc] initWithFrame:NSZeroRect]);
+@@ -181,13 +189,12 @@
+ 
+   // Set the dialog's description.
+   NSString* descriptionText;
+-  if (params.app_name == params.target_name) {
+-    descriptionText =
+-        l10n_util::GetNSStringF(IDS_DESKTOP_MEDIA_PICKER_TEXT, params.app_name);
++  if (appName == targetName) {
++    descriptionText = l10n_util::GetNSStringF(
++        IDS_DESKTOP_MEDIA_PICKER_TEXT, appName);
+   } else {
+-    descriptionText =
+-        l10n_util::GetNSStringF(IDS_DESKTOP_MEDIA_PICKER_TEXT_DELEGATED,
+-                                params.app_name, params.target_name);
++    descriptionText = l10n_util::GetNSStringF(
++        IDS_DESKTOP_MEDIA_PICKER_TEXT_DELEGATED, appName, targetName);
+   }
+   NSTextField* description =
+       [self createTextFieldWithText:descriptionText
+@@ -204,7 +211,7 @@
+   origin.y +=
+       NSHeight([imageBrowserScroll_ frame]) + kDesktopMediaPickerControlSpacing;
+ 
+-  if (params.request_audio) {
++  if (requestAudio) {
+     [self createAudioCheckboxAtOrigin:origin];
+     origin.y += NSHeight([audioShareCheckbox_ frame]) +
+                 kDesktopMediaPickerControlSpacing;
+@@ -611,11 +618,8 @@
+ 
+   [tabBrowser_ selectRowIndexes:indexes byExtendingSelection:NO];
+ 
+-  DesktopMediaID::Type selectedType = [self selectedSourceType];
+-  if (selectedType == DesktopMediaID::TYPE_WEB_CONTENTS) {
+     // Enable or disable the OK button based on whether we have a selection.
+     [shareButton_ setEnabled:(index >= 0)];
+-  }
+ }
+ 
+ #pragma mark NSWindowDelegate
+@@ -742,11 +746,7 @@
+     // Memorizing selection.
+     [self setTabBrowserIndex:selectedIndex];
+   } else if (sourceType == DesktopMediaID::TYPE_SCREEN) {
+-    if ([items count] == 1 && params_.created_by_extension) {
+-      // Preselect the first screen source for desktopCapture API only.
+-      [browser setSelectionIndexes:[NSIndexSet indexSetWithIndex:0]
+-              byExtendingSelection:NO];
+-    } else if ([items count] == 2) {
++    if ([items count] == 2) {
+       // Switch to multiple sources mode.
+       [browser setCellSize:NSMakeSize(kDesktopMediaPickerMultipleScreenWidth,
+                                       kDesktopMediaPickerMultipleScreenHeight)];
+--- a/chrome/browser/ui/cocoa/media_picker/desktop_media_picker_controller_unittest.mm	2019-04-05 03:49:05.000000000 +0300
++++ b/chrome/browser/ui/cocoa/media_picker/desktop_media_picker_controller_unittest.mm	2019-05-17 18:53:11.636000000 +0300
+@@ -95,14 +95,13 @@
+         base::Bind(&DesktopMediaPickerControllerTest::OnResult,
+                    base::Unretained(this));
+ 
+-    DesktopMediaPicker::Params params;
+-    params.app_name = base::ASCIIToUTF16("Screenshare Test");
+-    params.target_name = base::ASCIIToUTF16("https://foo.com");
+-    params.request_audio = true;
+     controller_.reset([[DesktopMediaPickerController alloc]
+         initWithSourceLists:std::move(source_lists)
++                     parent:nil
+                    callback:callback
+-                     params:params]);
++                    appName:base::ASCIIToUTF16("Screenshare Test")
++                 targetName:base::ASCIIToUTF16("https://foo.com")
++               requestAudio:true]);
+   }
+ 
+   void TearDown() override {
+--- a/chrome/browser/ui/views/constrained_web_dialog_delegate_views.cc	2019-04-05 03:49:05.000000000 +0300
++++ b/chrome/browser/ui/views/constrained_web_dialog_delegate_views.cc	2019-05-17 18:53:11.748000000 +0300
+@@ -325,7 +325,6 @@
+     const ui::Accelerator& accelerator) {
+   // Pressing ESC closes the dialog.
+   DCHECK_EQ(ui::VKEY_ESCAPE, accelerator.key_code());
+-  GetWebDialogDelegate()->OnDialogClosingFromKeyEvent();
+   GetWidget()->CloseWithReason(views::Widget::ClosedReason::kEscKeyPressed);
+   return true;
+ }
+--- a/chrome/browser/ui/views/desktop_capture/desktop_media_list_view.cc	2019-04-05 03:49:05.000000000 +0300
++++ b/chrome/browser/ui/views/desktop_capture/desktop_media_list_view.cc	2019-05-17 18:53:11.752000000 +0300
+@@ -193,11 +193,6 @@
+   if ((child_count() - 1) % active_style_->columns == 0)
+     parent_->OnMediaListRowsChanged();
+ 
+-  // Auto select the first screen for extension desktopCapture API only.
+-  if (index == 0 && source.id.type == DesktopMediaID::TYPE_SCREEN &&
+-      parent_->IsCreatedByExtension())
+-    source_view->RequestFocus();
+-
+   PreferredSizeChanged();
+ 
+   std::string autoselect_source =
+--- a/chrome/browser/ui/views/desktop_capture/desktop_media_picker_views.cc	2019-04-05 03:49:05.000000000 +0300
++++ b/chrome/browser/ui/views/desktop_capture/desktop_media_picker_views.cc	2019-05-17 18:53:11.752000000 +0300
+@@ -60,8 +60,7 @@
+       modality_(params.modality),
+       description_label_(new views::Label()),
+       audio_share_checkbox_(nullptr),
+-      pane_(new views::TabbedPane()),
+-      created_by_extension_(params.created_by_extension) {
++      pane_(new views::TabbedPane()) {
+   const ChromeLayoutProvider* provider = ChromeLayoutProvider::Get();
+ 
+   SetLayoutManager(std::make_unique<views::BoxLayout>(
+--- a/chrome/browser/ui/views/desktop_capture/desktop_media_picker_views.h	2019-04-05 03:49:05.000000000 +0300
++++ b/chrome/browser/ui/views/desktop_capture/desktop_media_picker_views.h	2019-05-17 18:53:11.752000000 +0300
+@@ -65,8 +65,6 @@
+       content::DesktopMediaID::Type source_type) const;
+   views::TabbedPane* GetPaneForTesting() const;
+ 
+-  bool IsCreatedByExtension() const { return created_by_extension_; }
+-
+  private:
+   void OnSourceTypeSwitched(int index);
+ 
+@@ -81,8 +79,6 @@
+   std::vector<DesktopMediaListView*> list_views_;
+   std::vector<content::DesktopMediaID::Type> source_types_;
+ 
+-  bool created_by_extension_;
+-
+   DISALLOW_COPY_AND_ASSIGN(DesktopMediaPickerDialogView);
+ };
+ 
+--- a/chrome/browser/ui/views/frame/browser_view.cc	2019-04-05 03:49:05.000000000 +0300
++++ b/chrome/browser/ui/views/frame/browser_view.cc	2019-05-17 18:53:11.772000000 +0300
+@@ -1498,33 +1498,8 @@
+       GetNativeWindow(), download_count, dialog_type, app_modal, callback);
+ }
+ 
+-void BrowserView::UserChangedTheme(BrowserThemeChangeType theme_change_type) {
+-  // When the native theme changes in a way that doesn't change the frame type
+-  // required, we can skip a frame regeneration. Frame regeneration can cause
+-  // visible flicker (see crbug/945138) so it's best avoided if all that has
+-  // changed is, for example, the titlebar color, or the user has switched from
+-  // light to dark mode.
+-  const bool should_use_native_frame = frame_->ShouldUseNativeFrame();
+-  bool must_regenerate_frame;
+-#if defined(OS_LINUX) && !defined(OS_CHROMEOS)
+-  // GTK and user theme changes can both change frame buttons, so the frame
+-  // always needs to be regenerated on Linux.
+-  must_regenerate_frame = true;
+-#else
+-  must_regenerate_frame =
+-      theme_change_type == BrowserThemeChangeType::kBrowserTheme ||
+-      using_native_frame_ != should_use_native_frame;
+-#endif
+-  if (must_regenerate_frame) {
+-    // This is a heavyweight theme change that requires regenerating the frame
+-    // as well as repainting the browser window.
++void BrowserView::UserChangedTheme() {
+     frame_->FrameTypeChanged();
+-  } else {
+-    // This is a lightweight theme change, so just refresh the theme on all
+-    // views in the browser window.
+-    GetWidget()->ThemeChanged();
+-  }
+-  using_native_frame_ = should_use_native_frame;
+ }
+ 
+ void BrowserView::ShowAppMenu() {
+@@ -1947,7 +1922,7 @@
+     return;
+   // Don't infinitely recurse.
+   if (!handling_theme_changed_)
+-    UserChangedTheme(BrowserThemeChangeType::kNativeTheme);
++    UserChangedTheme();
+   MaybeShowInvertBubbleView(this);
+ }
+ 
+@@ -2599,7 +2574,6 @@
+ 
+   frame_->OnBrowserViewInitViewsComplete();
+   frame_->GetFrameView()->UpdateMinimumSize();
+-  using_native_frame_ = frame_->ShouldUseNativeFrame();
+ }
+ 
+ void BrowserView::LoadingAnimationCallback() {
+--- a/chrome/browser/ui/views/frame/browser_view.h	2019-04-05 03:49:05.000000000 +0300
++++ b/chrome/browser/ui/views/frame/browser_view.h	2019-05-17 18:53:11.772000000 +0300
+@@ -398,7 +398,7 @@
+       Browser::DownloadClosePreventionType dialog_type,
+       bool app_modal,
+       const base::Callback<void(bool)>& callback) override;
+-  void UserChangedTheme(BrowserThemeChangeType theme_change_type) override;
++  void UserChangedTheme() override;
+   void ShowAppMenu() override;
+   content::KeyboardEventProcessingResult PreHandleKeyboardEvent(
+       const content::NativeWebKeyboardEvent& event) override;
+@@ -781,9 +781,6 @@
+   // OnThemeChanged()).
+   bool handling_theme_changed_ = false;
+ 
+-  // True if (as of the last time it was checked) the frame type is native.
+-  bool using_native_frame_ = true;
+-
+   // True when in ProcessFullscreen(). The flag is used to avoid reentrance and
+   // to ignore requests to layout while in ProcessFullscreen() to reduce
+   // jankiness.
+--- a/chrome/browser/ui/views/tabs/tab_drag_controller.cc	2019-04-05 03:49:05.000000000 +0300
++++ b/chrome/browser/ui/views/tabs/tab_drag_controller.cc	2019-05-17 18:53:11.840000000 +0300
+@@ -333,7 +333,12 @@
+       last_move_screen_loc_(0),
+       source_tab_index_(std::numeric_limits<size_t>::max()),
+       initial_move_(true),
++#if defined(USE_OZONE) && !defined(OS_CHROMEOS)
++      // TODO(crbug.com/896640): Support detachable tabs
++      detach_behavior_(NOT_DETACHABLE),
++#else
+       detach_behavior_(DETACHABLE),
++#endif
+       move_behavior_(REORDER),
+       mouse_has_ever_moved_left_(false),
+       mouse_has_ever_moved_right_(false),
+--- a/chrome/browser/ui/views/tabs/window_finder_ozone.cc	2019-04-05 03:49:05.000000000 +0300
++++ b/chrome/browser/ui/views/tabs/window_finder_ozone.cc	2019-05-17 18:53:11.848000000 +0300
+@@ -4,10 +4,19 @@
+ 
+ #include "chrome/browser/ui/views/tabs/window_finder.h"
+ 
++#include "base/stl_util.h"
++#include "ui/aura/window.h"
++#include "ui/display/screen.h"
++#include "ui/views/widget/widget.h"
++
+ gfx::NativeWindow WindowFinder::GetLocalProcessWindowAtPoint(
+     const gfx::Point& screen_point,
+     const std::set<gfx::NativeWindow>& ignore) {
+-  NOTIMPLEMENTED()
+-      << "For Ozone builds, window finder is not supported for now.";
+-  return nullptr;
++  gfx::NativeWindow window =
++      display::Screen::GetScreen()->GetWindowAtScreenPoint(screen_point);
++  for (; window; window = window->parent()) {
++    if (views::Widget::GetWidgetForNativeWindow(window))
++      break;
++  }
++  return (window && !base::ContainsKey(ignore, window)) ? window : nullptr;
+ }
+--- a/chrome/browser/web_applications/components/web_app_shortcut_mac.mm	2019-04-05 03:49:06.000000000 +0300
++++ b/chrome/browser/web_applications/components/web_app_shortcut_mac.mm	2019-05-17 18:53:12.012000000 +0300
+@@ -74,7 +74,6 @@
+ @implementation TerminationObserver
+ - (id)initWithRunningApplication:(NSRunningApplication*)app
+                         callback:(base::OnceClosure)callback {
+-  DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
+   if (self = [super init]) {
+     callback_ = std::move(callback);
+     app_.reset(app, base::scoped_policy::RETAIN);
+@@ -96,60 +95,22 @@
+   NSNumber* newNumberValue = [change objectForKey:NSKeyValueChangeNewKey];
+   BOOL newValue = [newNumberValue boolValue];
+   if (newValue) {
+-    base::scoped_nsobject<TerminationObserver> scoped_self(
+-        self, base::scoped_policy::RETAIN);
+     base::PostTaskWithTraits(
+         FROM_HERE, {content::BrowserThread::UI},
+         base::BindOnce(
+-            [](base::scoped_nsobject<TerminationObserver> observer) {
+-              [observer onTerminated];
+-            },
+-            scoped_self));
++            [](TerminationObserver* observer) { [observer onTerminated]; },
++            self));
+   }
+ }
+ 
+ - (void)onTerminated {
+   DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
+-  // If |onTerminated| is called repeatedly (which in theory it should not),
+-  // then ensure that we only call removeObserver and release once by doing an
+-  // early-out if |callback_| has already been made.
+-  if (!callback_)
+-    return;
+   std::move(callback_).Run();
+-  DCHECK(!callback_);
+   [app_ removeObserver:self forKeyPath:@"isTerminated" context:nullptr];
+   [self release];
+ }
+ @end
+ 
+-// TODO(https://crbug.com/941909): Change all launch functions to take a single
+-// callback that returns a NSRunningApplication, rather than separate launch and
+-// termination callbacks.
+-void RunAppLaunchCallbacks(
+-    base::scoped_nsobject<NSRunningApplication> app,
+-    base::OnceCallback<void(base::Process)> launch_callback,
+-    base::OnceClosure termination_callback) {
+-  DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
+-  DCHECK(app);
+-
+-  // If the app doesn't have a valid pid, or if the application has been
+-  // terminated, then indicate failure in |launch_callback|.
+-  base::Process process([app processIdentifier]);
+-  if (!process.IsValid() || [app isTerminated]) {
+-    std::move(launch_callback).Run(base::Process());
+-    return;
+-  }
+-
+-  // Otherwise, indicate successful launch, and watch for termination.
+-  // TODO(https://crbug.com/941909): This watches for termination indefinitely,
+-  // but we only need to watch for termination until the app establishes a
+-  // (whereupon termination will be noticed by the mojo connection closing).
+-  std::move(launch_callback).Run(std::move(process));
+-  [[TerminationObserver alloc]
+-      initWithRunningApplication:app
+-                        callback:std::move(termination_callback)];
+-}
+-
+ bool g_app_shims_allow_update_and_launch_in_tests = false;
+ 
+ namespace {
+@@ -325,16 +286,17 @@
+       command_line.AppendSwitch(app_mode::kLaunchedAfterRebuild);
+ 
+     // Launch without activating (NSWorkspaceLaunchWithoutActivation).
+-    base::scoped_nsobject<NSRunningApplication> app(
+-        base::mac::OpenApplicationWithPath(
++    NSRunningApplication* app = base::mac::OpenApplicationWithPath(
+             shim_path, command_line,
+-            NSWorkspaceLaunchDefault | NSWorkspaceLaunchWithoutActivation),
+-        base::scoped_policy::RETAIN);
++        NSWorkspaceLaunchDefault | NSWorkspaceLaunchWithoutActivation);
+     if (app) {
+-      base::PostTaskWithTraits(FROM_HERE, {content::BrowserThread::UI},
+-                               base::BindOnce(&RunAppLaunchCallbacks, app,
+-                                              std::move(launched_callback),
+-                                              std::move(terminated_callback)));
++      base::Process process([app processIdentifier]);
++      base::PostTaskWithTraits(
++          FROM_HERE, {content::BrowserThread::UI},
++          base::BindOnce(std::move(launched_callback), std::move(process)));
++      [[TerminationObserver alloc]
++          initWithRunningApplication:app
++                            callback:std::move(terminated_callback)];
+       return;
+     }
+   }
+--- a/chrome/common/safe_browsing/zip_analyzer.cc	2019-04-05 03:49:07.000000000 +0300
++++ b/chrome/common/safe_browsing/zip_analyzer.cc	2019-05-17 18:53:12.480000000 +0300
+@@ -13,7 +13,6 @@
+ #include "base/logging.h"
+ #include "base/macros.h"
+ #include "base/metrics/histogram_functions.h"
+-#include "base/metrics/histogram_macros.h"
+ #include "base/numerics/ranges.h"
+ #include "base/rand_util.h"
+ #include "build/build_config.h"
+@@ -69,16 +68,6 @@
+     return;
+   }
+ 
+-  bool too_big_to_unpack =
+-      base::checked_cast<uint64_t>(zip_file.GetLength()) >
+-      FileTypePolicies::GetInstance()->GetMaxFileSizeToAnalyze("zip");
+-  UMA_HISTOGRAM_BOOLEAN("SBClientDownload.ZipTooBigToUnpack",
+-                        too_big_to_unpack);
+-  if (too_big_to_unpack) {
+-    results->success = true;
+-    return;
+-  }
+-
+   bool contains_zip = false;
+   bool advanced = true;
+   int zip_entry_count = 0;
+--- a/chrome/test/base/interactive_ui_tests_main.cc	2019-04-05 03:49:07.000000000 +0300
++++ b/chrome/test/base/interactive_ui_tests_main.cc	2019-05-17 18:53:12.640000000 +0300
+@@ -15,6 +15,9 @@
+ #if defined(USE_AURA)
+ #include "ui/aura/test/ui_controls_factory_aura.h"
+ #include "ui/base/test/ui_controls_aura.h"
++#if defined(USE_OZONE) && defined(OS_LINUX) && !defined(OS_CHROMEOS)
++#include "ui/ozone/public/ozone_platform.h"
++#endif
+ #if defined(USE_X11)
+ #include "ui/views/test/ui_controls_factory_desktop_aurax11.h"
+ #endif
+@@ -51,12 +54,15 @@
+ #endif
+ 
+ #if defined(OS_LINUX)
+-#if defined(USE_OZONE)
+-    NOTIMPLEMENTED();
++#if defined(USE_OZONE) && !defined(OS_CHROMEOS)
++    ui::OzonePlatform::InitParams params;
++    params.single_process = true;
++    params.using_mojo = false;
++    ui::OzonePlatform::EnsureInstance()->InitializeForUI(std::move(params));
+ #else
+     ui_controls::InstallUIControlsAura(
+         views::test::CreateUIControlsDesktopAura());
+-#endif  // defined(USE_OZONE)
++#endif  // defined(USE_OZONE) && !defined(OS_CHROMEOS)
+ #else
+     ui_controls::InstallUIControlsAura(aura::test::CreateUIControlsAura(NULL));
+ #endif  // defined(OS_LINUX)
+--- a/chrome/test/base/test_browser_window.h	2019-04-05 03:49:07.000000000 +0300
++++ b/chrome/test/base/test_browser_window.h	2019-05-17 18:53:12.640000000 +0300
+@@ -146,7 +146,7 @@
+       Browser::DownloadClosePreventionType dialog_type,
+       bool app_modal,
+       const base::Callback<void(bool)>& callback) override {}
+-  void UserChangedTheme(BrowserThemeChangeType theme_change_type) override {}
++  void UserChangedTheme() override {}
+   void CutCopyPaste(int command_id) override {}
+   FindBar* CreateFindBar() override;
+   web_modal::WebContentsModalDialogHost* GetWebContentsModalDialogHost()
+--- a/chrome/VERSION	2019-04-05 03:48:56.000000000 +0300
++++ b/chrome/VERSION	2019-05-17 18:53:08.892000000 +0300
+@@ -1,4 +1,4 @@
+ MAJOR=73
+ MINOR=0
+ BUILD=3683
+-PATCH=103
++PATCH=75

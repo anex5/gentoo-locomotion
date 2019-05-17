@@ -1,0 +1,736 @@
+--- a/content/browser/appcache/appcache_update_url_loader_request.cc	2019-04-05 03:49:15.000000000 +0300
++++ b/content/browser/appcache/appcache_update_url_loader_request.cc	2019-05-17 18:53:30.980000000 +0300
+@@ -23,8 +23,7 @@
+ 
+   loader_factory_getter_->GetNetworkFactory()->CreateLoaderAndStart(
+       mojo::MakeRequest(&url_loader_), -1, -1,
+-      network::mojom::kURLLoadOptionSendSSLInfoWithResponse, request_,
+-      std::move(client),
++      network::mojom::kURLLoadOptionNone, request_, std::move(client),
+       net::MutableNetworkTrafficAnnotationTag(GetTrafficAnnotation()));
+ }
+ 
+--- a/content/browser/frame_host/navigation_controller_impl_browsertest.cc	2019-04-05 03:49:16.000000000 +0300
++++ b/content/browser/frame_host/navigation_controller_impl_browsertest.cc	2019-05-17 18:53:31.228000000 +0300
+@@ -7631,12 +7631,10 @@
+             controller.GetLastCommittedEntry()->GetVirtualURL());
+ }
+ 
+-// Verifies that unsafe redirects to javascript: URLs are canceled and don't
+-// make a spoof possible. Ideally they would create an error page, but some
+-// extensions rely on them being silently blocked. See https://crbug.com/935175
+-// and https://cbug.com/941653.
++// Verifies that unsafe redirects to javascript: or other URLs create an error
++// page and don't make a spoof possible. See https://crbug.com/935175.
+ IN_PROC_BROWSER_TEST_F(NavigationControllerBrowserTest,
+-                       JavascriptRedirectSilentlyCanceled) {
++                       UnsafeRedirectCreatesErrorPage) {
+   NavigationControllerImpl& controller = static_cast<NavigationControllerImpl&>(
+       shell()->web_contents()->GetController());
+ 
+@@ -7644,17 +7642,13 @@
+   EXPECT_TRUE(NavigateToURL(shell(), start_url));
+   EXPECT_EQ(0, controller.GetLastCommittedEntryIndex());
+ 
+-  // Navigating to a URL that redirects to a javascript: URL doesn't create an
+-  // error page; the navigation is simply ignored. Check the pending URL is not
+-  // left in the address bar.
++  // Navigating to URLs with unsafe redirects should create an error page so
++  // that the pending URL is not left in the address bar.
+   GURL redirect_to_unsafe_url(
+       embedded_test_server()->GetURL("/server-redirect?javascript:Hello!"));
+   EXPECT_FALSE(NavigateToURL(shell(), redirect_to_unsafe_url));
+-  EXPECT_EQ(0, controller.GetLastCommittedEntryIndex());
+-  EXPECT_EQ(PAGE_TYPE_NORMAL,
+-            controller.GetLastCommittedEntry()->GetPageType());
+-  EXPECT_EQ(controller.GetVisibleEntry(), controller.GetLastCommittedEntry());
+-  EXPECT_EQ(start_url, controller.GetVisibleEntry()->GetURL());
++  EXPECT_EQ(1, controller.GetLastCommittedEntryIndex());
++  EXPECT_EQ(PAGE_TYPE_ERROR, controller.GetLastCommittedEntry()->GetPageType());
+ }
+ 
+ // Verifies that redirecting to a blocked URL and going back does not allow a
+--- a/content/browser/frame_host/navigation_handle_impl_browsertest.cc	2019-04-05 03:49:16.000000000 +0300
++++ b/content/browser/frame_host/navigation_handle_impl_browsertest.cc	2019-05-17 18:53:31.232000000 +0300
+@@ -1905,14 +1905,9 @@
+     NavigationLogger logger(shell()->web_contents());
+ 
+     // Try to navigate to the url. The navigation should be canceled and the
+-    // NavigationHandle should have the right error code.  Note that javascript
+-    // URLS use ERR_ABORTED rather than ERR_UNSAFE_REDIRECT due to
+-    // https://crbug.com/941653.
++    // NavigationHandle should have the right error code.
+     EXPECT_FALSE(NavigateToURL(shell(), redirecting_url));
+-    int expected_err_code = test_url.SchemeIs("javascript")
+-                                ? net::ERR_ABORTED
+-                                : net::ERR_UNSAFE_REDIRECT;
+-    EXPECT_EQ(expected_err_code, observer.net_error_code());
++    EXPECT_EQ(net::ERR_UNSAFE_REDIRECT, observer.net_error_code());
+ 
+     // Both WebContentsObserver::{DidStartNavigation, DidFinishNavigation}
+     // are called, but no WebContentsObserver::DidRedirectNavigation.
+--- a/content/browser/frame_host/navigation_handle_impl.cc	2019-04-05 03:49:16.000000000 +0300
++++ b/content/browser/frame_host/navigation_handle_impl.cc	2019-05-17 18:53:31.228000000 +0300
+@@ -1167,8 +1167,7 @@
+   render_process_blocked_state_changed_subscription_.reset();
+   GetRenderFrameHost()->GetRenderWidgetHost()->RendererIsUnresponsive(
+       base::BindRepeating(&NavigationHandleImpl::RestartCommitTimeout,
+-                          weak_factory_.GetWeakPtr()),
+-      metrics::RendererHangCause::kCommitTimeout);
++                          weak_factory_.GetWeakPtr()));
+ }
+ 
+ // static
+--- a/content/browser/frame_host/navigation_request.cc	2019-04-05 03:49:16.000000000 +0300
++++ b/content/browser/frame_host/navigation_request.cc	2019-05-17 18:53:31.232000000 +0300
+@@ -897,12 +897,9 @@
+           redirect_info.new_url)) {
+     DVLOG(1) << "Denied redirect for "
+              << redirect_info.new_url.possibly_invalid_spec();
+-    // TODO(arthursonzogni): Redirect to a javascript URL should display an
+-    // error page with the net::ERR_UNSAFE_REDIRECT error code. Instead, the
+-    // browser simply ignores the navigation, because some extensions use this
+-    // edge case to silently cancel navigations. See https://crbug.com/941653.
++    // Show an error page rather than leaving the previous page in place.
+     OnRequestFailedInternal(
+-        network::URLLoaderCompletionStatus(net::ERR_ABORTED),
++        network::URLLoaderCompletionStatus(net::ERR_UNSAFE_REDIRECT),
+         false /* skip_throttles */, base::nullopt /* error_page_content */,
+         false /* collapse_frame */);
+     // DO NOT ADD CODE after this. The previous call to OnRequestFailedInternal
+@@ -919,11 +916,9 @@
+           redirect_info.new_url)) {
+     DVLOG(1) << "Denied unauthorized redirect for "
+              << redirect_info.new_url.possibly_invalid_spec();
+-    // TODO(arthursonzogni): This case uses ERR_ABORTED to be consistent with
+-    // the javascript URL redirect case above, though ideally it would use
+-    // net::ERR_UNSAFE_REDIRECT and an error page. See https://crbug.com/941653.
++    // Show an error page rather than leaving the previous page in place.
+     OnRequestFailedInternal(
+-        network::URLLoaderCompletionStatus(net::ERR_ABORTED),
++        network::URLLoaderCompletionStatus(net::ERR_UNSAFE_REDIRECT),
+         false /* skip_throttles */, base::nullopt /* error_page_content */,
+         false /* collapse_frame */);
+     // DO NOT ADD CODE after this. The previous call to OnRequestFailedInternal
+--- a/content/browser/frame_host/render_frame_host_impl.cc	2019-04-05 03:49:16.000000000 +0300
++++ b/content/browser/frame_host/render_frame_host_impl.cc	2019-05-17 18:53:31.236000000 +0300
+@@ -548,10 +548,6 @@
+ 
+   void OpenFileChooser(blink::mojom::FileChooserParamsPtr params,
+                        OpenFileChooserCallback callback) override {
+-    if (proxy_) {
+-      std::move(callback).Run(nullptr);
+-      return;
+-    }
+     callback_ = std::move(callback);
+     auto listener = std::make_unique<ListenerProxy>(this);
+     proxy_ = listener.get();
+@@ -571,10 +567,6 @@
+   void EnumerateChosenDirectory(
+       const base::FilePath& directory_path,
+       EnumerateChosenDirectoryCallback callback) override {
+-    if (proxy_) {
+-      std::move(callback).Run(nullptr);
+-      return;
+-    }
+     callback_ = std::move(callback);
+     auto listener = std::make_unique<ListenerProxy>(this);
+     proxy_ = listener.get();
+--- a/content/browser/indexed_db/indexed_db_backing_store.h	2019-04-05 03:49:16.000000000 +0300
++++ b/content/browser/indexed_db/indexed_db_backing_store.h	2019-05-17 18:53:31.256000000 +0300
+@@ -568,12 +568,11 @@
+   // an otherwise healthy backing store.
+   leveldb::Status RevertSchemaToV2();
+ 
+-  bool is_incognito() const { return !indexed_db_factory_; }
+-
+  protected:
+   friend class base::RefCounted<IndexedDBBackingStore>;
+   virtual ~IndexedDBBackingStore();
+ 
++  bool is_incognito() const { return !indexed_db_factory_; }
+ 
+   leveldb::Status AnyDatabaseContainsBlobs(LevelDBTransaction* transaction,
+                                            bool* blobs_exist);
+--- a/content/browser/indexed_db/indexed_db_browsertest.cc	2019-04-05 03:49:16.000000000 +0300
++++ b/content/browser/indexed_db/indexed_db_browsertest.cc	2019-05-17 18:53:31.256000000 +0300
+@@ -90,9 +90,7 @@
+         failure_class, failure_method, fail_on_instance_num, fail_on_call_num);
+   }
+ 
+-  void SimpleTest(const GURL& test_url,
+-                  bool incognito = false,
+-                  Shell** shell_out = nullptr) {
++  void SimpleTest(const GURL& test_url, bool incognito = false) {
+     // The test page will perform tests on IndexedDB, then navigate to either
+     // a #pass or #fail ref.
+     Shell* the_browser = incognito ? CreateOffTheRecordBrowser() : shell();
+@@ -109,8 +107,6 @@
+           &js_result));
+       FAIL() << "Failed: " << js_result;
+     }
+-    if (shell_out)
+-      *shell_out = the_browser;
+   }
+ 
+   void NavigateAndWaitForTitle(Shell* shell,
+@@ -311,21 +307,6 @@
+   NavigateToURLBlockUntilNavigationsComplete(shell(), url, 1);
+ }
+ 
+-IN_PROC_BROWSER_TEST_F(IndexedDBBrowserTest, Bug941965Test) {
+-  // Double-open an incognito window to test that saving & reading a blob from
+-  // indexeddb works.
+-  Shell* incognito_browser = nullptr;
+-  SimpleTest(GetTestUrl("indexeddb", "simple_blob_read.html"), true,
+-             &incognito_browser);
+-  ASSERT_TRUE(incognito_browser);
+-  incognito_browser->Close();
+-  incognito_browser = nullptr;
+-  SimpleTest(GetTestUrl("indexeddb", "simple_blob_read.html"), true,
+-             &incognito_browser);
+-  ASSERT_TRUE(incognito_browser);
+-  incognito_browser->Close();
+-}
+-
+ class IndexedDBBrowserTestWithLowQuota : public IndexedDBBrowserTest {
+  public:
+   IndexedDBBrowserTestWithLowQuota() {}
+--- a/content/browser/indexed_db/indexed_db_database.cc	2019-04-05 03:49:16.000000000 +0300
++++ b/content/browser/indexed_db/indexed_db_database.cc	2019-05-17 18:53:31.260000000 +0300
+@@ -1880,10 +1880,10 @@
+     request->AbortForForceClose();
+   }
+ 
+-  while (!connections_.empty()) {
+-    IndexedDBConnection* connection = *connections_.begin();
++  auto it = connections_.begin();
++  while (it != connections_.end()) {
++    IndexedDBConnection* connection = *it++;
+     connection->ForceClose();
+-    connections_.erase(connection);
+   }
+   DCHECK(connections_.empty());
+   DCHECK(!active_request_);
+--- a/content/browser/indexed_db/indexed_db_database_unittest.cc	2019-04-05 03:49:16.000000000 +0300
++++ b/content/browser/indexed_db/indexed_db_database_unittest.cc	2019-05-17 18:53:31.260000000 +0300
+@@ -314,45 +314,6 @@
+   EXPECT_TRUE(request2->success_called());
+ }
+ 
+-TEST_F(IndexedDBDatabaseTest, ForceCloseWhileOpenPending) {
+-  // Verify that pending connection requests are handled correctly during a
+-  // ForceClose.
+-  scoped_refptr<MockIndexedDBCallbacks> request1(new MockIndexedDBCallbacks());
+-  scoped_refptr<MockIndexedDBDatabaseCallbacks> callbacks1(
+-      new MockIndexedDBDatabaseCallbacks());
+-  const int64_t transaction_id1 = 1;
+-  std::unique_ptr<IndexedDBPendingConnection> connection(
+-      std::make_unique<IndexedDBPendingConnection>(
+-          request1, callbacks1, kFakeChildProcessId, transaction_id1,
+-          IndexedDBDatabaseMetadata::DEFAULT_VERSION));
+-  db_->OpenConnection(std::move(connection));
+-
+-  EXPECT_EQ(db_->ConnectionCount(), 1UL);
+-  EXPECT_EQ(db_->ActiveOpenDeleteCount(), 0UL);
+-  EXPECT_EQ(db_->PendingOpenDeleteCount(), 0UL);
+-  EXPECT_FALSE(backing_store_->HasOneRef());  // local and db
+-
+-  scoped_refptr<MockIndexedDBCallbacks> request2(
+-      new MockIndexedDBCallbacks(false));
+-  scoped_refptr<MockIndexedDBDatabaseCallbacks> callbacks2(
+-      new MockIndexedDBDatabaseCallbacks());
+-  const int64_t transaction_id2 = 2;
+-  std::unique_ptr<IndexedDBPendingConnection> connection2(
+-      std::make_unique<IndexedDBPendingConnection>(
+-          request1, callbacks1, kFakeChildProcessId, transaction_id2, 3));
+-  db_->OpenConnection(std::move(connection2));
+-
+-  EXPECT_EQ(db_->ConnectionCount(), 1UL);
+-  EXPECT_EQ(db_->ActiveOpenDeleteCount(), 1UL);
+-  EXPECT_EQ(db_->PendingOpenDeleteCount(), 0UL);
+-  EXPECT_FALSE(backing_store_->HasOneRef());  // local and db
+-
+-  db_->ForceClose();
+-  EXPECT_EQ(db_->ConnectionCount(), 0UL);
+-  EXPECT_EQ(db_->ActiveOpenDeleteCount(), 0UL);
+-  EXPECT_EQ(db_->PendingOpenDeleteCount(), 0UL);
+-}
+-
+ leveldb::Status DummyOperation(IndexedDBTransaction* transaction) {
+   return leveldb::Status::OK();
+ }
+--- a/content/browser/indexed_db/indexed_db_factory_impl.cc	2019-04-05 03:49:16.000000000 +0300
++++ b/content/browser/indexed_db/indexed_db_factory_impl.cc	2019-05-17 18:53:31.260000000 +0300
+@@ -716,14 +716,9 @@
+   if (!s.ok())
+     return {std::move(backing_store), s, data_loss_info, disk_full};
+ 
+-  if (data_directory.empty()) {
+-    backing_store = base::MakeRefCounted<IndexedDBBackingStore>(
+-        nullptr, origin, base::FilePath(), std::move(database),
+-        context_->TaskRunner());
+-  } else {
+     backing_store = CreateBackingStore(origin, blob_path, std::move(database),
+                                        context_->TaskRunner());
+-  }
++
+   bool first_open_since_startup =
+       backends_opened_since_startup_.insert(origin).second;
+   s = backing_store->Initialize(
+--- a/content/browser/indexed_db/indexed_db_factory_unittest.cc	2019-04-05 03:49:16.000000000 +0300
++++ b/content/browser/indexed_db/indexed_db_factory_unittest.cc	2019-05-17 18:53:31.260000000 +0300
+@@ -386,20 +386,6 @@
+   loop.Run();
+ }
+ 
+-TEST_F(IndexedDBFactoryTest, MemoryBackingStoreDetectedAsIncognito) {
+-  base::RunLoop loop;
+-  context()->TaskRunner()->PostTask(
+-      FROM_HERE, base::BindLambdaForTesting([&]() {
+-        auto factory = base::MakeRefCounted<MockIDBFactory>(context());
+-        const Origin origin1 = Origin::Create(GURL("http://localhost:81"));
+-        auto mem_store1 =
+-            factory->TestOpenBackingStore(origin1, base::FilePath());
+-        EXPECT_TRUE(mem_store1->is_incognito());
+-        loop.Quit();
+-      }));
+-  loop.Run();
+-}
+-
+ TEST_F(IndexedDBFactoryTest, RejectLongOrigins) {
+   base::RunLoop loop;
+   context()->TaskRunner()->PostTask(
+--- a/content/browser/media/hardware_key_media_controller.cc	2019-04-05 03:49:16.000000000 +0300
++++ b/content/browser/media/hardware_key_media_controller.cc	2019-05-17 18:53:31.304000000 +0300
+@@ -32,12 +32,12 @@
+   controller_manager_ptr->CreateActiveMediaController(
+       mojo::MakeRequest(&media_controller_ptr_));
+ 
+-  // Observe the active media controller for changes to playback state and
++  // Observe the active media session for changes to playback state and
+   // supported actions.
+-  media_session::mojom::MediaControllerObserverPtr media_controller_observer;
+-  media_controller_observer_binding_.Bind(
+-      mojo::MakeRequest(&media_controller_observer));
+-  media_controller_ptr_->AddObserver(std::move(media_controller_observer));
++  media_session::mojom::MediaSessionObserverPtr media_session_observer;
++  media_session_observer_binding_.Bind(
++      mojo::MakeRequest(&media_session_observer));
++  media_controller_ptr_->AddObserver(std::move(media_session_observer));
+ }
+ 
+ HardwareKeyMediaController::~HardwareKeyMediaController() = default;
+--- a/content/browser/media/hardware_key_media_controller.h	2019-04-05 03:49:16.000000000 +0300
++++ b/content/browser/media/hardware_key_media_controller.h	2019-05-17 18:53:31.304000000 +0300
+@@ -13,6 +13,7 @@
+ #include "content/common/content_export.h"
+ #include "mojo/public/cpp/bindings/binding.h"
+ #include "services/media_session/public/mojom/media_controller.mojom.h"
++#include "services/media_session/public/mojom/media_session.mojom.h"
+ #include "ui/base/accelerators/media_keys_listener.h"
+ #include "ui/events/keycodes/keyboard_codes.h"
+ 
+@@ -24,13 +25,13 @@
+ 
+ // HardwareKeyMediaController controls media sessions via hardware media keys.
+ class CONTENT_EXPORT HardwareKeyMediaController
+-    : public media_session::mojom::MediaControllerObserver,
++    : public media_session::mojom::MediaSessionObserver,
+       public ui::MediaKeysListener::Delegate {
+  public:
+   explicit HardwareKeyMediaController(service_manager::Connector* connector);
+   ~HardwareKeyMediaController() override;
+ 
+-  // media_session::mojom::MediaControllerObserver:
++  // media_session::mojom::MediaSessionObserver:
+   void MediaSessionInfoChanged(
+       media_session::mojom::MediaSessionInfoPtr session_info) override;
+   void MediaSessionMetadataChanged(
+@@ -83,9 +84,9 @@
+   // Used to check which actions are currently supported.
+   base::flat_set<media_session::mojom::MediaSessionAction> actions_;
+ 
+-  // Used to receive updates to the active media controller.
+-  mojo::Binding<media_session::mojom::MediaControllerObserver>
+-      media_controller_observer_binding_{this};
++  // Used to receive updates to the active MediaSession.
++  mojo::Binding<media_session::mojom::MediaSessionObserver>
++      media_session_observer_binding_{this};
+ 
+   DISALLOW_COPY_AND_ASSIGN(HardwareKeyMediaController);
+ };
+--- a/content/browser/network_service_instance.cc	2019-04-05 03:49:16.000000000 +0300
++++ b/content/browser/network_service_instance.cc	2019-05-17 18:53:31.332000000 +0300
+@@ -37,13 +37,6 @@
+ 
+ namespace {
+ 
+-#if defined(OS_POSIX)
+-// Environment variable pointing to credential cache file.
+-constexpr char kKrb5CCEnvName[] = "KRB5CCNAME";
+-// Environment variable pointing to Kerberos config file.
+-constexpr char kKrb5ConfEnvName[] = "KRB5_CONFIG";
+-#endif
+-
+ network::mojom::NetworkServicePtr* g_network_service_ptr = nullptr;
+ network::NetworkConnectionTracker* g_network_connection_tracker;
+ network::NetworkService* g_network_service;
+@@ -57,24 +50,6 @@
+   network_service_params->initial_connection_subtype =
+       network::mojom::ConnectionSubtype(
+           net::NetworkChangeNotifier::GetConnectionSubtype());
+-
+-#if defined(OS_POSIX)
+-  // Send Kerberos environment variables to the network service.
+-  if (IsOutOfProcessNetworkService()) {
+-    std::unique_ptr<base::Environment> env(base::Environment::Create());
+-    std::string value;
+-    if (env->HasVar(kKrb5CCEnvName)) {
+-      env->GetVar(kKrb5CCEnvName, &value);
+-      network_service_params->environment.push_back(
+-          network::mojom::EnvironmentVariable::New(kKrb5CCEnvName, value));
+-    }
+-    if (env->HasVar(kKrb5ConfEnvName)) {
+-      env->GetVar(kKrb5ConfEnvName, &value);
+-      network_service_params->environment.push_back(
+-          network::mojom::EnvironmentVariable::New(kKrb5ConfEnvName, value));
+-    }
+-  }
+-#endif
+   return network_service_params;
+ }
+ 
+--- a/content/browser/renderer_host/render_widget_host_impl.cc	2019-04-05 03:49:16.000000000 +0300
++++ b/content/browser/renderer_host/render_widget_host_impl.cc	2019-05-17 18:53:31.396000000 +0300
+@@ -675,7 +675,7 @@
+ }
+ 
+ bool RenderWidgetHostImpl::ShouldShowStaleContentOnEviction() {
+-  return delegate_ && delegate_->ShouldShowStaleContentOnEviction();
++  return delegate_->ShouldShowStaleContentOnEviction();
+ }
+ 
+ void RenderWidgetHostImpl::ShutdownAndDestroyWidget(bool also_delete) {
+@@ -2170,19 +2170,17 @@
+ }
+ 
+ void RenderWidgetHostImpl::OnInputEventAckTimeout() {
+-  RendererIsUnresponsive(
+-      base::BindRepeating(
++  RendererIsUnresponsive(base::BindRepeating(
+           &RenderWidgetHostImpl::RestartInputEventAckTimeoutIfNecessary,
+-          weak_factory_.GetWeakPtr()),
+-      metrics::RendererHangCause::kInputAckTimeout);
++      weak_factory_.GetWeakPtr()));
+ }
+ 
+ void RenderWidgetHostImpl::RendererIsUnresponsive(
+-    base::RepeatingClosure restart_hang_monitor_timeout,
+-    metrics::RendererHangCause hang_cause) {
++    base::RepeatingClosure restart_hang_monitor_timeout) {
+   NotificationService::current()->Notify(
+-      NOTIFICATION_RENDER_WIDGET_HOST_HANG, Source<RenderWidgetHost>(this),
+-      Details<metrics::RendererHangCause>(&hang_cause));
++      NOTIFICATION_RENDER_WIDGET_HOST_HANG,
++      Source<RenderWidgetHost>(this),
++      NotificationService::NoDetails());
+   is_unresponsive_ = true;
+ 
+   if (delegate_) {
+--- a/content/browser/renderer_host/render_widget_host_impl.h	2019-04-05 03:49:16.000000000 +0300
++++ b/content/browser/renderer_host/render_widget_host_impl.h	2019-05-17 18:53:31.396000000 +0300
+@@ -31,7 +31,6 @@
+ #include "base/time/time.h"
+ #include "base/timer/elapsed_timer.h"
+ #include "build/build_config.h"
+-#include "components/metrics/stability_metrics_helper.h"
+ #include "components/viz/common/resources/shared_bitmap.h"
+ #include "components/viz/common/surfaces/frame_sink_id.h"
+ #include "content/browser/renderer_host/event_with_latency_info.h"
+@@ -719,8 +718,7 @@
+   // 1) |hang_monitor_timeout_| (slow to ack input events) or
+   // 2) NavigationHandle::OnCommitTimeout (slow to commit).
+   void RendererIsUnresponsive(
+-      base::RepeatingClosure restart_hang_monitor_timeout,
+-      metrics::RendererHangCause hang_cause);
++      base::RepeatingClosure restart_hang_monitor_timeout);
+ 
+   // Called if we know the renderer is responsive. When we currently think the
+   // renderer is unresponsive, this will clear that state and call
+--- a/content/browser/security_exploit_browsertest.cc	2019-04-05 03:49:16.000000000 +0300
++++ b/content/browser/security_exploit_browsertest.cc	2019-05-17 18:53:31.424000000 +0300
+@@ -30,7 +30,6 @@
+ #include "content/public/browser/browser_task_traits.h"
+ #include "content/public/browser/browser_thread.h"
+ #include "content/public/browser/content_browser_client.h"
+-#include "content/public/browser/file_select_listener.h"
+ #include "content/public/browser/interstitial_page.h"
+ #include "content/public/browser/interstitial_page_delegate.h"
+ #include "content/public/browser/resource_context.h"
+@@ -207,43 +206,6 @@
+   GURL target_url_;
+ };
+ 
+-// Constructs a WebContentsDelegate that mocks a file dialog.
+-// Unlike content::FileChooserDelegate, this class doesn't make a response in
+-// RunFileChooser(), and a user needs to call Choose().
+-class DelayedFileChooserDelegate : public WebContentsDelegate {
+- public:
+-  void Choose(const base::FilePath& file) {
+-    auto file_info = blink::mojom::FileChooserFileInfo::NewNativeFile(
+-        blink::mojom::NativeFileInfo::New(file, base::string16()));
+-    std::vector<blink::mojom::FileChooserFileInfoPtr> files;
+-    files.push_back(std::move(file_info));
+-    listener_->FileSelected(std::move(files), base::FilePath(),
+-                            blink::mojom::FileChooserParams::Mode::kOpen);
+-    listener_.reset();
+-  }
+-
+-  // WebContentsDelegate overrides
+-  void RunFileChooser(RenderFrameHost* render_frame_host,
+-                      std::unique_ptr<FileSelectListener> listener,
+-                      const blink::mojom::FileChooserParams& params) override {
+-    listener_ = std::move(listener);
+-  }
+-
+-  void EnumerateDirectory(WebContents* web_contents,
+-                          std::unique_ptr<FileSelectListener> listener,
+-                          const base::FilePath& directory_path) override {
+-    listener->FileSelectionCanceled();
+-  }
+-
+- private:
+-  std::unique_ptr<FileSelectListener> listener_;
+-};
+-
+-void FileChooserCallback(base::RunLoop* run_loop,
+-                         blink::mojom::FileChooserResultPtr result) {
+-  run_loop->Quit();
+-}
+-
+ }  // namespace
+ 
+ // The goal of these tests will be to "simulate" exploited renderer processes,
+@@ -447,36 +409,6 @@
+ #endif
+ }
+ 
+-// A test for crbug.com/941008.
+-// Calling OpenFileChooser() and EnumerateChosenDirectory() for a single
+-// FileChooser instance had a problem.
+-IN_PROC_BROWSER_TEST_F(SecurityExploitBrowserTest, UnexpectedMethodsSequence) {
+-  NavigateToURL(shell(), GURL("http://foo.com/simple_page.html"));
+-  RenderFrameHost* compromised_renderer =
+-      shell()->web_contents()->GetMainFrame();
+-  auto delegate = std::make_unique<DelayedFileChooserDelegate>();
+-  shell()->web_contents()->SetDelegate(delegate.get());
+-
+-  blink::mojom::FileChooserPtr chooser =
+-      static_cast<RenderFrameHostImpl*>(compromised_renderer)
+-          ->BindFileChooserForTesting();
+-  base::RunLoop run_loop1;
+-  base::RunLoop run_loop2;
+-  chooser->OpenFileChooser(blink::mojom::FileChooserParams::New(),
+-                           base::BindOnce(FileChooserCallback, &run_loop2));
+-  // The following EnumerateChosenDirectory() runs the specified callback
+-  // immediately regardless of the content of the first argument FilePath.
+-  chooser->EnumerateChosenDirectory(
+-      base::FilePath(FILE_PATH_LITERAL(":*?\"<>|")),
+-      base::BindOnce(FileChooserCallback, &run_loop1));
+-  run_loop1.Run();
+-
+-  delegate->Choose(base::FilePath(FILE_PATH_LITERAL("foo.txt")));
+-  run_loop2.Run();
+-
+-  // The test passes if it doesn't crash.
+-}
+-
+ class SecurityExploitTestInterstitialPage : public InterstitialPageDelegate {
+  public:
+   explicit SecurityExploitTestInterstitialPage(WebContents* contents) {
+--- a/content/browser/tracing/tracing_controller_impl.cc	2019-04-05 03:49:16.000000000 +0300
++++ b/content/browser/tracing/tracing_controller_impl.cc	2019-05-17 18:53:31.472000000 +0300
+@@ -298,7 +298,10 @@
+ 
+ bool TracingControllerImpl::GetCategories(GetCategoriesDoneCallback callback) {
+   std::set<std::string> category_set;
+-  tracing::TracedProcessImpl::GetInstance()->GetCategories(&category_set);
++
++  tracing::TraceEventAgent::GetInstance()->GetCategories(&category_set);
++  for (auto& agent : agents_)
++    agent->GetCategories(&category_set);
+ 
+   std::move(callback).Run(category_set);
+   return true;
+--- a/content/browser/webrtc/webrtc_video_capture_browsertest.cc	2019-04-05 03:49:16.000000000 +0300
++++ b/content/browser/webrtc/webrtc_video_capture_browsertest.cc	2019-05-17 18:53:31.492000000 +0300
+@@ -22,6 +22,16 @@
+ 
+ namespace content {
+ 
++#if defined(OS_ANDROID)
++// Mojo video capture is currently not supported on Android
++// TODO(chfremer): Enable as soon as https://crbug.com/720500 is resolved.
++#define MAYBE_RecoverFromCrashInVideoCaptureProcess \
++  DISABLED_RecoverFromCrashInVideoCaptureProcess
++#else
++#define MAYBE_RecoverFromCrashInVideoCaptureProcess \
++  RecoverFromCrashInVideoCaptureProcess
++#endif  // defined(OS_ANDROID)
++
+ namespace {
+ 
+ static const char kVideoCaptureHtmlFile[] = "/media/video_capture_test.html";
+@@ -53,7 +63,6 @@
+   void SetUp() override {
+     ASSERT_TRUE(embedded_test_server()->InitializeAndListen());
+     EnablePixelOutput();
+-    embedded_test_server()->StartAcceptingConnections();
+     ContentBrowserTest::SetUp();
+   }
+ 
+@@ -64,12 +73,8 @@
+ };
+ 
+ IN_PROC_BROWSER_TEST_F(WebRtcVideoCaptureBrowserTest,
+-                       RecoverFromCrashInVideoCaptureProcess) {
+-  // This test only makes sense if the video capture service runs in a
+-  // separate process.
+-  if (!features::IsVideoCaptureServiceEnabledForOutOfProcess())
+-    return;
+-
++                       MAYBE_RecoverFromCrashInVideoCaptureProcess) {
++  embedded_test_server()->StartAcceptingConnections();
+   GURL url(embedded_test_server()->GetURL(kVideoCaptureHtmlFile));
+   NavigateToURL(shell(), url);
+ 
+--- a/content/common/throttling_url_loader.cc	2019-04-05 03:49:16.000000000 +0300
++++ b/content/common/throttling_url_loader.cc	2019-05-17 18:53:31.536000000 +0300
+@@ -552,8 +552,6 @@
+       deferred_stage_ = DEFERRED_REDIRECT;
+       redirect_info_ =
+           std::make_unique<RedirectInfo>(redirect_info, response_head);
+-      // |client_binding_| can be unbound if the redirect came from a throttle.
+-      if (client_binding_.is_bound())
+         client_binding_.PauseIncomingMethodCallProcessing();
+       return;
+     }
+@@ -679,8 +677,6 @@
+       break;
+     }
+     case DEFERRED_REDIRECT: {
+-      // |client_binding_| can be unbound if the redirect came from a throttle.
+-      if (client_binding_.is_bound())
+         client_binding_.ResumeIncomingMethodCallProcessing();
+       // TODO(dhausknecht) at this point we do not actually know if we commit to
+       // the redirect or if it will be cancelled. FollowRedirect would be a more
+--- a/content/public/common/content_features.cc	2019-04-05 03:49:17.000000000 +0300
++++ b/content/public/common/content_features.cc	2019-05-17 18:53:31.648000000 +0300
+@@ -5,6 +5,10 @@
+ #include "content/public/common/content_features.h"
+ #include "build/build_config.h"
+ 
++#if defined(OS_CHROMEOS)
++#include "media/capture/video/chromeos/public/cros_features.h"
++#endif
++
+ namespace features {
+ 
+ // All features in alphabetical order.
+@@ -719,11 +723,12 @@
+   if (!ShouldEnableVideoCaptureService())
+     return VideoCaptureServiceConfiguration::kDisabled;
+ 
+-// On ChromeOS the service must run in the browser process, because parts of the
+-// code depend on global objects that are only available in the Browser process.
+-// See https://crbug.com/891961.
+-#if defined(OS_ANDROID) || defined(OS_CHROMEOS)
++#if defined(OS_ANDROID)
+   return VideoCaptureServiceConfiguration::kEnabledForBrowserProcess;
++#elif defined(OS_CHROMEOS)
++  return media::ShouldUseCrosCameraService()
++             ? VideoCaptureServiceConfiguration::kEnabledForBrowserProcess
++             : VideoCaptureServiceConfiguration::kEnabledForOutOfProcess;
+ #else
+   return base::FeatureList::IsEnabled(
+              features::kRunVideoCaptureServiceInBrowserProcess)
+--- a/content/public/test/browser_test_base.cc	2019-04-05 03:49:17.000000000 +0300
++++ b/content/public/test/browser_test_base.cc	2019-05-17 18:53:31.676000000 +0300
+@@ -69,7 +69,7 @@
+ #if defined(OS_CHROMEOS)
+ #include "content/public/browser/network_service_instance.h"
+ #include "net/base/network_change_notifier.h"
+-#include "net/base/network_change_notifier_posix.h"
++#include "net/base/network_change_notifier_chromeos.h"
+ #endif
+ 
+ #if defined(USE_AURA)
+@@ -397,8 +397,8 @@
+   // Manually set the connection type since ChromeOS's NetworkChangeNotifier
+   // implementation relies on some other class controlling it (normally
+   // NetworkChangeManagerClient), which may not be set up in all browser tests.
+-  net::NetworkChangeNotifierPosix* network_change_notifier =
+-      static_cast<net::NetworkChangeNotifierPosix*>(
++  net::NetworkChangeNotifierChromeos* network_change_notifier =
++      static_cast<net::NetworkChangeNotifierChromeos*>(
+           content::GetNetworkChangeNotifier());
+   network_change_notifier->OnConnectionChanged(
+       net::NetworkChangeNotifier::CONNECTION_ETHERNET);
+--- a/content/renderer/media/stream/media_stream_constraints_util_audio.cc	2019-04-05 03:49:17.000000000 +0300
++++ b/content/renderer/media/stream/media_stream_constraints_util_audio.cc	2019-05-17 18:53:31.760000000 +0300
+@@ -1255,7 +1255,8 @@
+         // It is possible, however, that the HW echo canceller is enabled. In
+         // such case the property for echo cancellation type should be updated
+         // accordingly.
+-        if (effects & media::AudioParameters::ECHO_CANCELLER) {
++        if (effects & media::AudioParameters::ECHO_CANCELLER ||
++            effects & media::AudioParameters::EXPERIMENTAL_ECHO_CANCELLER) {
+           properties.echo_cancellation_type =
+               EchoCancellationType::kEchoCancellationSystem;
+         }
+--- a/content/renderer/media/stream/media_stream_constraints_util_audio_unittest.cc	2019-04-05 03:49:17.000000000 +0300
++++ b/content/renderer/media/stream/media_stream_constraints_util_audio_unittest.cc	2019-05-17 18:53:31.760000000 +0300
+@@ -190,18 +190,11 @@
+       bool enable_system_echo_canceller,
+       bool hotword_enabled,
+       bool disable_local_echo,
+-      bool render_to_associated_sink,
+-      bool enable_experimental_echo_canceller = false) {
++      bool render_to_associated_sink) {
+     blink::MediaStreamDevice device;
+     device.type = GetMediaStreamType();
+-
+-    int effects = 0;
+     if (enable_system_echo_canceller)
+-      effects |= media::AudioParameters::ECHO_CANCELLER;
+-    if (enable_experimental_echo_canceller)
+-      effects |= media::AudioParameters::EXPERIMENTAL_ECHO_CANCELLER;
+-    device.input.set_effects(effects);
+-
++      device.input.set_effects(media::AudioParameters::ECHO_CANCELLER);
+     if (render_to_associated_sink)
+       device.matched_output_device_id = std::string("some_device_id");
+ 
+@@ -2153,21 +2146,6 @@
+   }
+ }
+ 
+-TEST_P(MediaStreamConstraintsUtilAudioTest, ExperimetanlEcWithSource) {
+-  std::unique_ptr<LocalMediaStreamAudioSource> source =
+-      GetLocalMediaStreamAudioSource(
+-          false /* enable_system_echo_canceller */,
+-          false /* disable_local_echo */, false /* render_to_associated_sink */,
+-          true /* enable_experimental_echo_canceller */);
+-
+-  constraint_factory_.Reset();
+-  constraint_factory_.basic().echo_cancellation.SetExact(false);
+-
+-  auto result = SelectSettingsAudioCapture(
+-      source.get(), constraint_factory_.CreateWebMediaConstraints());
+-  EXPECT_TRUE(result.HasValue());
+-}
+-
+ INSTANTIATE_TEST_CASE_P(,
+                         MediaStreamConstraintsUtilAudioTest,
+                         testing::Values("",

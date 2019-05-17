@@ -220,7 +220,7 @@ PATCHES=(
 	"${FILESDIR}/ungoogled-chromium-libusb-interrupt-event-handler-r0.patch"
 	"${FILESDIR}/ungoogled-chromium-system-libusb-r0.patch"
 	"${FILESDIR}/ungoogled-chromium-system-nspr-r0.patch"
-	"${FILESDIR}/ungoogled-chromium-system-openjpeg-r0.patch"
+
 	"${FILESDIR}/ungoogled-chromium-system-fix-shim-headers-r0.patch"
 )
 
@@ -260,6 +260,10 @@ src_prepare() {
 	if use "system-jsoncpp" ; then
 		eapply "${FILESDIR}/${PN}-system-jsoncpp-r0.patch" || die
 	fi
+
+	#if use "system-openjpeg" ; then
+	#	eapply "${FILESDIR}/ungoogled-chromium-system-openjpeg-r0.patch" || die
+	#fi
 
 	if use optimize-webui; then
 		mkdir -p third_party/node/linux/node-linux-x64/bin || die
@@ -455,9 +459,6 @@ src_prepare() {
 		third_party/pdfium/third_party/libtiff
 		third_party/pdfium/third_party/skia_shared
 	)
-	use system-openjpeg || keeplibs+=(
-		third_party/pdfium/third_party/libopenjpeg20
-	)
 	use swiftshader && keeplibs+=(
 		third_party/swiftshader
 		third_party/swiftshader/third_party/llvm-subzero
@@ -594,6 +595,7 @@ src_configure() {
 	use system-libvpx && gn_system_libraries+=( libvpx )
 	#use system-wayland && gn_system_libraries+=( libwayland )
 	use system-openh264 && gn_system_libraries+=( openh264 )
+	use system-openjpeg && gn_system_libraries+=( libopenjpeg ) 
 
 	build/linux/unbundle/replace_gn_files.py --system-libraries "${gn_system_libraries[@]}" || die
 
@@ -668,7 +670,7 @@ src_configure() {
 		"use_system_freetype=$(usetf system-harfbuzz)"
 		"use_system_harfbuzz=$(usetf system-harfbuzz)"
 		"use_system_lcms2=$(usetf pdf)"
-		"use_system_libopenjpeg2=$(usetf system-openjpeg)"
+		#"use_system_libopenjpeg2=$(usetf system-openjpeg)"
 
 		"use_system_zlib=true"
 		"rtc_build_json=$(usex system-jsoncpp false true)"
