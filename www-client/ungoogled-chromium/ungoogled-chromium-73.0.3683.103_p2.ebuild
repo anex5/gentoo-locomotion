@@ -309,7 +309,7 @@ src_prepare() {
 		courgette/third_party
 		net/third_party/mozilla_security_manager
 		net/third_party/nss
-		net/third_party/quic
+		net/third_party/quic                             
 		net/third_party/uri_template
 		third_party/abseil-cpp
 		third_party/adobe
@@ -475,6 +475,7 @@ src_prepare() {
 	)
 	use system-icu || keeplibs+=( third_party/icu )
 	use system-jsoncpp || keeplibs+=( third_party/jsoncpp )
+	use system-libdrm || keeplibs+=( third_party/libdrm )
 	use system-libevent || keeplibs+=( base/third_party/libevent )
 	use system-libvpx || keeplibs+=(
 		third_party/libvpx
@@ -595,7 +596,7 @@ src_configure() {
 	use system-libvpx && gn_system_libraries+=( libvpx )
 	#use system-wayland && gn_system_libraries+=( libwayland )
 	use system-openh264 && gn_system_libraries+=( openh264 )
-	use system-openjpeg && gn_system_libraries+=( libopenjpeg ) 
+	#use system-openjpeg && gn_system_libraries+=( libopenjpeg20 ) 
 
 	build/linux/unbundle/replace_gn_files.py --system-libraries "${gn_system_libraries[@]}" || die
 
@@ -673,7 +674,7 @@ src_configure() {
 		#"use_system_libopenjpeg2=$(usetf system-openjpeg)"
 
 		"use_system_zlib=true"
-		"rtc_build_json=$(usex system-jsoncpp false true)"
+		#"rtc_build_json=$(usex system-jsoncpp false true)"
 
 		# Debug flags
 		"is_debug=$(usetf debug)"
@@ -721,7 +722,7 @@ src_configure() {
 		"enable_pdf=$(usetf pdf)"
 		"enable_print_preview=$(usetf pdf)"
 		"rtc_build_examples=false"
-		#"use_boringssl_for_http_transport_socket=true"
+	    #"use_boringssl_for_http_transport_socket=true"
 		"use_atk=$(usetf atk)"
 		"use_dbus=$(usetf dbus)"
 		"use_icf=true"
@@ -748,7 +749,7 @@ src_configure() {
 	# use_cfi_icall only works with LLD
 	use cfi && myconf_gn+=( "use_cfi_icall=$(usetf lld)" )
 
-	#use system-jsoncpp && "rtc_jsoncpp_root=\<jsoncpp/json\>"
+	#use system-jsoncpp && "rtc_jsoncpp_root=/usr/include/jsoncpp/json"
 
 	# wayland
 	if use wayland; then
@@ -767,6 +768,7 @@ src_configure() {
 		"use_system_minigbm=false"
 		"use_system_libdrm=$(usetf system-libdrm)"
 		"enable_background_mode=true"
+		"use_wayland_gbm=false"
 		)
 	fi
 

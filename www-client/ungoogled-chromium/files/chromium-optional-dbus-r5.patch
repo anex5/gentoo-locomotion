@@ -1,5 +1,16 @@
 --- a/chrome/browser/BUILD.gn
 +++ b/chrome/browser/BUILD.gn
+@@ -761,8 +761,8 @@ jumbo_split_static_library("browser") {
+     "memory_details_win.cc",
+     "metrics/antivirus_metrics_provider_win.cc",
+     "metrics/antivirus_metrics_provider_win.h",
+-    "metrics/bluetooth_available_utility.cc",
+-    "metrics/bluetooth_available_utility.h",
++    #"metrics/bluetooth_available_utility.cc",
++    #"metrics/bluetooth_available_utility.h",
+     "metrics/browser_window_histogram_helper.cc",
+     "metrics/browser_window_histogram_helper.h",
+     "metrics/chrome_browser_main_extra_parts_metrics.cc",
 @@ -3454,13 +3454,18 @@ jumbo_split_static_library("browser") {
        "first_run/upgrade_util_linux.cc",
        "first_run/upgrade_util_linux.h",
@@ -153,3 +164,14 @@
  
    if (is_android) {
      deps += [ ":jni_headers" ]
+--- a/chrome/browser/metrics/chrome_browser_main_extra_parts_metrics.cc
++++ b/chrome/browser/metrics/chrome_browser_main_extra_parts_metrics.cc
+@@ -227,7 +227,7 @@ void RecordStartupMetrics() {
+   // Re-enable when that is resolved.
+   // See https://crbug.com/929375.
+ #if !defined(OS_WIN)
+-  bluetooth_utility::ReportBluetoothAvailability();
++// bluetooth_utility::ReportBluetoothAvailability();
+ #endif
+ 
+   // Record whether Chrome is the default browser or not.
