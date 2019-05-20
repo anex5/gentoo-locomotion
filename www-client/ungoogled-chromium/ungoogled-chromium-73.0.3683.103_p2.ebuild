@@ -229,7 +229,7 @@ S="${WORKDIR}/chromium-${PV/_*}"
 pre_build_checks() {
 	# Check build requirements (Bug #541816)
 	CHECKREQS_MEMORY="3G"
-	CHECKREQS_DISK_BUILD="5G"
+	CHECKREQS_DISK_BUILD="6G"
 	if use custom-cflags && ( shopt -s extglob; is-flagq '-g?(gdb)?([1-9])' ); then
 		CHECKREQS_DISK_BUILD="25G"
 	fi
@@ -852,7 +852,7 @@ src_install() {
 	insinto "${CHROMIUM_HOME}"
 	doins out/Release/*.bin
 	doins out/Release/*.pak
-	doins out/Release/*.so
+	#doins out/Release/*.so
 
 	use system-icu || doins out/Release/icudtl.dat
 

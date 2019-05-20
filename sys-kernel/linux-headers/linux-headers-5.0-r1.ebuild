@@ -50,7 +50,7 @@ src_prepare() {
 	eapply "${FILESDIR}/0018-BACKPORT-FROMLIST-v4l-Add-controls-for-jpeg-quantization-tables.patch"
 	#eapply "${FILESDIR}/0019-BACKPORT-media-uapi-linux-media.h-add-request-API.patch"
 	#eapply "${FILESDIR}/0020-BACKPORT-media-videodev2.h-add-request_fd-field-to-v.patch"
-	#eapply "${FILESDIR}/0021-BACKPORT-media-videodev2.h-Add-request_fd-field-to-v.patch"
+	eapply "${FILESDIR}/0021-BACKPORT-media-videodev2.h-Add-config_store-field-to-v.patch"
 	#eapply "${FILESDIR}/0022-BACKPORT-media-videodev2.h-add-new-capabilities-for-.patch"
 	eapply "${FILESDIR}/0023-media-drm-fourcc.h-videodev2.h-add-V4L2_PIX_FMT_MT21.patch"
 	eapply "${FILESDIR}/0024-media-drm-fourcc.h-add-DRM_FORMAT_MOD_CHROMEOS_ROCKCHIP_AFBC.patch"
