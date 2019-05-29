@@ -1,0 +1,380 @@
+From c84fea745a182aaf9337de00271a4acf6103bdf0 Mon Sep 17 00:00:00 2001
+From: Julie Jeongeun Kim <jkim@igalia.com>
+Date: Tue, 14 Aug 2018 20:54:33 +0900
+Subject: [PATCH] Implement SelectDialog with fileSelectionExtenson for Ozone
+ build.
+
+It registers SelectFileDialogExtensionFactory for SelectFileDialogFactory
+for Ozone build.
+---
+ .../browser/chrome_content_browser_client.cc  | 11 +++++++---
+ .../api/file_manager/private_api_dialog.cc    | 15 --------------
+ .../chrome_file_system_delegate.cc            |  8 --------
+ .../api/file_system/consent_provider.cc       |  2 --
+ chrome/browser/ui/BUILD.gn                    | 20 ++++++++++++-------
+ .../chrome_browser_main_extra_parts_views.cc  |  9 +++++++++
+ .../ui/views/select_file_dialog_extension.cc  |  4 ++--
+ content/browser/browser_context.cc            |  6 +++---
+ .../api/file_system/file_system_api.cc        |  4 ++--
+ .../browser/api/file_system/file_system_api.h |  2 +-
+ 10 files changed, 38 insertions(+), 43 deletions(-)
+
+diff --git a/chrome/browser/chrome_content_browser_client.cc b/chrome/browser/chrome_content_browser_client.cc
+index b691b9a3c6009..412f72d2c1ac1 100644
+--- a/chrome/browser/chrome_content_browser_client.cc
++++ b/chrome/browser/chrome_content_browser_client.cc
+@@ -325,8 +325,6 @@
+ #include "chrome/browser/chromeos/policy/browser_policy_connector_chromeos.h"
+ #include "chrome/browser/chromeos/profiles/profile_helper.h"
+ #include "chrome/browser/chromeos/system/input_device_settings.h"
+-#include "chrome/browser/file_manager/app_id.h"
+-#include "chrome/browser/fileapi/file_system_backend.h"
+ #include "chrome/browser/fileapi/mtp_file_system_backend_delegate.h"
+ #include "chrome/browser/ui/ash/chrome_browser_main_extra_parts_ash.h"
+ #include "chrome/browser/ui/ash/tablet_mode_client.h"
+@@ -370,6 +368,11 @@
+ #include "chrome/browser/chrome_browser_main_posix.h"
+ #endif
+ 
++#if defined(OS_LINUX) && defined(USE_OZONE)
++#include "chrome/browser/file_manager/app_id.h"
++#include "chrome/browser/fileapi/file_system_backend.h"
++#endif
++
+ #if !defined(OS_ANDROID)
+ #include "chrome/browser/devtools/chrome_devtools_manager_delegate.h"
+ #include "chrome/browser/devtools/devtools_window.h"
+@@ -3325,11 +3328,12 @@ void ChromeContentBrowserClient::GetAdditionalFileSystemBackends(
+     const base::FilePath& storage_partition_path,
+     std::vector<std::unique_ptr<storage::FileSystemBackend>>*
+         additional_backends) {
+-#if defined(OS_CHROMEOS)
++#if defined(OS_LINUX) && defined(USE_OZONE)
+   storage::ExternalMountPoints* external_mount_points =
+       content::BrowserContext::GetMountPoints(browser_context);
+   DCHECK(external_mount_points);
+   auto backend = std::make_unique<chromeos::FileSystemBackend>(
++#if defined(OS_CHROMEOS)
+       std::make_unique<drive::FileSystemBackendDelegate>(),
+       std::make_unique<chromeos::file_system_provider::BackendDelegate>(),
+       std::make_unique<chromeos::MTPFileSystemBackendDelegate>(
+@@ -3337,6 +3341,7 @@ void ChromeContentBrowserClient::GetAdditionalFileSystemBackends(
+       std::make_unique<arc::ArcContentFileSystemBackendDelegate>(),
+       std::make_unique<arc::ArcDocumentsProviderBackendDelegate>(),
+       std::make_unique<drive::DriveFsFileSystemBackendDelegate>(),
++#endif
+       external_mount_points, storage::ExternalMountPoints::GetSystemInstance());
+   backend->AddSystemMountPoints();
+   DCHECK(backend->CanHandleType(storage::kFileSystemTypeExternal));
+diff --git a/chrome/browser/extensions/api/file_manager/private_api_dialog.cc b/chrome/browser/extensions/api/file_manager/private_api_dialog.cc
+index d953f213ed691..19717c5893a9e 100644
+--- a/chrome/browser/extensions/api/file_manager/private_api_dialog.cc
++++ b/chrome/browser/extensions/api/file_manager/private_api_dialog.cc
+@@ -19,7 +19,6 @@ using content::BrowserThread;
+ 
+ namespace extensions {
+ 
+-#if defined(OS_CHROMEOS)
+ namespace {
+ 
+ // TODO(https://crbug.com/844654): This should be using something more
+@@ -48,18 +47,12 @@ SelectFileDialogExtension::RoutingID GetFileDialogRoutingID(
+ }
+ 
+ }  // namespace
+-#endif
+ 
+ bool FileManagerPrivateCancelDialogFunction::RunAsync() {
+-#if defined(OS_CHROMEOS)
+   SelectFileDialogExtension::OnFileSelectionCanceled(
+       GetFileDialogRoutingID(this));
+   SendResponse(true);
+   return true;
+-#else
+-  SendResponse(false);
+-  return false;
+-#endif
+ }
+ 
+ bool FileManagerPrivateSelectFileFunction::RunAsync() {
+@@ -98,13 +91,9 @@ void FileManagerPrivateSelectFileFunction::GetSelectedFileInfoResponse(
+     SendResponse(false);
+     return;
+   }
+-#if defined(OS_CHROMEOS)
+   SelectFileDialogExtension::OnFileSelected(GetFileDialogRoutingID(this),
+                                             files[0], index);
+   SendResponse(true);
+-#else
+-  SendResponse(false);
+-#endif
+ }
+ 
+ bool FileManagerPrivateSelectFilesFunction::RunAsync() {
+@@ -137,13 +126,9 @@ void FileManagerPrivateSelectFilesFunction::GetSelectedFileInfoResponse(
+     return;
+   }
+ 
+-#if defined(OS_CHROMEOS)
+   SelectFileDialogExtension::OnMultiFilesSelected(GetFileDialogRoutingID(this),
+                                                   files);
+   SendResponse(true);
+-#else
+-  SendResponse(false);
+-#endif
+ }
+ 
+ }  // namespace extensions
+diff --git a/chrome/browser/extensions/api/file_system/chrome_file_system_delegate.cc b/chrome/browser/extensions/api/file_system/chrome_file_system_delegate.cc
+index c8da2639d6c2c..94e9fe2e21ebf 100644
+--- a/chrome/browser/extensions/api/file_system/chrome_file_system_delegate.cc
++++ b/chrome/browser/extensions/api/file_system/chrome_file_system_delegate.cc
+@@ -75,7 +75,6 @@ const char kRequiresFileSystemWriteError[] =
+ const char kSecurityError[] = "Security error.";
+ const char kVolumeNotFoundError[] = "Volume not found.";
+ 
+-#if defined(OS_CHROMEOS)
+ // Fills a list of volumes mounted in the system.
+ bool GetVolumeListForExtension(
+     const std::vector<base::WeakPtr<file_manager::Volume>>& available_volumes,
+@@ -201,7 +200,6 @@ void OnConsentReceived(
+ 
+   success_callback.Run(file_system_id, register_name);
+ }
+-#endif
+ 
+ }  // namespace
+ 
+@@ -221,7 +219,6 @@ void DispatchVolumeListChangeEvent(content::BrowserContext* browser_context) {
+       Profile::FromBrowserContext(browser_context));
+   ConsentProvider consent_provider(&consent_provider_delegate);
+ 
+-#if defined(OS_CHROMEOS)
+   const std::vector<base::WeakPtr<file_manager::Volume>> volume_list =
+       file_manager::VolumeManager::Get(browser_context)->GetVolumeList();
+ 
+@@ -239,7 +236,6 @@ void DispatchVolumeListChangeEvent(content::BrowserContext* browser_context) {
+             file_system::OnVolumeListChanged::kEventName,
+             file_system::OnVolumeListChanged::Create(event_args)));
+   }
+-#endif
+ }
+ 
+ }  // namespace file_system_api
+@@ -340,7 +336,6 @@ void ChromeFileSystemDelegate::RequestFileSystem(
+     bool writable,
+     const FileSystemCallback& success_callback,
+     const ErrorCallback& error_callback) {
+-#if defined(OS_CHROMEOS)
+   ConsentProviderDelegate consent_provider_delegate(
+       Profile::FromBrowserContext(browser_context));
+   ConsentProvider consent_provider(&consent_provider_delegate);
+@@ -396,7 +391,6 @@ void ChromeFileSystemDelegate::RequestFileSystem(
+ 
+   consent_provider.RequestConsent(extension, requester->render_frame_host(),
+                                   volume, writable, callback);
+-#endif
+ }
+ 
+ void ChromeFileSystemDelegate::GetVolumeList(
+@@ -404,7 +398,6 @@ void ChromeFileSystemDelegate::GetVolumeList(
+     const Extension& extension,
+     const VolumeListCallback& success_callback,
+     const ErrorCallback& error_callback) {
+-#if defined(OS_CHROMEOS)
+   ConsentProviderDelegate consent_provider_delegate(
+       Profile::FromBrowserContext(browser_context));
+   ConsentProvider consent_provider(&consent_provider_delegate);
+@@ -416,7 +409,6 @@ void ChromeFileSystemDelegate::GetVolumeList(
+   GetVolumeListForExtension(volume_list, &consent_provider, extension,
+                             &result_volume_list);
+   success_callback.Run(result_volume_list);
+-#endif
+ }
+ 
+ #endif  // defined(OS_LINUX) && defined(USE_OZONE)
+diff --git a/chrome/browser/extensions/api/file_system/consent_provider.cc b/chrome/browser/extensions/api/file_system/consent_provider.cc
+index e090f809c45c8..e6d0a5d8ffff5 100644
+--- a/chrome/browser/extensions/api/file_system/consent_provider.cc
++++ b/chrome/browser/extensions/api/file_system/consent_provider.cc
+@@ -229,13 +229,11 @@ void ConsentProviderDelegate::ShowDialog(
+     return;
+   }
+ 
+-#if defined(OS_CHROMEOS)
+   RequestFileSystemDialogView::ShowDialog(
+       web_contents, extension.name(),
+       (volume->volume_label().empty() ? volume->volume_id()
+                                       : volume->volume_label()),
+       writable, callback);
+-#endif
+ }
+ 
+ #if defined(OS_CHROMEOS)
+diff --git a/chrome/browser/ui/BUILD.gn b/chrome/browser/ui/BUILD.gn
+index 92f8a396ae98a..052492bd41b36 100644
+--- a/chrome/browser/ui/BUILD.gn
++++ b/chrome/browser/ui/BUILD.gn
+@@ -1889,8 +1889,6 @@ jumbo_split_static_library("ui") {
+       "views/apps/chrome_native_app_window_views_aura_ash.cc",
+       "views/apps/chrome_native_app_window_views_aura_ash.h",
+       "views/chrome_views_delegate_chromeos.cc",
+-      "views/extensions/request_file_system_dialog_view.cc",
+-      "views/extensions/request_file_system_dialog_view.h",
+       "views/frame/browser_frame_ash.cc",
+       "views/frame/browser_frame_ash.h",
+       "views/frame/browser_frame_mash.cc",
+@@ -1913,11 +1911,6 @@ jumbo_split_static_library("ui") {
+       "views/platform_keys_certificate_selector_chromeos.cc",
+       "views/platform_keys_certificate_selector_chromeos.h",
+ 
+-      # On chromeos, file manager extension handles the file open/save dialog.
+-      "views/select_file_dialog_extension.cc",
+-      "views/select_file_dialog_extension.h",
+-      "views/select_file_dialog_extension_factory.cc",
+-      "views/select_file_dialog_extension_factory.h",
+       "webui/chromeos/assistant_optin/assistant_optin_handler.cc",
+       "webui/chromeos/assistant_optin/assistant_optin_handler.h",
+       "webui/chromeos/assistant_optin/assistant_optin_screen_exit_code.h",
+@@ -2204,6 +2197,19 @@ jumbo_split_static_library("ui") {
+     }
+   }
+ 
++  if (use_ozone && is_linux) {
++    assert(enable_extensions)
++    sources += [
++      # On chromeos and linux ozone, file manager extension handles the file open/save dialog.
++      "views/select_file_dialog_extension.cc",
++      "views/select_file_dialog_extension.h",
++      "views/select_file_dialog_extension_factory.cc",
++      "views/select_file_dialog_extension_factory.h",
++      "views/extensions/request_file_system_dialog_view.cc",
++      "views/extensions/request_file_system_dialog_view.h",
++    ]
++  }
++
+   if (is_win || is_mac || is_desktop_linux || is_chromeos) {
+     sources += [
+       "signin_view_controller.cc",
+diff --git a/chrome/browser/ui/views/chrome_browser_main_extra_parts_views.cc b/chrome/browser/ui/views/chrome_browser_main_extra_parts_views.cc
+index dcbb4b65490cc..a5c40075945b6 100644
+--- a/chrome/browser/ui/views/chrome_browser_main_extra_parts_views.cc
++++ b/chrome/browser/ui/views/chrome_browser_main_extra_parts_views.cc
+@@ -51,6 +51,11 @@
+ #include "ui/base/l10n/l10n_util.h"
+ #endif  // defined(OS_LINUX) && !defined(OS_CHROMEOS)
+ 
++#if defined(OS_LINUX) && defined(USE_OZONE)
++#include "chrome/browser/ui/views/select_file_dialog_extension.h"
++#include "chrome/browser/ui/views/select_file_dialog_extension_factory.h"
++#endif
++
+ ChromeBrowserMainExtraPartsViews::ChromeBrowserMainExtraPartsViews() {
+ }
+ 
+@@ -113,6 +118,10 @@ void ChromeBrowserMainExtraPartsViews::PreProfileInit() {
+ #endif
+ 
+ #if defined(OS_LINUX) && !defined(OS_CHROMEOS)
++#if defined(USE_OZONE)
++  ui::SelectFileDialog::SetFactory(new SelectFileDialogExtensionFactory);
++#endif
++
+   // On the Linux desktop, we want to prevent the user from logging in as root,
+   // so that we don't destroy the profile. Now that we have some minimal ui
+   // initialized, check to see if we're running as root and bail if we are.
+diff --git a/chrome/browser/ui/views/select_file_dialog_extension.cc b/chrome/browser/ui/views/select_file_dialog_extension.cc
+index 0f3aac219fad4..8f335c3b9d61c 100644
+--- a/chrome/browser/ui/views/select_file_dialog_extension.cc
++++ b/chrome/browser/ui/views/select_file_dialog_extension.cc
+@@ -14,7 +14,6 @@
+ #include "base/threading/thread_task_runner_handle.h"
+ #include "chrome/browser/app_mode/app_mode_utils.h"
+ #include "chrome/browser/apps/platform_apps/app_window_registry_util.h"
+-#include "chrome/browser/chromeos/login/ui/login_web_dialog.h"
+ #include "chrome/browser/extensions/extension_service.h"
+ #include "chrome/browser/extensions/extension_view_host.h"
+ #include "chrome/browser/file_manager/app_id.h"
+@@ -42,6 +41,7 @@
+ 
+ #if defined(OS_CHROMEOS)
+ #include "chrome/browser/chromeos/login/ui/login_display_host.h"
++#include "chrome/browser/chromeos/login/ui/login_web_dialog.h"
+ #include "chrome/browser/chromeos/login/ui/webui_login_view.h"
+ #include "chrome/browser/chromeos/profiles/profile_helper.h"
+ #endif
+@@ -146,13 +146,13 @@ void FindRuntimeContext(gfx::NativeWindow owner_window,
+     }
+   }
+ 
++#if defined(OS_CHROMEOS)
+   // In ChromeOS kiosk launch mode, we can still show file picker for
+   // certificate manager dialog. There are no browser or webapp window
+   // instances present in this case.
+   if (chrome::IsRunningInForcedAppMode() && !(*web_contents))
+     *web_contents = chromeos::LoginWebDialog::GetCurrentWebContents();
+ 
+-#if defined(OS_CHROMEOS)
+   // Check for a WebContents used for the Chrome OS WebUI login flow.
+   if (!*web_contents)
+     *web_contents = GetLoginWebContents();
+diff --git a/content/browser/browser_context.cc b/content/browser/browser_context.cc
+index 840cafc185f46..c8b484202fef4 100644
+--- a/content/browser/browser_context.cc
++++ b/content/browser/browser_context.cc
+@@ -113,9 +113,9 @@ const char kServiceUserId[] = "service-user-id";
+ const char kStoragePartitionMapKeyName[] = "content_storage_partition_map";
+ const char kVideoDecodePerfHistoryId[] = "video-decode-perf-history";
+ 
+-#if defined(OS_CHROMEOS)
++#if defined(OS_LINUX) && defined(USE_OZONE)
+ const char kMountPointsKey[] = "mount_points";
+-#endif  // defined(OS_CHROMEOS)
++#endif  // defined(OS_LINUX) && defined(USE_OZONE)
+ 
+ void RemoveBrowserContextFromUserIdMap(BrowserContext* browser_context) {
+   ServiceUserIdHolder* holder = static_cast<ServiceUserIdHolder*>(
+@@ -256,7 +256,7 @@ storage::ExternalMountPoints* BrowserContext::GetMountPoints(
+   DCHECK(BrowserThread::CurrentlyOn(BrowserThread::UI) ||
+          !BrowserThread::IsThreadInitialized(BrowserThread::UI));
+ 
+-#if defined(OS_CHROMEOS)
++#if defined(OS_LINUX) && defined(USE_OZONE)
+   if (!context->GetUserData(kMountPointsKey)) {
+     scoped_refptr<storage::ExternalMountPoints> mount_points =
+         storage::ExternalMountPoints::CreateRefCounted();
+diff --git a/extensions/browser/api/file_system/file_system_api.cc b/extensions/browser/api/file_system/file_system_api.cc
+index 1620ea8c34537..38b88a7b06762 100644
+--- a/extensions/browser/api/file_system/file_system_api.cc
++++ b/extensions/browser/api/file_system/file_system_api.cc
+@@ -87,7 +87,7 @@ const char kRetainEntryError[] = "Could not retain file entry.";
+ const char kRetainEntryIncognitoError[] =
+     "Could not retain file entry in incognito mode";
+ 
+-#if defined(OS_CHROMEOS)
++#if defined(OS_LINUX) && defined(USE_OZONE)
+ const char kNotSupportedOnNonKioskSessionError[] =
+     "Operation only supported for kiosk apps running in a kiosk session.";
+ #endif
+@@ -929,7 +929,7 @@ ExtensionFunction::ResponseAction FileSystemGetObservedEntriesFunction::Run() {
+   return RespondNow(Error(kUnknownIdError));
+ }
+ 
+-#if !defined(OS_CHROMEOS)
++#if !(defined(OS_LINUX) && defined(USE_OZONE))
+ ExtensionFunction::ResponseAction FileSystemRequestFileSystemFunction::Run() {
+   using file_system::RequestFileSystem::Params;
+   const std::unique_ptr<Params> params(Params::Create(*args_));
+diff --git a/extensions/browser/api/file_system/file_system_api.h b/extensions/browser/api/file_system/file_system_api.h
+index efa3d0f80bc38..2145ee53d91b8 100644
+--- a/extensions/browser/api/file_system/file_system_api.h
++++ b/extensions/browser/api/file_system/file_system_api.h
+@@ -246,7 +246,7 @@ class FileSystemGetObservedEntriesFunction : public UIThreadExtensionFunction {
+   ResponseAction Run() override;
+ };
+ 
+-#if !defined(OS_CHROMEOS)
++#if !(defined(OS_LINUX) && defined(USE_OZONE))
+ // Stub for non Chrome OS operating systems.
+ class FileSystemRequestFileSystemFunction : public UIThreadExtensionFunction {
+  public:
