@@ -50,7 +50,7 @@ REQUIRED_USE="
 	gnome? ( gtk dbus )
 	atk? ( gnome )
 	system-wayland? ( wayland )
-	swiftshader? ( x86 )
+	swiftshader? ( x86 amd64 )
 "
 RESTRICT="
 	!system-ffmpeg? ( proprietary-codecs? ( bindist ) )
