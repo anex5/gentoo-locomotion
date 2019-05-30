@@ -211,16 +211,15 @@ PATCHES=(
 	"${FILESDIR}/ungoogled-chromium-disable-third-party-lzma-sdk-r0.patch"
 	"${FILESDIR}/ungoogled-chromium-empty-array-r0.patch"
 	"${FILESDIR}/ungoogled-chromium-fix-atomic-r0.patch"
+	"${FILESDIR}/chromium-fix-non-buildable-sources.patch"
 	"${FILESDIR}/chromium-test-r0.patch"
  	"${FILESDIR}/chromium-optional-atk-r0.patch"
 	"${FILESDIR}/chromium-optional-dbus-r5.patch"
-	#"${FILESDIR}/chromium-add-file-picker-support-using-WebUI.patch"
-
+	
 	# Extra patches taken from openSUSE
 	"${FILESDIR}/ungoogled-chromium-libusb-interrupt-event-handler-r0.patch"
 	"${FILESDIR}/ungoogled-chromium-system-libusb-r0.patch"
 	"${FILESDIR}/ungoogled-chromium-system-nspr-r0.patch"
-
 	"${FILESDIR}/ungoogled-chromium-system-fix-shim-headers-r0.patch"
 )
 
