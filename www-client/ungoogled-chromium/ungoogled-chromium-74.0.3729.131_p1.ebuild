@@ -280,7 +280,7 @@ src_prepare() {
 	cp -a "${EPREFIX}/usr/include/libusb-1.0/libusb.h" \
 		third_party/libusb/src/libusb/libusb.h || die
 
-	use gold && eapply ${FILESDIR}/${PN}-gold-r3.patch"
+	use gold && eapply "${FILESDIR}/${PN}-gold-r3.patch"
 
 
 	ebegin "Pruning binaries"
