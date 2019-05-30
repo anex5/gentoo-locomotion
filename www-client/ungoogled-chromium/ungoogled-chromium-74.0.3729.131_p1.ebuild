@@ -211,7 +211,7 @@ PATCHES=(
 
 	"${FILESDIR}/chromium-test-r0.patch"
  	"${FILESDIR}/chromium-optional-atk-r0.patch"
-	"${FILESDIR}/chromium-optional-dbus-r5.patch"
+	"${FILESDIR}/chromium-optional-dbus-r6.patch"
 	"${FILESDIR}/chromium-gen-Stop-passing-static-libstdc-to-the-compiler.patch"
 
 	# Extra patches taken from openSUSE
