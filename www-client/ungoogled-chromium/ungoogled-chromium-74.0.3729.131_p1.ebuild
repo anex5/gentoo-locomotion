@@ -890,7 +890,7 @@ src_install() {
 	insinto "${CHROMIUM_HOME}"
 	doins out/Release/*.bin
 	doins out/Release/*.pak
-	#doins out/Release/*.so
+	doins out/Release/*.so
 
 	use system-icu || doins out/Release/icudtl.dat
 
