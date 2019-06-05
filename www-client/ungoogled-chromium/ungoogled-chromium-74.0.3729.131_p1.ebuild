@@ -226,7 +226,7 @@ S="${WORKDIR}/chromium-${PV/_*}"
 pre_build_checks() {
 	# Check build requirements (Bug #541816)
 	CHECKREQS_MEMORY="3G"
-	CHECKREQS_DISK_BUILD="6G"
+	CHECKREQS_DISK_BUILD="5G"
 	if use custom-cflags && ( shopt -s extglob; is-flagq '-g?(gdb)?([1-9])' ); then
 		CHECKREQS_DISK_BUILD="25G"
 	fi
@@ -488,7 +488,9 @@ src_prepare() {
 		third_party/pdfium/third_party/libtiff
 		third_party/pdfium/third_party/skia_shared
 	)
-	use system-openjpeg || keeplibs+=(
+	# To do system-openjpeg req files
+	#use system-openjpeg || 
+	keeplibs+=(
 		third_party/pdfium/third_party/libopenjpeg20
 	)
 	use swiftshader && keeplibs+=(
@@ -802,7 +804,7 @@ src_configure() {
 		"use_system_minigbm=false"
 		"use_system_libdrm=$(usetf system-libdrm)"
 		"enable_background_mode=true"
-		"use_wayland_gbm=false"
+		"use_wayland_gbm=true"
 		)
 	fi
 
