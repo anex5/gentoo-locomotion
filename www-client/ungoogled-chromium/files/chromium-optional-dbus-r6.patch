@@ -153,3 +153,15 @@ index 0324e35..efcd817 100644
  
    if (is_android) {
      deps += [ ":jni_headers" ]
+
+--- a/chrome/browser/metrics/chrome_browser_main_extra_parts_metrics.cc
++++ b/chrome/browser/metrics/chrome_browser_main_extra_parts_metrics.cc
+@@ -227,7 +227,7 @@ void RecordStartupMetrics() {
+   // Re-enable when that is resolved.
+   // See https://crbug.com/929375.
+ #if !defined(OS_WIN)
+-  bluetooth_utility::ReportBluetoothAvailability();
++// bluetooth_utility::ReportBluetoothAvailability();
+ #endif
+ 
+   // Record whether Chrome is the default browser or not.
