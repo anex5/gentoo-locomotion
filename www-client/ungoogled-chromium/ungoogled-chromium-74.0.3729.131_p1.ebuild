@@ -155,7 +155,7 @@ BDEPEND="
 	!arm? (
 		dev-lang/yasm
 	)
-	dev-util/gn
+	=dev-util/gn-0.1544
 	>=dev-util/gperf-3.0.3
 	>=dev-util/ninja-1.7.2
 	dev-vcs/git
@@ -271,39 +271,39 @@ src_prepare() {
 	# Apply extra patches (taken from Igalia)
 	local p="${FILESDIR}/igalia-$(ver_cut 1-1)"
 
-	eapply "${p}/0001-ozone-wayland-add-CreateSurfaceCheckGbm-test.patch"
-    eapply "${p}/0002-ozone-wayland-Fix-flaky-DataDevice-unit-tests.patch"
-    eapply "${p}/0003-ozone-wayland-Use-opaque-region-for-opaque-windows.patch"
-    eapply "${p}/0004-ozone-wayland-Clean-up-TestDataSource.patch"
-    eapply "${p}/0005-ozone-wayland-Add-const-keyword-to-getters.patch"
-    eapply "${p}/0006-ozone-wayland-Clean-up-data-device-related-code.patch"
-    eapply "${p}/0007-ozone-wayland-Fix-Drag-Drop-crash-when-dragging-with.patch"
-    eapply "${p}/0008-ozone-wayland-Fix-cursor-regression-when-running-in-.patch"
-    eapply "${p}/0009-ozone-wayland-Clean-up-WaylandCursor.patch"
-    eapply "${p}/0010-Make-minigbm-users-use-non-deprecated-gbm-apis.patch"
-    eapply "${p}/0011-ozone-wayland-Fix-crash-when-trying-to-read-clipboar.patch"
-    eapply "${p}/0012-ozone-wayland-Fix-drag-icon-handling.patch"
-    eapply "${p}/0013-ozone-Include-memory-and-utility-where-necessary.patch"
-    eapply "${p}/0014-ozone-wayland-Change-the-order-when-the-opaque-regio.patch"
-    eapply "${p}/0015-ozone-wayland-Factor-out-zwp-linux-dmabuf-from-the-m.patch"
-    eapply "${p}/0016-ozone-wayland-Introduce-WaylandShmBuffer-class.patch"
-    eapply "${p}/0017-ozone-wayland-Handle-viz-process-restart.patch"
-    eapply "${p}/0018-ozone-wayland-Move-the-host-gpu-common-and-test-code.patch"
-    eapply "${p}/0019-ozone-wayland-Drop-dependency-wayland-ui-display-man.patch"
-    eapply "${p}/0020-ozone-wayland-Separate-swap-buffer-and-presentation-.patch"
-    eapply "${p}/0021-ozone-wayland-Add-possibility-to-create-wl-buffer-im.patch"
-    eapply "${p}/0022-ozone-wayland-Factored-the-clipboard-logic-out-of-Wa.patch"
-    eapply "${p}/0023-Convert-wayland-buffer-to-the-new-shared-memory-API.patch"
-    eapply "${p}/0024-Migrate-WaylandCanvasSurface-to-the-new-shared-memor.patch"
-    eapply "${p}/0025-ozone-wayland-Ease-the-buffer-swap-and-maintenance.patch"
-    eapply "${p}/0026-ozone-wayland-Fix-presentation-feedback-flags.patch"
-    eapply "${p}/0027-wayland-Do-not-release-shared-memory-fd-when-passing.patch"
-    eapply "${p}/0001-ozone-wayland-Don-t-wait-for-frame-callback-after-su.patch"
-    eapply "${p}/0001-Add-support-for-V4L2VDA-on-Linux.patch"
-    eapply "${p}/0002-Add-mmap-via-libv4l-to-generic_v4l2_device.patch"
-    eapply "${p}/0001-ozone-wayland-Do-not-add-window-if-manager-does-not-.patch"
-    eapply "${p}/0001-ozone-wayland-Fix-NativeGpuMemoryBuffers-usage.patch"
-    eapply "${p}/0001-v4l2_device-Update-CanCreateEGLImageFrom-to-support-.patch"
+	eapply "${p}/0001-ozone-wayland-add-CreateSurfaceCheckGbm-test.patch" || die
+    eapply "${p}/0002-ozone-wayland-Fix-flaky-DataDevice-unit-tests.patch" || die
+    eapply "${p}/0003-ozone-wayland-Use-opaque-region-for-opaque-windows.patch" || die
+    eapply "${p}/0004-ozone-wayland-Clean-up-TestDataSource.patch" || die
+    eapply "${p}/0005-ozone-wayland-Add-const-keyword-to-getters.patch" || die
+    eapply "${p}/0006-ozone-wayland-Clean-up-data-device-related-code.patch" || die
+    eapply "${p}/0007-ozone-wayland-Fix-Drag-Drop-crash-when-dragging-with.patch" || die
+    eapply "${p}/0008-ozone-wayland-Fix-cursor-regression-when-running-in-.patch" || die
+    eapply "${p}/0009-ozone-wayland-Clean-up-WaylandCursor.patch" || die
+    eapply "${p}/0010-Make-minigbm-users-use-non-deprecated-gbm-apis.patch" || die
+    eapply "${p}/0011-ozone-wayland-Fix-crash-when-trying-to-read-clipboar.patch" || die
+    eapply "${p}/0012-ozone-wayland-Fix-drag-icon-handling.patch" || die
+    eapply "${p}/0013-ozone-Include-memory-and-utility-where-necessary.patch" || die
+    eapply "${p}/0014-ozone-wayland-Change-the-order-when-the-opaque-regio.patch" || die
+    eapply "${p}/0015-ozone-wayland-Factor-out-zwp-linux-dmabuf-from-the-m.patch" || die
+    eapply "${p}/0016-ozone-wayland-Introduce-WaylandShmBuffer-class.patch" || die
+    eapply "${p}/0017-ozone-wayland-Handle-viz-process-restart.patch" || die
+    eapply "${p}/0018-ozone-wayland-Move-the-host-gpu-common-and-test-code.patch" || die
+    eapply "${p}/0019-ozone-wayland-Drop-dependency-wayland-ui-display-man.patch" || die
+    eapply "${p}/0020-ozone-wayland-Separate-swap-buffer-and-presentation-.patch" || die
+    eapply "${p}/0021-ozone-wayland-Add-possibility-to-create-wl-buffer-im.patch" || die
+    eapply "${p}/0022-ozone-wayland-Factored-the-clipboard-logic-out-of-Wa.patch" || die
+    eapply "${p}/0023-Convert-wayland-buffer-to-the-new-shared-memory-API.patch" || die
+    eapply "${p}/0024-Migrate-WaylandCanvasSurface-to-the-new-shared-memor.patch" || die
+    eapply "${p}/0025-ozone-wayland-Ease-the-buffer-swap-and-maintenance.patch" || die
+    eapply "${p}/0026-ozone-wayland-Fix-presentation-feedback-flags.patch" || die
+    eapply "${p}/0027-wayland-Do-not-release-shared-memory-fd-when-passing.patch" || die
+    eapply "${p}/0001-ozone-wayland-Don-t-wait-for-frame-callback-after-su.patch" || die
+    eapply "${p}/0001-Add-support-for-V4L2VDA-on-Linux.patch" || die
+    eapply "${p}/0002-Add-mmap-via-libv4l-to-generic_v4l2_device.patch" || die
+    eapply "${p}/0001-ozone-wayland-Do-not-add-window-if-manager-does-not-.patch" || die
+    eapply "${p}/0001-ozone-wayland-Fix-NativeGpuMemoryBuffers-usage.patch" || die
+    eapply "${p}/0001-v4l2_device-Update-CanCreateEGLImageFrom-to-support-.patch" || die
 
 	# Hack for libusb stuff (taken from openSUSE)
 	rm third_party/libusb/src/libusb/libusb.h || die
