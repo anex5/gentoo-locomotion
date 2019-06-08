@@ -27,6 +27,10 @@ SRC_URI="
 LICENSE="BSD"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
+VIDEO_CARDS="
+	amdgpu exynos intel marvell mediatek msm radeon radeonsi rockchip tegra vc4 virgl
+"
+
 IUSE="
 	atk cfi component-build closure-compile cups custom-cflags +dbus gnome gold jumbo-build kerberos libcxx
 	lld new-tcmalloc optimize-thinlto optimize-webui +pdf +proprietary-codecs
@@ -35,6 +39,11 @@ IUSE="
 	+system-openjpeg system-libdrm system-wayland +tcmalloc +thinlto vaapi widevine
 	wayland X libvpx gtk xkbcommon v4l2 v4lplugin +clang swiftshader udev debug
 "
+
+for card in ${VIDEO_CARDS}; do
+	IUSE+=" video_cards_${card}"
+done
+
 REQUIRED_USE="
 	^^ ( gold lld )
 	|| ( $(python_gen_useflags 'python3*') )
@@ -501,7 +510,6 @@ src_prepare() {
 	use v4l2 && keeplibs+=(
 		third_party/v4l-utils
 	)
-
 	use system-ffmpeg || keeplibs+=( third_party/ffmpeg third_party/opus )
 	use system-harfbuzz || keeplibs+=(
 		third_party/freetype
@@ -538,6 +546,25 @@ setup_compile_flags() {
 		# Prevent libvpx build failures (Bug #530248, #544702, #546984)
 		filter-flags -mno-mmx -mno-sse2 -mno-ssse3 -mno-sse4.1 -mno-avx -mno-avx2
 	fi
+
+	# -clang-syntax is a flag that enable us to do clang syntax checking on
+	# top of building Chrome with gcc. Since Chrome itself is clang clean,
+	# there is no need to check it again. And this flag has
+	# nothing to do with USE=clang.
+	use clang && filter-flags -clang-syntax 
+	
+	use video_cards_amdgpu && append-cppflags -DDRV_AMDGPU && export DRV_AMDGPU=1
+	use video_cards_exynos && append-cppflags -DDRV_EXYNOS && export DRV_EXYNOS=1
+	use video_cards_intel && append-cppflags -DDRV_I915 && export DRV_I915=1
+	use video_cards_marvell && append-cppflags -DDRV_MARVELL && export DRV_MARVELL=1
+	use video_cards_mediatek && append-cppflags -DDRV_MEDIATEK && export DRV_MEDIATEK=1
+	use video_cards_msm && append-cppflags -DDRV_MSM && export DRV_MSM=1
+	use video_cards_radeon && append-cppflags -DDRV_RADEON && export DRV_RADEON=1
+	use video_cards_radeonsi && append-cppflags -DDRV_RADEON && export DRV_RADEON=1
+	use video_cards_rockchip && append-cppflags -DDRV_ROCKCHIP && export DRV_ROCKCHIP=1
+	use video_cards_tegra && append-cppflags -DDRV_TEGRA && export DRV_TEGRA=1
+	use video_cards_vc4 && append-cppflags -DDRV_VC4 && export DRV_VC4=1
+	use video_cards_virgl && append-cppflags -DDRV_VIRGL && export DRV_VIRGL=1
 
 	if use libcxx; then
 		append-cxxflags "-stdlib=libc++"
@@ -698,8 +725,6 @@ src_configure() {
 
 		"use_kerberos=$(usetf kerberos)"
 
-
-
 		"use_pulseaudio=$(usetf pulseaudio)"
 		# HarfBuzz and FreeType need to be built together in a specific way
 		# to get FreeType autohinting to work properly. Chromium bundles
@@ -799,12 +824,22 @@ src_configure() {
 		"ozone_platform_x11=$(usetf X)"
 		"ozone_platform_wayland=true"
 		"ozone_platform=\"wayland\""
-		"ozone_platform_gbm=false"
+		"ozone_platform_gbm=true"
 		"enable_mus=false"
 		"use_system_minigbm=false"
 		"use_system_libdrm=$(usetf system-libdrm)"
 		"enable_background_mode=true"
 		"use_wayland_gbm=true"
+		"use_intel_minigbm=$(usetf video_cards_intel)" 
+		"use_radeon_minigbm=$(usetf video_cards_radeon)"
+	   	"use_amdgpu_minigbm=$(usetf video_cards_amdgpu)"
+		"use_exynos_minigbm=$(usetf video_cards_exynos)"
+		"use_marvell_minigbm=$(usetf video_cards_marvell)"
+		"use_mediatek_minigbm=$(usetf video_cards_mediatek)"
+		"use_msm_minigbm=$(usetf video_cards_msm)"
+		"use_rockchip_minigbm=$(usetf video_cards_rockchip)"
+		"use_tegra_minigbm=$(usetf video_cards_tegra)"
+		"use_vc4_minigbm=$(usetf video_cards_vc4)"
 		)
 	fi
 
