@@ -75,10 +75,15 @@ DEPEND="${RDEPEND}
 	wayland? ( >=dev-libs/wayland-protocols-1.8 )
 	llvm? ( sys-devel/llvm )
 "
+
+S="${WORKDIR}/${MY_P}"
+EGIT_CHECKOUT_DIR=${S}
+
 driver_list() {
 	local drivers="$(sort -u <<< "${1// /$'\n'}")"
 	echo "${drivers//$'\n'/,}"
 }
+
 src_prepare() {
 	# apply patches
 	if [[ ${PV} != 9999* && -n ${SRC_PATCHES} ]]; then
@@ -104,6 +109,7 @@ src_prepare() {
 	epatch "${FILESDIR}"/UPSTREAM-mesa-Expose-EXT_texture_query_lod-and-add-support-fo.patch
 	default
 }
+
 src_configure() {
 	tc-getPROG PKG_CONFIG pkg-config
 	# Needs std=gnu++11 to build with libc++. crbug.com/750831
@@ -180,6 +186,7 @@ src_configure() {
 	)
 	meson_src_configure
 }
+
 src_install() {
 	meson_src_install
 	# Remove redundant GLES headers
@@ -205,6 +212,7 @@ src_install() {
 	insinto "/etc/"
 	doins "${FILESDIR}"/drirc
 }
+
 # $1 - VIDEO_CARDS flag (check skipped for "--")
 # other args - names of DRI drivers to enable
 dri_driver_enable() {
