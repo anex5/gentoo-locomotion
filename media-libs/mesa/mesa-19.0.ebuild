@@ -19,7 +19,7 @@ inherit multilib flag-o-matic meson toolchain-funcs ${GIT_ECLASS}
 OPENGL_DIR="xorg-x11"
 
 MY_P="${P/_/-}"
-FOLDER="${PV/_rc*/}"
+
 [[ ${PV/_rc*/} == ${PV} ]] || FOLDER+="/RC"
 DESCRIPTION="OpenGL-like graphic library for Linux"
 HOMEPAGE="http://mesa3d.sourceforge.net/"
@@ -27,7 +27,7 @@ HOMEPAGE="http://mesa3d.sourceforge.net/"
 if [[ $PV == 9999* ]]; then
 	SRC_URI=""
 else
-	SRC_URI="ftp://ftp.freedesktop.org/pub/mesa/${FOLDER}/${MY_P}.tar.xz"
+	SRC_URI="ftp://ftp.freedesktop.org/pub/mesa/${MY_P}.tar.xz"
 fi
 
 # Most of the code is MIT/X11.
