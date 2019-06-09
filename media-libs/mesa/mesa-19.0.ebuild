@@ -9,20 +9,19 @@ EGIT_REPO_URI="git://anongit.freedesktop.org/mesa/mesa"
 CROS_WORKON_PROJECT="chromiumos/third_party/mesa"
 CROS_WORKON_BLACKLIST="1"
 if [[ ${PV} = 9999* ]]; then
-	GIT_ECLASS="git-2"
+	GIT_ECLASS="git-r3"
 	EXPERIMENTAL="true"
 fi
-inherit base multilib flag-o-matic meson toolchain-funcs ${GIT_ECLASS} cros-workon
+inherit multilib flag-o-matic meson toolchain-funcs ${GIT_ECLASS}
 FOLDER="${PV/_rc*/}"
 [[ ${PV/_rc*/} == ${PV} ]] || FOLDER+="/RC"
 DESCRIPTION="OpenGL-like graphic library for Linux"
 HOMEPAGE="http://mesa3d.sourceforge.net/"
-#SRC_PATCHES="mirror://gentoo/${P}-gentoo-patches-01.tar.bz2"
+
 if [[ $PV = 9999* ]] || [[ -n ${CROS_WORKON_COMMIT} ]]; then
 	SRC_URI="${SRC_PATCHES}"
 else
-	SRC_URI="ftp://ftp.freedesktop.org/pub/mesa/${FOLDER}/${P}.tar.bz2
-		${SRC_PATCHES}"
+	SRC_URI="ftp://ftp.freedesktop.org/pub/mesa/${FOLDER}/${P}.tar.bz2"
 fi
 # Most of the code is MIT/X11.
 # ralloc is LGPL-3
