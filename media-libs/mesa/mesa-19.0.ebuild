@@ -1,28 +1,35 @@
 # Copyright 1999-2019 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-x86/media-libs/mesa/mesa-7.9.ebuild,v 1.3 2010/12/05 17:19:14 arfrever Exp $
+
 EAPI=6
+
+PYTHON_COMPAT=( python3_5 python3_6 python3_7 )
+
 MESON_AUTO_DEPEND=no
-CROS_WORKON_COMMIT="b43b55d4619489e603780adf3c92a36dadcc362b"
-CROS_WORKON_TREE="b09304eab38348e2a157c4adc75542a460746ce9"
+
 EGIT_REPO_URI="git://anongit.freedesktop.org/mesa/mesa"
-CROS_WORKON_PROJECT="chromiumos/third_party/mesa"
-CROS_WORKON_BLACKLIST="1"
+
 if [[ ${PV} = 9999* ]]; then
 	GIT_ECLASS="git-r3"
 	EXPERIMENTAL="true"
 fi
+
 inherit multilib flag-o-matic meson toolchain-funcs ${GIT_ECLASS}
+
+OPENGL_DIR="xorg-x11"
+
+MY_P="${P/_/-}"
 FOLDER="${PV/_rc*/}"
 [[ ${PV/_rc*/} == ${PV} ]] || FOLDER+="/RC"
 DESCRIPTION="OpenGL-like graphic library for Linux"
 HOMEPAGE="http://mesa3d.sourceforge.net/"
 
-if [[ $PV = 9999* ]] || [[ -n ${CROS_WORKON_COMMIT} ]]; then
-	SRC_URI="${SRC_PATCHES}"
+if [[ $PV == 9999* ]]; then
+	SRC_URI=""
 else
-	SRC_URI="ftp://ftp.freedesktop.org/pub/mesa/${FOLDER}/${P}.tar.bz2"
+	SRC_URI="ftp://ftp.freedesktop.org/pub/mesa/${FOLDER}/${MY_P}.tar.xz"
 fi
+
 # Most of the code is MIT/X11.
 # ralloc is LGPL-3
 # GLES[2]/gl[2]{,ext,platform}.h are SGI-B-2.0
