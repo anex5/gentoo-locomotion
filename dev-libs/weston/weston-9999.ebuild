@@ -87,10 +87,6 @@ DEPEND="${RDEPEND}
 	virtual/pkgconfig
 "
 
-PATCHES=(
-	"${FILESDIR}"/${PN}-gears-build.patch
-)
-
 src_configure() {
 	local emesonargs=(
 		$(meson_use drm backend-drm)
