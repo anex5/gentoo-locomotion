@@ -190,7 +190,7 @@ src_configure() {
 src_install() {
 	meson_src_install
 	# Remove redundant GLES headers
-	rm -f "${D}"/usr/include/{EGL,GLES2,GLES3,KHR}/*.h || die "Removing GLES headers failed."
+	#rm -f "${D}"/usr/include/{EGL,GLES2,GLES3,KHR}/*.h || die "Removing GLES headers failed."
 	dodir /usr/$(get_libdir)/dri
 	insinto "/usr/$(get_libdir)/dri/"
 	insopts -m0755
