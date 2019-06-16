@@ -33,8 +33,8 @@ fi
 LICENSE="MIT LGPL-3 SGI-B-2.0"
 SLOT="0"
 KEYWORDS="*"
-INTEL_CARDS="intel"
-RADEON_CARDS="amdgpu radeon"
+INTEL_CARDS="i915 i965 intel iris"
+RADEON_CARDS="amdgpu radeon radeonsi"
 VIDEO_CARDS="${INTEL_CARDS} ${RADEON_CARDS} freedreno llvmpipe mach64 mga nouveau r128 radeonsi savage sis softpipe tdfx via virgl vmware"
 for card in ${VIDEO_CARDS}; do
 	IUSE_VIDEO_CARDS+=" video_cards_${card}"
