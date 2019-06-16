@@ -303,7 +303,7 @@ src_prepare() {
 	eapply "${p}/0005-ozone-wayland-Fix-presentation-feedback-flags.patch" || die
 	eapply "${p}/0006-wayland-Do-not-release-shared-memory-fd-when-passing.patch" || die
 	eapply "${p}/0007-ozone-wayland-Don-t-wait-for-frame-callback-after-su.patch" || die
-	eapply "${p}/0008-ozone-wayland-Do-not-add-window-if-manager-does-not-.patch " || die
+	eapply "${p}/0008-ozone-wayland-Do-not-add-window-if-manager-does-not-.patch" || die
 	eapply "${p}/0009-ozone-wayland-Fix-NativeGpuMemoryBuffers-usage.patch" || die
 	eapply "${p}/0010-ozone-wayland-Add-immediate-release-support.patch" || die
 	eapply "${p}/0011-ozone-wayland-Wrap-wl_shm-to-WaylandShm.patch" || die
