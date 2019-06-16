@@ -3,18 +3,11 @@
 
 EAPI=6
 
-PYTHON_COMPAT=( python2_7 )
+PYTHON_COMPAT=( python3_5 python3_6 python3_7 )
 
 MESON_AUTO_DEPEND=no
-
-EGIT_REPO_URI="git://anongit.freedesktop.org/mesa/mesa"
-
-if [[ ${PV} = 9999* ]]; then
-	GIT_ECLASS="git-r3"
-	EXPERIMENTAL="true"
-fi
-
-inherit multilib flag-o-matic meson toolchain-funcs ${GIT_ECLASS}
+ 
+inherit llvm meson multilib-minimal pax-utils python-any-r1
 
 OPENGL_DIR="xorg-x11"
 
@@ -22,13 +15,17 @@ MY_P="${P/_/-}"
 
 [[ ${PV/_rc*/} == ${PV} ]] || FOLDER+="/RC"
 DESCRIPTION="OpenGL-like graphic library for Linux"
-HOMEPAGE="http://mesa3d.sourceforge.net/"
+HOMEPAGE="https://www.mesa3d.org/ https://mesa.freedesktop.org/"
 
-if [[ $PV == 9999* ]]; then
-	SRC_URI=""
+if [[ ${PV} == 9999 ]]; then
+	EGIT_REPO_URI="https://gitlab.freedesktop.org/mesa/mesa.git"
+	EXPERIMENTAL="true"
+	inherit git-r3
 else
-	SRC_URI="ftp://ftp.freedesktop.org/pub/mesa/${MY_P}.tar.xz"
+	SRC_URI="https://mesa.freedesktop.org/archive/${MY_P}.tar.xz"
+	KEYWORDS="~alpha ~amd64 ~arm ~arm64 ~hppa ~ia64 ~mips ~ppc ~ppc64 ~s390 ~sh ~sparc ~x86 ~amd64-fbsd ~x86-fbsd ~amd64-linux ~x86-linux ~sparc-solaris ~x64-solaris ~x86-solaris"
 fi
+
 
 # Most of the code is MIT/X11.
 # ralloc is LGPL-3
@@ -43,41 +40,141 @@ for card in ${VIDEO_CARDS}; do
 	IUSE_VIDEO_CARDS+=" video_cards_${card}"
 done
 IUSE="${IUSE_VIDEO_CARDS}
-	+classic debug dri drm egl +gallium gbm gles1 gles2 llvm +nptl pic
-	selinux shared-glapi kernel_FreeBSD vulkan wayland xlib-glx X"
-LIBDRM_DEPSTRING=">=x11-libs/libdrm-2.4.60"
-REQUIRED_USE="video_cards_amdgpu? ( llvm )
-	video_cards_llvmpipe? ( llvm )"
-# keep correct libdrm and dri2proto dep
-# keep blocks in rdepend for binpkg
+	+classic debug dri drm +egl +gallium +gbm gles1 +gles2 +libglvnd +llvm 
+	+nptl opencl pic selinux pax_kernel vaapi valgrind vdpau vulkan vulkan-overlay wayland xlib-glx X"
+
+REQUIRED_USE="
+	video_cards_amdgpu? ( llvm )
+	video_cards_llvmpipe? ( llvm )
+	gles1?  ( egl )
+	gles2?  ( egl )
+	vulkan? ( dri
+			  || ( video_cards_i965 video_cards_iris video_cards_radeonsi )
+			  video_cards_radeonsi? ( llvm ) )
+	vulkan-overlay? ( vulkan )
+	wayland? ( egl gbm )
+	video_cards_freedreno?  ( gallium )
+	video_cards_intel?  ( classic )
+	video_cards_i915?   ( || ( classic gallium ) )
+	video_cards_i965?   ( classic )
+	video_cards_iris?   ( gallium )
+	video_cards_nouveau? ( || ( classic gallium ) )
+	video_cards_radeon? ( || ( classic gallium )
+						  gallium? ( x86? ( llvm ) amd64? ( llvm ) ) )
+	video_cards_radeonsi?   ( gallium llvm )
+	video_cards_virgl? ( gallium )
+	video_cards_vmware? ( gallium )
+"
+
+LIBDRM_DEPSTRING=">=x11-libs/libdrm-2.4.97"
 RDEPEND="
+	>=dev-libs/expat-2.1.0-r3:=[${MULTILIB_USEDEP}]
+	>=sys-libs/zlib-1.2.8[${MULTILIB_USEDEP}]
 	X? (
 		!<x11-base/xorg-server-1.7
-		>=x11-libs/libX11-1.3.99.901
-		x11-libs/libXdamage
-		x11-libs/libXext
-		x11-libs/libXrandr
-		x11-libs/libXxf86vm
+		>=x11-libs/libX11-1.6.2:=[${MULTILIB_USEDEP}]
+		>=x11-libs/libxshmfence-1.1:=[${MULTILIB_USEDEP}]
+		>=x11-libs/libXdamage-1.1.4-r1:=[${MULTILIB_USEDEP}]
+		>=x11-libs/libXext-1.3.2:=[${MULTILIB_USEDEP}]
+		>=x11-libs/libXxf86vm-1.1.3:=[${MULTILIB_USEDEP}]
+		x11-libs/libXfixes:=[${MULTILIB_USEDEP}]
 	)
+	>=x11-libs/libxcb-1.13:=[${MULTILIB_USEDEP}]
+	libglvnd? (
+		media-libs/libglvnd[${MULTILIB_USEDEP}]
+		!app-eselect/eselect-opengl
+	)
+	gallium? (
+		llvm? (
+			video_cards_radeonsi? (
+				virtual/libelf:0=[${MULTILIB_USEDEP}]
+			)
+			video_cards_radeon? (
+				virtual/libelf:0=[${MULTILIB_USEDEP}]
+			)
+		)
+		opencl? (
+					dev-libs/ocl-icd[khronos-headers,${MULTILIB_USEDEP}]
+					dev-libs/libclc
+					virtual/libelf:0=[${MULTILIB_USEDEP}]
+				)
+		vaapi? (
+			>=x11-libs/libva-1.7.3:=[${MULTILIB_USEDEP}]
+			video_cards_nouveau? ( !<=x11-libs/libva-vdpau-driver-0.7.4-r3 )
+		)
+		vdpau? ( >=x11-libs/libvdpau-1.1:=[${MULTILIB_USEDEP}] )
+	)
+
+	wayland? (
+		>=dev-libs/wayland-1.15.0:=[${MULTILIB_USEDEP}]
+		>=dev-libs/wayland-protocols-1.8
+	)
+	${LIBDRM_DEPSTRING}[video_cards_freedreno?,video_cards_nouveau?,video_cards_vc4?,video_cards_vivante?,video_cards_vmware?,${MULTILIB_USEDEP}]
+
+	video_cards_intel? (
+		!video_cards_i965? ( ${LIBDRM_DEPSTRING}[video_cards_intel] )
+	)
+	video_cards_i915? ( ${LIBDRM_DEPSTRING}[video_cards_intel] )
+	vulkan-overlay? ( dev-util/glslang:0=[${MULTILIB_USEDEP}] )
+
 	llvm? ( virtual/libelf )
-	dev-libs/expat
 	dev-libs/libgcrypt
 	virtual/udev
 	${LIBDRM_DEPSTRING}
 "
 DEPEND="${RDEPEND}
-	=dev-lang/python-2*
+	${PYTHON_DEPS}
 	dev-libs/libxml2
 	sys-devel/bison
 	sys-devel/flex
+	sys-devel/gettext
 	virtual/pkgconfig
 	x11-base/xorg-proto
-	wayland? ( >=dev-libs/wayland-protocols-1.8 )
 	llvm? ( sys-devel/llvm )
+	valgrind? ( dev-util/valgrind )
+	x11-libs/libXrandr[${MULTILIB_USEDEP}]
+	$(python_gen_any_dep ">=dev-python/mako-0.8.0[\${PYTHON_USEDEP}]")
 "
+
+# Please keep the LLVM dependency block separate. Since LLVM is slotted,
+# we need to *really* make sure we're not pulling one than more slot
+# simultaneously.
+#
+# How to use it:
+# 1. List all the working slots (with min versions) in ||, newest first.
+# 2. Update the := to specify *max* version, e.g. < 10.
+# 3. Specify LLVM_MAX_SLOT, e.g. 9.
+LLVM_MAX_SLOT="9"
+LLVM_DEPSTR="
+	|| (
+		sys-devel/llvm:9[${MULTILIB_USEDEP}]
+		sys-devel/llvm:8[${MULTILIB_USEDEP}]
+		sys-devel/llvm:7[${MULTILIB_USEDEP}]
+	)
+	sys-devel/llvm:=[${MULTILIB_USEDEP}]
+"
+LLVM_DEPSTR_AMDGPU=${LLVM_DEPSTR//]/,llvm_targets_AMDGPU(-)]}
+CLANG_DEPSTR=${LLVM_DEPSTR//llvm/clang}
+CLANG_DEPSTR_AMDGPU=${CLANG_DEPSTR//]/,llvm_targets_AMDGPU(-)]}
+RDEPEND="${RDEPEND}
+	${CLANG_DEPSTR_AMDGPU}
+	${LLVM_DEPSTR_AMDGPU}
+"
+unset {LLVM,CLANG}_DEPSTR{,_AMDGPU}
 
 S="${WORKDIR}/${MY_P}"
 EGIT_CHECKOUT_DIR=${S}
+
+QA_WX_LOAD="
+x86? (
+	!pic? (
+		usr/lib*/libglapi.so.0.0.0
+		usr/lib*/libGLESv1_CM.so.1.0.0
+		usr/lib*/libGLESv2.so.2.0.0
+		usr/lib*/libGL.so.1.2.0
+		usr/lib*/libOSMesa.so.8.0.0
+	)
+)"
 
 driver_list() {
 	local drivers="$(sort -u <<< "${1// /$'\n'}")"
@@ -122,15 +219,43 @@ src_configure() {
 		ewarn "You enabled neither classic, gallium, nor vulkan "
 		ewarn "USE flags. No hardware drivers will be built."
 	fi
+
+	local emesonargs=()
+
 	if use classic; then
 	# Configurable DRI drivers
 		# Intel code
 		dri_driver_enable video_cards_intel i965
+		dri_driver_enable video_cards_i965 i965
+		if ! use video_cards_i915 && \
+			! use video_cards_i965; then
+			dri_driver_enable video_cards_intel i915 i965
+		fi
+		# Nouveau code
+		dri_driver_enable video_cards_nouveau nouveau
+
+		# ATI code
+		dri_driver_enable video_cards_r100 r100
+		dri_driver_enable video_cards_r200 r200
+		if ! use video_cards_r100 && \
+			! use video_cards_r200; then
+			dri_driver_enable video_cards_radeon r100 r200
+		fi
 	fi
 	if use gallium; then
 	# Configurable gallium drivers
 		gallium_enable video_cards_llvmpipe swrast
 		gallium_enable video_cards_softpipe swrast
+		# Intel code
+		gallium_enable video_cards_iris iris
+		# Only one i915 driver (classic vs gallium). Default to classic.
+		if ! use classic; then
+			gallium_enable video_cards_i915 i915
+			if ! use video_cards_i915 && \
+				! use video_cards_i965; then
+				gallium_enable video_cards_intel i915
+			fi
+		fi
 		# Nouveau code
 		gallium_enable video_cards_nouveau nouveau
 		# ATI code
@@ -139,11 +264,56 @@ src_configure() {
 		# Freedreno code
 		gallium_enable video_cards_freedreno freedreno
 		gallium_enable video_cards_virgl virgl
+
+		gallium_enable video_cards_vmware svga
+
+
+		if use video_cards_r600 ||
+		   use video_cards_radeonsi ||
+		   use video_cards_nouveau; then
+			emesonargs+=($(meson_use vaapi gallium-va))
+			use vaapi && emesonargs+=( -Dva-libs-path="${EPREFIX}"/usr/$(get_libdir)/va/drivers )
+		else
+			emesonargs+=(-Dgallium-va=false)
+		fi
+
+		if use video_cards_r300 ||
+		   use video_cards_r600 ||
+		   use video_cards_radeonsi ||
+		   use video_cards_nouveau; then
+			emesonargs+=($(meson_use vdpau gallium-vdpau))
+		else
+			emesonargs+=(-Dgallium-vdpau=false)
+		fi
+		# opencl stuff
+		emesonargs+=(
+			-Dgallium-opencl="$(usex opencl icd disabled)"
+		)
 	fi
 	if use vulkan; then
+		vulkan_enable video_cards_i965 intel
 		vulkan_enable video_cards_intel intel
 		vulkan_enable video_cards_amdgpu amd
 	fi
+
+	# x86 hardened pax_kernel needs glx-rts, bug 240956
+	if [[ ${ABI} == x86 ]]; then
+		emesonargs+=( $(meson_use pax_kernel glx-read-only-text) )
+	fi
+
+	# on abi_x86_32 hardened we need to have asm disable
+	if [[ ${ABI} == x86* ]] && use pic; then
+		emesonargs+=( -Dasm=false )
+	fi
+
+	if use gallium; then
+		gallium_enable -- swrast
+		emesonargs+=( -Dosmesa=$(usex osmesa gallium none) )
+	else
+		dri_driver_enable -- swrast
+		emesonargs+=( -Dosmesa=$(usex osmesa classic none) )
+	fi
+
 	LLVM_ENABLE=false
 	if use llvm && use !video_cards_softpipe; then
 		emesonargs+=( -Dshared-llvm=false )
@@ -173,16 +343,22 @@ src_configure() {
 		-Dglx="${glx}"
 		-Dllvm="${LLVM_ENABLE}"
 		-Dplatforms="${egl_platforms}"
+		-Dshared-glapi=true
+		$(meson_use dri)
 		$(meson_use egl)
 		$(meson_use gbm)
-		$(meson_use X gl)
+		$(meson_use X)
 		$(meson_use gles1)
 		$(meson_use gles2)
+		$(meson_use libglvnd glvnd)
 		$(meson_use selinux)
+		-Dvalgrind=$(usex valgrind auto false)
 		-Ddri-drivers=$(driver_list "${DRI_DRIVERS[*]}")
 		-Dgallium-drivers=$(driver_list "${GALLIUM_DRIVERS[*]}")
 		-Dvulkan-drivers=$(driver_list "${VULKAN_DRIVERS[*]}")
+		$(meson_use vulkan-overlay vulkan-overlay-layer)
 		--buildtype $(usex debug debug release)
+		-Db_ndebug=$(usex debug false true)
 	)
 	meson_src_configure
 }
@@ -191,6 +367,8 @@ src_install() {
 	meson_src_install
 	# Remove redundant GLES headers
 	#rm -f "${D}"/usr/include/{EGL,GLES2,GLES3,KHR}/*.h || die "Removing GLES headers failed."
+	use libglvnd && rm -f "${D}"/usr/$(get_libdir)/libGLESv{1_CM,2}.so*
+
 	dodir /usr/$(get_libdir)/dri
 	insinto "/usr/$(get_libdir)/dri/"
 	insopts -m0755
