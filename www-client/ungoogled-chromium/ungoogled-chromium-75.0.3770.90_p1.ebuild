@@ -221,7 +221,6 @@ PATCHES=(
 	"${FILESDIR}/chromium-75-noexcept.patch"
 	"${FILESDIR}/chromium-75-llvm8.patch"
 	"${FILESDIR}/chromium-75-pure-virtual.patch"
-	"${FILESDIR}/quiche-00f47df.patch"
 
 	"${FILESDIR}/${PN}-disable-third-party-lzma-sdk-r0.patch"
 	"${FILESDIR}/${PN}-empty-array-r0.patch"
