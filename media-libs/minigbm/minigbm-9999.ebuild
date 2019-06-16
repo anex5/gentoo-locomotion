@@ -69,5 +69,5 @@ src_install() {
 	insinto "${EPREFIX}/etc/udev/rules.d"
 	doins "${FILESDIR}/50-vgem.rules"
 	default
-	dosym $(get_libdir)/libminigbm.so.1.0.0" $(get_libdir)/libminigbm.so
+	dosym $(get_libdir)/libminigbm.so.1.0.0 $(get_libdir)/libminigbm.so
 }
