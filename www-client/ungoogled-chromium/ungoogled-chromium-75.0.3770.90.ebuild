@@ -36,7 +36,7 @@ IUSE="
 	lld new-tcmalloc optimize-thinlto optimize-webui +pdf +proprietary-codecs
 	pulseaudio selinux +suid system-ffmpeg system-harfbuzz +system-icu
 	+system-jsoncpp +system-libevent +system-libvpx system-openh264
-	+system-openjpeg +system-libdrm +system-minigbm system-wayland +tcmalloc +thinlto widevine
+	+system-openjpeg +system-libdrm system-wayland +tcmalloc +thinlto widevine
 	wayland X libvpx gtk xkbcommon v4l2 v4lplugin +clang swiftshader udev debug
 "
 
@@ -542,7 +542,7 @@ src_prepare() {
 		third_party/libvpx/source/libvpx/third_party/x86inc
 	)
 	use system-wayland || keeplibs+=( third_party/wayland third_party/wayland-protocols )
-	use system-minigbm || keeplibs+=( third_party/minigbm )
+	keeplibs+=( third_party/minigbm )
 	use system-openh264 || keeplibs+=( third_party/openh264 )
 	use tcmalloc && keeplibs+=( third_party/tcmalloc )
 
@@ -572,21 +572,18 @@ setup_compile_flags() {
 	# nothing to do with USE=clang.
 	use clang && filter-flags -clang-syntax 
 	
-	if ! use system-minigbm; then
-		use video_cards_amdgpu && append-cppflags -DDRV_AMDGPU && export DRV_AMDGPU=1
-		use video_cards_exynos && append-cppflags -DDRV_EXYNOS && export DRV_EXYNOS=1
-		use video_cards_intel && append-cppflags -DDRV_I915 && export DRV_I915=1
-		use video_cards_marvell && append-cppflags -DDRV_MARVELL && export DRV_MARVELL=1
-		use video_cards_mediatek && append-cppflags -DDRV_MEDIATEK && export DRV_MEDIATEK=1
-		use video_cards_msm && append-cppflags -DDRV_MSM && export DRV_MSM=1
-		use video_cards_radeon && append-cppflags -DDRV_RADEON && export DRV_RADEON=1
-		use video_cards_radeonsi && append-cppflags -DDRV_RADEON && export DRV_RADEON=1
-		use video_cards_rockchip && append-cppflags -DDRV_ROCKCHIP && export DRV_ROCKCHIP=1
-		use video_cards_tegra && append-cppflags -DDRV_TEGRA && export DRV_TEGRA=1
-		use video_cards_vc4 && append-cppflags -DDRV_VC4 && export DRV_VC4=1
-		use video_cards_virgl && append-cppflags -DDRV_VIRGL && export DRV_VIRGL=1
-	fi
-
+	use video_cards_amdgpu && append-cppflags -DDRV_AMDGPU && export DRV_AMDGPU=1
+	use video_cards_exynos && append-cppflags -DDRV_EXYNOS && export DRV_EXYNOS=1
+	use video_cards_intel && append-cppflags -DDRV_I915 && export DRV_I915=1
+	use video_cards_marvell && append-cppflags -DDRV_MARVELL && export DRV_MARVELL=1
+	use video_cards_mediatek && append-cppflags -DDRV_MEDIATEK && export DRV_MEDIATEK=1
+	use video_cards_msm && append-cppflags -DDRV_MSM && export DRV_MSM=1
+	use video_cards_radeon && append-cppflags -DDRV_RADEON && export DRV_RADEON=1
+	use video_cards_radeonsi && append-cppflags -DDRV_RADEON && export DRV_RADEON=1
+	use video_cards_rockchip && append-cppflags -DDRV_ROCKCHIP && export DRV_ROCKCHIP=1
+	use video_cards_tegra && append-cppflags -DDRV_TEGRA && export DRV_TEGRA=1
+	use video_cards_vc4 && append-cppflags -DDRV_VC4 && export DRV_VC4=1
+	use video_cards_virgl && append-cppflags -DDRV_VIRGL && export DRV_VIRGL=1
 	# Turns out this is only really supported by Clang. See crosbug.com/615466
 	# Add "-faddrsig" flag required to efficiently support "--icf=all".
 	if use clang; then
@@ -898,7 +895,7 @@ src_configure() {
 		"ozone_platform=\"wayland\""
 		"ozone_platform_gbm=true"
 		"enable_mus=false"
-		"use_system_minigbm=$(usetf system-minigbm)"
+		#"use_system_minigbm=$(usetf system-minigbm)"
 		"use_system_libdrm=$(usetf system-libdrm)"
 		"enable_background_mode=true"
 		"use_wayland_gbm=true"
