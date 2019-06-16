@@ -293,6 +293,11 @@ src_configure() {
 		emesonargs+=( -Dasm=false )
 	fi
 
+	emesonargs+=(-Dgallium-nine=false)
+	emesonargs+=(-Dgallium-xa=false)
+	emesonargs+=(-Dgallium-xvmc=false)
+
+
 	LLVM_ENABLE=false
 	if use llvm && use !video_cards_softpipe; then
 		emesonargs+=( -Dshared-llvm=false )
@@ -326,7 +331,7 @@ src_configure() {
 		$(meson_use dri)
 		$(meson_use egl)
 		$(meson_use gbm)
-		$(meson_use X)
+		$(meson_use X gl)
 		$(meson_use gles1)
 		$(meson_use gles2)
 		$(meson_use libglvnd glvnd)
