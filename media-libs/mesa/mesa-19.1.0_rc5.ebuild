@@ -7,7 +7,7 @@ PYTHON_COMPAT=( python3_5 python3_6 python3_7 )
 
 MESON_AUTO_DEPEND=no
  
-inherit base llvm meson flag-o-matic multilib-minimal pax-utils python-any-r1 toolchain-funcs
+inherit llvm meson flag-o-matic multilib-minimal pax-utils python-any-r1 toolchain-funcs
 
 OPENGL_DIR="xorg-x11"
 
@@ -233,14 +233,6 @@ src_configure() {
 		fi
 		# Nouveau code
 		dri_driver_enable video_cards_nouveau nouveau
-
-		# ATI code
-		dri_driver_enable video_cards_r100 r100
-		dri_driver_enable video_cards_r200 r200
-		if ! use video_cards_r100 && \
-			! use video_cards_r200; then
-			dri_driver_enable video_cards_radeon r100 r200
-		fi
 	fi
 	if use gallium; then
 	# Configurable gallium drivers
