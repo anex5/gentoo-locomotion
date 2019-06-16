@@ -3,7 +3,7 @@
 
 EAPI=6
 
-PYTHON_COMPAT=( python3_5 python3_6 python3_7 )
+PYTHON_COMPAT=( python2_7 )
 
 MESON_AUTO_DEPEND=no
 
@@ -43,7 +43,7 @@ for card in ${VIDEO_CARDS}; do
 	IUSE_VIDEO_CARDS+=" video_cards_${card}"
 done
 IUSE="${IUSE_VIDEO_CARDS}
-	+classic debug dri drm egl +gallium -gbm gles1 gles2 llvm +nptl pic
+	+classic debug dri drm egl +gallium gbm gles1 gles2 llvm +nptl pic
 	selinux shared-glapi kernel_FreeBSD vulkan wayland xlib-glx X"
 LIBDRM_DEPSTRING=">=x11-libs/libdrm-2.4.60"
 REQUIRED_USE="video_cards_amdgpu? ( llvm )
