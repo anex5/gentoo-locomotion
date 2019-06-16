@@ -259,9 +259,7 @@ src_configure() {
 
 		gallium_enable video_cards_vmware svga
 
-
-		if use video_cards_r600 ||
-		   use video_cards_radeonsi ||
+		if use video_cards_radeonsi ||
 		   use video_cards_nouveau; then
 			emesonargs+=($(meson_use vaapi gallium-va))
 			use vaapi && emesonargs+=( -Dva-libs-path="${EPREFIX}"/usr/$(get_libdir)/va/drivers )
@@ -269,9 +267,7 @@ src_configure() {
 			emesonargs+=(-Dgallium-va=false)
 		fi
 
-		if use video_cards_r300 ||
-		   use video_cards_r600 ||
-		   use video_cards_radeonsi ||
+		if use video_cards_radeonsi ||
 		   use video_cards_nouveau; then
 			emesonargs+=($(meson_use vdpau gallium-vdpau))
 		else
