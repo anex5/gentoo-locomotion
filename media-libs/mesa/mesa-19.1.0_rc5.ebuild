@@ -172,7 +172,6 @@ x86? (
 		usr/lib*/libGLESv1_CM.so.1.0.0
 		usr/lib*/libGLESv2.so.2.0.0
 		usr/lib*/libGL.so.1.2.0
-		usr/lib*/libOSMesa.so.8.0.0
 	)
 )"
 
@@ -292,14 +291,6 @@ src_configure() {
 	# on abi_x86_32 hardened we need to have asm disable
 	if [[ ${ABI} == x86* ]] && use pic; then
 		emesonargs+=( -Dasm=false )
-	fi
-
-	if use gallium; then
-		gallium_enable -- swrast
-		emesonargs+=( -Dosmesa=$(usex osmesa gallium none) )
-	else
-		dri_driver_enable -- swrast
-		emesonargs+=( -Dosmesa=$(usex osmesa classic none) )
 	fi
 
 	LLVM_ENABLE=false
