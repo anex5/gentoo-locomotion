@@ -7,7 +7,7 @@ PYTHON_COMPAT=( python3_5 python3_6 python3_7 )
 
 MESON_AUTO_DEPEND=no
  
-inherit llvm meson multilib-minimal pax-utils python-any-r1 toolchain-funcs
+inherit base llvm meson flag-o-matic multilib-minimal pax-utils python-any-r1 toolchain-funcs
 
 OPENGL_DIR="xorg-x11"
 
