@@ -227,7 +227,7 @@ PATCHES=(
 	"${FILESDIR}/${PN}-fix-atomic-r0.patch"
 	"${FILESDIR}/chromium-test-r0.patch"
  	"${FILESDIR}/chromium-optional-atk-r0.patch"
-	"${FILESDIR}/chromium-optional-dbus-r6.patch"
+	"${FILESDIR}/chromium-optional-dbus-r7.patch"
 	
 	# Extra patches taken from openSUSE
 	"${FILESDIR}/${PN}-libusb-interrupt-event-handler-r0.patch"
