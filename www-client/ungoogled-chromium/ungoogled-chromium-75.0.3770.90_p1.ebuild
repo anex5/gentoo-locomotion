@@ -656,9 +656,9 @@ src_configure() {
 
 	tc-export CXX CC AR AS NM RANLIB STRIP
 	export CC_host=$(usex clang "${CBUILD}-clang" "$(tc-getBUILD_CC)")
-	export CXX_host=$(usex clang "{CBUILD}-clang++" "$(tc-getBUILD_CXX)")
+	export CXX_host=$(usex clang "${CBUILD}-clang++" "$(tc-getBUILD_CXX)")
 	export CC=$(usex clang "${CHOST}-clang" "$(tc-getBUILD_CC)")
-	export CXX=$(usex clang "{CHOST}-clang++" "$(tc-getBUILD_CXX)")
+	export CXX=$(usex clang "${CHOST}-clang++" "$(tc-getBUILD_CXX)")
 	export NM_host=$(tc-getBUILD_NM)
 	export READELF="${CHOST}-readelf"
 	export READELF_host="${CBUILD}-readelf"
@@ -806,9 +806,9 @@ src_configure() {
 		"symbol_level=$(usex debug 2 0)"
 		"strip_debug_info=$(usex debug false true)"
 		#"sanitizer_no_symbols=$(usex debug false true)"
-		"blink_symbol_level=$(usex debug 2 -1)"
+		"blink_symbol_level=$(usex debug 2 0)"
 		"enable_iterator_debugging=$(usetf debug)"
-		"remove_webcore_debug_symbols=$(usex debug false true)"
+		#"remove_webcore_debug_symbols=$(usex debug false true)"
 
 		# Codecs
 		"proprietary_codecs=$(usetf proprietary-codecs)"
