@@ -571,18 +571,6 @@ setup_compile_flags() {
 	# nothing to do with USE=clang.
 	use clang && filter-flags -clang-syntax 
 	
-	use video_cards_amdgpu && append-cppflags -DDRV_AMDGPU && export DRV_AMDGPU=1
-	use video_cards_exynos && append-cppflags -DDRV_EXYNOS && export DRV_EXYNOS=1
-	use video_cards_intel && append-cppflags -DDRV_I915 && export DRV_I915=1
-	use video_cards_marvell && append-cppflags -DDRV_MARVELL && export DRV_MARVELL=1
-	use video_cards_mediatek && append-cppflags -DDRV_MEDIATEK && export DRV_MEDIATEK=1
-	use video_cards_msm && append-cppflags -DDRV_MSM && export DRV_MSM=1
-	use video_cards_radeon && append-cppflags -DDRV_RADEON && export DRV_RADEON=1
-	use video_cards_radeonsi && append-cppflags -DDRV_RADEON && export DRV_RADEON=1
-	use video_cards_rockchip && append-cppflags -DDRV_ROCKCHIP && export DRV_ROCKCHIP=1
-	use video_cards_tegra && append-cppflags -DDRV_TEGRA && export DRV_TEGRA=1
-	use video_cards_vc4 && append-cppflags -DDRV_VC4 && export DRV_VC4=1
-	use video_cards_virgl && append-cppflags -DDRV_VIRGL && export DRV_VIRGL=1
 	# Turns out this is only really supported by Clang. See crosbug.com/615466
 	# Add "-faddrsig" flag required to efficiently support "--icf=all".
 	if use clang; then
@@ -900,16 +888,6 @@ src_configure() {
 		"use_system_libdrm=$(usetf system-libdrm)"
 		"enable_background_mode=true"
 		"use_wayland_gbm=true"
-		"use_intel_minigbm=$(usetf video_cards_intel)" 
-		"use_radeon_minigbm=$(usetf video_cards_radeon)"
-	   	"use_amdgpu_minigbm=$(usetf video_cards_amdgpu)"
-		"use_exynos_minigbm=$(usetf video_cards_exynos)"
-		"use_marvell_minigbm=$(usetf video_cards_marvell)"
-		"use_mediatek_minigbm=$(usetf video_cards_mediatek)"
-		"use_msm_minigbm=$(usetf video_cards_msm)"
-		"use_rockchip_minigbm=$(usetf video_cards_rockchip)"
-		"use_tegra_minigbm=$(usetf video_cards_tegra)"
-		"use_vc4_minigbm=$(usetf video_cards_vc4)"
 		)
 	fi
 
