@@ -36,7 +36,7 @@ IUSE="
 	lld new-tcmalloc optimize-thinlto optimize-webui +pdf +proprietary-codecs
 	pulseaudio selinux +suid system-ffmpeg system-harfbuzz +system-icu
 	+system-jsoncpp +system-libevent +system-libvpx system-openh264
-	+system-openjpeg +system-libdrm +system_minigbm system-wayland +tcmalloc +thinlto widevine
+	+system-openjpeg +system-libdrm +system-minigbm system-wayland +tcmalloc +thinlto widevine
 	wayland X libvpx gtk xkbcommon v4l2 v4lplugin +clang swiftshader udev debug
 "
 
@@ -446,7 +446,6 @@ src_prepare() {
 		third_party/markupsafe
 		third_party/mesa
 		third_party/metrics_proto
-		third_party/minigbm
 		third_party/modp_b64
 		third_party/nasm
 		third_party/openmax_dl
@@ -543,6 +542,7 @@ src_prepare() {
 		third_party/libvpx/source/libvpx/third_party/x86inc
 	)
 	use system-wayland || keeplibs+=( third_party/wayland third_party/wayland-protocols )
+	use system-minigbm || keeplibs+=( third_party/minigbm )
 	use system-openh264 || keeplibs+=( third_party/openh264 )
 	use tcmalloc && keeplibs+=( third_party/tcmalloc )
 
@@ -898,7 +898,7 @@ src_configure() {
 		"ozone_platform=\"wayland\""
 		"ozone_platform_gbm=true"
 		"enable_mus=false"
-		"use_system_minigbm=$(usetf system_minigbm)"
+		"use_system_minigbm=$(usetf system-minigbm)"
 		"use_system_libdrm=$(usetf system-libdrm)"
 		"enable_background_mode=true"
 		"use_wayland_gbm=true"
