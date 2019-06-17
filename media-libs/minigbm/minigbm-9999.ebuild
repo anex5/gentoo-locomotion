@@ -34,18 +34,24 @@ RDEPEND="
 DEPEND="${RDEPEND}
 	virtual/pkgconfig
 	video_cards_amdgpu? (
-		media-libs/mesa
+		media-libs/mesa:=[${MULTILIB_USEDEP}]
 		x11-drivers/opengles-headers
 	)"
 
 EGIT_CHECKOUT_DIR=${S}
 
+src_unpack() {
+	default
+	[[ $PV = 9999* ]] && git-r3_src_unpack
+}
+
 src_prepare() {
 	default
 }
 
-src_configure() {
+multilib_src_configure() {
 	export LIBDIR="/usr/$(get_libdir)"
+	export PKG_CONFIG="/usr/bin/pkg-config"
 	use video_cards_amdgpu && append-cppflags $(test-flags-CXX -DDRV_AMDGPU) && export DRV_AMDGPU=1
 	use video_cards_exynos && append-cppflags $(test-flags-CXX -DDRV_EXYNOS) && export DRV_EXYNOS=1
 	use video_cards_intel && append-cppflags $(test-flags-CXX -DDRV_I915) && export DRV_I915=1
@@ -64,9 +70,9 @@ src_configure() {
 	default
 }
 
-src_install() {
+multilib_src_install() {
 	insinto "${EPREFIX}/lib/udev/rules.d"
 	doins "${FILESDIR}/50-vgem.rules"
-	default
 	dosym libminigbm.so.1.0.0 "${LIBDIR}/libminigbm.so"
+	default
 }
