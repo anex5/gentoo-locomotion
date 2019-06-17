@@ -70,6 +70,10 @@ multilib_src_configure() {
 	default
 }
 
+src_prepare() {
+	default
+}
+
 multilib_src_install() {
 	insinto "${EPREFIX}/lib/udev/rules.d"
 	doins "${FILESDIR}/50-vgem.rules"
