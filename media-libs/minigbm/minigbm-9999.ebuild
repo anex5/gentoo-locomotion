@@ -8,7 +8,7 @@ if [[ ${PV} = 9999* ]]; then
 	GIT_ECLASS="git-r3"
 fi
 
-inherit flag-o-matic multilib-minimal toolchain-funcs ${GIT_ECLASS}
+inherit flag-o-matic multilib toolchain-funcs ${GIT_ECLASS}
 
 DESCRIPTION="Mini GBM implementation"
 HOMEPAGE="https://chromium.googlesource.com/chromiumos/platform/minigbm"
@@ -34,7 +34,7 @@ RDEPEND="
 DEPEND="${RDEPEND}
 	virtual/pkgconfig
 	video_cards_amdgpu? (
-		media-libs/mesa:=[${MULTILIB_USEDEP}]
+		media-libs/mesa
 		x11-drivers/opengles-headers
 	)"
 
@@ -49,7 +49,7 @@ src_prepare() {
 	default
 }
 
-multilib_src_configure() {
+src_configure() {
 	export LIBDIR="/usr/$(get_libdir)"
 	export PKG_CONFIG="/usr/bin/pkg-config"
 	use video_cards_amdgpu && append-cppflags $(test-flags-CXX -DDRV_AMDGPU) && export DRV_AMDGPU=1
@@ -74,9 +74,10 @@ src_prepare() {
 	default
 }
 
-multilib_src_install() {
+src_install() {
 	insinto "${EPREFIX}/lib/udev/rules.d"
 	doins "${FILESDIR}/50-vgem.rules"
 	dosym libminigbm.so.1.0.0 "${LIBDIR}/libminigbm.so"
+
 	default
 }
