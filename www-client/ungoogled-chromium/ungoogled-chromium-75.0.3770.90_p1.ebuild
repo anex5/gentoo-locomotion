@@ -534,7 +534,7 @@ src_prepare() {
 	)
 	use system-icu || keeplibs+=( third_party/icu )
 	use system-jsoncpp || keeplibs+=( third_party/jsoncpp )
-	use system-libdrm || keeplibs+=( third_party/libdrm )
+	use system-libdrm || keeplibs+=( third_party/libdrm third_party/libdrm/src/include/drm )
 	use system-libevent || keeplibs+=( base/third_party/libevent )
 	use system-libvpx || keeplibs+=(
 		third_party/libvpx
@@ -574,7 +574,7 @@ setup_compile_flags() {
 	# Turns out this is only really supported by Clang. See crosbug.com/615466
 	# Add "-faddrsig" flag required to efficiently support "--icf=all".
 	if use clang; then
-		append-flags -faddrsig
+		#append-flags -faddrsig
 		append-flags -Wno-unknown-warning-option
 		export CXXFLAGS_host+=" -Wno-unknown-warning-option"
 		export CFLAGS_host+=" -Wno-unknown-warning-option"
@@ -645,10 +645,10 @@ src_configure() {
 	tc-export CXX CC AR AS NM RANLIB STRIP
 	export CC_host=$(usex clang "${CBUILD}-clang" "$(tc-getBUILD_CC)")
 	export CXX_host=$(usex clang "${CBUILD}-clang++" "$(tc-getBUILD_CXX)")
-	export CC=$(usex clang "${CHOST}-clang" "$(tc-getBUILD_CC)")
-	export CXX=$(usex clang "${CHOST}-clang++" "$(tc-getBUILD_CXX)")
+	export CC=$(usex clang "${CBUILD}-clang" "$(tc-getBUILD_CC)")
+	export CXX=$(usex clang "${CBUILD}-clang++" "$(tc-getBUILD_CXX)")
 	export NM_host=$(tc-getBUILD_NM)
-	export READELF="${CHOST}-readelf"
+	export READELF="${CBUILD}-readelf"
 	export READELF_host="${CBUILD}-readelf"
 	# Temporarily use llvm-objcopy to generate split-debug file with non-debug
 	# sections preserved, b/127337806. This workaround only works because
@@ -659,7 +659,7 @@ src_configure() {
 	export LD_host=${CXX_host}
 	# We need below change when USE="thinlto" is set. We set this globally
 	# so that users can turn on the "use_thin_lto" in the simplechrome
-	# flow more easily. We might be able to remve the dependency on use
+	# flow more easily. We might be able to remove the dependency on use
 	# clang because clang is the default compiler now.
 	if use clang ; then
 		# use nm from llvm, https://crbug.com/917193
@@ -726,7 +726,6 @@ src_configure() {
 		# UGC's "common" GN flags (config_bundles/common/gn_flags.map
 		"enable_hangout_services_extension=false"
 
-
 		"enable_mdns=false"
 
 		# Disable nacl, we can't build without pnacl (http://crbug.com/269560).
@@ -739,7 +738,6 @@ src_configure() {
 		"enable_remoting=false"
 		"enable_reporting=false"
 		"enable_service_discovery=false"
-
 
 		"exclude_unwind_tables=true"
 		"fatal_linker_warnings=false"
@@ -885,6 +883,7 @@ src_configure() {
 		"ozone_platform_gbm=true"
 		"enable_mus=false"
 		#"use_system_minigbm=$(usetf system-minigbm)"
+		"use_system_minigbm=false"
 		"use_system_libdrm=$(usetf system-libdrm)"
 		"enable_background_mode=true"
 		"use_wayland_gbm=true"

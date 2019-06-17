@@ -8,7 +8,7 @@ if [[ ${PV} = 9999* ]]; then
 	GIT_ECLASS="git-r3"
 fi
 
-inherit multilib toolchain-funcs ${GIT_ECLASS}
+inherit multilib flag-o-matic toolchain-funcs ${GIT_ECLASS}
 
 DESCRIPTION="Mini GBM implementation"
 HOMEPAGE="https://chromium.googlesource.com/chromiumos/platform/minigbm"
@@ -66,8 +66,8 @@ src_configure() {
 
 src_install() {
 	
-	insinto "${EPREFIX}/etc/udev/rules.d"
+	insinto "${EPREFIX}/lib/udev/rules.d"
 	doins "${FILESDIR}/50-vgem.rules"
 	default
-	dosym $(get_libdir)/libminigbm.so.1.0.0 $(get_libdir)/libminigbm.so
+	dosym $(get_libdir)/libminigbm.so.1.0.0 libminigbm.so
 }
