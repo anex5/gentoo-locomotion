@@ -8,7 +8,7 @@ if [[ ${PV} = 9999* ]]; then
 	GIT_ECLASS="git-r3"
 fi
 
-inherit flag-o-matic toolchain-funcs ${GIT_ECLASS}
+inherit flag-o-matic multilib-minimal toolchain-funcs ${GIT_ECLASS}
 
 DESCRIPTION="Mini GBM implementation"
 HOMEPAGE="https://chromium.googlesource.com/chromiumos/platform/minigbm"
@@ -39,6 +39,11 @@ DEPEND="${RDEPEND}
 	)"
 
 EGIT_CHECKOUT_DIR=${S}
+
+src_unpack() {
+	default
+	[[ $PV = 9999* ]] && git-r3_src_unpack
+}
 
 src_prepare() {
 	default
