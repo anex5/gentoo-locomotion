@@ -44,29 +44,35 @@ src_prepare() {
 	default
 }
 
-src_configure() {
-	export LIBDIR="/usr/$(get_libdir)"
-	use video_cards_amdgpu && append-cppflags $(test-flags-CXX -DDRV_AMDGPU) && export DRV_AMDGPU=1
-	use video_cards_exynos && append-cppflags $(test-flags-CXX -DDRV_EXYNOS) && export DRV_EXYNOS=1
-	use video_cards_intel && append-cppflags $(test-flags-CXX -DDRV_I915) && export DRV_I915=1
-	use video_cards_marvell && append-cppflags $(test-flags-CXX -DDRV_MARVELL) && export DRV_MARVELL=1
-	if [[ ${MTK_MINIGBM_PLATFORM} == "MT8183" ]] ; then
-		append-cppflags $(test-flags-CXX -DMTK_MT8183) && export MTK_MT8183=1
-	fi
-	use video_cards_mediatek && append-cppflags $(test-flags-CXX -DDRV_MEDIATEK) && export DRV_MEDIATEK=1
-	use video_cards_msm && append-cppflags $(test-flags-CXX -DDRV_MSM) && export DRV_MSM=1
-	use video_cards_radeon && append-cppflags $(test-flags-CXX -DDRV_RADEON) && export DRV_RADEON=1
-	use video_cards_radeonsi && append-cppflags $(test-flags-CXX -DDRV_RADEON) && export DRV_RADEON=1
-	use video_cards_rockchip && append-cppflags $(test-flags-CXX -DDRV_ROCKCHIP) && export DRV_ROCKCHIP=1
-	use video_cards_tegra && append-cppflags $(test-flags-CXX -DDRV_TEGRA) && export DRV_TEGRA=1
-	use video_cards_vc4 && append-cppflags $(test-flags-CXX -DDRV_VC4) && export DRV_VC4=1
-	use video_cards_virgl && append-cppflags $(test-flags-CXX -DDRV_VIRGL) && export DRV_VIRGL=1
-	default
+multilib_src_configure() {
+	local emesonargs=(
+		-DDRV_AMDGPU=$(usex video_cards_amdgpu true false)
+		-DDRV_EXYNOS=$(usex video_cards_exynos true false)
+		-DDRV_I915=$(usex video_cards_intel true false)
+		-DDRV_MARVELL=$(usex video_cards_marvell true false)
+		-DDRV_MEDIATEK=$(usex video_cards_mediatek auto false)
+		-DDRV_MSM=$(usex video_cards_msm auto false)
+		-DDRV_RADEON=$(usex video_cards_radeon true false)
+		-DDRV_RADEON=$(usex video_cards_radeonsi true false)
+		-DDRV_ROCKCHIP=$(usex video_cards_rockchip true false)
+		-DDRV_TEGRA=$(usex video_cards_tegra true false)
+		-DDRV_VC4=$(usex video_cards_vc4 true false)
+		-DDRV_VIRGL=$(usex video_cards_virgl auto false)
+	)
+	meson_src_configure
 }
 
-src_install() {
+multilib_src_compile() {
+	meson_src_compile
+}
+
+multilib_src_test() {
+	meson_src_test
+}
+
+multilib_src_install() {
 	insinto "${EPREFIX}/lib/udev/rules.d"
 	doins "${FILESDIR}/50-vgem.rules"
-	default
 	dosym libminigbm.so.1.0.0 "${LIBDIR}/libminigbm.so"
+	meson_src_install
 }
