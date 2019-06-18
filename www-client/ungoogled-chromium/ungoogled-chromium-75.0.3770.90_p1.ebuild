@@ -35,8 +35,8 @@ IUSE="
 	atk cfi component-build closure-compile cups custom-cflags +dbus gnome gold jumbo-build kerberos libcxx
 	lld new-tcmalloc optimize-thinlto optimize-webui +pdf +proprietary-codecs
 	pulseaudio selinux +suid system-ffmpeg system-harfbuzz +system-icu
-	+system-jsoncpp +system-libevent +system-libvpx system-openh264
-	+system-openjpeg +system-libdrm system-wayland +tcmalloc +thinlto widevine
+	-system-jsoncpp +system-libevent +system-libvpx system-openh264
+	+system-openjpeg +system-libdrm -system-wayland +tcmalloc +thinlto widevine
 	wayland X libvpx gtk xkbcommon v4l2 v4lplugin +clang swiftshader udev debug
 "
 
@@ -537,6 +537,7 @@ src_prepare() {
 	)
 	use system-icu || keeplibs+=( third_party/icu )
 	use system-jsoncpp || keeplibs+=( third_party/jsoncpp )
+	use libcxx || keeplibs+=( buildtools/third_party/libc++ buildtools/third_party/libc++abi )
 	use system-libdrm || keeplibs+=( third_party/libdrm third_party/libdrm/src/include/drm )
 	use system-libevent || keeplibs+=( base/third_party/libevent )
 	use system-libvpx || keeplibs+=(
@@ -573,18 +574,17 @@ setup_compile_flags() {
 	# there is no need to check it again. And this flag has
 	# nothing to do with USE=clang.
 	use clang && filter-flags -clang-syntax 
-	
+
 	# Turns out this is only really supported by Clang. See crosbug.com/615466
 	# Add "-faddrsig" flag required to efficiently support "--icf=all".
 	if use clang; then
 		append-flags -faddrsig
-		append-flags -ffunction-sections
 		append-flags -Wno-unknown-warning-option
 		export CXXFLAGS_host+=" -Wno-unknown-warning-option"
 		export CFLAGS_host+=" -Wno-unknown-warning-option"
 		if use libcxx; then
 			append-cxxflags "-stdlib=libc++"
-			append-ldflags "-stdlib=libc++"
+			append-ldflags "-stdlib=libc++ -Wl,-lc++abi"
 		else
 			if has_version 'sys-devel/clang[default-libcxx]'; then
 				append-cxxflags "-stdlib=libstdc++"
@@ -592,6 +592,7 @@ setup_compile_flags() {
 			fi
 		fi
 	fi
+	append-flags -ffunction-sections
 
 	# 'gcc_s' is still required if 'compiler-rt' is Clang's default rtlib
 	has_version 'sys-devel/clang[default-compiler-rt]' && \
