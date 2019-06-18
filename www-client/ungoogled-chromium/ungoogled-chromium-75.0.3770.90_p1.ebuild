@@ -469,6 +469,7 @@ src_prepare() {
 		third_party/skia/third_party/skcms
 		third_party/skia/third_party/vulkan
 		third_party/smhasher
+		third_party/speech-dispatcher
 		third_party/spirv-headers
 		third_party/SPIRV-Tools
 		third_party/sqlite
