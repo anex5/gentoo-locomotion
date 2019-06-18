@@ -232,7 +232,7 @@ PATCHES=(
 	# Extra patches taken from openSUSE
 	"${FILESDIR}/${PN}-libusb-interrupt-event-handler-r0.patch"
 	"${FILESDIR}/${PN}-system-libusb-r0.patch"
-	"${FILESDIR}/${PN}-system-nspr-r0.patch"
+	#"${FILESDIR}/${PN}-system-nspr-r0.patch"
 	"${FILESDIR}/${PN}-system-fix-shim-headers-r0.patch"
 )
 
@@ -332,6 +332,8 @@ src_prepare() {
 	use gold && eapply "${FILESDIR}/${PN}-gold-r3.patch"
 
 	use widevine && eapply "${FILESDIR}/chromium-widevine-r4.patch"
+
+	use system-libdrm && eapply "${FILESDIR}/chromium-system-libdrm.patch"
 
 	ebegin "Pruning binaries"
 	"${UGC_WD}/utils/prune_binaries.py" . "${UGC_WD}/pruning.list"
@@ -574,7 +576,8 @@ setup_compile_flags() {
 	# Turns out this is only really supported by Clang. See crosbug.com/615466
 	# Add "-faddrsig" flag required to efficiently support "--icf=all".
 	if use clang; then
-		#append-flags -faddrsig
+		append-flags -faddrsig
+		append-flags -ffunction-sections
 		append-flags -Wno-unknown-warning-option
 		export CXXFLAGS_host+=" -Wno-unknown-warning-option"
 		export CFLAGS_host+=" -Wno-unknown-warning-option"
@@ -891,6 +894,28 @@ src_configure() {
 	fi
 
 	setup_compile_flags
+
+	local myarch="$(tc-arch)"
+
+	if [[ $myarch = amd64 ]] ; then
+		myconf_gn+=" target_cpu=\"x64\""
+		ffmpeg_target_arch=x64
+	elif [[ $myarch = x86 ]] ; then
+		myconf_gn+=" target_cpu=\"x86\""
+		ffmpeg_target_arch=ia32
+
+		# This is normally defined by compiler_cpu_abi in
+		# build/config/compiler/BUILD.gn, but we patch that part out.
+		append-flags -msse2 -mfpmath=sse -mmmx
+	elif [[ $myarch = arm64 ]] ; then
+		myconf_gn+=" target_cpu=\"arm64\""
+		ffmpeg_target_arch=arm64
+	elif [[ $myarch = arm ]] ; then
+		myconf_gn+=" target_cpu=\"arm\""
+		ffmpeg_target_arch=$(usex neon arm-neon arm)
+	else
+		die "Failed to determine target arch, got '$myarch'."
+	fi
 
 	if false; then
 	#if ! use system-ffmpeg; then
