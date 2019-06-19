@@ -165,3 +165,14 @@ index 0324e35..efcd817 100644
  #endif
  
    // Record whether Chrome is the default browser or not.
+--- a/chrome/browser/metrics/bluetooth_available_utility.cc
++++ b/chrome/browser/metrics/bluetooth_available_utility.cc
+@@ -64,7 +64,7 @@ void ReportBluetoothAvailability() {
+     return;
+   }
+
+-#if defined(OS_LINUX)
++#if defined(OS_LINUX) && defined(USE_DBUS)
+   // This is for tests that have not initialized bluez or dbus thread manager.
+   // Outside of tests these are initialized earlier during browser startup.
+   if (!bluez::BluezDBusManager::IsInitialized())
