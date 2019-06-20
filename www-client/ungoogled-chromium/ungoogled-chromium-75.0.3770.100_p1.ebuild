@@ -234,7 +234,7 @@ PATCHES=(
 	"${FILESDIR}/${PN}-system-libusb-r0.patch"
 	#"${FILESDIR}/${PN}-system-nspr-r0.patch"
 	"${FILESDIR}/${PN}-system-fix-shim-headers-r0.patch"
-	"${FILESDIR}/${PN}-ungoogled-chromium-fix-nosafebrowsing-build-r0.patch"
+	"${FILESDIR}/${PN}-fix-nosafebrowsing-build-r0.patch"
 )
 
 S="${WORKDIR}/chromium-${PV/_*}"
