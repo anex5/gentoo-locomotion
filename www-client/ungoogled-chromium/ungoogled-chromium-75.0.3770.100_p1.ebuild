@@ -142,6 +142,10 @@ CDEPEND="
 	)
 	v4lplugin? ( media-tv/v4l-utils )
 	gtk? ( x11-libs/gtk+:3[X] )
+	wayland? (
+		virtual/egl
+		virtual/libgles2
+	)
 "
 RDEPEND="${CDEPEND}
 	virtual/opengl
@@ -324,6 +328,7 @@ src_prepare() {
 	eapply "${p}/0001-Add-support-for-V4L2VDA-on-Linux.patch" || die
 	eapply "${p}/0002-Add-mmap-via-libv4l-to-generic_v4l2_device.patch" || die
 	eapply "${p}/0001-ozone-wayland-Fix-method-prototype-match.patch" || die
+	eapply "${p}/0001-Avoid-pure-virtual-crash-destroying-RenderProcessUse.patch" || die
 
 	# Hack for libusb stuff (taken from openSUSE)
 	rm third_party/libusb/src/libusb/libusb.h || die
@@ -877,22 +882,36 @@ src_configure() {
 	# wayland
 	if use wayland; then
 		myconf_gn+=(
-		"use_egl=true"
-		"toolkit_views=true" 
-		"use_system_libwayland=$(usetf system-wayland)"
-		"use_ozone=true"
-		"use_aura=true"
-		"ozone_auto_platforms=false"
-		"ozone_platform_x11=$(usetf X)"
-		"ozone_platform_wayland=true"
-		"ozone_platform=\"wayland\""
-		"ozone_platform_gbm=true"
-		"enable_mus=false"
-		#"use_system_minigbm=$(usetf system-minigbm)"
-		"use_system_minigbm=false"
-		"use_system_libdrm=$(usetf system-libdrm)"
-		"enable_background_mode=true"
-		"use_wayland_gbm=true"
+			"use_egl=true"
+			#"toolkit_views=true" 
+			"use_system_libwayland=$(usetf system-wayland)"
+			"use_ozone=true"
+			"use_aura=true"
+			"ozone_auto_platforms=false"
+			"ozone_platform_x11=$(usetf X)"
+			"ozone_platform_wayland=true"
+			"ozone_platform_headless=true"
+			"ozone_platform_gbm=true"
+			"ozone_platform=\"wayland\""
+			"enable_mus=false"
+			"enable_wayland_server=true"
+
+			#"use_system_minigbm=$(usetf system-minigbm)"
+			"use_system_minigbm=false"
+			"use_system_libdrm=$(usetf system-libdrm)"
+			"enable_background_mode=true"
+			"use_wayland_gbm=true"
+	
+			"use_intel_minigbm=$(usetf video_cards_intel)" 
+			"use_radeon_minigbm=$(usetf video_cards_radeon)"
+		   	"use_amdgpu_minigbm=$(usetf video_cards_amdgpu)"
+			"use_exynos_minigbm=$(usetf video_cards_exynos)"
+			"use_marvell_minigbm=$(usetf video_cards_marvell)"
+			"use_mediatek_minigbm=$(usetf video_cards_mediatek)"
+			"use_msm_minigbm=$(usetf video_cards_msm)"
+			"use_rockchip_minigbm=$(usetf video_cards_rockchip)"
+			"use_tegra_minigbm=$(usetf video_cards_tegra)"
+			"use_vc4_minigbm=$(usetf video_cards_vc4)"
 		)
 	fi
 
