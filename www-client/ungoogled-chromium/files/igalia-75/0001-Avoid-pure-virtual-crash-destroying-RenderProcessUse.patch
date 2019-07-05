@@ -48,18 +48,6 @@ index 2e2c199d4fff..ef6e1fbfb986 100644
 +}
 +
  }  // namespace performance_manager
-diff --git a/chrome/browser/performance_manager/render_process_user_data.h b/chrome/browser/performance_manager/render_process_user_data.h
-index ac74b1df2040..f3b4d162e6d3 100644
---- a/chrome/browser/performance_manager/render_process_user_data.h
-+++ b/chrome/browser/performance_manager/render_process_user_data.h
-@@ -47,6 +47,7 @@ class RenderProcessUserData : public base::SupportsUserData::Data,
-   void RenderProcessExited(
-       content::RenderProcessHost* host,
-       const content::ChildProcessTerminationInfo& info) override;
-+  void RenderProcessHostDestroyed(content::RenderProcessHost* host) override;
- 
-   // All instances are linked together in a doubly linked list to allow orderly
-   // destruction at browser shutdown time.
 -- 
 2.20.1
 
