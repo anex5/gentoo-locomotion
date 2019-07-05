@@ -142,10 +142,6 @@ CDEPEND="
 	)
 	v4lplugin? ( media-tv/v4l-utils )
 	gtk? ( x11-libs/gtk+:3[X] )
-	wayland? (
-		virtual/egl
-		virtual/libgles2
-	)
 "
 RDEPEND="${CDEPEND}
 	virtual/opengl
