@@ -324,7 +324,6 @@ src_prepare() {
 	eapply "${p}/0001-Add-support-for-V4L2VDA-on-Linux.patch" || die
 	eapply "${p}/0002-Add-mmap-via-libv4l-to-generic_v4l2_device.patch" || die
 	eapply "${p}/0001-ozone-wayland-Fix-method-prototype-match.patch" || die
-	eapply "${p}/0001-Avoid-pure-virtual-crash-destroying-RenderProcessUse.patch" || die
 
 	# Hack for libusb stuff (taken from openSUSE)
 	rm third_party/libusb/src/libusb/libusb.h || die
