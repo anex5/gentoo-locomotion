@@ -794,7 +794,6 @@ src_configure() {
 
 		# Debug flags
 		"is_debug=$(usetf debug)"
-		"use_debug_fission=false"
 		"symbol_level=$(usex debug 2 0)"
 		"strip_debug_info=$(usex debug false true)"
 		#"sanitizer_no_symbols=$(usex debug false true)"
@@ -815,6 +814,7 @@ src_configure() {
 		"enable_mse_mpeg2ts_stream_parser=true"
 		"media_use_ffmpeg=true"
 		"enable_ffmpeg_video_decoders=true"
+		"rtc_initialize_ffmpeg=true"
 		"use_v4l2_codec=$(usetf v4l2)"
 		"use_linux_v4l2_only=$(usetf v4l2)"
 		"use_v4lplugin=$(usetf v4lplugin)"
@@ -827,6 +827,7 @@ src_configure() {
 		"use_vaapi=false"
 		"enable_plugins=true"
 		"use_cras=false"
+		"use_low_quality_image_interpolation=false"
 
 		# Additional flags
 		"is_component_build=$(usetf component-build)"
@@ -861,6 +862,8 @@ src_configure() {
 		"use_xkbcommon=$(usetf xkbcommon)"
 	)
 	
+	use gold || myconf_gn+=( "use_lld=true" )
+
 	use cfi	&& myconf_gn+=( "use_cfi_cast=$(usetf cfi)" )
 	# use_cfi_icall only works with LLD
 	use cfi && myconf_gn+=( "use_cfi_icall=$(usetf lld)" )
@@ -872,8 +875,12 @@ src_configure() {
 	else
 		myconf_gn+=(" host_toolchain=\"//build/toolchain/linux/unbundle:default\"")
 	fi
-	#use system-jsoncpp && "rtc_jsoncpp_root=/usr/include/jsoncpp/json"
 
+	use system-jsoncpp && myconf_gn+=(
+		"rtc_jsoncpp_root=\"\""
+		"rtc_build_json=false"
+	)
+	
 	# wayland
 	if use wayland; then
 		myconf_gn+=(
@@ -882,6 +889,7 @@ src_configure() {
 			"use_system_libwayland=$(usetf system-wayland)"
 			"use_ozone=true"
 			"use_aura=true"
+			"use_wayland_gbm=true"
 			"ozone_auto_platforms=false"
 			"ozone_platform_x11=$(usetf X)"
 			"ozone_platform_wayland=true"
@@ -889,14 +897,13 @@ src_configure() {
 			"ozone_platform_gbm=true"
 			"ozone_platform=\"wayland\""
 			"enable_mus=false"
-			"enable_wayland_server=true"
-			"use_ash=true"
+			#"enable_wayland_server=true" #Exo parts (aura shell)
+			#"enable_package_mash_services = true" #ChromeOS
+			"enable_background_mode=true"
 			#"use_system_minigbm=$(usetf system-minigbm)"
 			"use_system_minigbm=false"
 			"use_system_libdrm=$(usetf system-libdrm)"
-			"enable_background_mode=true"
-			"use_wayland_gbm=true"
-	
+
 			"use_intel_minigbm=$(usetf video_cards_intel)" 
 			"use_radeon_minigbm=$(usetf video_cards_radeon)"
 		   	"use_amdgpu_minigbm=$(usetf video_cards_amdgpu)"
