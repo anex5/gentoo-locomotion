@@ -877,7 +877,7 @@ src_configure() {
 	fi
 
 	use system-jsoncpp && myconf_gn+=(
-		"rtc_jsoncpp_root=\"\""
+		"rtc_jsoncpp_root=\"/include/jsoncpp/json\""
 		"rtc_build_json=false"
 	)
 	
