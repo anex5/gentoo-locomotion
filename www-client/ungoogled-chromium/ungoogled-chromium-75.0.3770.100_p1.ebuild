@@ -807,7 +807,7 @@ src_configure() {
 		"enable_hls_sample_aes=true"
 		"use_openh264=true" #Encoding
 		"rtc_use_h264=true" #Decoding
-		"enable_ac3_eac3_audio_demuxing=true"
+		"enable_ac3_eac3_audio_demuxing=false"
 		"enable_hevc_demuxing=true"
 		"enable_dolby_vision_demuxing=true"
 		"enable_av1_decoder=true"
