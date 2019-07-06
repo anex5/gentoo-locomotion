@@ -890,7 +890,7 @@ src_configure() {
 			"ozone_platform=\"wayland\""
 			"enable_mus=false"
 			"enable_wayland_server=true"
-
+			"use_ash=true"
 			#"use_system_minigbm=$(usetf system-minigbm)"
 			"use_system_minigbm=false"
 			"use_system_libdrm=$(usetf system-libdrm)"
