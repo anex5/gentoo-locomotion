@@ -814,7 +814,7 @@ src_configure() {
 		"enable_mse_mpeg2ts_stream_parser=true"
 		"media_use_ffmpeg=true"
 		"enable_ffmpeg_video_decoders=true"
-		"rtc_initialize_ffmpeg=true"
+		#"rtc_initialize_ffmpeg=true"
 		"use_v4l2_codec=$(usetf v4l2)"
 		"use_linux_v4l2_only=$(usetf v4l2)"
 		"use_v4lplugin=$(usetf v4lplugin)"
@@ -877,8 +877,8 @@ src_configure() {
 	fi
 
 	use system-jsoncpp && myconf_gn+=(
-		"rtc_jsoncpp_root=\"/include/jsoncpp/json\""
 		"rtc_build_json=false"
+		#"rtc_jsoncpp_root=\"/usr/include/json\""
 	)
 	
 	# wayland
