@@ -1,0 +1,59 @@
+--- a/build/config/compiler/BUILD.gn
++++ b/build/config/compiler/BUILD.gn
+@@ -432,7 +432,7 @@ config("compiler") {
+       # On Android, this isn't needed.  gcc in the NDK knows to look next to
+       # it with -fuse-ld=gold, and clang gets a --gcc-toolchain flag passed
+       # above.
+-      ldflags += [ "-B$gold_path" ]
++      #ldflags += [ "-B$gold_path" ]
+ 
+       if (linux_use_bundled_binutils) {
+         ldflags += [
+@@ -635,8 +635,8 @@ config("compiler") {
+   # TODO(pcc): Make this conditional on is_official_build rather than on gn
+   # flags for specific features.
+   if (!is_debug && use_thin_lto && is_a_target_toolchain) {
+-    assert(use_lld || target_os == "chromeos",
+-           "gold plugin only supported with ChromeOS")
++    #assert(use_lld || target_os == "chromeos",
++           #"gold plugin only supported with ChromeOS")
+ 
+     cflags += [ "-flto=thin" ]
+ 
+@@ -660,24 +660,24 @@ config("compiler") {
+       # Limit the parallelism to avoid too aggressive competition between
+       # linker jobs. This is still suboptimal to a potential dynamic
+       # resource allocation scheme, but should be good enough.
+-      if (use_lld) {
+-        ldflags += [ "-Wl,--thinlto-jobs=8" ]
+-
+-        # Caching on Chrome OS materially slows the PFQ down; disable it until
+-        # we can figure out why. (crbug.com/964328)
+-        if (!is_chromeos) {
+-          # Limit the size of the ThinLTO cache to the lesser of 10% of
+-          # available disk space, 10GB and 100000 files.
+-          cache_policy =
+-              "cache_size=10%:cache_size_bytes=10g:cache_size_files=100000"
++      if (use_lld || use_gold) {
++        # Limit the size of the ThinLTO cache to the lesser of 10% of
++        # available disk space, 10GB and 100000 files.
++        cache_policy =
++            "cache_size=10%:cache_size_bytes=10g:cache_size_files=100000"
++        if (use_lld) {
+           ldflags += [
+             "-Wl,--thinlto-cache-dir=" +
+                 rebase_path("$root_out_dir/thinlto-cache", root_build_dir),
+             "-Wl,--thinlto-cache-policy,$cache_policy",
+           ]
++        } else {
++          ldflags += [
++            "-Wl,-plugin-opt,cache-dir=" +
++                rebase_path("$root_out_dir/thinlto-cache", root_build_dir),
++            "-Wl,-plugin-opt,cache-policy=$cache_policy",
++          ]
+         }
+-      } else {
+-        ldflags += [ "-Wl,-plugin-opt,jobs=8" ]
+       }
+ 
+       if (use_lld) {
