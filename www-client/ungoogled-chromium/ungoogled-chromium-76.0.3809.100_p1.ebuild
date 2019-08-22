@@ -212,29 +212,38 @@ GTK+ icon theme.
 "
 
 PATCHES=(
-	"${FILESDIR}/chromium-compiler-r9.patch"
+	# Gentoo patches
+	"${FILESDIR}/chromium-compiler-r10.patch"
 	"${FILESDIR}/chromium-fix-char_traits.patch"
-	"${FILESDIR}/chromium-75-fix-gn-gen.patch"
-	"${FILESDIR}/chromium-75-gcc-angle-fix.patch"
-	"${FILESDIR}/chromium-75-unique_ptr.patch"
-	"${FILESDIR}/chromium-75-lss.patch"
-	"${FILESDIR}/chromium-75-noexcept.patch"
-	"${FILESDIR}/chromium-75-llvm8.patch"
-	"${FILESDIR}/chromium-75-pure-virtual.patch"
+	"${FILESDIR}/chromium-angle-inline.patch"
+	"${FILESDIR}/chromium-76-arm64-skia.patch"
+	"${FILESDIR}/chromium-76-quiche.patch"
+	"${FILESDIR}/chromium-76-gcc-vulkan.patch"
+	"${FILESDIR}/chromium-76-gcc-private.patch"
+	"${FILESDIR}/chromium-76-gcc-noexcept.patch"
+	"${FILESDIR}/chromium-76-gcc-gl-init.patch"
+	"${FILESDIR}/chromium-76-gcc-blink-namespace1.patch"
+	"${FILESDIR}/chromium-76-gcc-blink-namespace2.patch"
+	"${FILESDIR}/chromium-76-gcc-blink-constexpr.patch"
+	"${FILESDIR}/chromium-76-gcc-uint32.patch"
+	"${FILESDIR}/chromium-76-gcc-ambiguous-nodestructor.patch"
+	"${FILESDIR}/chromium-76-gcc-include.patch"
+	"${FILESDIR}/chromium-76-gcc-pure-virtual.patch"
 
+	# Ungoogled patches
 	"${FILESDIR}/${PN}-disable-third-party-lzma-sdk-r0.patch"
 	"${FILESDIR}/${PN}-empty-array-r0.patch"
 	"${FILESDIR}/${PN}-fix-atomic-r0.patch"
-	"${FILESDIR}/chromium-test-r0.patch"
- 	"${FILESDIR}/chromium-optional-atk-r0.patch"
-	"${FILESDIR}/chromium-optional-dbus-r7.patch"
-	
-	# Extra patches taken from openSUSE
 	"${FILESDIR}/${PN}-libusb-interrupt-event-handler-r1.patch"
 	"${FILESDIR}/${PN}-system-libusb-r0.patch"
 	#"${FILESDIR}/${PN}-system-nspr-r0.patch"
 	"${FILESDIR}/${PN}-system-fix-shim-headers-r0.patch"
 	"${FILESDIR}/${PN}-fix-nosafebrowsing-build-r0.patch"
+
+	# Personal patches
+	"${FILESDIR}/chromium-test-r0.patch"
+ 	"${FILESDIR}/chromium-optional-atk-r0.patch"
+	"${FILESDIR}/chromium-optional-dbus-r7.patch"	
 )
 
 S="${WORKDIR}/chromium-${PV/_*}"
