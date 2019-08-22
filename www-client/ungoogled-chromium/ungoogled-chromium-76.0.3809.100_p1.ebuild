@@ -215,7 +215,6 @@ PATCHES=(
 	# Gentoo patches
 	"${FILESDIR}/chromium-compiler-r10.patch"
 	"${FILESDIR}/chromium-fix-char_traits.patch"
-	"${FILESDIR}/chromium-unbundle-zlib.patch"
 	"${FILESDIR}/chromium-angle-inline.patch"
 	"${FILESDIR}/chromium-76-arm64-skia.patch"
 	"${FILESDIR}/chromium-76-quiche.patch"
