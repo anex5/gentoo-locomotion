@@ -215,6 +215,7 @@ PATCHES=(
 	# Gentoo patches
 	"${FILESDIR}/chromium-compiler-r10.patch"
 	"${FILESDIR}/chromium-fix-char_traits.patch"
+	"${FILESDIR}/chromium-unbundle-zlib.patch"
 	"${FILESDIR}/chromium-angle-inline.patch"
 	"${FILESDIR}/chromium-76-arm64-skia.patch"
 	"${FILESDIR}/chromium-76-quiche.patch"
@@ -233,7 +234,6 @@ PATCHES=(
 	# Ungoogled patches
 	"${FILESDIR}/${PN}-disable-third-party-lzma-sdk-r0.patch"
 	"${FILESDIR}/${PN}-empty-array-r0.patch"
-	"${FILESDIR}/${PN}-fix-atomic-r0.patch"
 	"${FILESDIR}/${PN}-libusb-interrupt-event-handler-r1.patch"
 	"${FILESDIR}/${PN}-system-libusb-r0.patch"
 	#"${FILESDIR}/${PN}-system-nspr-r0.patch"
@@ -373,7 +373,6 @@ src_prepare() {
 		third_party/boringssl/src/third_party/fiat
 		third_party/boringssl/src/third_party/sike
 		third_party/boringssl/linux-x86_64/crypto/third_party/sike
-
 		third_party/breakpad
 		third_party/breakpad/breakpad/src/third_party/curl
 		third_party/brotli
@@ -394,6 +393,7 @@ src_prepare() {
 		third_party/ced
 		third_party/cld_3
 		third_party/crashpad
+		third_party/crashpad/crashpad/third_party/lss
 		third_party/crashpad/crashpad/third_party/zlib
 		third_party/crc32c
 		third_party/cros_system_api
