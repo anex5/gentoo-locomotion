@@ -371,6 +371,7 @@ src_prepare() {
 		third_party/boringssl/src/third_party/fiat
 		third_party/boringssl/src/third_party/sike
 		third_party/boringssl/linux-x86_64/crypto/third_party/sike
+		third_party/boringssl/linux-aarch64/crypto/third_party/sike
 		third_party/breakpad
 		third_party/breakpad/breakpad/src/third_party/curl
 		third_party/brotli
@@ -430,6 +431,7 @@ src_prepare() {
 		third_party/libxml/chromium
 		third_party/libyuv
 		third_party/lss
+		third_party/lzma_sdk
 		third_party/markupsafe
 		third_party/mesa
 		third_party/metrics_proto
