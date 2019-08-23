@@ -20,8 +20,9 @@ UGC_WD="${WORKDIR}/${UGC_P}"
 
 DESCRIPTION="Modifications to Chromium for removing Google integration and enhancing privacy"
 HOMEPAGE="https://github.com/Eloston/ungoogled-chromium https://www.chromium.org/ https://github.com/Igalia/chromium"
+#https://commondatastorage.googleapis.com/chromium-browser-official/chromium-${PV/_*}.tar.xz
 SRC_URI="
-	https://commondatastorage.googleapis.com/chromium-browser-official/chromium-${PV/_*}.tar.xz
+	https://github.com/chromium/chromium/archive/${PV/_*}.tar.gz
 	https://github.com/Eloston/${PN}/archive/${UGC_PV}.tar.gz -> ${UGC_P}.tar.gz
 "
 
