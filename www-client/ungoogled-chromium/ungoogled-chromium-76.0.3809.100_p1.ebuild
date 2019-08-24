@@ -13,8 +13,8 @@ CHROMIUM_LANGS="
 
 inherit check-reqs chromium-2 desktop flag-o-matic ninja-utils pax-utils python-r1 readme.gentoo-r1 toolchain-funcs xdg-utils
 
-# UGC_PV="${PV/_p/-}"
-UGC_PV="76.0.3809.100-1"
+UGC_PV="${PV/_p/-}"
+# UGC_PV="76.0.3809.100-1"
 UGC_P="${PN}-${UGC_PV}"
 UGC_WD="${WORKDIR}/${UGC_P}"
 
@@ -102,6 +102,7 @@ CDEPEND="
 		x11-libs/libXScrnSaver:=
 		x11-libs/libXtst:=
 		x11-libs/pango:=
+		x11-misc/xdg-utils
 	)
 	atk? (
 		>=app-accessibility/at-spi2-atk-2.26:2
