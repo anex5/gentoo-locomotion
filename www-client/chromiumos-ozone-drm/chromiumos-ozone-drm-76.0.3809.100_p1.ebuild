@@ -14,16 +14,13 @@ CHROMIUM_LANGS="
 inherit check-reqs chromium-2 desktop flag-o-matic ninja-utils pax-utils python-r1 readme.gentoo-r1 toolchain-funcs xdg-utils
 
 UGC_PV="${PV/_p/-}"
-# UGC_PV="76.0.3809.100-1"
 UGC_P="${PN}-${UGC_PV}"
 UGC_WD="${WORKDIR}/${UGC_P}"
 
 DESCRIPTION="Modifications to Chromium for removing Google integration and enhancing privacy"
 HOMEPAGE="https://github.com/Eloston/ungoogled-chromium https://www.chromium.org/ https://github.com/Igalia/chromium"
-
 SRC_URI="
-	https://commondatastorage.googleapis.com/chromium-browser-official/chromium-${PV/_*}.tar.xz
-	https://github.com/Eloston/${PN}/archive/${UGC_PV}.tar.gz -> ${UGC_P}.tar.gz
+	https://github.com/Eloston/ungoogled-chromium/archive/${UGC_PV}.tar.gz -> ${UGC_P}.tar.gz
 "
 
 LICENSE="BSD"
@@ -38,8 +35,8 @@ IUSE="
 	lld new-tcmalloc optimize-thinlto optimize-webui +pdf +proprietary-codecs
 	pulseaudio selinux +suid system-ffmpeg system-harfbuzz +system-icu
 	-system-jsoncpp +system-libevent +system-libvpx system-openh264
-	+system-openjpeg +system-libdrm -system-wayland +tcmalloc +thinlto vaapi widevine
-	wayland X libvpx gtk xkbcommon v4l2 v4lplugin +clang swiftshader udev debug
+	+system-openjpeg +system-libdrm system-minigbm -system-wayland +tcmalloc +thinlto 
+	vaapi widevine wayland X libvpx gtk xkbcommon v4l2 v4lplugin +clang swiftshader udev debug
 "
 
 for card in ${VIDEO_CARDS}; do
@@ -101,7 +98,7 @@ CDEPEND="
 		x11-libs/libXScrnSaver:=
 		x11-libs/libXtst:=
 		x11-libs/pango:=
-		x11-misc/xdg-utils
+		x11-misc/xdg-utils:=
 	)
 	atk? (
 		>=app-accessibility/at-spi2-atk-2.26:2
@@ -132,7 +129,6 @@ CDEPEND="
 	system-openh264? ( >=media-libs/openh264-1.6.0:= )
 	system-openjpeg? ( media-libs/openjpeg:2= )
 	vaapi? ( x11-libs/libva:= )
-
 	system-wayland? (
 		dev-libs/wayland
 		dev-libs/wayland-protocols
@@ -148,8 +144,11 @@ CDEPEND="
 	v4lplugin? ( media-tv/v4l-utils )
 	gtk? ( x11-libs/gtk+:3[X] )
 "
+
 RDEPEND="${CDEPEND}
+	virtual/opengl
 	virtual/ttf-fonts
+	x11-misc/xdg-utils
 	selinux? ( sec-policy/selinux-chromium )
 	widevine? ( !x86? ( www-plugins/chrome-binary-plugins[widevine(-)] ) )
 	!www-client/chromium
@@ -194,24 +193,7 @@ if ! has chromium_pkg_die ${EBUILD_DEATH_HOOKS}; then
 fi
 
 DISABLE_AUTOFORMATTING="yes"
-DOC_CONTENTS="
-Some web pages may require additional fonts to display properly.
-Try installing some of the following packages if some characters
-are not displayed properly:
-- media-fonts/arphicfonts
-- media-fonts/droid
-- media-fonts/ipamonafont
-- media-fonts/noto
-- media-fonts/noto-emoji
-- media-fonts/ja-ipafonts
-- media-fonts/takao-fonts
-- media-fonts/wqy-microhei
-- media-fonts/wqy-zenhei
-
-To fix broken icons on the Downloads page, you should install an icon
-theme that covers the appropriate MIME types, and configure this as your
-GTK+ icon theme.
-"
+DOC_CONTENTS=""
 
 PATCHES=(
 	# Gentoo patches
@@ -233,17 +215,16 @@ PATCHES=(
 	"${FILESDIR}/chromium-76-gcc-pure-virtual.patch"
 
 	# Ungoogled patches
-	"${FILESDIR}/${PN}-disable-third-party-lzma-sdk-r0.patch"
-	"${FILESDIR}/${PN}-empty-array-r0.patch"
-	"${FILESDIR}/${PN}-libusb-interrupt-event-handler-r1.patch"
-	"${FILESDIR}/${PN}-system-libusb-r0.patch"
-	#"${FILESDIR}/${PN}-system-nspr-r0.patch"
-	"${FILESDIR}/${PN}-system-fix-shim-headers-r0.patch"
-	"${FILESDIR}/${PN}-fix-nosafebrowsing-build-r0.patch"
+	"${FILESDIR}/ungoogled-chromium-disable-third-party-lzma-sdk-r0.patch"
+	"${FILESDIR}/ungoogled-chromium-empty-array-r0.patch"
+	"${FILESDIR}/ungoogled-chromium-libusb-interrupt-event-handler-r1.patch"
+	"${FILESDIR}/ungoogled-chromium-system-libusb-r0.patch"
+	"${FILESDIR}/ungoogled-chromium-system-fix-shim-headers-r0.patch"
+	"${FILESDIR}/ungoogled-chromium-fix-nosafebrowsing-build-r0.patch"
 
 	# Personal patches
  	"${FILESDIR}/chromium-optional-atk-r0.patch"
-	"${FILESDIR}/chromium-optional-dbus-r8.patch"	
+	"${FILESDIR}/chromium-optional-dbus-r8.patch"
 )
 
 S="${WORKDIR}/chromium-${PV/_*}"
@@ -258,7 +239,7 @@ pre_build_checks() {
 
 	# Check build requirements, bug #541816 and bug #471810 .
 	CHECKREQS_MEMORY="3G"
-	CHECKREQS_DISK_BUILD="5G"
+	CHECKREQS_DISK_BUILD="7G"
 	if ( shopt -s extglob; is-flagq '-g?(gdb)?([1-9])' ); then
 		CHECKREQS_DISK_BUILD="25G"
 		if ! use component-build; then
@@ -283,6 +264,77 @@ pkg_setup() {
 	chromium_suid_sandbox_check_kernel_config
 }
 
+unpack_chrome() {
+	einfo "Fetching chromium using depot_tools"
+	
+	S="${WORKDIR}/src"
+
+	python_setup 'python2*'
+
+	if ! [[ -f .gclient ]]; then
+		local cmd=( 
+		${EGCLIENT} config --name=src --spec 'solutions=[{\
+		"url": "https://chromium.googlesource.com/chromium/src.git@refs/tags/${PV}",\
+		"managed": False,\
+		"name": "src",\
+		"deps_file": "DEPS",\
+		"custom_deps": {\
+			"src/content/test/data/layout_tests/LayoutTests": None,\
+			"src/chrome/tools/test/reference_build/chrome_win": None,\
+			"src/chrome_frame/tools/test/reference_build/chrome_win": None,\
+			"src/chrome/tools/test/reference_build/chrome_linux": None,\
+			"src/chrome/tools/test/reference_build/chrome_mac": None,\
+			"src/native_client_sdk/src/build_tools/toolchain_archives": None,\
+			"src/chrome/test/data/extensions/api_test/permissions/nacl_enabled/bin": None,\
+			"src/chrome/test/data/layout_tests": None,\
+			"src/chrome/tools/test/reference_build": None,\
+			"src/third_party/ffmpeg/binaries": None,\
+			"src/chrome/test/data/layout_tests": None,\
+			"src/chrome/tools/test/reference_build/chrome_linux": None,\
+			"src/third_party/ffmpeg/source/patched-ffmpeg-mt": None,\
+			"src/third_party/hunspell_dictionaries": None,\
+			"src/third_party/yasm/source/patched-yasm": None,\
+			"src/native_client/toolchain": None,\
+			"src/ios": None
+	   		},\
+		}]; target_os = ["chromeos"]; target_os_only = True'
+		)
+
+		elog "${cmd[*]}"
+		"${cmd[@]}" || die
+	fi
+
+	local cmd=(
+		${EGCLIENT} sync --no-history --with_branch_heads --with_tags --jobs=1 --nohooks --noprehooks
+	)
+
+	elog "${cmd[*]}"
+	"${cmd[@]}" || die
+}
+
+src_unpack(){
+	
+	export EGCLIENT="${DEPOT_TOOLS}/gclient"
+	export ENINJA="${DEPOT_TOOLS}/ninja"
+	# Prevents gclient from updating self.
+	export DEPOT_TOOLS_UPDATE=0
+	# Prevent gclient metrics collection.
+	export DEPOT_TOOLS_METRICS=0
+	# Prevent gclient use windows toolchain.
+	export DEPOT_TOOLS_WIN_TOOLCHAIN=0
+
+	URI_DEPOT_TOOLS="https://chromium.googlesource.com/chromium/tools/depot_tools.git"
+	einfo "Fetching depot_tools from googlesource"
+	git-r3_fetch ${URI_DEPOT_TOOLS}
+	git-r3_checkout ${URI_DEPOT_TOOLS} depot_tools
+
+	dosym {$S}/depot_tools/cipd /usr/bin/cipd
+	dosym {$S}/depot_tools/gclient /usr/bin/gclient
+
+	unpack_chrome
+	
+}
+
 src_prepare() {
 	# Calling this here supports resumption via FEATURES=keepwork
 	python_setup 'python3*'
@@ -290,11 +342,11 @@ src_prepare() {
 	default
 
 	if use "system-jsoncpp" ; then
-		eapply "${FILESDIR}/${PN}-system-jsoncpp-r0.patch" || die
+		eapply "${FILESDIR}/chromium-system-jsoncpp-r0.patch" || die
 	fi
 
 	if use "system-openjpeg" ; then
-		eapply "${FILESDIR}/${PN}-system-openjpeg-r0.patch" || die
+		eapply "${FILESDIR}/chromium-system-openjpeg-r0.patch" || die
 	fi
 
 	if use optimize-webui; then
@@ -315,7 +367,7 @@ src_prepare() {
 	cp -a "${EPREFIX}/usr/include/libusb-1.0/libusb.h" \
 		third_party/libusb/src/libusb/libusb.h || die
 
-	use gold && eapply "${FILESDIR}/${PN}-gold-r4.patch"
+	use gold && eapply "${FILESDIR}/chromium-gold-r4.patch"
 
 	use widevine && eapply "${FILESDIR}/chromium-widevine-r4.patch"
 
@@ -516,7 +568,6 @@ src_prepare() {
 		third_party/swiftshader
 		third_party/swiftshader/third_party/llvm-subzero
 		third_party/swiftshader/third_party/subzero
-
 	)
 	use v4l2 && keeplibs+=(
 		third_party/v4l-utils
@@ -536,7 +587,7 @@ src_prepare() {
 		third_party/libvpx/source/libvpx/third_party/x86inc
 	)
 	use system-wayland || keeplibs+=( third_party/wayland third_party/wayland-protocols )
-	keeplibs+=( third_party/minigbm )
+	use system-minigbm || keeplibs+=( third_party/minigbm )
 	use system-openh264 || keeplibs+=( third_party/openh264 )
 	use tcmalloc && keeplibs+=( third_party/tcmalloc )
 
@@ -716,6 +767,8 @@ src_configure() {
 		"use_thin_lto=$(usetf thinlto)"
 		"rtc_use_lto=$(usetf thinlto)"
 		"clang_use_default_sample_profile=false"
+		"cros_host_is_clang=$(usetf clang)"
+		"cros_v8_snapshot_is_clang=$(usetf clang)"
 
 		#"use_system_libcxx=$(usetf libcxx)"
 
@@ -776,11 +829,14 @@ src_configure() {
 		# FreeType and HarfBuzz to meet that need. (https://crbug.com/694137)
 		"use_system_freetype=$(usetf system-harfbuzz)"
 		"use_system_harfbuzz=$(usetf system-harfbuzz)"
+		"use_bundled_fontconfig=false"
 		"use_system_lcms2=$(usetf pdf)"
+		"use_system_libsync=true"
 		#"use_system_libopenjpeg2=$(usetf system-openjpeg)"
 
 		"use_system_zlib=true"
 		#"rtc_build_json=$(usex system-jsoncpp false true)"
+		"use_vaapi=$(usetf vaapi)"
 
 		# Debug flags
 		"is_debug=$(usetf debug)"
@@ -797,14 +853,14 @@ src_configure() {
 		"enable_hls_sample_aes=true"
 		"use_openh264=true" #Encoding
 		"rtc_use_h264=true" #Decoding
-		"enable_ac3_eac3_audio_demuxing=false"
+		"enable_ac3_eac3_audio_demuxing=true"
 		"enable_hevc_demuxing=true"
 		"enable_dolby_vision_demuxing=true"
 		"enable_av1_decoder=true"
 		"enable_mse_mpeg2ts_stream_parser=true"
 		"media_use_ffmpeg=true"
 		"enable_ffmpeg_video_decoders=true"
-		#"rtc_initialize_ffmpeg=true"
+		"rtc_initialize_ffmpeg=true"
 		"use_v4l2_codec=$(usetf v4l2)"
 		"use_linux_v4l2_only=$(usetf v4l2)"
 		"use_v4lplugin=$(usetf v4lplugin)"
@@ -813,7 +869,7 @@ src_configure() {
 		"rtc_libvpx_build_vp9=false"
 		#"enable_runtime_media_renderer_selection=true"
 		"enable_mpeg_h_audio_demuxing=true"
-		"enable_vulkan=true" 
+		"enable_vulkan=false"
 		"use_vaapi=$(usetf vaapi)"
 		"enable_plugins=true"
 		"use_cras=false"
@@ -867,8 +923,8 @@ src_configure() {
 	fi
 
 	use system-jsoncpp && myconf_gn+=(
+		"rtc_jsoncpp_root=\"/include/jsoncpp/json\""
 		"rtc_build_json=false"
-		#"rtc_jsoncpp_root=\"/usr/include/json\""
 	)
 	
 	# wayland
@@ -885,10 +941,10 @@ src_configure() {
 			"ozone_platform_wayland=true"
 			"ozone_platform_headless=true"
 			"ozone_platform_gbm=true"
-			"ozone_platform=\"wayland\""
+			"ozone_platform=\"gbm\""
 			"enable_mus=false"
-			#"enable_wayland_server=true" #Exo parts (aura shell)
-			#"enable_package_mash_services = true" #ChromeOS
+			"enable_wayland_server=true" #Exo parts (aura shell)
+			"enable_package_mash_services=true" #ChromeOS
 			"enable_background_mode=true"
 			#"use_system_minigbm=$(usetf system-minigbm)"
 			"use_system_minigbm=false"
@@ -930,6 +986,8 @@ src_configure() {
 	else
 		die "Failed to determine target arch, got '$myarch'."
 	fi
+
+	myconf_gn+=" target_os=\"chromeos\""
 
 	# Bug #491582
 	export TMPDIR="${WORKDIR}/temp"
@@ -987,7 +1045,7 @@ src_install() {
 
 	doexe out/Release/chromedriver
 
-	newexe "${FILESDIR}/${PN}-launcher-r3.sh" chromium-launcher.sh
+	newexe "${FILESDIR}/chromium-launcher-r3.sh" chromium-launcher.sh
 	sed -i "s:/usr/lib/:/usr/$(get_libdir)/:g" \
 		"${ED}${CHROMIUM_HOME}/chromium-launcher.sh" || die
 
@@ -1001,7 +1059,7 @@ src_install() {
 
 	# Allow users to override command-line options (Bug #357629)
 	insinto /etc/chromium
-	newins "${FILESDIR}/${PN}.default" "default"
+	newins "${FILESDIR}/chromium.default" "default"
 
 	pushd out/Release/locales > /dev/null || die
 	chromium_remove_language_paks
