@@ -291,7 +291,7 @@ unpack_chrome() {
 			"src/third_party/hunspell_dictionaries": None,\
 			"src/third_party/yasm/source/patched-yasm": None,\
 			"src/native_client/toolchain": None,\
-			"src/ios": None
+			"src/ios": None\
 	   		},\
 		}]; target_os = ["chromeos"]; target_os_only = True'
 		)
@@ -311,26 +311,12 @@ unpack_chrome() {
 src_unpack(){
 
 	S="${WORKDIR}/src"
-	DEPOT_TOOLS="${WORKDIR}/depot_tools"
-	export EGCLIENT="${DEPOT_TOOLS}/gclient"
-	export ENINJA="${DEPOT_TOOLS}/ninja"
-	# Prevents gclient from updating self.
-	export DEPOT_TOOLS_UPDATE=0
-	# Prevent gclient metrics collection.
-	export DEPOT_TOOLS_METRICS=0
-	# Prevent gclient use windows toolchain.
-	export DEPOT_TOOLS_WIN_TOOLCHAIN=0
-
-	URI_DEPOT_TOOLS="https://chromium.googlesource.com/chromium/tools/depot_tools.git"
-	einfo "Fetching depot_tools from googlesource"
-	git-r3_fetch ${URI_DEPOT_TOOLS}
-	git-r3_checkout ${URI_DEPOT_TOOLS} depot_tools
-
-	dosym ${DEPOT_TOOLS}/cipd /usr/bin/cipd
-	dosym ${DEPOT_TOOLS}/gclient /usr/bin/gclient
-
-	unpack_chrome
 	
+
+	URI_CHROMIUM="https://chromium.googlesource.com/chromium/src.git"
+	git-r3_fetch ${URI_CHROMIUM} "refs/tags/${PV/_*/}"
+	git-r3_checkout ${URI_CHROMIUM} "${S}/src"
+
 }
 
 src_prepare() {
