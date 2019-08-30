@@ -269,6 +269,7 @@ src_unpack(){
 
 	default
 
+	git-r3_src_unpack
 	#git-r3_fetch ${EGIT_REPO_URI} "refs/tags/${PV/_*/}"
 	#git-r3_checkout ${EGIT_REPO_URI} "${S}/chromium-${PV/_*}"
 
