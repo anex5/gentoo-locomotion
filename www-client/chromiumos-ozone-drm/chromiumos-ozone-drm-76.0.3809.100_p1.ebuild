@@ -311,7 +311,7 @@ unpack_chrome() {
 src_unpack(){
 
 	S="${WORKDIR}/src"
-	DEPOT_TOOLS="${S}/depot_tools"
+	DEPOT_TOOLS="${WORKDIR}/depot_tools"
 	export EGCLIENT="${DEPOT_TOOLS}/gclient"
 	export ENINJA="${DEPOT_TOOLS}/ninja"
 	# Prevents gclient from updating self.
