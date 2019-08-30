@@ -266,7 +266,7 @@ src_unpack(){
 	default
 
 	EGIT_CLONE_TYPE="single"
-	EGIT_REPO_URI="https://chromium.googlesource.com/chromium/src.git@refs/tags/${PV/_*/}"
+	EGIT_REPO_URI="https://chromium.googlesource.com/chromium/src.git"
 	EGIT_CHECKOUT_DIR="${S}/chromium-${PV/_*}"
 
 	git-r3_fetch ${EGIT_REPO_URI} "refs/tags/${PV/_*/}"
