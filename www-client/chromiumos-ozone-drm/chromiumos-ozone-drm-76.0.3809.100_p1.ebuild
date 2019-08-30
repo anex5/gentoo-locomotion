@@ -273,7 +273,7 @@ src_unpack(){
 	git-r3_src_unpack
 
 	git-r3_fetch "https://chromium.googlesource.com/angle/angle" "refs/heads/chromium/3809"
-	git-r3_checkout "https://chromium.googlesource.com/linux-syscall-support" "${S}/chromium-${PV/_*}/third_party/angle"
+	git-r3_checkout "https://chromium.googlesource.com/angle/angle" "${S}/chromium-${PV/_*}/third_party/angle"
 }
 
 src_prepare() {
