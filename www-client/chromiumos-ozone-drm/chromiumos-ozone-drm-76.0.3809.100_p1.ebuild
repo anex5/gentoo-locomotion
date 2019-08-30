@@ -262,59 +262,12 @@ pkg_setup() {
 	chromium_suid_sandbox_check_kernel_config
 }
 
-unpack_chrome() {
-	einfo "Fetching chromium using depot_tools"
-	
-	python_setup 'python2*'
-
-	if ! [[ -f .gclient ]]; then
-		local cmd=( 
-		${EGCLIENT} config --name=src --spec 'solutions=[{\
-		"url": "https://chromium.googlesource.com/chromium/src.git@refs/tags/${PV}",\
-		"managed": False,\
-		"name": "src",\
-		"deps_file": "DEPS",\
-		"custom_deps": {\
-			"src/content/test/data/layout_tests/LayoutTests": None,\
-			"src/chrome/tools/test/reference_build/chrome_win": None,\
-			"src/chrome_frame/tools/test/reference_build/chrome_win": None,\
-			"src/chrome/tools/test/reference_build/chrome_linux": None,\
-			"src/chrome/tools/test/reference_build/chrome_mac": None,\
-			"src/native_client_sdk/src/build_tools/toolchain_archives": None,\
-			"src/chrome/test/data/extensions/api_test/permissions/nacl_enabled/bin": None,\
-			"src/chrome/test/data/layout_tests": None,\
-			"src/chrome/tools/test/reference_build": None,\
-			"src/third_party/ffmpeg/binaries": None,\
-			"src/chrome/test/data/layout_tests": None,\
-			"src/chrome/tools/test/reference_build/chrome_linux": None,\
-			"src/third_party/ffmpeg/source/patched-ffmpeg-mt": None,\
-			"src/third_party/hunspell_dictionaries": None,\
-			"src/third_party/yasm/source/patched-yasm": None,\
-			"src/native_client/toolchain": None,\
-			"src/ios": None\
-	   		},\
-		}]; target_os = ["chromeos"]; target_os_only = True'
-		)
-
-		elog "${cmd[*]}"
-		"${cmd[@]}" || die
-	fi
-
-	local cmd=(
-		${EGCLIENT} sync --no-history --with_branch_heads --with_tags --jobs=1 --nohooks --noprehooks
-	)
-
-	elog "${cmd[*]}"
-	"${cmd[@]}" || die
-}
-
 src_unpack(){
-
-	S="${WORKDIR}/src"
-	EGIT_MIN_CLONE_TYPE="single"
+	EGIT_MIN_CLONE_TYPE='single'
 	URI_CHROMIUM="https://chromium.googlesource.com/chromium/src.git"
+	git-r3_src_unpack
 	git-r3_fetch ${URI_CHROMIUM} "refs/tags/${PV/_*/}"
-	git-r3_checkout ${URI_CHROMIUM} "${S}/src"
+	git-r3_checkout ${URI_CHROMIUM} "${S}/chromium-${PV/_*}"
 
 }
 
