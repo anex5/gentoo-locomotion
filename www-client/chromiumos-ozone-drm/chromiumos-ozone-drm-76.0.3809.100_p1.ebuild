@@ -265,12 +265,15 @@ pkg_setup() {
 src_unpack(){
 	default
 
-	EGIT_CLONE_TYPE="shallow"
+	EGIT_MIN_CLONE_TYPE="single"
 	EGIT_REPO_URI="https://chromium.googlesource.com/chromium/src.git"
 	EGIT_COMMIT="refs/tags/${PV/_*/}"
 	EGIT_CHECKOUT_DIR="${S}"
-	#/chromium-${PV/_*}
+	#
 	git-r3_src_unpack
+
+	git-r3_fetch https://chromium.googlesource.com/angle/angle
+	git-r3_checkout https://chromium.googlesource.com/linux-syscall-support "${S}/chromium-${PV/_*}/third_party/angle"
 }
 
 src_prepare() {
