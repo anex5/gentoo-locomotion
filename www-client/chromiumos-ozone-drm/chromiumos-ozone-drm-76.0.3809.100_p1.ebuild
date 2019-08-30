@@ -318,7 +318,7 @@ src_unpack(){
  	fi
  
  	local cmd=(
- 		${EGCLIENT} sync --no-history --with_branch_heads --with_tags --jobs=1
+ 		${EGCLIENT} sync --no-history --with_branch_heads --with_tags --jobs=1 --nohooks --noprehooks
  	)
  	elog "${cmd[*]}"
  	"${cmd[@]}" || die
