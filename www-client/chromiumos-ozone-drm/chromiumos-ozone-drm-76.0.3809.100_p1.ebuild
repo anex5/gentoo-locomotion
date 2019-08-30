@@ -287,9 +287,9 @@ src_unpack(){
  	if ! [[ -f .gclient ]]; then
  		local cmd=( 
  		${EGCLIENT} config --name=src --spec 'solutions=[{\
- 		"url": "https://chromium.googlesource.com/chromium/src.git@refs/tags/'+${PV/_*/}+'",\
+ 		"url": "https://chromium.googlesource.com/chromium/src.git@refs/tags/'${PV/_*/}'",\
  		"managed": False,\
- 		"name": "src",\
+ 		"name": "chromium-'${PV/_*}'",\
  		"deps_file": "DEPS",\
  		"custom_deps": {\
  			"src/content/test/data/layout_tests/LayoutTests": None,\
@@ -308,9 +308,9 @@ src_unpack(){
  			"src/third_party/hunspell_dictionaries": None,\
  			"src/third_party/yasm/source/patched-yasm": None,\
  			"src/native_client/toolchain": None,\
- 			"src/ios": None
+ 			"src/ios": None \
  	   		},\
- 		}]; target_os = ["chromeos"]; target_os_only = True'
+ 		}]; target_os = ["chromeos"]; target_os_only = True\'
  		)
  
  		elog "${cmd[*]}"
@@ -320,6 +320,8 @@ src_unpack(){
  	local cmd=(
  		${EGCLIENT} sync --no-history --with_branch_heads --with_tags --jobs=1
  	)
+ 	elog "${cmd[*]}"
+ 	"${cmd[@]}" || die
 }
 
 src_prepare() {
