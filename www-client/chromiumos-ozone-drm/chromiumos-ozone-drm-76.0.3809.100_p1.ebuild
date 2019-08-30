@@ -312,6 +312,7 @@ unpack_chrome() {
 
 src_unpack(){
 	
+	DEPOT_TOOLS="{$S}/depot_tools"
 	export EGCLIENT="${DEPOT_TOOLS}/gclient"
 	export ENINJA="${DEPOT_TOOLS}/ninja"
 	# Prevents gclient from updating self.
@@ -326,8 +327,8 @@ src_unpack(){
 	git-r3_fetch ${URI_DEPOT_TOOLS}
 	git-r3_checkout ${URI_DEPOT_TOOLS} depot_tools
 
-	dosym {$S}/depot_tools/cipd /usr/bin/cipd
-	dosym {$S}/depot_tools/gclient /usr/bin/gclient
+	dosym ${DEPOT_TOOLS}/cipd /usr/bin/cipd
+	dosym ${DEPOT_TOOLS}/gclient /usr/bin/gclient
 
 	unpack_chrome
 	
