@@ -263,13 +263,14 @@ pkg_setup() {
 }
 
 src_unpack(){
-	EGIT_MIN_CLONE_TYPE='single'
-	URI_CHROMIUM="https://chromium.googlesource.com/chromium/src.git"
-	
+	EGIT_CLONE_TYPE="single"
+	EGIT_REPO_URI="https://chromium.googlesource.com/chromium/src.git@refs/tags/${PV/_*/}"
+	EGIT_CHECKOUT_DIR="${S}/chromium-${PV/_*}"
+
 	default
 
-	git-r3_fetch ${URI_CHROMIUM} "refs/tags/${PV/_*/}"
-	git-r3_checkout ${URI_CHROMIUM} "${S}/chromium-${PV/_*}"
+	#git-r3_fetch ${EGIT_REPO_URI} "refs/tags/${PV/_*/}"
+	#git-r3_checkout ${EGIT_REPO_URI} "${S}/chromium-${PV/_*}"
 
 }
 
