@@ -265,7 +265,7 @@ pkg_setup() {
 src_unpack(){
 	default
 
-	EGIT_MIN_CLONE_TYPE="shallow"
+	EGIT_CLONE_TYPE="shallow"
 	EGIT_REPO_URI="https://chromium.googlesource.com/chromium/src.git"
 	EGIT_COMMIT="refs/tags/${PV/_*/}"
 	EGIT_CHECKOUT_DIR="${S}"
