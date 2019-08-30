@@ -311,8 +311,7 @@ unpack_chrome() {
 src_unpack(){
 
 	S="${WORKDIR}/src"
-	
-
+	EGIT_MIN_CLONE_TYPE="single"
 	URI_CHROMIUM="https://chromium.googlesource.com/chromium/src.git"
 	git-r3_fetch ${URI_CHROMIUM} "refs/tags/${PV/_*/}"
 	git-r3_checkout ${URI_CHROMIUM} "${S}/src"
