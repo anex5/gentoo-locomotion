@@ -14,7 +14,7 @@ CHROMIUM_LANGS="
 inherit git-r3 check-reqs chromium-2 desktop flag-o-matic ninja-utils pax-utils python-r1 readme.gentoo-r1 toolchain-funcs xdg-utils
 
 UGC_PV="${PV/_p/-}"
-UGC_P="${PN}-${UGC_PV}"
+UGC_P="ungoogled-chromium-${UGC_PV}"
 UGC_WD="${WORKDIR}/${UGC_P}"
 
 DESCRIPTION="Modifications to Chromium for removing Google integration and enhancing privacy"
@@ -273,7 +273,7 @@ src_unpack(){
 	git-r3_src_unpack
 
 	git-r3_fetch "https://chromium.googlesource.com/angle/angle" "refs/heads/chromium/3809"
-	git-r3_checkout "https://chromium.googlesource.com/angle/angle" "${S}/chromium-${PV/_*}/third_party/angle"
+	git-r3_checkout "https://chromium.googlesource.com/angle/angle" "${S}/third_party/angle"
 }
 
 src_prepare() {
