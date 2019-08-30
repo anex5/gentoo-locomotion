@@ -265,8 +265,6 @@ pkg_setup() {
 unpack_chrome() {
 	einfo "Fetching chromium using depot_tools"
 	
-	S="${WORKDIR}/src"
-
 	python_setup 'python2*'
 
 	if ! [[ -f .gclient ]]; then
@@ -312,6 +310,7 @@ unpack_chrome() {
 
 src_unpack(){
 	
+	S="${WORKDIR}/src"
 	DEPOT_TOOLS="{$S}/depot_tools"
 	export EGCLIENT="${DEPOT_TOOLS}/gclient"
 	export ENINJA="${DEPOT_TOOLS}/ninja"
