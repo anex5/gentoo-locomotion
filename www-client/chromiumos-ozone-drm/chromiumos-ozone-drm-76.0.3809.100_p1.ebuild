@@ -146,9 +146,7 @@ CDEPEND="
 "
 
 RDEPEND="${CDEPEND}
-	virtual/opengl
 	virtual/ttf-fonts
-	x11-misc/xdg-utils
 	selinux? ( sec-policy/selinux-chromium )
 	widevine? ( !x86? ( www-plugins/chrome-binary-plugins[widevine(-)] ) )
 	!www-client/chromium
