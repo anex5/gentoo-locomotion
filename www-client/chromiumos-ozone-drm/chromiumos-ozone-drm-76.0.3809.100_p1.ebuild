@@ -268,13 +268,9 @@ src_unpack(){
 	EGIT_CLONE_TYPE="shallow"
 	EGIT_REPO_URI="https://chromium.googlesource.com/chromium/src.git"
 	EGIT_COMMIT="refs/tags/${PV/_*/}"
-	#EGIT_BRANCH=""
-	EGIT_CHECKOUT_DIR="${S}/chromium-${PV/_*}"
+	#EGIT_CHECKOUT_DIR="${S}/chromium-${PV/_*}"
 
 	git-r3_src_unpack
-	#git-r3_src_fetch ${EGIT_REPO_URI}
-	#git-r3_checkout ${EGIT_REPO_URI} "${S}/chromium-${PV/_*}"
-
 }
 
 src_prepare() {
