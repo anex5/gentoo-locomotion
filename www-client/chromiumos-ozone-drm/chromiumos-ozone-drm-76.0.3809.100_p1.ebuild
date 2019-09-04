@@ -292,6 +292,15 @@ src_unpack(){
  		"name": "chromium-'${PV/_*}'",\
  		"deps_file": "DEPS",\
  		"custom_deps": {\
+ 			"src/third_party/blink/web_tests/platform/mac": None,\
+			"src/third_party/blink/web_tests/platform/mac-mac10.10": None,\
+			"src/third_party/blink/web_tests/platform/mac-mac10.11": None,\
+			"src/third_party/blink/web_tests/platform/mac-mac10.12": None,\
+			"src/third_party/blink/web_tests/platform/mac-mac10.13": None,\
+			"src/third_party/blink/web_tests/platform/mac-retina": None,\
+			"src/third_party/WebKit/LayoutTests": None,\
+			"src/third_party/android_ndk": None,\
+			"src/third_party/android_tools": None,\
  			"src/content/test/data/layout_tests/LayoutTests": None,\
  			"src/chrome/tools/test/reference_build/chrome_win": None,\
  			"src/chrome_frame/tools/test/reference_build/chrome_win": None,\
