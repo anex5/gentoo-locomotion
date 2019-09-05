@@ -272,12 +272,269 @@ src_unpack(){
 	#
 	git-r3_src_unpack
 
-	git-r3_fetch "https://chromium.googlesource.com/chromium/tools/depot_tools" "refs/heads/master"
-	git-r3_checkout "https://chromium.googlesource.com/chromium/tools/depot_tools" "${S}/third_party/depot_tools"
+	git-r3_fetch "https://chromium.googlesource.com/chromium/llvm-project/cfe/tools/clang-format.git" "96636aa0e9f047f17447f2d45a094d0b59ed7917"
+	git-r3_checkout "https://chromium.googlesource.com/chromium/llvm-project/cfe/tools/clang-format.git" "${S}/buildtools/clang_format/script"
+
+	git-r3_fetch "https://chromium.googlesource.com/chromium/llvm-project/libcxx.git" "5938e0582bac570a41edb3d6a2217c299adc1bc6"
+	git-r3_checkout "https://chromium.googlesource.com/chromium/llvm-project/libcxx.git" "${S}/buildtools/third_party/libc++/trunk"
+
+	git-r3_fetch "https://chromium.googlesource.com/chromium/llvm-project/libcxxabi.git" "0d529660e32d77d9111912d73f2c74fc5fa2a858"
+	git-r3_checkout "https://chromium.googlesource.com/chromium/llvm-project/libcxxabi.git" "${S}/buildtools/third_party/libc++abi/trunk"
+
+	git-r3_fetch "https://chromium.googlesource.com/external/llvm.org/libunwind.git" "69d9b84cca8354117b9fe9705a4430d789ee599b"
+	git-r3_checkout "https://chromium.googlesource.com/external/llvm.org/libunwind.git" "${S}/buildtools/third_party/libunwind/trunk"
+
+	git-r3_fetch "https://chromium.googlesource.com/media_router.git" "29324b698ccd8920bc81c71d42dadc6310f0ad0f"
+	git-r3_checkout "https://chromium.googlesource.com/media_router.git" "${S}/chrome/browser/resources/media_router/extension/src"
+
+	git-r3_fetch "https://chromium.googlesource.com/chromium/canvas_bench.git" "a7b40ea5ae0239517d78845a5fc9b12976bfc732"
+	git-r3_checkout "https://chromium.googlesource.com/chromium/canvas_bench.git" "${S}/chrome/test/data/perf/canvas_bench"
+
+	git-r3_fetch "https://chromium.googlesource.com/chromium/frame_rate/content.git" "c10272c88463efeef6bb19c9ec07c42bc8fe22b9"
+	git-r3_checkout "https://chromium.googlesource.com/chromium/frame_rate/content.git" "${S}/chrome/test/data/perf/frame_rate/content"
+
+	git-r3_fetch "https://chromium.googlesource.com/external/github.com/toji/webvr.info.git" "c58ae99b9ff9e2aa4c524633519570bf33536248"
+	git-r3_checkout "https://chromium.googlesource.com/external/github.com/toji/webvr.info.git" "${S}/chrome/test/data/xr/webvr_info"
+
+	git-r3_fetch "https://chromium.googlesource.com/chromium/cdm.git" "817c8005a57ea3ca417f767b3b3679601329afd8"
+	git-r3_checkout "https://chromium.googlesource.com/chromium/cdm.git" "${S}/media/cdm/api"
+
+	git-r3_fetch "https://chromium.googlesource.com/native_client/${S}/native_client.git" "0ddc033406886a709b901e0c312872529f9705e8"
+	git-r3_checkout "https://chromium.googlesource.com/native_client/${S}/native_client.git" "${S}/native_client"
+
+	git-r3_fetch "https://quiche.googlesource.com/quiche.git" "b417d60c04d847ac676aa4492c79a17fadca509e"
+	git-r3_checkout "https://quiche.googlesource.com/quiche.git" "${S}/net/third_party/quiche/src"
+
+	git-r3_fetch "https://chromium.googlesource.com/external/github.com/KhronosGroup/SPIRV-Tools.git" "e7866de4b1dc2a7e8672867caeb0bdca49f458d3"
+	git-r3_checkout "https://chromium.googlesource.com/external/github.com/KhronosGroup/SPIRV-Tools.git" "${S}/third_party/SPIRV-Tools/src"
+
+	git-r3_fetch "https://chromium.googlesource.com/angle/angle.git" "9379eed385311cbc442a986437431b3e6ce45ff1"
+	git-r3_checkout "https://chromium.googlesource.com/angle/angle.git" "${S}/third_party/angle"
+
+	git-r3_fetch "https://boringssl.googlesource.com/boringssl.git" "2e0d354690064c90ee245c715b92e2bb32492571"
+	git-r3_checkout "https://boringssl.googlesource.com/boringssl.git" "${S}/third_party/boringssl/src"
+
+	git-r3_fetch "https://chromium.googlesource.com/breakpad/breakpad.git" "1fc9cc0d0e1dfafb8d29dba8d01f09587d870026"
+	git-r3_checkout "https://chromium.googlesource.com/breakpad/breakpad.git" "${S}/third_party/breakpad/breakpad"
+
+	git-r3_fetch "https://chromium.googlesource.com/catapult.git" "fa2fd31ebd189625ee47aacbf75aa7c217169c01"
+	git-r3_checkout "https://chromium.googlesource.com/catapult.git" "${S}/third_party/catapult"
+
+	git-r3_fetch "https://chromium.googlesource.com/external/github.com/google/compact_enc_det.git" "ba412eaaacd3186085babcd901679a48863c7dd5"
+	git-r3_checkout "https://chromium.googlesource.com/external/github.com/google/compact_enc_det.git" "${S}/third_party/ced/src"
+
+	git-r3_fetch "https://chrome-infra-packages.appspot.com/chromium/third_party/checkstyle" "y17J5dqst1qkBcbJyie8jltB2oFOgaQjFZ5k9UpbbbwC"
+	git-r3_checkout "https://chrome-infra-packages.appspot.com/chromium/third_party/checkstyle" "${S}/third_party/checkstyle:chromium/third_party/checkstyle"
+
+	git-r3_fetch "https://chromium.googlesource.com/chromiumos/chromite.git" "a9e9c3dff0c2bf41895f2c2c6fb10960cea00596"
+	git-r3_checkout "https://chromium.googlesource.com/chromiumos/chromite.git" "${S}/third_party/chromite"
+
+	git-r3_fetch "https://chromium.googlesource.com/external/github.com/google/cld_3.git" "06f695f1c8ee530104416aab5dcf2d6a1414a56a"
+	git-r3_checkout "https://chromium.googlesource.com/external/github.com/google/cld_3.git" "${S}/third_party/cld_3/src"
+
+	git-r3_fetch "https://chromium.googlesource.com/external/colorama.git" "799604a1041e9b3bc5d2789ecbd7e8db2e18e6b8"
+	git-r3_checkout "https://chromium.googlesource.com/external/colorama.git" "${S}/third_party/colorama/src"
+
+	git-r3_fetch "https://chromium.googlesource.com/external/github.com/google/crc32c.git" "5998f8451548244de8cde7fab387a550e7c4497d"
+	git-r3_checkout "https://chromium.googlesource.com/external/github.com/google/crc32c.git" "${S}/third_party/crc32c/src"
+
+	git-r3_fetch "https://chromium.googlesource.com/chromiumos/platform2/system_api.git" "a67d91d30a5a37cee98a9685f2082ecdf92168ad"
+	git-r3_checkout "https://chromium.googlesource.com/chromiumos/platform2/system_api.git" "${S}/third_party/cros_system_api"
+
+	git-r3_fetch "https://chromium.googlesource.com/external/github.com/videolan/dav1d.git" "fc3777b44c0449180073665eb78070d388b11738"
+	git-r3_checkout "https://chromium.googlesource.com/external/github.com/videolan/dav1d.git" "${S}/third_party/dav1d/libdav1d"
+
+	git-r3_fetch "https://dawn.googlesource.com/dawn.git" "26d3cf08c209c662a6e2298c301272e2eb8246e4"
+	git-r3_checkout "https://dawn.googlesource.com/dawn.git" "${S}/third_party/dawn"
+
+	git-r3_fetch "https://chromium.googlesource.com/chromium/tools/depot_tools.git" "bad01ad3adaaa017b780f020d85a1e3b34f89c98"
+	git-r3_checkout "https://chromium.googlesource.com/chromium/tools/depot_tools.git" "${S}/third_party/depot_tools"
+
+	git-r3_fetch "https://chromium.googlesource.com/external/github.com/ChromeDevTools/devtools-node-modules" "5f7cd2497d7a643125c3b6eb910d99ba28be6899"
+	git-r3_checkout "https://chromium.googlesource.com/external/github.com/ChromeDevTools/devtools-node-modules" "${S}/third_party/devtools-node-modules"
+
+	git-r3_fetch "https://chromium.googlesource.com/chromium/dom-distiller/dist.git" "3093c3e238768ab27ff756bd7563ccbb12129d9f"
+	git-r3_checkout "https://chromium.googlesource.com/chromium/dom-distiller/dist.git" "${S}/third_party/dom_distiller_js/dist"
+
+	git-r3_fetch "https://chromium.googlesource.com/external/github.com/googlei18n/emoji-segmenter.git" "9ba6d25d0d9313569665d4a9d2b34f0f39f9a50e"
+	git-r3_checkout "https://chromium.googlesource.com/external/github.com/googlei18n/emoji-segmenter.git" "${S}/third_party/emoji-segmenter/src"
+
+	git-r3_fetch "https://chromium.googlesource.com/chromium/third_party/ffmpeg.git" "e1e3cc4d2ec19c4e1859e487e8b7529cb69d91d8"
+	git-r3_checkout "https://chromium.googlesource.com/chromium/third_party/ffmpeg.git" "${S}/third_party/ffmpeg"
+
+	git-r3_fetch "https://chromium.googlesource.com/chromium/deps/flac.git" "af862024c8c8fa0ae07ced05e89013d881b00596"
+	git-r3_checkout "https://chromium.googlesource.com/chromium/deps/flac.git" "${S}/third_party/flac"
+
+	git-r3_fetch "https://chromium.googlesource.com/external/github.com/google/flatbuffers.git" "9bf9b18f0a705dfd6d50b98056463a55de6a1bf9"
+	git-r3_checkout "https://chromium.googlesource.com/external/github.com/google/flatbuffers.git" "${S}/third_party/flatbuffers/src"
+
+	git-r3_fetch "https://chromium.googlesource.com/external/fontconfig.git" "ba206df9b9a7ca300265f650842c1459ff7c634a"
+	git-r3_checkout "https://chromium.googlesource.com/external/fontconfig.git" "${S}/third_party/fontconfig/src"
+
+	git-r3_fetch "https://chromium.googlesource.com/chromium/${S}/third_party/freetype2.git" "12e4307dc7b48c9a4a4fc3ac6c32220874ab18ec"
+	git-r3_checkout "https://chromium.googlesource.com/chromium/${S}/third_party/freetype2.git" "${S}/third_party/freetype/src"
+
+	git-r3_fetch "https://chromium.googlesource.com/chromiumos/platform/gestures.git" "74f55100df966280d305d5d5ada824605f875839"
+	git-r3_checkout "https://chromium.googlesource.com/chromiumos/platform/gestures.git" "${S}/third_party/gestures/gestures"
+
+	git-r3_fetch "https://chromium.googlesource.com/external/github.com/glfw/glfw.git" "2de2589f910b1a85905f425be4d32f33cec092df"
+	git-r3_checkout "https://chromium.googlesource.com/external/github.com/glfw/glfw.git" "${S}/third_party/glfw/src"
+
+	git-r3_fetch "https://chromium.googlesource.com/external/github.com/KhronosGroup/glslang.git" "625eb25d6e801311af2f587a38ff35412876dfe0"
+	git-r3_checkout "https://chromium.googlesource.com/external/github.com/KhronosGroup/glslang.git" "${S}/third_party/glslang/src"
+
+	git-r3_fetch "https://chromium.googlesource.com/external/github.com/google/googletest.git" "f5edb4f542e155c75bc4b516f227911d99ec167c"
+	git-r3_checkout "https://chromium.googlesource.com/external/github.com/google/googletest.git" "${S}/third_party/googletest/src"
+
+	git-r3_fetch "https://chromium.googlesource.com/external/github.com/grpc/grpc.git" "b245ad4ae810ed6bc13378421edfd3986a8ffac3"
+	git-r3_checkout "https://chromium.googlesource.com/external/github.com/grpc/grpc.git" "${S}/third_party/grpc/src"
+
+	git-r3_fetch "https://chromium.googlesource.com/external/github.com/harfbuzz/harfbuzz.git" "c73d7ba75d4556d9b8e05b10d6572f74f4814f7a"
+	git-r3_checkout "https://chromium.googlesource.com/external/github.com/harfbuzz/harfbuzz.git" "${S}/third_party/harfbuzz-ng/src"
+
+	git-r3_fetch "https://chromium.googlesource.com/chromium/deps/hunspell_dictionaries.git" "3874188bd69fe67a825d07584c74451e45063e95"
+	git-r3_checkout "https://chromium.googlesource.com/chromium/deps/hunspell_dictionaries.git" "${S}/third_party/hunspell_dictionaries"
+
+	git-r3_fetch "https://chromium.googlesource.com/chromium/deps/icu.git" "64e5d7d43a1ff205e3787ab6150bbc1a1837332b"
+	git-r3_checkout "https://chromium.googlesource.com/chromium/deps/icu.git" "${S}/third_party/icu"
+
+	git-r3_fetch "https://chromium.googlesource.com/external/github.com/open-source-parsers/jsoncpp.git" "f572e8e42e22cfcf5ab0aea26574f408943edfa4"
+	git-r3_checkout "https://chromium.googlesource.com/external/github.com/open-source-parsers/jsoncpp.git" "${S}/third_party/jsoncpp/source"
+
+	git-r3_fetch "https://chromium.googlesource.com/external/leveldb.git" "4bd052d7e8b0469b2b87664388e2a99cb212ecdb"
+	git-r3_checkout "https://chromium.googlesource.com/external/leveldb.git" "${S}/third_party/leveldatabase/src"
+
+	git-r3_fetch "https://chromium.googlesource.com/chromium/llvm-project/compiler-rt/lib/fuzzer.git" "e9b95bcfe2f5472fac2e516a0040aedf2140dd62"
+	git-r3_checkout "https://chromium.googlesource.com/chromium/llvm-project/compiler-rt/lib/fuzzer.git" "${S}/third_party/libFuzzer/src"
+
+	git-r3_fetch "https://chromium.googlesource.com/external/libaddressinput.git" "56c60affb5de83c10ebf5f11d9adcdd70648ab71"
+	git-r3_checkout "https://chromium.googlesource.com/external/libaddressinput.git" "${S}/third_party/libaddressinput/src"
+
+	git-r3_fetch "https://aomedia.googlesource.com/aom.git" "625cded0550bb79efd10d98a9809a7ccd72a8f60"
+	git-r3_checkout "https://aomedia.googlesource.com/aom.git" "${S}/third_party/libaom/source/libaom"
+
+	git-r3_fetch "https://chromium.googlesource.com/chromiumos/third_party/libdrm.git" "0061b1f244574e615c415479725046ab2951f09a"
+	git-r3_checkout "https://chromium.googlesource.com/chromiumos/third_party/libdrm.git" "${S}/third_party/libdrm/src"
+
+	git-r3_fetch "https://chromium.googlesource.com/chromiumos/platform/libevdev.git" "9f7a1961eb4726211e18abd147d5a11a4ea86744"
+	git-r3_checkout "https://chromium.googlesource.com/chromiumos/platform/libevdev.git" "${S}/third_party/libevdev/src"
+
+	git-r3_fetch "https://chromium.googlesource.com/chromium/deps/libjpeg_turbo.git" "2de84a43e683c2c3c8ff4922da16b9053f024144"
+	git-r3_checkout "https://chromium.googlesource.com/chromium/deps/libjpeg_turbo.git" "${S}/third_party/libjpeg_turbo"
+
+	git-r3_fetch "https://chromium.googlesource.com/external/liblouis-github.git" "97ce1c67fccbd3668291b7e63c06161c095d49f2"
+	git-r3_checkout "https://chromium.googlesource.com/external/liblouis-github.git" "${S}/third_party/liblouis/src"
+
+	git-r3_fetch "https://chromium.googlesource.com/external/libphonenumber.git" "a4da30df63a097d67e3c429ead6790ad91d36cf4"
+	git-r3_checkout "https://chromium.googlesource.com/external/libphonenumber.git" "${S}/third_party/libphonenumber/dist"
+
+	git-r3_fetch "https://chromium.googlesource.com/external/github.com/google/libprotobuf-mutator.git" "439e81f8f4847ec6e2bf11b3aa634a5d8485633d"
+	git-r3_checkout "https://chromium.googlesource.com/external/github.com/google/libprotobuf-mutator.git" "${S}/third_party/libprotobuf-mutator/src"
+
+	git-r3_fetch "https://chromium.googlesource.com/chromium/deps/libsrtp.git" "650611720ecc23e0e6b32b0e3100f8b4df91696c"
+	git-r3_checkout "https://chromium.googlesource.com/chromium/deps/libsrtp.git" "${S}/third_party/libsrtp"
+
+	git-r3_fetch "https://chromium.googlesource.com/aosp/platform/system/core/libsync.git" "f4f4387b6bf2387efbcfd1453af4892e8982faf6"
+	git-r3_checkout "https://chromium.googlesource.com/aosp/platform/system/core/libsync.git" "${S}/third_party/libsync/src"
+
+	git-r3_fetch "https://chromium.googlesource.com/webm/libvpx.git" "0308a9a132612006056f9920c069a1942e49c26c"
+	git-r3_checkout "https://chromium.googlesource.com/webm/libvpx.git" "${S}/third_party/libvpx/source/libvpx"
+
+	git-r3_fetch "https://chromium.googlesource.com/webm/libwebm.git" "51ca718c3adf0ddedacd7df25fe45f67dc5a9ce1"
+	git-r3_checkout "https://chromium.googlesource.com/webm/libwebm.git" "${S}/third_party/libwebm/source"
+
+	git-r3_fetch "https://chromium.googlesource.com/libyuv/libyuv.git" "b36c86fdfe746d7be904c3a565b047b24d58087e"
+	git-r3_checkout "https://chromium.googlesource.com/libyuv/libyuv.git" "${S}/third_party/libyuv"
+
+	git-r3_fetch "https://chromium.googlesource.com/linux-syscall-support.git" "e6527b0cd469e3ff5764785dadcb39bf7d787154"
+	git-r3_checkout "https://chromium.googlesource.com/linux-syscall-support.git" "${S}/third_party/lss"
+
+	git-r3_fetch "https://chromium.googlesource.com/chromiumos/platform/minigbm.git" "4fe3038be586d5db8e44e452f5ed6a93c8ccf50a"
+	git-r3_checkout "https://chromium.googlesource.com/chromiumos/platform/minigbm.git" "${S}/third_party/minigbm/src"
+
+	git-r3_fetch "https://chromium.googlesource.com/external/github.com/nmoinvaz/minizip" "1ff40343b55e738d941abb51c70eddb803db16e2"
+	git-r3_checkout "https://chromium.googlesource.com/external/github.com/nmoinvaz/minizip" "${S}/third_party/minizip/src"
+
+	git-r3_fetch "https://chromium.googlesource.com/chromium/deps/nasm.git" "c8b248039ec1f75a7c5733bbe76d7fa416ce097a"
+	git-r3_checkout "https://chromium.googlesource.com/chromium/deps/nasm.git" "${S}/third_party/nasm"
+
+	git-r3_fetch "https://chromium.googlesource.com/external/github.com/cisco/openh264" "6f26bce0b1c4e8ce0e13332f7c0083788def5fdf"
+	git-r3_checkout "https://chromium.googlesource.com/external/github.com/cisco/openh264" "${S}/third_party/openh264/src"
+
+	git-r3_fetch "https://chromium.googlesource.com/openscreen" "6dcfbb6577554933548255799ed7b58bfbfc51fd"
+	git-r3_checkout "https://chromium.googlesource.com/openscreen" "${S}/third_party/openscreen/src"
+
+	git-r3_fetch "https://pdfium.googlesource.com/pdfium.git" "178b812ec8c7954d782b7822f9d36667542397a0"
+	git-r3_checkout "https://pdfium.googlesource.com/pdfium.git" "${S}/third_party/pdfium"
+
+	git-r3_fetch "https://android.googlesource.com/platform/external/perfetto.git" "7f727d4068ec466c3b1f3ba5f178fe2f58f1d1d7"
+	git-r3_checkout "https://android.googlesource.com/platform/external/perfetto.git" "${S}/third_party/perfetto"
+
+	git-r3_fetch "https://chromium.googlesource.com/chromiumos/third_party/pyelftools.git" "19b3e610c86fcadb837d252c794cb5e8008826ae"
+	git-r3_checkout "https://chromium.googlesource.com/chromiumos/third_party/pyelftools.git" "${S}/third_party/pyelftools"
+
+	git-r3_fetch "https://chromium.googlesource.com/external/github.com/google/pywebsocket.git" "2d7b73c3acbd0f41dcab487ae5c97c6feae06ce2"
+	git-r3_checkout "https://chromium.googlesource.com/external/github.com/google/pywebsocket.git" "${S}/third_party/pywebsocket/src"
+
+	git-r3_fetch "https://chromium.googlesource.com/external/github.com/google/quic-trace.git" "8415c22f0ca2485bd8a16eff64075f4361f3878e"
+	git-r3_checkout "https://chromium.googlesource.com/external/github.com/google/quic-trace.git" "${S}/third_party/quic_trace/src"
+
+	git-r3_fetch "https://chromium.googlesource.com/external/github.com/google/re2.git" "a98fad02c421896bc75d97f49ccd245cdce7dd55"
+	git-r3_checkout "https://chromium.googlesource.com/external/github.com/google/re2.git" "${S}/third_party/re2/src"
 
 	git-r3_fetch "https://chromium.googlesource.com/external/github.com/googlei18n/sfntly.git" "e24c73130c663c9f329e78f5ca3fd5bd83b02622"
-	git-r3_checkout "https://chromium.googlesource.com/external/github.com/googlei18n/sfntly.git" "${S}/third_party/sfntly"
+	git-r3_checkout "https://chromium.googlesource.com/external/github.com/googlei18n/sfntly.git" "${S}/third_party/sfntly/src"
 
+	git-r3_fetch "https://chromium.googlesource.com/external/github.com/google/shaderc.git" "538a9d21bcb7b3437f016337bf2ff262de26ea73"
+	git-r3_checkout "https://chromium.googlesource.com/external/github.com/google/shaderc.git" "${S}/third_party/shaderc/src"
+
+	git-r3_fetch "https://skia.googlesource.com/skia.git" "f13f8690bede09ca97071e9786d68bc0758a24cc"
+	git-r3_checkout "https://skia.googlesource.com/skia.git" "${S}/third_party/skia"
+
+	git-r3_fetch "https://chromium.googlesource.com/external/smhasher.git" "e87738e57558e0ec472b2fc3a643b838e5b6e88f"
+	git-r3_checkout "https://chromium.googlesource.com/external/smhasher.git" "${S}/third_party/smhasher/src"
+
+	git-r3_fetch "https://chromium.googlesource.com/external/github.com/google/snappy.git" "3f194acb57e0487531c96b97af61dcbd025a78a3"
+	git-r3_checkout "https://chromium.googlesource.com/external/github.com/google/snappy.git" "${S}/third_party/snappy/src"
+
+	git-r3_fetch "https://chromium.googlesource.com/external/github.com/KhronosGroup/SPIRV-Cross.git" "f07a4e16a60e1d0231dda5d3883550761bd70a47"
+	git-r3_checkout "https://chromium.googlesource.com/external/github.com/KhronosGroup/SPIRV-Cross.git" "${S}/third_party/spirv-cross/spirv-cross"
+
+	git-r3_fetch "https://chromium.googlesource.com/external/github.com/KhronosGroup/SPIRV-Headers.git" "7ac42f80c0e8a72eb0da29dbd673efad2b6cb421"
+	git-r3_checkout "https://chromium.googlesource.com/external/github.com/KhronosGroup/SPIRV-Headers.git" "${S}/third_party/spirv-headers/src"
+
+	git-r3_fetch "https://swiftshader.googlesource.com/SwiftShader.git" "c0d7ee45d45f22772ceca9e961c1ab4cfc9322d9"
+	git-r3_checkout "https://swiftshader.googlesource.com/SwiftShader.git" "${S}/third_party/swiftshader"
+
+	git-r3_fetch "https://chromium.googlesource.com/external/github.com/sctplab/usrsctp" "7a8bc9a90ca96634aa56ee712856d97f27d903f8"
+	git-r3_checkout "https://chromium.googlesource.com/external/github.com/sctplab/usrsctp" "${S}/third_party/usrsctp/usrsctplib"
+
+	git-r3_fetch "https://chromium.googlesource.com/external/anongit.freedesktop.org/git/wayland/wayland-protocols.git" "57423eac60cc234ebfad15f394488a47f69afe16"
+	git-r3_checkout "https://chromium.googlesource.com/external/anongit.freedesktop.org/git/wayland/wayland-protocols.git" "${S}/third_party/wayland-protocols/src"
+
+	git-r3_fetch "https://chromium.googlesource.com/external/anongit.freedesktop.org/git/wayland/wayland.git" "1361da9cd5a719b32d978485a29920429a31ed25"
+	git-r3_checkout "https://chromium.googlesource.com/external/anongit.freedesktop.org/git/wayland/wayland.git" "${S}/third_party/wayland/src"
+
+	git-r3_fetch "https://chromium.googlesource.com/external/github.com/01org/wds" "ac3d8210d95f3000bf5c8e16a79dbbbf22d554a5"
+	git-r3_checkout "https://chromium.googlesource.com/external/github.com/01org/wds" "${S}/third_party/wds/src"
+
+	git-r3_fetch "https://chromium.googlesource.com/external/github.com/SeleniumHQ/selenium/py.git" "d0045ec570c1a77612db35d1e92f05e1d27b4d53"
+	git-r3_checkout "https://chromium.googlesource.com/external/github.com/SeleniumHQ/selenium/py.git" "${S}/third_party/webdriver/pylib"
+
+	git-r3_fetch "https://chromium.googlesource.com/external/khronosgroup/webgl.git" "6f0b34abee8dba611c253738d955c59f703c147a"
+	git-r3_checkout "https://chromium.googlesource.com/external/khronosgroup/webgl.git" "${S}/third_party/webgl/src"
+
+	git-r3_fetch "https://webrtc.googlesource.com/src.git" "9863f3d246e2da7a2e1f42bbc5757f6af5ec5682"
+	git-r3_checkout "https://webrtc.googlesource.com/src.git" "${S}/third_party/webrtc"
+
+	git-r3_fetch "https://chromium.googlesource.com/chromium/deps/xdg-utils.git" "d80274d5869b17b8c9067a1022e4416ee7ed5e0d"
+	git-r3_checkout "https://chromium.googlesource.com/chromium/deps/xdg-utils.git" "${S}/third_party/xdg-utils"
+
+	git-r3_fetch "https://chromium.googlesource.com/chromium/deps/yasm/patched-yasm.git" "720b70524a4424b15fc57e82263568c8ba0496ad"
+	git-r3_checkout "https://chromium.googlesource.com/chromium/deps/yasm/patched-yasm.git" "${S}/third_party/yasm/source/patched-yasm"
+
+	git-r3_fetch "https://chromium.googlesource.com/v8/v8.git" "5bec950c6647873c777f55f1b95ed7ae5d7def73"
+	git-r3_checkout "https://chromium.googlesource.com/v8/v8.git" "${S}/v8"
 
 }
 
