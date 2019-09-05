@@ -225,7 +225,7 @@ PATCHES=(
 	"${FILESDIR}/chromium-optional-dbus-r8.patch"
 )
 
-S="${WORKDIR}/chromium-${PV/_*}"
+S="${WORKDIR}/src"
 
 pre_build_checks() {
 	if [[ ${MERGE_TYPE} != binary ]]; then
@@ -289,10 +289,12 @@ src_unpack(){
  		${EGCLIENT} config --name=src --spec 'solutions=[{\
  		"url": "https://chromium.googlesource.com/chromium/src.git@refs/tags/'${PV/_*/}'",\
  		"managed": False,\
- 		"name": "chromium-'${PV/_*}'",\
+ 		"name": "src",\
  		"deps_file": "DEPS",\
  		"custom_deps": {\
- 			"src/third_party/blink/web_tests": None,\
+ 			"src/third_party/blink/web_tests/platform/linux": None,\
+ 			"src/third_party/blink/web_tests/platform/mac": None,\
+ 			"src/third_party/blink/web_tests/platform/win": None,\
 			"src/third_party/WebKit/LayoutTests": None,\
 			"src/third_party/android_ndk": None,\
 			"src/third_party/android_tools": None,\
