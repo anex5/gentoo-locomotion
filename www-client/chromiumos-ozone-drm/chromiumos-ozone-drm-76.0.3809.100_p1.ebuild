@@ -275,60 +275,10 @@ src_unpack(){
 	git-r3_fetch "https://chromium.googlesource.com/chromium/tools/depot_tools" "refs/heads/master"
 	git-r3_checkout "https://chromium.googlesource.com/chromium/tools/depot_tools" "${S}/third_party/depot_tools"
 
-	# Prevents gclient from updating self.
- 	export DEPOT_TOOLS_UPDATE=0
- 	# Prevent gclient metrics collection.
- 	export DEPOT_TOOLS_METRICS=0
- 	# Prevent gclient use windows toolchain.
- 	export DEPOT_TOOLS_WIN_TOOLCHAIN=0
+	git-r3_fetch "https://chromium.googlesource.com/external/github.com/googlei18n/sfntly.git" "e24c73130c663c9f329e78f5ca3fd5bd83b02622"
+	git-r3_checkout "https://chromium.googlesource.com/external/github.com/googlei18n/sfntly.git" "${S}/third_party/sfntly"
 
- 	export EGCLIENT="${S}/third_party/depot_tools/gclient"
 
- 	if ! [[ -f .gclient ]]; then
- 		local cmd=( 
- 		${EGCLIENT} config --name=src --spec 'solutions=[{\
- 		"url": "https://chromium.googlesource.com/chromium/src.git@refs/tags/'${PV/_*/}'",\
- 		"managed": False,\
- 		"name": "src",\
- 		"deps_file": "DEPS",\
- 		"custom_deps": {\
- 			"src/third_party/blink/web_tests/platform/linux": None,\
- 			"src/third_party/blink/web_tests/platform/mac": None,\
- 			"src/third_party/blink/web_tests/platform/win": None,\
-			"src/third_party/WebKit/LayoutTests": None,\
-			"src/third_party/android_ndk": None,\
-			"src/third_party/android_tools": None,\
-			"src/third_party/android_system_sdk": None,\
- 			"src/content/test/data/layout_tests/LayoutTests": None,\
- 			"src/chrome/tools/test/reference_build/chrome_win": None,\
- 			"src/chrome_frame/tools/test/reference_build/chrome_win": None,\
- 			"src/chrome/tools/test/reference_build/chrome_linux": None,\
- 			"src/chrome/tools/test/reference_build/chrome_mac": None,\
- 			"src/native_client_sdk/src/build_tools/toolchain_archives": None,\
- 			"src/chrome/test/data/extensions/api_test/permissions/nacl_enabled/bin": None,\
- 			"src/chrome/test/data/layout_tests": None,\
- 			"src/chrome/tools/test/reference_build": None,\
- 			"src/third_party/ffmpeg/binaries": None,\
- 			"src/chrome/test/data/layout_tests": None,\
- 			"src/chrome/tools/test/reference_build/chrome_linux": None,\
- 			"src/third_party/ffmpeg/source/patched-ffmpeg-mt": None,\
- 			"src/third_party/hunspell_dictionaries": None,\
- 			"src/third_party/yasm/source/patched-yasm": None,\
- 			"src/native_client/toolchain": None,\
- 			"src/ios": None \
- 	   		},\
- 		}]; target_os = ["chromeos"]; target_os_only = True\'
- 		)
- 
- 		elog "${cmd[*]}"
- 		"${cmd[@]}" || die
- 	fi
- 
- 	local cmd=(
- 		${EGCLIENT} sync --no-history --with_branch_heads --with_tags --jobs=1 --nohooks --noprehooks
- 	)
- 	elog "${cmd[*]}"
- 	"${cmd[@]}" || die
 }
 
 src_prepare() {
