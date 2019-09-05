@@ -299,9 +299,6 @@ src_unpack(){
 	git-r3_fetch "https://chromium.googlesource.com/chromium/cdm.git" "817c8005a57ea3ca417f767b3b3679601329afd8"
 	git-r3_checkout "https://chromium.googlesource.com/chromium/cdm.git" "${S}/media/cdm/api"
 
-	git-r3_fetch "https://chromium.googlesource.com/native_client/${S}/native_client.git" "0ddc033406886a709b901e0c312872529f9705e8"
-	git-r3_checkout "https://chromium.googlesource.com/native_client/${S}/native_client.git" "${S}/native_client"
-
 	git-r3_fetch "https://quiche.googlesource.com/quiche.git" "b417d60c04d847ac676aa4492c79a17fadca509e"
 	git-r3_checkout "https://quiche.googlesource.com/quiche.git" "${S}/net/third_party/quiche/src"
 
@@ -371,8 +368,8 @@ src_unpack(){
 	git-r3_fetch "https://chromium.googlesource.com/external/fontconfig.git" "ba206df9b9a7ca300265f650842c1459ff7c634a"
 	git-r3_checkout "https://chromium.googlesource.com/external/fontconfig.git" "${S}/third_party/fontconfig/src"
 
-	git-r3_fetch "https://chromium.googlesource.com/chromium/${S}/third_party/freetype2.git" "12e4307dc7b48c9a4a4fc3ac6c32220874ab18ec"
-	git-r3_checkout "https://chromium.googlesource.com/chromium/${S}/third_party/freetype2.git" "${S}/third_party/freetype/src"
+	git-r3_fetch "https://chromium.googlesource.com/chromium/third_party/freetype2.git" "12e4307dc7b48c9a4a4fc3ac6c32220874ab18ec"
+	git-r3_checkout "https://chromium.googlesource.com/chromium/third_party/freetype2.git" "${S}/third_party/freetype/src"
 
 	git-r3_fetch "https://chromium.googlesource.com/chromiumos/platform/gestures.git" "74f55100df966280d305d5d5ada824605f875839"
 	git-r3_checkout "https://chromium.googlesource.com/chromiumos/platform/gestures.git" "${S}/third_party/gestures/gestures"
