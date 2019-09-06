@@ -305,7 +305,7 @@ src_unpack(){
 	git-r3_fetch "https://chromium.googlesource.com/external/github.com/KhronosGroup/SPIRV-Tools.git" "e7866de4b1dc2a7e8672867caeb0bdca49f458d3"
 	git-r3_checkout "https://chromium.googlesource.com/external/github.com/KhronosGroup/SPIRV-Tools.git" "${S}/third_party/SPIRV-Tools/src"
 
-	git-r3_fetch "https://chromium.googlesource.com/angle/angle.git" "9379eed385311cbc442a986437431b3e6ce45ff1"
+	git-r3_fetch "https://chromium.googlesource.com/angle/angle.git" "refs/heads/chromium/3809"
 	git-r3_checkout "https://chromium.googlesource.com/angle/angle.git" "${S}/third_party/angle"
 
 	git-r3_fetch "https://boringssl.googlesource.com/boringssl.git" "2e0d354690064c90ee245c715b92e2bb32492571"
@@ -452,7 +452,7 @@ src_unpack(){
 	git-r3_fetch "https://chromium.googlesource.com/openscreen" "6dcfbb6577554933548255799ed7b58bfbfc51fd"
 	git-r3_checkout "https://chromium.googlesource.com/openscreen" "${S}/third_party/openscreen/src"
 
-	git-r3_fetch "https://pdfium.googlesource.com/pdfium.git" "8e6dcdbee832eca11a20f234216146ecb4884d0b"
+	git-r3_fetch "https://pdfium.googlesource.com/pdfium.git" "refs/heads/chromium/3809"
 	git-r3_checkout "https://pdfium.googlesource.com/pdfium.git" "${S}/third_party/pdfium"
 
 	git-r3_fetch "https://android.googlesource.com/platform/external/perfetto.git" "7f727d4068ec466c3b1f3ba5f178fe2f58f1d1d7"
@@ -476,7 +476,7 @@ src_unpack(){
 	git-r3_fetch "https://chromium.googlesource.com/external/github.com/google/shaderc.git" "538a9d21bcb7b3437f016337bf2ff262de26ea73"
 	git-r3_checkout "https://chromium.googlesource.com/external/github.com/google/shaderc.git" "${S}/third_party/shaderc/src"
 
-	git-r3_fetch "https://skia.googlesource.com/skia.git" "f13f8690bede09ca97071e9786d68bc0758a24cc"
+	git-r3_fetch "https://skia.googlesource.com/skia.git" "refs/heads/chrome/m76"
 	git-r3_checkout "https://skia.googlesource.com/skia.git" "${S}/third_party/skia"
 
 	git-r3_fetch "https://chromium.googlesource.com/external/smhasher.git" "e87738e57558e0ec472b2fc3a643b838e5b6e88f"
@@ -512,7 +512,7 @@ src_unpack(){
 	git-r3_fetch "https://chromium.googlesource.com/external/khronosgroup/webgl.git" "6f0b34abee8dba611c253738d955c59f703c147a"
 	git-r3_checkout "https://chromium.googlesource.com/external/khronosgroup/webgl.git" "${S}/third_party/webgl/src"
 
-	git-r3_fetch "https://webrtc.googlesource.com/src.git" "9863f3d246e2da7a2e1f42bbc5757f6af5ec5682"
+	git-r3_fetch "https://webrtc.googlesource.com/src.git" "refs/branch-heads/m76"
 	git-r3_checkout "https://webrtc.googlesource.com/src.git" "${S}/third_party/webrtc"
 
 	git-r3_fetch "https://chromium.googlesource.com/chromium/deps/xdg-utils.git" "d80274d5869b17b8c9067a1022e4416ee7ed5e0d"
@@ -521,7 +521,7 @@ src_unpack(){
 	git-r3_fetch "https://chromium.googlesource.com/chromium/deps/yasm/patched-yasm.git" "720b70524a4424b15fc57e82263568c8ba0496ad"
 	git-r3_checkout "https://chromium.googlesource.com/chromium/deps/yasm/patched-yasm.git" "${S}/third_party/yasm/source/patched-yasm"
 
-	git-r3_fetch "https://chromium.googlesource.com/v8/v8.git" "5bec950c6647873c777f55f1b95ed7ae5d7def73"
+	git-r3_fetch "https://chromium.googlesource.com/v8/v8.git" "refs/heads/7.6-lkgr"
 	git-r3_checkout "https://chromium.googlesource.com/v8/v8.git" "${S}/v8"
 
 }
