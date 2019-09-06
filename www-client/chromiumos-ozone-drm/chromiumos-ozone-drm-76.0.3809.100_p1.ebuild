@@ -564,9 +564,9 @@ src_prepare() {
 
 	use system-libdrm && eapply "${FILESDIR}/chromium-system-libdrm.patch"
 
-	ebegin "Pruning binaries"
-	"${UGC_WD}/utils/prune_binaries.py" . "${UGC_WD}/pruning.list"
-	eend $? || die
+	#ebegin "Pruning binaries"
+	#"${UGC_WD}/utils/prune_binaries.py" . "${UGC_WD}/pruning.list"
+	#eend $? || die
 
 	ebegin "Applying ungoogled-chromium patches"
 	"${UGC_WD}/utils/patches.py" apply . "${UGC_WD}/patches"
