@@ -359,8 +359,8 @@ src_unpack(){
 	git-r3_fetch "https://chromium.googlesource.com/external/fontconfig.git" "ba206df9b9a7ca300265f650842c1459ff7c634a"
 	git-r3_checkout "https://chromium.googlesource.com/external/fontconfig.git" "${S}/third_party/fontconfig/src"
 
-	git-r3_fetch "https://chromium.googlesource.com/chromium/third_party/freetype2.git" "12e4307dc7b48c9a4a4fc3ac6c32220874ab18ec"
-	git-r3_checkout "https://chromium.googlesource.com/chromium/third_party/freetype2.git" "${S}/third_party/freetype/src"
+	git-r3_fetch "https://chromium.googlesource.com/chromium/src/third_party/freetype2.git" "12e4307dc7b48c9a4a4fc3ac6c32220874ab18ec"
+	git-r3_checkout "https://chromium.googlesource.com/chromium/src/third_party/freetype2.git" "${S}/third_party/freetype/src"
 
 	git-r3_fetch "https://chromium.googlesource.com/chromiumos/platform/gestures.git" "74f55100df966280d305d5d5ada824605f875839"
 	git-r3_checkout "https://chromium.googlesource.com/chromiumos/platform/gestures.git" "${S}/third_party/gestures/gestures"
