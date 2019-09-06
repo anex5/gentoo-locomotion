@@ -320,9 +320,6 @@ src_unpack(){
 	git-r3_fetch "https://chromium.googlesource.com/external/github.com/google/compact_enc_det.git" "ba412eaaacd3186085babcd901679a48863c7dd5"
 	git-r3_checkout "https://chromium.googlesource.com/external/github.com/google/compact_enc_det.git" "${S}/third_party/ced/src"
 
-	git-r3_fetch "https://chrome-infra-packages.appspot.com/chromium/third_party/checkstyle" "y17J5dqst1qkBcbJyie8jltB2oFOgaQjFZ5k9UpbbbwC"
-	git-r3_checkout "https://chrome-infra-packages.appspot.com/chromium/third_party/checkstyle" "${S}/third_party/checkstyle:chromium/third_party/checkstyle"
-
 	git-r3_fetch "https://chromium.googlesource.com/chromiumos/chromite.git" "a9e9c3dff0c2bf41895f2c2c6fb10960cea00596"
 	git-r3_checkout "https://chromium.googlesource.com/chromiumos/chromite.git" "${S}/third_party/chromite"
 
