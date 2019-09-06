@@ -380,8 +380,8 @@ src_unpack(){
 	#git-r3_fetch "https://chromium.googlesource.com/external/github.com/harfbuzz/harfbuzz.git" "c73d7ba75d4556d9b8e05b10d6572f74f4814f7a"
 	#git-r3_checkout "https://chromium.googlesource.com/external/github.com/harfbuzz/harfbuzz.git" "${S}/third_party/harfbuzz-ng/src"
 
-	git-r3_fetch "https://chromium.googlesource.com/chromium/deps/hunspell_dictionaries.git" "3874188bd69fe67a825d07584c74451e45063e95"
-	git-r3_checkout "https://chromium.googlesource.com/chromium/deps/hunspell_dictionaries.git" "${S}/third_party/hunspell_dictionaries"
+	#git-r3_fetch "https://chromium.googlesource.com/chromium/deps/hunspell_dictionaries.git" "3874188bd69fe67a825d07584c74451e45063e95"
+	#git-r3_checkout "https://chromium.googlesource.com/chromium/deps/hunspell_dictionaries.git" "${S}/third_party/hunspell_dictionaries"
 
 	git-r3_fetch "https://chromium.googlesource.com/chromium/deps/icu.git" "64e5d7d43a1ff205e3787ab6150bbc1a1837332b"
 	git-r3_checkout "https://chromium.googlesource.com/chromium/deps/icu.git" "${S}/third_party/icu"
@@ -401,7 +401,7 @@ src_unpack(){
 	git-r3_fetch "https://aomedia.googlesource.com/aom.git" "625cded0550bb79efd10d98a9809a7ccd72a8f60"
 	git-r3_checkout "https://aomedia.googlesource.com/aom.git" "${S}/third_party/libaom/source/libaom"
 
-	git-r3_fetch "https://chromium.googlesource.com/chromiumos/third_party/libdrm.git" "0061b1f244574e615c415479725046ab2951f09a"
+	git-r3_fetch "https://chromium.googlesource.com/chromiumos/third_party/libdrm.git" "728dfa9dbeeb013e5a26c24f4372a16eace99c5e"
 	git-r3_checkout "https://chromium.googlesource.com/chromiumos/third_party/libdrm.git" "${S}/third_party/libdrm/src"
 
 	git-r3_fetch "https://chromium.googlesource.com/chromiumos/platform/libevdev.git" "9f7a1961eb4726211e18abd147d5a11a4ea86744"
