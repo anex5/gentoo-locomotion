@@ -452,7 +452,7 @@ src_unpack(){
 	git-r3_fetch "https://chromium.googlesource.com/openscreen" "6dcfbb6577554933548255799ed7b58bfbfc51fd"
 	git-r3_checkout "https://chromium.googlesource.com/openscreen" "${S}/third_party/openscreen/src"
 
-	git-r3_fetch "https://pdfium.googlesource.com/pdfium.git" "178b812ec8c7954d782b7822f9d36667542397a0"
+	git-r3_fetch "https://pdfium.googlesource.com/pdfium.git" "8e6dcdbee832eca11a20f234216146ecb4884d0b"
 	git-r3_checkout "https://pdfium.googlesource.com/pdfium.git" "${S}/third_party/pdfium"
 
 	git-r3_fetch "https://android.googlesource.com/platform/external/perfetto.git" "7f727d4068ec466c3b1f3ba5f178fe2f58f1d1d7"
