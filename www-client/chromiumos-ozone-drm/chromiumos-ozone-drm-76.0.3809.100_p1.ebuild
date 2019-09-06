@@ -377,8 +377,8 @@ src_unpack(){
 	git-r3_fetch "https://chromium.googlesource.com/external/github.com/grpc/grpc.git" "b245ad4ae810ed6bc13378421edfd3986a8ffac3"
 	git-r3_checkout "https://chromium.googlesource.com/external/github.com/grpc/grpc.git" "${S}/third_party/grpc/src"
 
-	git-r3_fetch "https://chromium.googlesource.com/external/github.com/harfbuzz/harfbuzz.git" "c73d7ba75d4556d9b8e05b10d6572f74f4814f7a"
-	git-r3_checkout "https://chromium.googlesource.com/external/github.com/harfbuzz/harfbuzz.git" "${S}/third_party/harfbuzz-ng/src"
+	#git-r3_fetch "https://chromium.googlesource.com/external/github.com/harfbuzz/harfbuzz.git" "c73d7ba75d4556d9b8e05b10d6572f74f4814f7a"
+	#git-r3_checkout "https://chromium.googlesource.com/external/github.com/harfbuzz/harfbuzz.git" "${S}/third_party/harfbuzz-ng/src"
 
 	git-r3_fetch "https://chromium.googlesource.com/chromium/deps/hunspell_dictionaries.git" "3874188bd69fe67a825d07584c74451e45063e95"
 	git-r3_checkout "https://chromium.googlesource.com/chromium/deps/hunspell_dictionaries.git" "${S}/third_party/hunspell_dictionaries"
