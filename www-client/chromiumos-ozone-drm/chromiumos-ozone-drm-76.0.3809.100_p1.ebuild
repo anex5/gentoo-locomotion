@@ -225,7 +225,7 @@ PATCHES=(
 	"${FILESDIR}/chromium-optional-dbus-r8.patch"
 )
 
-S="${WORKDIR}/src"
+S="${WORKDIR}/chromium-${PV/_*}"
 
 pre_build_checks() {
 	if [[ ${MERGE_TYPE} != binary ]]; then
@@ -493,6 +493,9 @@ src_unpack(){
 
 	git-r3_fetch "https://swiftshader.googlesource.com/SwiftShader.git" "c0d7ee45d45f22772ceca9e961c1ab4cfc9322d9"
 	git-r3_checkout "https://swiftshader.googlesource.com/SwiftShader.git" "${S}/third_party/swiftshader"
+
+	git-r3_fetch "https://chromium.googlesource.com/chromium/third_party/ffmpeg" "e1e3cc4d2ec19c4e1859e487e8b7529cb69d91d8"
+	git-r3_checkout "https://chromium.googlesource.com/chromium/third_party/ffmpeg" "${S}/third_party/ffmpeg"
 
 	git-r3_fetch "https://chromium.googlesource.com/external/github.com/sctplab/usrsctp" "7a8bc9a90ca96634aa56ee712856d97f27d903f8"
 	git-r3_checkout "https://chromium.googlesource.com/external/github.com/sctplab/usrsctp" "${S}/third_party/usrsctp/usrsctplib"
