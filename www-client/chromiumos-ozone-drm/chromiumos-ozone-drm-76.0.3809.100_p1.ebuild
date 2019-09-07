@@ -67,7 +67,7 @@ REQUIRED_USE="
 	atk? ( gnome )
 	system-wayland? ( wayland )
 "
-RESTRICT="
+RESTRICT="mirror
 	!system-ffmpeg? ( proprietary-codecs? ( bindist ) )
 	!system-openh264? ( bindist )
 "
@@ -273,13 +273,13 @@ pkg_setup() {
 src_unpack(){
 	default
 
-	mv "gn-linux-amd64/gn" "buildtools/linux64"
-	mv "third_party-checkstyle/checkstyle-8.0-all.jar" "third_party/checkstyle"
-	mv "openscreen-gn-linux-amd64/gn" "third_party/openscreen/src/buildtools/linux64"
-	mv "isolated-linux-amd64/isolate" "tools/luci-go"
-	mv "isolated-linux-amd64/isolated" "tools/luci-go"
-	mv "swarming-linux-amd64/swarming" "tools/luci-go"
-	mv "goldctl-linux-amd64/goldctl" "tools/skia_goldctl"
+	mv "${WORKDIR}/gn-linux-amd64/gn" "buildtools/linux64"
+	mv "${WORKDIR}/third_party-checkstyle/checkstyle-8.0-all.jar" "third_party/checkstyle"
+	mv "${WORKDIR}/openscreen-gn-linux-amd64/gn" "third_party/openscreen/src/buildtools/linux64"
+	mv "${WORKDIR}/isolated-linux-amd64/isolate" "tools/luci-go"
+	mv "${WORKDIR}/isolated-linux-amd64/isolated" "tools/luci-go"
+	mv "${WORKDIR}/swarming-linux-amd64/swarming" "tools/luci-go"
+	mv "${WORKDIR}/goldctl-linux-amd64/goldctl" "tools/skia_goldctl"
 
 	EGIT_CLONE_TYPE="shallow"
 	EGIT_REPO_URI="https://chromium.googlesource.com/chromium/src.git"
