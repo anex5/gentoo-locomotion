@@ -275,8 +275,8 @@ src_unpack(){
 	git-r3_fetch "https://chromium.googlesource.com/chromium/llvm-project/cfe/tools/clang-format.git" "96636aa0e9f047f17447f2d45a094d0b59ed7917"
 	git-r3_checkout "https://chromium.googlesource.com/chromium/llvm-project/cfe/tools/clang-format.git" "buildtools/clang_format/script"
 
-	git-r3_fetch "https://chrome-infra-packages.appspot.com/gn/gn/linux-amd64" "git_revision:81ee1967d3fcbc829bac1c005c3da59739c88df9"
-	git-r3_checkout "https://chrome-infra-packages.appspot.com/gn/gn/linux-amd64" "buildtools/linux64:gn/gn/linux-amd64"
+	git-r3_fetch "https://chrome-infra-packages.appspot.com/p/gn/gn/linux-amd64" "git_revision:81ee1967d3fcbc829bac1c005c3da59739c88df9"
+	git-r3_checkout "https://chrome-infra-packages.appspot.com/p/gn/gn/linux-amd64" "buildtools/linux64:gn/gn/linux-amd64"
 
 	git-r3_fetch "https://chromium.googlesource.com/chromium/llvm-project/libcxx.git" "5938e0582bac570a41edb3d6a2217c299adc1bc6"
 	git-r3_checkout "https://chromium.googlesource.com/chromium/llvm-project/libcxx.git" "buildtools/third_party/libc++/trunk"
@@ -488,8 +488,8 @@ src_unpack(){
 	git-r3_fetch "https://chromium.googlesource.com/openscreen" "6dcfbb6577554933548255799ed7b58bfbfc51fd"
 	git-r3_checkout "https://chromium.googlesource.com/openscreen" "third_party/openscreen/src"
 
-	git-r3_fetch "https://chrome-infra-packages.appspot.com/gn/gn/linux-amd64" "git_revision:81ee1967d3fcbc829bac1c005c3da59739c88df9"
-	git-r3_checkout "https://chrome-infra-packages.appspot.com/gn/gn/linux-amd64" "third_party/openscreen/src/buildtools/linux64:gn/gn/linux-amd64"
+	git-r3_fetch "https://chrome-infra-packages.appspot.com/p/gn/gn/linux-amd64" "git_revision:81ee1967d3fcbc829bac1c005c3da59739c88df9"
+	git-r3_checkout "https://chrome-infra-packages.appspot.com/p/gn/gn/linux-amd64" "third_party/openscreen/src/buildtools/linux64:gn/gn/linux-amd64"
 
 	git-r3_fetch "https://chromium.googlesource.com/external/github.com/intel/tinycbor.git" "bfc40dcf909f1998d7760c2bc0e1409979d3c8cb"
 	git-r3_checkout "https://chromium.googlesource.com/external/github.com/intel/tinycbor.git" "third_party/openscreen/src/third_party/tinycbor/src"
