@@ -273,14 +273,6 @@ pkg_setup() {
 src_unpack(){
 	default
 
-	cp "${WORKDIR}/gn" "${S}/buildtools/linux64" || die
-	mv "${WORKDIR}/checkstyle-8.0-all.jar" "${S}/third_party/checkstyle" || die
-	mv "${WORKDIR}/gn" "${S}/third_party/openscreen/src/buildtools/linux64" || die
-	mv "${WORKDIR}/isolate" "${S}/tools/luci-go" || die
-	mv "${WORKDIR}/isolated" "${S}/tools/luci-go" || die
-	mv "${WORKDIR}/swarming" "${S}/tools/luci-go" || die
-	mv "${WORKDIR}/goldctl" "${S}/tools/skia_goldctl" || die
-
 	EGIT_CLONE_TYPE="shallow"
 	EGIT_REPO_URI="https://chromium.googlesource.com/chromium/src.git"
 	EGIT_COMMIT="refs/tags/${PV/_*/}"
@@ -581,6 +573,14 @@ src_unpack(){
 	
 	git-r3_fetch "https://chromium.googlesource.com/chromium/third_party/ffmpeg" "7e1e8a4f7df474a4f8109c507a09621acad40314"
 	git-r3_checkout "https://chromium.googlesource.com/chromium/third_party/ffmpeg" "${S}/third_party/ffmpeg"
+
+	cp "${WORKDIR}/gn" "${S}/buildtools/linux64" || die
+	mv "${WORKDIR}/checkstyle-8.0-all.jar" "${S}/third_party/checkstyle" || die
+	mv "${WORKDIR}/gn" "${S}/third_party/openscreen/src/buildtools/linux64" || die
+	mv "${WORKDIR}/isolate" "${S}/tools/luci-go" || die
+	mv "${WORKDIR}/isolated" "${S}/tools/luci-go" || die
+	mv "${WORKDIR}/swarming" "${S}/tools/luci-go" || die
+	mv "${WORKDIR}/goldctl" "${S}/tools/skia_goldctl" || die
 }
 
 src_prepare() {
