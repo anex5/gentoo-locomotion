@@ -382,7 +382,7 @@ src_unpack(){
 	git-r3_fetch "https://chromium.googlesource.com/chromium/dom-distiller/dist.git" "3093c3e238768ab27ff756bd7563ccbb12129d9f"
 	git-r3_checkout "https://chromium.googlesource.com/chromium/dom-distiller/dist.git" "${S}/third_party/dom_distiller_js/dist"
 
-	git-r3_fetch "https://chromium.googlesource.com/external/github.com/googlei18n/emoji-segmenter.git" "9ba6d25d0d9313569665d4a9d2b34f0f39f9a50e"
+	git-r3_fetch "https://chromium.googlesource.com/external/github.com/googlei18n/emoji-segmenter.git" "refs/heads/upstream/master"
 	git-r3_checkout "https://chromium.googlesource.com/external/github.com/googlei18n/emoji-segmenter.git" "${S}/third_party/emoji-segmenter/src"
 
 	#git-r3_fetch "https://chromium.googlesource.com/chromium/third_party/ffmpeg.git" "e1e3cc4d2ec19c4e1859e487e8b7529cb69d91d8"
