@@ -574,9 +574,9 @@ src_unpack(){
 	git-r3_fetch "https://chromium.googlesource.com/chromium/third_party/ffmpeg.git" "7e1e8a4f7df474a4f8109c507a09621acad40314"
 	git-r3_checkout "https://chromium.googlesource.com/chromium/third_party/ffmpeg.git" "${S}/third_party/ffmpeg"
 
-	cp "${WORKDIR}/gn" "chromium-${PV/_*}/buildtools/linux64" || die
+	mv "${WORKDIR}/gn" "chromium-${PV/_*}/buildtools/linux64" || die
 	mv "${WORKDIR}/checkstyle-8.0-all.jar" "chromium-${PV/_*}/third_party/checkstyle" || die
-	mv "${WORKDIR}/gn" "chromium-${PV/_*}/third_party/openscreen/src/buildtools/linux64" || die
+	#mv "${WORKDIR}/gn" "chromium-${PV/_*}/third_party/openscreen/src/buildtools/linux64" || die
 	mv "${WORKDIR}/isolate" "chromium-${PV/_*}/tools/luci-go" || die
 	mv "${WORKDIR}/isolated" "chromium-${PV/_*}/tools/luci-go" || die
 	mv "${WORKDIR}/swarming" "chromium-${PV/_*}/tools/luci-go" || die
