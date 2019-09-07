@@ -273,13 +273,13 @@ pkg_setup() {
 src_unpack(){
 	default
 
-	mv "${WORKDIR}/gn-linux-amd64/gn" "buildtools/linux64"
-	mv "${WORKDIR}/third_party-checkstyle/checkstyle-8.0-all.jar" "third_party/checkstyle"
-	mv "${WORKDIR}/openscreen-gn-linux-amd64/gn" "third_party/openscreen/src/buildtools/linux64"
-	mv "${WORKDIR}/isolated-linux-amd64/isolate" "tools/luci-go"
-	mv "${WORKDIR}/isolated-linux-amd64/isolated" "tools/luci-go"
-	mv "${WORKDIR}/swarming-linux-amd64/swarming" "tools/luci-go"
-	mv "${WORKDIR}/goldctl-linux-amd64/goldctl" "tools/skia_goldctl"
+	mv "${WORKDIR}/gn-linux-amd64/gn" "buildtools/linux64" || die
+	mv "${WORKDIR}/third_party-checkstyle/checkstyle-8.0-all.jar" "${S}/third_party/checkstyle" || die
+	mv "${WORKDIR}/openscreen-gn-linux-amd64/gn" "${S}/third_party/openscreen/src/buildtools/linux64" || die
+	mv "${WORKDIR}/isolated-linux-amd64/isolate" "${S}/tools/luci-go" || die
+	mv "${WORKDIR}/isolated-linux-amd64/isolated" "${S}/tools/luci-go" || die
+	mv "${WORKDIR}/swarming-linux-amd64/swarming" "${S}/tools/luci-go" || die
+	mv "${WORKDIR}/goldctl-linux-amd64/goldctl" "${S}/tools/skia_goldctl" || die
 
 	EGIT_CLONE_TYPE="shallow"
 	EGIT_REPO_URI="https://chromium.googlesource.com/chromium/src.git"
