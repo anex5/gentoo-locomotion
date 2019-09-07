@@ -319,7 +319,7 @@ src_unpack(){
 	git-r3_fetch "https://chromium.googlesource.com/angle/angle.git" "refs/heads/chromium/3809"
 	git-r3_checkout "https://chromium.googlesource.com/angle/angle.git" "${S}/third_party/angle"
 
-	git-r3_fetch "https://chromium.googlesource.com/external/deqp" "e773f33c5a0fa5f8f8147f3ee77d540d1cf974d0"
+	git-r3_fetch "https://chromium.googlesource.com/external/deqp" "6859e6c3488a5c757557b42c3774508baeacf3d0"
 	git-r3_checkout "https://chromium.googlesource.com/external/deqp" "${S}/third_party/angle/third_party/deqp/src"
 
 	git-r3_fetch "https://chromium.googlesource.com/external/github.com/glmark2/glmark2" "c4b3ff5a481348e8bdc2b71ee275864db91e40b1"
