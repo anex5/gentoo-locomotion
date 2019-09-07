@@ -273,7 +273,7 @@ pkg_setup() {
 src_unpack(){
 	default
 
-	mv "${WORKDIR}/gn-linux-amd64/gn" "buildtools/linux64" || die
+	mv "${WORKDIR}/gn-linux-amd64/gn" "${S}/buildtools/linux64" || die
 	mv "${WORKDIR}/third_party-checkstyle/checkstyle-8.0-all.jar" "${S}/third_party/checkstyle" || die
 	mv "${WORKDIR}/openscreen-gn-linux-amd64/gn" "${S}/third_party/openscreen/src/buildtools/linux64" || die
 	mv "${WORKDIR}/isolated-linux-amd64/isolate" "${S}/tools/luci-go" || die
