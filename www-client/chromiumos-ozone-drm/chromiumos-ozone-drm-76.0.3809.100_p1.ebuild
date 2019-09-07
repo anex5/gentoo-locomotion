@@ -439,7 +439,7 @@ src_unpack(){
 	git-r3_fetch "https://aomedia.googlesource.com/aom.git" "625cded0550bb79efd10d98a9809a7ccd72a8f60"
 	git-r3_checkout "https://aomedia.googlesource.com/aom.git" "${S}/third_party/libaom/source/libaom"
 
-	git-r3_fetch "https://chromium.googlesource.com/chromiumos/third_party/libdrm.git" "0061b1f244574e615c415479725046ab2951f09a"
+	git-r3_fetch "https://chromium.googlesource.com/chromiumos/third_party/libdrm.git" "refs/heads/release-R76-12239.B"
 	git-r3_checkout "https://chromium.googlesource.com/chromiumos/third_party/libdrm.git" "${S}/third_party/libdrm/src"
 
 	git-r3_fetch "https://chromium.googlesource.com/chromiumos/platform/libevdev.git" "9f7a1961eb4726211e18abd147d5a11a4ea86744"
