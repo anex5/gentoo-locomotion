@@ -499,7 +499,7 @@ src_unpack(){
 	git-r3_fetch "https://android.googlesource.com/platform/external/perfetto.git" "7f727d4068ec466c3b1f3ba5f178fe2f58f1d1d7"
 	git-r3_checkout "https://android.googlesource.com/platform/external/perfetto.git" "${S}/third_party/perfetto"
 
-	git-r3_fetch "https://chromium.googlesource.com/chromiumos/third_party/pyelftools.git" "19b3e610c86fcadb837d252c794cb5e8008826ae"
+	git-r3_fetch "https://chromium.googlesource.com/chromiumos/third_party/pyelftools.git" "refs/heads/release-R76-12239.B"
 	git-r3_checkout "https://chromium.googlesource.com/chromiumos/third_party/pyelftools.git" "${S}/third_party/pyelftools"
 
 	git-r3_fetch "https://chromium.googlesource.com/external/github.com/google/pywebsocket.git" "2d7b73c3acbd0f41dcab487ae5c97c6feae06ce2"
