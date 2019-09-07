@@ -24,12 +24,12 @@ SRC_URI="
 	https://github.com/Eloston/ungoogled-chromium/archive/${UGC_PV}.tar.gz -> ${UGC_P}.tar.gz
 	https://chrome-infra-packages.appspot.com/dl/gn/gn/${platform}/+/git_revision:b3fefa62b27278f19c25878b513e169b5ebcbc30 -> gn-linux-amd64.zip
 	https://chrome-infra-packages.appspot.com/dl/chromium/third_party/checkstyle/+/y17J5dqst1qkBcbJyie8jltB2oFOgaQjFZ5k9UpbbbwC -> third_party-checkstyle.zip
-	https://chrome-infra-packages.appspot.com/dl/gn/gn/${platform}/+/git_revision:81ee1967d3fcbc829bac1c005c3da59739c88df9 -> openscreen-gn-linux-amd64.zip
 	https://chrome-infra-packages.appspot.com/dl/infra/tools/luci/isolate/${platform}/+/git_revision:25958d48e89e980e2a97daeddc977fb5e2e1fb8c -> isolate-linux-amd64.zip
 	https://chrome-infra-packages.appspot.com/dl/infra/tools/luci/isolated/${platform}/+/git_revision:25958d48e89e980e2a97daeddc977fb5e2e1fb8c -> isolated-linux-amd64.zip
 	https://chrome-infra-packages.appspot.com/dl/infra/tools/luci/swarming/${platform}/+/git_revision:25958d48e89e980e2a97daeddc977fb5e2e1fb8c -> swarming-linux-amd64.zip
 	https://chrome-infra-packages.appspot.com/dl/skia/tools/goldctl/${platform}/+/git_revision:f87a7deecc778c67e04af82265f040fef5d05c3f	-> goldctl-linux-amd64.zip
 "
+#https://chrome-infra-packages.appspot.com/dl/gn/gn/${platform}/+/git_revision:81ee1967d3fcbc829bac1c005c3da59739c88df9 -> openscreen-gn-linux-amd64.zip
 
 LICENSE="BSD"
 SLOT="0"
@@ -982,7 +982,7 @@ src_configure() {
 		flac
 		fontconfig
 		libpng
-		libusb
+		#libusb
 		libwebp
 		libxml
 		libxslt
