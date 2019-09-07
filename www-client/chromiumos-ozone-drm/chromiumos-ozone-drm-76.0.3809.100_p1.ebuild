@@ -16,16 +16,24 @@ inherit git-r3 check-reqs chromium-2 desktop flag-o-matic ninja-utils pax-utils 
 UGC_PV="${PV/_p/-}"
 UGC_P="ungoogled-chromium-${UGC_PV}"
 UGC_WD="${WORKDIR}/${UGC_P}"
+platform="linux-amd64"
 
 DESCRIPTION="Modifications to Chromium for removing Google integration and enhancing privacy"
 HOMEPAGE="https://github.com/Eloston/ungoogled-chromium https://www.chromium.org/ https://github.com/Igalia/chromium"
 SRC_URI="
 	https://github.com/Eloston/ungoogled-chromium/archive/${UGC_PV}.tar.gz -> ${UGC_P}.tar.gz
+	https://chrome-infra-packages.appspot.com/dl/gn/gn/${platform}/+/git_revision:b3fefa62b27278f19c25878b513e169b5ebcbc30
+	https://chrome-infra-packages.appspot.com/dl/chromium/third_party/checkstyle/+/y17J5dqst1qkBcbJyie8jltB2oFOgaQjFZ5k9UpbbbwC
+	https://chrome-infra-packages.appspot.com/dl/gn/gn/${platform}/+/git_revision:81ee1967d3fcbc829bac1c005c3da59739c88df9 -> openscreen-gn-linux-amd64.zip
+	https://chrome-infra-packages.appspot.com/dl/infra/tools/luci/isolate/${platform}/+/git_revision:25958d48e89e980e2a97daeddc977fb5e2e1fb8c
+	https://chrome-infra-packages.appspot.com/dl/infra/tools/luci/isolated/${platform}/+/git_revision:25958d48e89e980e2a97daeddc977fb5e2e1fb8c
+	https://chrome-infra-packages.appspot.com/dl/infra/tools/luci/swarming/${platform}/+/git_revision:25958d48e89e980e2a97daeddc977fb5e2e1fb8c
+	https://chrome-infra-packages.appspot.com/dl/skia/tools/goldctl/${platform}/+/git_revision:f87a7deecc778c67e04af82265f040fef5d05c3f	
 "
 
 LICENSE="BSD"
 SLOT="0"
-KEYWORDS="~amd64 ~x86"
+KEYWORDS="~amd64 ~x86 ~arm64"
 VIDEO_CARDS="
 	amdgpu exynos intel marvell mediatek msm radeon radeonsi rockchip tegra vc4 virgl
 "
@@ -265,6 +273,14 @@ pkg_setup() {
 src_unpack(){
 	default
 
+	mv "gn-linux-amd64/gn" "buildtools/linux64"
+	mv "third_party-checkstyle/checkstyle-8.0-all.jar" "third_party/checkstyle"
+	mv "openscreen-gn-linux-amd64/gn" "third_party/openscreen/src/buildtools/linux64"
+	mv "isolated-linux-amd64/isolate" "tools/luci-go"
+	mv "isolated-linux-amd64/isolated" "tools/luci-go"
+	mv "swarming-linux-amd64/swarming" "tools/luci-go"
+	mv "goldctl-linux-amd64/goldctl" "tools/skia_goldctl"
+
 	EGIT_CLONE_TYPE="shallow"
 	EGIT_REPO_URI="https://chromium.googlesource.com/chromium/src.git"
 	EGIT_COMMIT="refs/tags/${PV/_*/}"
@@ -274,9 +290,6 @@ src_unpack(){
 
 	git-r3_fetch "https://chromium.googlesource.com/chromium/llvm-project/cfe/tools/clang-format.git" "96636aa0e9f047f17447f2d45a094d0b59ed7917"
 	git-r3_checkout "https://chromium.googlesource.com/chromium/llvm-project/cfe/tools/clang-format.git" "buildtools/clang_format/script"
-
-	git-r3_fetch "https://chrome-infra-packages.appspot.com/p/gn/gn/linux-amd64" "git_revision:81ee1967d3fcbc829bac1c005c3da59739c88df9"
-	git-r3_checkout "https://chrome-infra-packages.appspot.com/p/gn/gn/linux-amd64" "buildtools/linux64:gn/gn/linux-amd64"
 
 	git-r3_fetch "https://chromium.googlesource.com/chromium/llvm-project/libcxx.git" "5938e0582bac570a41edb3d6a2217c299adc1bc6"
 	git-r3_checkout "https://chromium.googlesource.com/chromium/llvm-project/libcxx.git" "buildtools/third_party/libc++/trunk"
@@ -346,9 +359,6 @@ src_unpack(){
 
 	git-r3_fetch "https://chromium.googlesource.com/external/github.com/google/compact_enc_det.git" "ba412eaaacd3186085babcd901679a48863c7dd5"
 	git-r3_checkout "https://chromium.googlesource.com/external/github.com/google/compact_enc_det.git" "third_party/ced/src"
-
-	git-r3_fetch "https://chrome-infra-packages.appspot.com/chromium/third_party/checkstyle" "y17J5dqst1qkBcbJyie8jltB2oFOgaQjFZ5k9UpbbbwC"
-	git-r3_checkout "https://chrome-infra-packages.appspot.com/chromium/third_party/checkstyle" "third_party/checkstyle:chromium/third_party/checkstyle"
 
 	git-r3_fetch "https://chromium.googlesource.com/chromiumos/chromite.git" "a9e9c3dff0c2bf41895f2c2c6fb10960cea00596"
 	git-r3_checkout "https://chromium.googlesource.com/chromiumos/chromite.git" "third_party/chromite"
@@ -488,9 +498,6 @@ src_unpack(){
 	git-r3_fetch "https://chromium.googlesource.com/openscreen" "6dcfbb6577554933548255799ed7b58bfbfc51fd"
 	git-r3_checkout "https://chromium.googlesource.com/openscreen" "third_party/openscreen/src"
 
-	git-r3_fetch "https://chrome-infra-packages.appspot.com/p/gn/gn/linux-amd64" "git_revision:81ee1967d3fcbc829bac1c005c3da59739c88df9"
-	git-r3_checkout "https://chrome-infra-packages.appspot.com/p/gn/gn/linux-amd64" "third_party/openscreen/src/buildtools/linux64:gn/gn/linux-amd64"
-
 	git-r3_fetch "https://chromium.googlesource.com/external/github.com/intel/tinycbor.git" "bfc40dcf909f1998d7760c2bc0e1409979d3c8cb"
 	git-r3_checkout "https://chromium.googlesource.com/external/github.com/intel/tinycbor.git" "third_party/openscreen/src/third_party/tinycbor/src"
 
@@ -563,20 +570,8 @@ src_unpack(){
 	git-r3_fetch "https://chromium.googlesource.com/chromium/deps/yasm/patched-yasm.git" "720b70524a4424b15fc57e82263568c8ba0496ad"
 	git-r3_checkout "https://chromium.googlesource.com/chromium/deps/yasm/patched-yasm.git" "third_party/yasm/source/patched-yasm"
 
-	git-r3_fetch "https://chrome-infra-packages.appspot.com/infra/tools/luci/isolate/${platform}" "git_revision:25958d48e89e980e2a97daeddc977fb5e2e1fb8c"
-	git-r3_checkout "https://chrome-infra-packages.appspot.com/infra/tools/luci/isolate/${platform}" "tools/luci-go:infra/tools/luci/isolate/${platform}"
-
-	git-r3_fetch "https://chrome-infra-packages.appspot.com/infra/tools/luci/isolated/${platform}" "git_revision:25958d48e89e980e2a97daeddc977fb5e2e1fb8c"
-	git-r3_checkout "https://chrome-infra-packages.appspot.com/infra/tools/luci/isolated/${platform}" "tools/luci-go:infra/tools/luci/isolated/${platform}"
-
-	git-r3_fetch "https://chrome-infra-packages.appspot.com/infra/tools/luci/swarming/${platform}" "git_revision:25958d48e89e980e2a97daeddc977fb5e2e1fb8c"
-	git-r3_checkout "https://chrome-infra-packages.appspot.com/infra/tools/luci/swarming/${platform}" "tools/luci-go:infra/tools/luci/swarming/${platform}"
-
 	git-r3_fetch "https://chromium.googlesource.com/chromium/deps/acid3.git" "6be0a66a1ebd7ebc5abc1b2f405a945f6d871521"
 	git-r3_checkout "https://chromium.googlesource.com/chromium/deps/acid3.git" "tools/page_cycler/acid3"
-
-	git-r3_fetch "https://chrome-infra-packages.appspot.com/skia/tools/goldctl/${platform}" "git_revision:f87a7deecc778c67e04af82265f040fef5d05c3f"
-	git-r3_checkout "https://chrome-infra-packages.appspot.com/skia/tools/goldctl/${platform}" "tools/skia_goldctl:skia/tools/goldctl/${platform}"
 
 	git-r3_fetch "https://chromium.googlesource.com/infra/luci/client-py.git" "779c4f0f8488c64587b75dbb001d18c3c0c4cda9"
 	git-r3_checkout "https://chromium.googlesource.com/infra/luci/client-py.git" "tools/swarming_client"
