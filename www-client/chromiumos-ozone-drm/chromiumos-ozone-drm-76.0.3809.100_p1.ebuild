@@ -1141,7 +1141,7 @@ src_configure() {
 		"use_udev=$(usetf udev)"
 		"rtc_build_libevent=$(usetf udev)"
 		"rtc_enable_libevent=$(usetf udev)"
-		"is_desktop_linux=true"
+		"is_desktop_linux=false"
 
 		# Enables the soon-to-be default tcmalloc (https://crbug.com/724399)
 		# It is relevant only when use_allocator == "tcmalloc"
