@@ -15,11 +15,10 @@ src_prepare() {
 	cp "${FILESDIR}/Makefile" "${S}" || die "Copying Makefile"
 	cp "${FILESDIR}/strlcpy.c" "${S}" || die "Copying strlcpy.c"
 	cp "${FILESDIR}/libsync.pc.template" "${S}" || die "Copying libsync.pc.template"
-	eapply "${FILESDIR}/0001-libsync-add-prototype-for-strlcpy.patch"
+	eapply "${FILESDIR}/0001-libsync-add-prototype-for-strlcpy.patch" || die "patching "
 }
 
 src_configure() {
-	default
 	export GENTOO_LIBDIR=$(get_libdir)
 	tc-export CC
 }
