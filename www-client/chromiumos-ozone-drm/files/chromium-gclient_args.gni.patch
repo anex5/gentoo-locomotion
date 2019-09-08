@@ -1,0 +1,13 @@
+diff --git a/build/config/gclient_args.gni b/build/config/gclient_args.gni1
+index f694e6bfae..4c8764052d 100644
+--- a/build/config/gclient_args.gni
++++ b/build/config/gclient_args.gni1
+@@ -1,7 +1,7 @@
+ # Generated from 'DEPS'
+ build_with_chromium = true
+ checkout_android = false
+-checkout_android_native_support = false
++checkout_android_native_support = true
+ checkout_ios_webkit = false
+ checkout_nacl = true
+ checkout_oculus_sdk = false
