@@ -296,7 +296,8 @@ src_unpack(){
 	mv "${WORKDIR}/swarming" "chromium-${PV/_*}/tools/luci-go" || die
 	mv "${WORKDIR}/goldctl" "chromium-${PV/_*}/tools/skia_goldctl" || die
 
-	 	# Prevents gclient from updating self.
+	python_setup 'python2*'
+	# Prevents gclient from updating self.
   	export DEPOT_TOOLS_UPDATE=0
   	# Prevent gclient metrics collection.
   	export DEPOT_TOOLS_METRICS=0
