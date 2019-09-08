@@ -12,6 +12,7 @@ KEYWORDS="~*"
 RDEPEND="!media-libs/arc-camera3-libsync"
 
 src_prepare() {
+	default
 	cp "${FILESDIR}/Makefile" "${S}" || die "Copying Makefile"
 	cp "${FILESDIR}/strlcpy.c" "${S}" || die "Copying strlcpy.c"
 	cp "${FILESDIR}/libsync.pc.template" "${S}" || die "Copying libsync.pc.template"
@@ -19,6 +20,7 @@ src_prepare() {
 }
 
 src_configure() {
+	default
 	export GENTOO_LIBDIR=$(get_libdir)
 	tc-export CC
 }
