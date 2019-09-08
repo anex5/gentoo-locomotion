@@ -344,7 +344,7 @@ src_unpack(){
 		elog "${cmd[*]}"
 		"${cmd[@]}" || die
 	fi
-
+	ln -s "chromium-${PV/_*}" "src"
 	local cmd=(
 		${EGCLIENT} runhooks --jobs=1
 	)
