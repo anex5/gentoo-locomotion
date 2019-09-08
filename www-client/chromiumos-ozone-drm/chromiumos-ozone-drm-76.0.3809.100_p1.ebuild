@@ -1185,8 +1185,8 @@ src_configure() {
 			"use_aura=true"
 			"use_wayland_gbm=true"
 			"ozone_auto_platforms=false"
-			"ozone_platform_x11=$(usetf X)"
-			"ozone_platform_wayland=true"
+			"ozone_platform_x11=false"
+			"ozone_platform_wayland=false"
 			"ozone_platform_headless=true"
 			"ozone_platform_gbm=true"
 			"ozone_platform=\"gbm\""
@@ -1194,8 +1194,8 @@ src_configure() {
 			"enable_wayland_server=true" #Exo parts (aura shell)
 			"enable_package_mash_services=true" #ChromeOS
 			"enable_background_mode=true"
-			#"use_system_minigbm=$(usetf system-minigbm)"
-			"use_system_minigbm=false"
+			"use_system_minigbm=$(usetf system-minigbm)"
+			#"use_system_minigbm=false"
 			"use_system_libdrm=$(usetf system-libdrm)"
 
 			"use_intel_minigbm=$(usetf video_cards_intel)" 
