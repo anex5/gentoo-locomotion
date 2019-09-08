@@ -1264,19 +1264,19 @@ src_compile() {
 		export CCACHE_SLOPPINESS="${CCACHE_SLOPPINESS:-time_macros}"
 
 	# Build mksnapshot and pax-mark it
-	local x
-	for x in mksnapshot v8_context_snapshot_generator; do
-		eninja -C out/Release "${x}"
-		pax-mark m "out/Release/${x}"
-	done
+	#local x
+	#for x in mksnapshot v8_context_snapshot_generator; do
+	#	eninja -C out/Release "${x}"
+	#	pax-mark m "out/Release/${x}"
+	#done
 
 	# Work around broken deps
 	eninja -C out/Release gen/ui/accessibility/ax_enums.mojom{,-shared}.h
 
 	# Even though ninja autodetects number of CPUs, we respect
 	# user's options, for debugging with -j 1 or any other reason
-	eninja -C out/Release chrome chromedriver
-	use suid && eninja -C out/Release chrome_sandbox
+	eninja -C out/Release chrome
+	#use suid && eninja -C out/Release chrome_sandbox
 
 	pax-mark m out/Release/chrome
 }
