@@ -15,7 +15,7 @@ src_prepare() {
 	cp "${FILESDIR}/Makefile" "${S}" || die "Copying Makefile"
 	cp "${FILESDIR}/strlcpy.c" "${S}" || die "Copying strlcpy.c"
 	cp "${FILESDIR}/libsync.pc.template" "${S}" || die "Copying libsync.pc.template"
-	epatch "${FILESDIR}/0001-libsync-add-prototype-for-strlcpy.patch"
+	eapply "${FILESDIR}/0001-libsync-add-prototype-for-strlcpy.patch"
 }
 
 src_configure() {
