@@ -604,11 +604,11 @@ src_prepare() {
 	fi
 	
 	# Apply extra patches (taken from Igalia)
-	local p="${FILESDIR}/igalia-$(ver_cut 1-1)"
+	#local p="${FILESDIR}/igalia-$(ver_cut 1-1)"
 
-	eapply "${p}/0001-ozone-wayland-Fix-method-prototype-match.patch" || die
-	eapply "${p}/V4L2/0001-Add-support-for-V4L2VDA-on-Linux.patch" || die
-	eapply "${p}/V4L2/0002-Add-mmap-via-libv4l-to-generic_v4l2_device.patch" || die
+	#eapply "${p}/0001-ozone-wayland-Fix-method-prototype-match.patch" || die
+	#eapply "${p}/V4L2/0001-Add-support-for-V4L2VDA-on-Linux.patch" || die
+	#eapply "${p}/V4L2/0002-Add-mmap-via-libv4l-to-generic_v4l2_device.patch" || die
 
 	# Hack for libusb stuff (taken from openSUSE)
 	rm third_party/libusb/src/libusb/libusb.h || die
@@ -1110,7 +1110,7 @@ src_configure() {
 		"enable_ffmpeg_video_decoders=true"
 		"rtc_initialize_ffmpeg=true"
 		"use_v4l2_codec=$(usetf v4l2)"
-		"use_linux_v4l2_only=$(usetf v4l2)"
+		"use_linux_v4l2_only=false"
 		"use_v4lplugin=$(usetf v4lplugin)"
 		"rtc_build_libvpx=$(usetf libvpx)"
 		"media_use_libvpx=$(usetf libvpx)"
