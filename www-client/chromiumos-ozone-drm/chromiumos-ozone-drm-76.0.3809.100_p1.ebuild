@@ -1133,6 +1133,7 @@ src_configure() {
 		"enable_pdf=$(usetf pdf)"
 		"enable_print_preview=$(usetf pdf)"
 		"rtc_build_examples=false"
+		"use_remote=false"
 	    #"use_boringssl_for_http_transport_socket=true"
 		"use_atk=$(usetf atk)"
 		"use_dbus=$(usetf dbus)"
