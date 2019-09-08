@@ -1,7 +1,7 @@
-diff --git a/build/config/gclient_args.gni b/build/config/gclient_args.gni1
+diff --git a/build/config/gclient_args.gni b/build/config/gclient_args.gni
 index f694e6bfae..4c8764052d 100644
 --- a/build/config/gclient_args.gni
-+++ b/build/config/gclient_args.gni1
++++ b/build/config/gclient_args.gni
 @@ -1,7 +1,7 @@
  # Generated from 'DEPS'
  build_with_chromium = true
