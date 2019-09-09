@@ -571,7 +571,7 @@ src_prepare() {
 	#use closure-compile && 
 	keeplibs+=( 
 		#build/linux/libbrlapi
-		#third_party/android_ndk
+		third_party/android_ndk
 		third_party/ashmem
 		third_party/android_sdk
 		third_party/closure_compiler
@@ -810,7 +810,7 @@ src_configure() {
 		"rtc_use_lto=$(usetf thinlto)"
 		"clang_use_default_sample_profile=false"
 		#"cros_host_is_clang=$(usetf clang)"
-		"cros_v8_snapshot_is_clang=$(usetf clang)"
+		#"cros_v8_snapshot_is_clang=$(usetf clang)"
 
 		#"use_system_libcxx=$(usetf libcxx)"
 
