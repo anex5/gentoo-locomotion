@@ -1,0 +1,277 @@
+diff --git a/DEPS b/DEPS
+index dc1f51b..9362d4e 100644
+--- a/DEPS
++++ b/DEPS
+@@ -2309,221 +2309,6 @@ hooks = [
+     ],
+   },
+   {
+-    'name': 'sysroot_arm',
+-    'pattern': '.',
+-    'condition': 'checkout_linux and checkout_arm',
+-    'action': ['python', 'src/build/linux/sysroot_scripts/install-sysroot.py',
+-               '--arch=arm'],
+-  },
+-  {
+-    'name': 'sysroot_arm64',
+-    'pattern': '.',
+-    'condition': 'checkout_linux and checkout_arm64',
+-    'action': ['python', 'src/build/linux/sysroot_scripts/install-sysroot.py',
+-               '--arch=arm64'],
+-  },
+-  {
+-    'name': 'sysroot_x86',
+-    'pattern': '.',
+-    'condition': 'checkout_linux and (checkout_x86 or checkout_x64)',
+-    'action': ['python', 'src/build/linux/sysroot_scripts/install-sysroot.py',
+-               '--arch=x86'],
+-  },
+-  {
+-    'name': 'sysroot_mips',
+-    'pattern': '.',
+-    'condition': 'checkout_linux and checkout_mips',
+-    'action': ['python', 'src/build/linux/sysroot_scripts/install-sysroot.py',
+-               '--arch=mips'],
+-  },
+-  {
+-    'name': 'sysroot_mips64',
+-    'pattern': '.',
+-    'condition': 'checkout_linux and checkout_mips64',
+-    'action': ['python', 'src/build/linux/sysroot_scripts/install-sysroot.py',
+-               '--arch=mips64el'],
+-  },
+-
+-  {
+-    'name': 'sysroot_x64',
+-    'pattern': '.',
+-    'condition': 'checkout_linux and checkout_x64',
+-    'action': ['python', 'src/build/linux/sysroot_scripts/install-sysroot.py',
+-               '--arch=x64'],
+-  },
+-  {
+-    # Case-insensitivity for the Win SDK. Must run before win_toolchain below.
+-    'name': 'ciopfs_linux',
+-    'pattern': '.',
+-    'condition': 'checkout_win and host_os == "linux"',
+-    'action': [ 'python',
+-                'src/third_party/depot_tools/download_from_google_storage.py',
+-                '--no_resume',
+-                '--no_auth',
+-                '--bucket', 'chromium-browser-clang/ciopfs',
+-                '-s', 'src/build/ciopfs.sha1',
+-    ]
+-  },
+-  {
+-    # Update the Windows toolchain if necessary.  Must run before 'clang' below.
+-    'name': 'win_toolchain',
+-    'pattern': '.',
+-    'condition': 'checkout_win',
+-    'action': ['python', 'src/build/vs_toolchain.py', 'update', '--force'],
+-  },
+-  {
+-    # Update the Mac toolchain if necessary.
+-    'name': 'mac_toolchain',
+-    'pattern': '.',
+-    'condition': 'checkout_ios or checkout_mac',
+-    'action': ['python', 'src/build/mac_toolchain.py'],
+-  },
+-  # Pull binutils for linux, enabled debug fission for faster linking /
+-  # debugging when used with clang on Ubuntu Precise.
+-  # https://code.google.com/p/chromium/issues/detail?id=352046
+-  {
+-    'name': 'binutils',
+-    'pattern': 'src/third_party/binutils',
+-    'condition': 'host_os == "linux" and host_cpu != "mips64"',
+-    'action': [
+-        'python',
+-        'src/third_party/binutils/download.py',
+-    ],
+-  },
+-  {
+-    # Update the prebuilt clang toolchain.
+-    # Note: On Win, this should run after win_toolchain, as it may use it.
+-    'name': 'clang',
+-    'pattern': '.',
+-    'condition': 'not llvm_force_head_revision',
+-    'action': ['python', 'src/tools/clang/scripts/update.py'],
+-  },
+-  {
+-    # Build the clang toolchain from tip-of-tree.
+-    # Note: On Win, this should run after win_toolchain, as it may use it.
+-    'name': 'clang_tot',
+-    'pattern': '.',
+-    'condition': 'llvm_force_head_revision',
+-    'action': ['python', 'src/tools/clang/scripts/build.py',
+-               '--llvm-force-head-revision',
+-               '--with-android={checkout_android}'],
+-  },
+-  {
+-    # This is supposed to support the same set of platforms as 'clang' above.
+-    'name': 'clang_coverage',
+-    'pattern': '.',
+-    'condition': 'checkout_clang_coverage_tools',
+-    'action': ['python', 'src/tools/code_coverage/update_clang_coverage_tools.py'],
+-  },
+-  {
+-    # Mac doesn't use lld so it's not included in the default clang bundle
+-    # there.  lld is however needed in win and Fuchsia cross builds, so
+-    # download it there. Should run after the clang hook.
+-    'name': 'lld/mac',
+-    'pattern': '.',
+-    'condition': 'host_os == "mac" and (checkout_win or checkout_fuchsia)',
+-    'action': ['python', 'src/tools/clang/scripts/download_lld_mac.py'],
+-  },
+-  {
+-    # Update LASTCHANGE.
+-    'name': 'lastchange',
+-    'pattern': '.',
+-    'action': ['python', 'src/build/util/lastchange.py',
+-               '-o', 'src/build/util/LASTCHANGE'],
+-  },
+-  {
+-    # Update GPU lists version string (for gpu/config).
+-    'name': 'gpu_lists_version',
+-    'pattern': '.',
+-    'action': ['python', 'src/build/util/lastchange.py',
+-               '-m', 'GPU_LISTS_VERSION',
+-               '--revision-id-only',
+-               '--header', 'src/gpu/config/gpu_lists_version.h'],
+-  },
+-  {
+-    # Update skia_commit_hash.h.
+-    'name': 'lastchange_skia',
+-    'pattern': '.',
+-    'action': ['python', 'src/build/util/lastchange.py',
+-               '-m', 'SKIA_COMMIT_HASH',
+-               '-s', 'src/third_party/skia',
+-               '--header', 'src/skia/ext/skia_commit_hash.h'],
+-  },
+-  # Pull clang-format binaries using checked-in hashes.
+-  {
+-    'name': 'clang_format_win',
+-    'pattern': '.',
+-    'condition': 'host_os == "win"',
+-    'action': [ 'python',
+-                'src/third_party/depot_tools/download_from_google_storage.py',
+-                '--no_resume',
+-                '--no_auth',
+-                '--bucket', 'chromium-clang-format',
+-                '-s', 'src/buildtools/win/clang-format.exe.sha1',
+-    ],
+-  },
+-  {
+-    'name': 'clang_format_mac',
+-    'pattern': '.',
+-    'condition': 'host_os == "mac"',
+-    'action': [ 'python',
+-                'src/third_party/depot_tools/download_from_google_storage.py',
+-                '--no_resume',
+-                '--no_auth',
+-                '--bucket', 'chromium-clang-format',
+-                '-s', 'src/buildtools/mac/clang-format.sha1',
+-    ],
+-  },
+-  {
+-    'name': 'clang_format_linux',
+-    'pattern': '.',
+-    'condition': 'host_os == "linux"',
+-    'action': [ 'python',
+-                'src/third_party/depot_tools/download_from_google_storage.py',
+-                '--no_resume',
+-                '--no_auth',
+-                '--bucket', 'chromium-clang-format',
+-                '-s', 'src/buildtools/linux64/clang-format.sha1',
+-    ],
+-  },
+-  # Pull rc binaries using checked-in hashes.
+-  {
+-    'name': 'rc_win',
+-    'pattern': '.',
+-    'condition': 'checkout_win and host_os == "win"',
+-    'action': [ 'python',
+-                'src/third_party/depot_tools/download_from_google_storage.py',
+-                '--no_resume',
+-                '--no_auth',
+-                '--bucket', 'chromium-browser-clang/rc',
+-                '-s', 'src/build/toolchain/win/rc/win/rc.exe.sha1',
+-    ],
+-  },
+-  {
+-    'name': 'rc_mac',
+-    'pattern': '.',
+-    'condition': 'checkout_win and host_os == "mac"',
+-    'action': [ 'python',
+-                'src/third_party/depot_tools/download_from_google_storage.py',
+-                '--no_resume',
+-                '--no_auth',
+-                '--bucket', 'chromium-browser-clang/rc',
+-                '-s', 'src/build/toolchain/win/rc/mac/rc.sha1',
+-    ],
+-  },
+-  {
+-    'name': 'rc_linux',
+-    'pattern': '.',
+-    'condition': 'checkout_win and host_os == "linux"',
+-    'action': [ 'python',
+-                'src/third_party/depot_tools/download_from_google_storage.py',
+-                '--no_resume',
+-                '--no_auth',
+-                '--bucket', 'chromium-browser-clang/rc',
+-                '-s', 'src/build/toolchain/win/rc/linux64/rc.sha1',
+-    ]
+-  },
+- {
+     'name': 'test_fonts',
+     'pattern': '.',
+     'action': [ 'download_from_google_storage',
+@@ -2534,50 +2319,6 @@ hooks = [
+                 '-s', 'src/third_party/test_fonts/test_fonts.tar.gz.sha1',
+     ],
+   },
+-  # Pull order files for the win/clang build.
+-  {
+-    'name': 'orderfiles_win',
+-    'pattern': '.',
+-    'condition': 'checkout_win',
+-    'action': [ 'python',
+-                'src/third_party/depot_tools/download_from_google_storage.py',
+-                '--no_resume',
+-                '--no_auth',
+-                '--num_threads=4',
+-                '--bucket', 'chromium-browser-clang/orderfiles',
+-                '-d', 'src/chrome/build',
+-    ],
+-  },
+-  {
+-    'name': 'apache_mac',
+-    'pattern': '\\.sha1',
+-    'condition': 'checkout_mac',
+-    'action': [ 'python',
+-                'src/third_party/depot_tools/download_from_google_storage.py',
+-                '--no_resume',
+-                '--directory',
+-                '--recursive',
+-                '--no_auth',
+-                '--num_threads=16',
+-                '--bucket', 'chromium-apache-mac',
+-                'src/third_party/apache-mac',
+-    ],
+-  },
+-  {
+-    'name': 'apache_win32',
+-    'pattern': '\\.sha1',
+-    'condition': 'checkout_win',
+-    'action': [ 'python',
+-                'src/third_party/depot_tools/download_from_google_storage.py',
+-                '--no_resume',
+-                '--directory',
+-                '--recursive',
+-                '--no_auth',
+-                '--num_threads=16',
+-                '--bucket', 'chromium-apache-win32',
+-                'src/third_party/apache-win32',
+-    ],
+-  },
+   {
+     'name': 'msan_chained_origins',
+     'pattern': '.',
