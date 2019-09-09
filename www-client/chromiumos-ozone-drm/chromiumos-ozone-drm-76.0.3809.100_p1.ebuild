@@ -288,6 +288,7 @@ src_unpack(){
 	#git-r3_fetch "https://chromium.googlesource.com/android_ndk.git" "refs/heads/master"
 	#git-r3_checkout "https://chromium.googlesource.com/android_ndk.git" "${S}/third_party/android_ndk"
 
+	rm -r ${S}/third_party/depot_tools
 	git-r3_fetch "https://chromium.googlesource.com/chromium/tools/depot_tools.git" "bad01ad3adaaa017b780f020d85a1e3b34f89c98"
  	git-r3_checkout "https://chromium.googlesource.com/chromium/tools/depot_tools.git" "${S}/third_party/depot_tools"
 
