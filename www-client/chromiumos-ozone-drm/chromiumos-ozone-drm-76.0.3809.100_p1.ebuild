@@ -274,6 +274,9 @@ pkg_setup() {
 }
 
 src_unpack(){
+	
+	mv "${WORKDIR}/android.jar" "chromium-${PV/_*}/third_party/android_sdk/public/platforms/android-28" || die
+
 	default
 
 	#EGIT_CLONE_TYPE="shallow"
@@ -292,8 +295,7 @@ src_unpack(){
 	rm -r "${S}/third_party/depot_tools" || die
 	git-r3_fetch "https://chromium.googlesource.com/chromium/tools/depot_tools.git" "refs/heads/master"
  	git-r3_checkout "https://chromium.googlesource.com/chromium/tools/depot_tools.git" "${S}/third_party/depot_tools"
-
- 	mv "${WORKDIR}/android.jar" "chromium-${PV/_*}/third_party/android_sdk/public/platforms/android-28" || die
+ 	
 	mv "${WORKDIR}/gn" "chromium-${PV/_*}/buildtools/linux64" || die
 	mv "${WORKDIR}/checkstyle-8.0-all.jar" "chromium-${PV/_*}/third_party/checkstyle" || die
 	#mv "${WORKDIR}/gn" "chromium-${PV/_*}/third_party/openscreen/src/buildtools/linux64" || die
