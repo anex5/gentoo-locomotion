@@ -288,6 +288,9 @@ src_unpack(){
 	#git-r3_fetch "https://chromium.googlesource.com/android_ndk.git" "refs/heads/master"
 	#git-r3_checkout "https://chromium.googlesource.com/android_ndk.git" "${S}/third_party/android_ndk"
 
+	git-r3_fetch "https://chromium.googlesource.com/chromium/tools/depot_tools.git" "bad01ad3adaaa017b780f020d85a1e3b34f89c98"
+ 	git-r3_checkout "https://chromium.googlesource.com/chromium/tools/depot_tools.git" "${S}/third_party/depot_tools"
+
 	mv "${WORKDIR}/gn" "chromium-${PV/_*}/buildtools/linux64" || die
 	mv "${WORKDIR}/checkstyle-8.0-all.jar" "chromium-${PV/_*}/third_party/checkstyle" || die
 	#mv "${WORKDIR}/gn" "chromium-${PV/_*}/third_party/openscreen/src/buildtools/linux64" || die
@@ -295,6 +298,7 @@ src_unpack(){
 	mv "${WORKDIR}/isolated" "chromium-${PV/_*}/tools/luci-go" || die
 	mv "${WORKDIR}/swarming" "chromium-${PV/_*}/tools/luci-go" || die
 	mv "${WORKDIR}/goldctl" "chromium-${PV/_*}/tools/skia_goldctl" || die
+	ln -s "chromium-${PV/_*}" "src"
 }
 
 src_prepare() {
@@ -312,44 +316,40 @@ src_prepare() {
 
 	if ! [[ -f .gclient ]]; then
 		local cmd=( 
-		${EGCLIENT} config --name=src --spec 'solutions=[{\
-		"url": "https://chromium.googlesource.com/chromium/src.git@refs/tags/'${PV/_*/}'",\
-		"managed": False,\
-		"name": "src",\
-		"deps_file": "DEPS",\
- 		"custom_deps": {\
-			"src/third_party/blink/web_tests/platform/linux": None,\
-			"src/third_party/blink/web_tests/platform/mac": None,\
-			"src/third_party/blink/web_tests/platform/win": None,\
-			"src/third_party/WebKit/LayoutTests": None,\
-			"src/third_party/android_ndk": None,\
-			"src/third_party/android_tools": None,\
-			"src/third_party/android_system_sdk": None,\
-			"src/content/test/data/layout_tests/LayoutTests": None,\
-			"src/chrome/tools/test/reference_build/chrome_win": None,\
-			"src/chrome_frame/tools/test/reference_build/chrome_win": None,\
-			"src/chrome/tools/test/reference_build/chrome_linux": None,\
-			"src/chrome/tools/test/reference_build/chrome_mac": None,\
-			"src/native_client_sdk/src/build_tools/toolchain_archives": None,\
-			"src/chrome/test/data/extensions/api_test/permissions/nacl_enabled/bin": None,\
-			"src/chrome/test/data/layout_tests": None,\
-			"src/chrome/tools/test/reference_build": None,\
-			"src/third_party/ffmpeg/binaries": None,\
-			"src/chrome/test/data/layout_tests": None,\
-			"src/chrome/tools/test/reference_build/chrome_linux": None,\
-			"src/third_party/ffmpeg/source/patched-ffmpeg-mt": None,\
-			"src/third_party/hunspell_dictionaries": None,\
-			"src/third_party/yasm/source/patched-yasm": None,\
-			"src/native_client/toolchain": None,\
-			"src/ios": None \
-			},\
-		}]; target_os = ["chromeos"]; target_os_only = True\'
+			${EGCLIENT} config --name=src --spec 'solutions=[{\
+			"url": "https://chromium.googlesource.com/chromium/src.git@refs/tags/'${PV/_*/}'",\
+			"managed": False,\
+			"name": "src",\
+			"deps_file": "DEPS",\
+			"custom_deps": {\
+				"src/third_party/blink/web_tests/platform/linux": None,\
+				"src/third_party/blink/web_tests/platform/mac": None,\
+				"src/third_party/blink/web_tests/platform/win": None,\
+				"src/third_party/WebKit/LayoutTests": None,\
+				"src/content/test/data/layout_tests/LayoutTests": None,\
+				"src/chrome/tools/test/reference_build/chrome_win": None,\
+				"src/chrome_frame/tools/test/reference_build/chrome_win": None,\
+				"src/chrome/tools/test/reference_build/chrome_linux": None,\
+				"src/chrome/tools/test/reference_build/chrome_mac": None,\
+				"src/native_client_sdk/src/build_tools/toolchain_archives": None,\
+				"src/chrome/test/data/extensions/api_test/permissions/nacl_enabled/bin": None,\
+				"src/chrome/test/data/layout_tests": None,\
+				"src/chrome/tools/test/reference_build": None,\
+				"src/third_party/ffmpeg/binaries": None,\
+				"src/chrome/test/data/layout_tests": None,\
+				"src/chrome/tools/test/reference_build/chrome_linux": None,\
+				"src/third_party/ffmpeg/source/patched-ffmpeg-mt": None,\
+				"src/third_party/hunspell_dictionaries": None,\
+				"src/third_party/yasm/source/patched-yasm": None,\
+				"src/native_client/toolchain": None,\
+				},\
+			}]; target_os = ["chromeos"]; target_os_only = True\'
 		)
 
 		elog "${cmd[*]}"
 		"${cmd[@]}" || die
 	fi
-	ln -s "chromium-${PV/_*}" "src"
+	
 	local cmd=(
 		${EGCLIENT} runhooks --jobs=1
 	)
