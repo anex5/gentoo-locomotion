@@ -301,6 +301,7 @@ src_unpack(){
 	mv "${WORKDIR}/goldctl" "chromium-${PV/_*}/tools/skia_goldctl" || die
 
 	wget "https://chromium.googlesource.com/android_tools/+/HEAD/sdk/platforms/android-28/android.jar" || die
+	mkdir -p "${S}/third_party/android_sdk/public/platforms/android-28" || die
 	mv "${WORKDIR}/android.jar" "${S}/third_party/android_sdk/public/platforms/android-28/" || die
 	ln -s "chromium-${PV/_*}" "src"	
 }
