@@ -23,7 +23,6 @@ HOMEPAGE="https://github.com/Eloston/ungoogled-chromium https://www.chromium.org
 SRC_URI="
 	https://commondatastorage.googleapis.com/chromium-browser-official/chromium-${PV/_*}.tar.xz
 	https://github.com/Eloston/ungoogled-chromium/archive/${UGC_PV}.tar.gz -> ${UGC_P}.tar.gz
-	https://chromium.googlesource.com/android_tools/+/HEAD/sdk/platforms/android-28/android.jar
 	https://chrome-infra-packages.appspot.com/dl/gn/gn/${platform}/+/git_revision:b3fefa62b27278f19c25878b513e169b5ebcbc30 -> gn-linux-amd64.zip
 	https://chrome-infra-packages.appspot.com/dl/chromium/third_party/checkstyle/+/y17J5dqst1qkBcbJyie8jltB2oFOgaQjFZ5k9UpbbbwC -> third_party-checkstyle.zip
 	https://chrome-infra-packages.appspot.com/dl/infra/tools/luci/isolate/${platform}/+/git_revision:25958d48e89e980e2a97daeddc977fb5e2e1fb8c -> isolate-linux-amd64.zip
@@ -275,8 +274,6 @@ pkg_setup() {
 
 src_unpack(){
 	
-	mv "${WORKDIR}/android.jar" "chromium-${PV/_*}/third_party/android_sdk/public/platforms/android-28" || die
-
 	default
 
 	#EGIT_CLONE_TYPE="shallow"
@@ -285,7 +282,6 @@ src_unpack(){
 	#EGIT_CHECKOUT_DIR="${S}"
 	#
 	#git-r3_src_unpack
-
 	#git-r3_fetch "https://chromium.googlesource.com/external/github.com/googlei18n/emoji-segmenter.git" "refs/heads/upstream/master"
 	#git-r3_checkout "https://chromium.googlesource.com/external/github.com/googlei18n/emoji-segmenter.git" "${S}/third_party/emoji-segmenter/src"
 
@@ -303,6 +299,8 @@ src_unpack(){
 	mv "${WORKDIR}/isolated" "chromium-${PV/_*}/tools/luci-go" || die
 	mv "${WORKDIR}/swarming" "chromium-${PV/_*}/tools/luci-go" || die
 	mv "${WORKDIR}/goldctl" "chromium-${PV/_*}/tools/skia_goldctl" || die
+
+	wget "https://chromium.googlesource.com/android_tools/+/HEAD/sdk/platforms/android-28/android.jar" -O "chromium-${PV/_*}/third_party/android_sdk/public/platforms/android-28/android.jar" || die
 	ln -s "chromium-${PV/_*}" "src"	
 }
 
