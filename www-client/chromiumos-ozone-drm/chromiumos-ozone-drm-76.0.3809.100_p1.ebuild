@@ -295,17 +295,21 @@ src_unpack(){
 	mv "${WORKDIR}/isolated" "chromium-${PV/_*}/tools/luci-go" || die
 	mv "${WORKDIR}/swarming" "chromium-${PV/_*}/tools/luci-go" || die
 	mv "${WORKDIR}/goldctl" "chromium-${PV/_*}/tools/skia_goldctl" || die
+}
+
+src_prepare() {
+	eapply "${FILESDIR}/chromium-DEPS-chromeos.patch" || die
 
 	python_setup 'python2*'
 	# Prevents gclient from updating self.
-  	export DEPOT_TOOLS_UPDATE=0
-  	# Prevent gclient metrics collection.
-  	export DEPOT_TOOLS_METRICS=0
-  	# Prevent gclient use windows toolchain.
-  	export DEPOT_TOOLS_WIN_TOOLCHAIN=0
- 
-  	export EGCLIENT="${S}/third_party/depot_tools/gclient"
- 
+	export DEPOT_TOOLS_UPDATE=0
+	# Prevent gclient metrics collection.
+	export DEPOT_TOOLS_METRICS=0
+	# Prevent gclient use windows toolchain.
+	export DEPOT_TOOLS_WIN_TOOLCHAIN=0
+
+	export EGCLIENT="${S}/third_party/depot_tools/gclient"
+
 	if ! [[ -f .gclient ]]; then
 		local cmd=( 
 		${EGCLIENT} config --name=src --spec 'solutions=[{\
@@ -351,9 +355,7 @@ src_unpack(){
 	)
 	elog "${cmd[*]}"
 	"${cmd[@]}" || die
-}
 
-src_prepare() {
 	# Calling this here supports resumption via FEATURES=keepwork
 	python_setup 'python3*'
 
