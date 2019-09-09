@@ -23,6 +23,7 @@ HOMEPAGE="https://github.com/Eloston/ungoogled-chromium https://www.chromium.org
 SRC_URI="
 	https://commondatastorage.googleapis.com/chromium-browser-official/chromium-${PV/_*}.tar.xz
 	https://github.com/Eloston/ungoogled-chromium/archive/${UGC_PV}.tar.gz -> ${UGC_P}.tar.gz
+	https://chromium.googlesource.com/android_tools/+/HEAD/sdk/platforms/android-28/android.jar
 	https://chrome-infra-packages.appspot.com/dl/gn/gn/${platform}/+/git_revision:b3fefa62b27278f19c25878b513e169b5ebcbc30 -> gn-linux-amd64.zip
 	https://chrome-infra-packages.appspot.com/dl/chromium/third_party/checkstyle/+/y17J5dqst1qkBcbJyie8jltB2oFOgaQjFZ5k9UpbbbwC -> third_party-checkstyle.zip
 	https://chrome-infra-packages.appspot.com/dl/infra/tools/luci/isolate/${platform}/+/git_revision:25958d48e89e980e2a97daeddc977fb5e2e1fb8c -> isolate-linux-amd64.zip
@@ -292,6 +293,7 @@ src_unpack(){
 	git-r3_fetch "https://chromium.googlesource.com/chromium/tools/depot_tools.git" "refs/heads/master"
  	git-r3_checkout "https://chromium.googlesource.com/chromium/tools/depot_tools.git" "${S}/third_party/depot_tools"
 
+ 	mv "${WORKDIR}/android.jar" "chromium-${PV/_*}/third_party/android_sdk/public/platforms/android-28" || die
 	mv "${WORKDIR}/gn" "chromium-${PV/_*}/buildtools/linux64" || die
 	mv "${WORKDIR}/checkstyle-8.0-all.jar" "chromium-${PV/_*}/third_party/checkstyle" || die
 	#mv "${WORKDIR}/gn" "chromium-${PV/_*}/third_party/openscreen/src/buildtools/linux64" || die
@@ -299,11 +301,11 @@ src_unpack(){
 	mv "${WORKDIR}/isolated" "chromium-${PV/_*}/tools/luci-go" || die
 	mv "${WORKDIR}/swarming" "chromium-${PV/_*}/tools/luci-go" || die
 	mv "${WORKDIR}/goldctl" "chromium-${PV/_*}/tools/skia_goldctl" || die
-	ln -s "chromium-${PV/_*}" "src"
+	ln -s "chromium-${PV/_*}" "src"	
 }
 
 src_prepare() {
-	eapply "${FILESDIR}/chromium-DEPS-chromeos.patch" || die
+	#eapply "${FILESDIR}/chromium-DEPS-chromeos.patch" || die
 
 	python_setup 'python2*'
 	# Prevents gclient from updating self.
@@ -567,15 +569,20 @@ src_prepare() {
 	#use closure-compile && 
 	keeplibs+=( 
 		#build/linux/libbrlapi
-		third_party/closure_compiler
-		third_party/ink
-		third_party/chromevox
-		third_party/grpc
-		third_party/liblouis
-		third_party/google_trust_services
-		third_party/android_sdk
 		#third_party/android_ndk
 		third_party/ashmem
+		third_party/android_sdk
+		third_party/closure_compiler
+		third_party/chromevox
+		third_party/chromevox/third_party
+		third_party/grpc
+		third_party/grpc/src/third_party
+		third_party/ink
+		third_party/libjpeg
+		third_party/liblouis
+		third_party/google_trust_services
+		third_party/wayland
+		third_party/wayland-protocols
 	)
 	use optimize-webui && keeplibs+=(
 		third_party/node
@@ -800,7 +807,7 @@ src_configure() {
 		"use_thin_lto=$(usetf thinlto)"
 		"rtc_use_lto=$(usetf thinlto)"
 		"clang_use_default_sample_profile=false"
-		"cros_host_is_clang=$(usetf clang)"
+		#"cros_host_is_clang=$(usetf clang)"
 		"cros_v8_snapshot_is_clang=$(usetf clang)"
 
 		#"use_system_libcxx=$(usetf libcxx)"
