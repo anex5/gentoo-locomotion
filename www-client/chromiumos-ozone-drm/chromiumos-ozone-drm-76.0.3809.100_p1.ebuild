@@ -300,7 +300,7 @@ src_unpack(){
 	mv "${WORKDIR}/swarming" "chromium-${PV/_*}/tools/luci-go" || die
 	mv "${WORKDIR}/goldctl" "chromium-${PV/_*}/tools/skia_goldctl" || die
 
-	wget "https://chromium.googlesource.com/android_tools/+/HEAD/sdk/platforms/android-28/android.jar" -O "chromium-${PV/_*}/third_party/android_sdk/public/platforms/android-28/android.jar" || die
+	wget "https://chromium.googlesource.com/android_tools/+/HEAD/sdk/platforms/android-28/android.jar" -O "${S}/third_party/android_sdk/public/platforms/android-28/android.jar" || die
 	ln -s "chromium-${PV/_*}" "src"	
 }
 
