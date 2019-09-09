@@ -233,6 +233,7 @@ PATCHES=(
  	"${FILESDIR}/chromium-optional-atk-r0.patch"
 	"${FILESDIR}/chromium-optional-dbus-r8.patch"
 	"${FILESDIR}/chromium-gclient_args.gni.patch"
+	"${FILESDIR}/chromium-disable-ink_lib.patch"
 )
 
 S="${WORKDIR}/chromium-${PV/_*}"
@@ -307,7 +308,8 @@ src_unpack(){
 }
 
 src_prepare() {
-	eapply "${FILESDIR}/chromium-DEPS-chromeos.patch" || die
+ if false; then
+	eapply "${FILESDIR}/chromium-DEPS-chromeos.patch"
 
 	cd "${WORKDIR}"
 
@@ -365,6 +367,7 @@ src_prepare() {
 	"${cmd[@]}" || die
 
 	cd "${S}"
+ fi
 
 	# Calling this here supports resumption via FEATURES=keepwork
 	python_setup 'python3*'
