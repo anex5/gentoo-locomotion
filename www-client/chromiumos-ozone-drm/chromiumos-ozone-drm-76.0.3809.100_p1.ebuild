@@ -285,11 +285,11 @@ src_unpack(){
 	#git-r3_fetch "https://chromium.googlesource.com/external/github.com/googlei18n/emoji-segmenter.git" "refs/heads/upstream/master"
 	#git-r3_checkout "https://chromium.googlesource.com/external/github.com/googlei18n/emoji-segmenter.git" "${S}/third_party/emoji-segmenter/src"
 
-	#git-r3_fetch "https://chromium.googlesource.com/android_ndk.git" "refs/heads/master"
-	#git-r3_checkout "https://chromium.googlesource.com/android_ndk.git" "${S}/third_party/android_ndk"
+	git-r3_fetch "https://chromium.googlesource.com/android_ndk.git" "refs/heads/master"
+	git-r3_checkout "https://chromium.googlesource.com/android_ndk.git" "${S}/third_party/android_ndk"
 
-	rm -r ${S}/third_party/depot_tools
-	git-r3_fetch "https://chromium.googlesource.com/chromium/tools/depot_tools.git" "bad01ad3adaaa017b780f020d85a1e3b34f89c98"
+	rm -r "${S}/third_party/depot_tools" || die
+	git-r3_fetch "https://chromium.googlesource.com/chromium/tools/depot_tools.git" "refs/heads/master"
  	git-r3_checkout "https://chromium.googlesource.com/chromium/tools/depot_tools.git" "${S}/third_party/depot_tools"
 
 	mv "${WORKDIR}/gn" "chromium-${PV/_*}/buildtools/linux64" || die
@@ -566,7 +566,7 @@ src_prepare() {
 
 	#use closure-compile && 
 	keeplibs+=( 
-		build/linux/libbrlapi
+		#build/linux/libbrlapi
 		third_party/closure_compiler
 		third_party/ink
 		third_party/chromevox
@@ -574,7 +574,7 @@ src_prepare() {
 		third_party/liblouis
 		third_party/google_trust_services
 		third_party/android_sdk
-		third_party/android_ndk
+		#third_party/android_ndk
 		third_party/ashmem
 	)
 	use optimize-webui && keeplibs+=(
