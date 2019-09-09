@@ -307,7 +307,9 @@ src_unpack(){
 }
 
 src_prepare() {
-	#eapply "${FILESDIR}/chromium-DEPS-chromeos.patch" || die
+	eapply "${FILESDIR}/chromium-DEPS-chromeos.patch" || die
+
+	cd "${WORKDIR}"
 
 	python_setup 'python2*'
 	# Prevents gclient from updating self.
@@ -360,6 +362,8 @@ src_prepare() {
 	)
 	elog "${cmd[*]}"
 	"${cmd[@]}" || die
+
+	cd "${S}"
 
 	# Calling this here supports resumption via FEATURES=keepwork
 	python_setup 'python3*'
@@ -577,6 +581,7 @@ src_prepare() {
 		third_party/closure_compiler
 		third_party/chromevox
 		third_party/chromevox/third_party
+		third_party/depot_tools
 		third_party/grpc
 		third_party/grpc/src/third_party
 		third_party/ink
