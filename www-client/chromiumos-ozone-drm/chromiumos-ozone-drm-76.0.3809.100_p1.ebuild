@@ -319,6 +319,7 @@ src_prepare() {
 	# Prevent gclient use windows toolchain.
 	export DEPOT_TOOLS_WIN_TOOLCHAIN=0
 
+	export PATH="${PATH}:${S}/third_party/depot_tools"
 	export EGCLIENT="${S}/third_party/depot_tools/gclient"
 
 	if ! [[ -f .gclient ]]; then
