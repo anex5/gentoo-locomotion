@@ -43,8 +43,13 @@ src_unpack() {
 src_prepare() {
 	default
 	[[ -n ${PATCH_VER} ]] && eapply "${WORKDIR}"/${PV}/*.patch
-	eapply "${FILESDIR}/0023-media-drm-fourcc.h-videodev2.h-add-V4L2_PIX_FMT_MT21.patch"
-	eapply "${FILESDIR}/0024-media-drm-fourcc.h-add-DRM_FORMAT_MOD_CHROMEOS_ROCKCHIP_AFBC.patch"
+
+	eapply "${FILESDIR}/Add-back-VENDOR_NV-name.patch"
+	eapply "${FILESDIR}/Add-Evdi-module-userspace-api-file.patch"
+	eapply "${FILESDIR}/Add-header-for-Mediatek-DRM-userspace.patch"
+	eapply "${FILESDIR}/Add-header-for-Rockchip-DRM-userspace.patch"
+	eapply "${FILESDIR}/Add-Rockchip-AFBC-modifier.patch"
+	eapply "${FILESDIR}/CHROMIUM-add-resource-info-header.patch"
 }
 
 multilib_src_configure() {
