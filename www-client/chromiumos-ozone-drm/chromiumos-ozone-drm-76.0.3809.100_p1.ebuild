@@ -589,7 +589,6 @@ src_prepare() {
 		third_party/grpc
 		third_party/grpc/src/third_party
 		third_party/ink
-		third_party/libjpeg
 		third_party/liblouis
 		third_party/google_trust_services
 		third_party/wayland
@@ -883,12 +882,11 @@ src_configure() {
 		"use_bundled_fontconfig=false"
 		"use_system_lcms2=$(usetf pdf)"
 		"use_system_libsync=true"
-		#"use_system_libopenjpeg2=$(usetf system-openjpeg)"
-
+		"use_system_libjpeg=$(usetf system-openjpeg)"
+		"use_system_libopenjpeg2=$(usetf system-openjpeg)"
+		
 		"use_system_zlib=true"
-		#"rtc_build_json=$(usex system-jsoncpp false true)"
-		"use_vaapi=$(usetf vaapi)"
-
+		
 		# Debug flags
 		"is_debug=$(usetf debug)"
 		"symbol_level=$(usex debug 2 0)"
@@ -996,12 +994,9 @@ src_configure() {
 			"ozone_platform=\"gbm\""
 			"enable_mus=false"
 			"enable_wayland_server=true" #Exo parts (aura shell)
-			"enable_package_mash_services=true" #ChromeOS
 			"enable_background_mode=true"
 			"use_system_minigbm=$(usetf system-minigbm)"
-			#"use_system_minigbm=false"
 			"use_system_libdrm=$(usetf system-libdrm)"
-
 			"use_intel_minigbm=$(usetf video_cards_intel)" 
 			"use_radeon_minigbm=$(usetf video_cards_radeon)"
 		   	"use_amdgpu_minigbm=$(usetf video_cards_amdgpu)"
