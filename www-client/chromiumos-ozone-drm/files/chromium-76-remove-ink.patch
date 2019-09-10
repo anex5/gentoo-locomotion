@@ -1,0 +1,120 @@
+diff --git a/chrome/browser/extensions/chrome_component_extension_resource_manager.cc b/chrome/browser/extensions/chrome_component_extension_resource_manager.cc
+index cefe299..ecde539 100644
+--- a/chrome/browser/extensions/chrome_component_extension_resource_manager.cc
++++ b/chrome/browser/extensions/chrome_component_extension_resource_manager.cc
+@@ -20,12 +20,12 @@
+ #include "chrome/browser/chromeos/file_manager/file_manager_string_util.h"
+ #include "chrome/grit/component_extension_resources.h"
+ #include "extensions/common/constants.h"
+-#include "third_party/ink/grit/ink_resources.h"
++// #include "third_party/ink/grit/ink_resources.h"
+ #include "ui/base/resource/resource_bundle.h"
+ #include "ui/file_manager/file_manager_resource_util.h"
+ #include "ui/file_manager/grit/file_manager_resources.h"
+ #endif
+-
++  
+ #if defined(KIOSK_NEXT) && defined(GOOGLE_CHROME_BUILD)
+ #include "chrome/grit/kiosk_next_internal_resources_map.h"
+ #endif
+@@ -51,12 +51,12 @@ ChromeComponentExtensionResourceManager() {
+ #if defined(OS_CHROMEOS)
+     {"chrome_app/chrome_app_icon_32.png", IDR_CHROME_APP_ICON_32},
+     {"chrome_app/chrome_app_icon_192.png", IDR_CHROME_APP_ICON_192},
+-    {"pdf/ink/ink_lib_binary.js", IDR_INK_LIB_BINARY_JS},
+-    {"pdf/ink/pthread-main.js", IDR_INK_PTHREAD_MAIN_JS},
+-    {"pdf/ink/glcore_base.js.mem", IDR_INK_GLCORE_BASE_JS_MEM},
+-    {"pdf/ink/glcore_base.wasm", IDR_INK_GLCORE_BASE_WASM},
+-    {"pdf/ink/glcore_wasm_bootstrap_compiled.js",
+-     IDR_INK_GLCORE_WASM_BOOTSTRAP_COMPILED_JS},
++//    {"pdf/ink/ink_lib_binary.js", IDR_INK_LIB_BINARY_JS},
++//    {"pdf/ink/pthread-main.js", IDR_INK_PTHREAD_MAIN_JS},
++//    {"pdf/ink/glcore_base.js.mem", IDR_INK_GLCORE_BASE_JS_MEM},
++//    {"pdf/ink/glcore_base.wasm", IDR_INK_GLCORE_BASE_WASM},
++//    {"pdf/ink/glcore_wasm_bootstrap_compiled.js",
++//     IDR_INK_GLCORE_WASM_BOOTSTRAP_COMPILED_JS},
+ #endif
+   };
+ 
+diff --git a/chrome/BUILD.gn b/chrome/BUILD.gn
+index abdac6a..7eda685 100644
+--- a/chrome/BUILD.gn
++++ b/chrome/BUILD.gn
+@@ -1662,7 +1662,6 @@ group("extra_resources") {
+       "//chrome/browser/resources/chromeos/chromevox",
+       "//chrome/browser/resources/chromeos/select_to_speak:build",
+       "//chrome/browser/resources/chromeos/switch_access:build",
+-      "//third_party/ink:ink_resources",
+     ]
+   }
+ 
+diff --git a/chrome/browser/resources/pdf/ink/BUILD.gn b/chrome/browser/resources/pdf/ink/BUILD.gn
+index 38908ee..b99603a 100644
+--- a/chrome/browser/resources/pdf/ink/BUILD.gn
++++ b/chrome/browser/resources/pdf/ink/BUILD.gn
+@@ -12,7 +12,6 @@ js_type_check("closure_compile") {
+ 
+ js_library("ink_api") {
+   externs_list = [
+-    "//third_party/ink/build/ink_lib_externs.js",
+     "$externs_path/pending.js",
+   ]
+ }
+diff --git a/chrome/browser/resources/pdf/elements/viewer-ink-host/BUILD.gn b/chrome/browser/resources/pdf/elements/viewer-ink-host/BUILD.gn
+index 32ca2b0..afaf3a1 100644
+--- a/chrome/browser/resources/pdf/elements/viewer-ink-host/BUILD.gn
++++ b/chrome/browser/resources/pdf/elements/viewer-ink-host/BUILD.gn
+@@ -14,6 +14,5 @@ js_library("viewer-ink-host") {
+   deps = [
+     "//chrome/browser/resources/pdf:metrics",
+     "//chrome/browser/resources/pdf:viewport",
+-    "//chrome/browser/resources/pdf/ink:ink_api",
+   ]
+ }
+diff --git a/chrome/browser/resources/component_extension_resources.grd b/chrome/browser/resources/component_extension_resources.grd
+index 83d54e2..a3739f7 100644
+--- a/chrome/browser/resources/component_extension_resources.grd
++++ b/chrome/browser/resources/component_extension_resources.grd
+@@ -126,9 +126,7 @@
+         <include name="IDR_PDF_VIEWER_ERROR_SCREEN_JS" file="pdf/elements/viewer-error-screen/viewer-error-screen.js" type="BINDATA" />
+         <if expr="chromeos">
+           <include name="IDR_PDF_VIEWER_INK_INDEX_HTML" file="pdf/ink/index.html" type="BINDATA" />
+-          <include name="IDR_PDF_VIEWER_INK_INK_API_JS" file="pdf/ink/ink_api.js" type="BINDATA" />
+           <include name="IDR_PDF_VIEWER_INK_HOST_HTML" file="pdf/elements/viewer-ink-host/viewer-ink-host.html" type="BINDATA" />
+-          <include name="IDR_PDF_VIEWER_INK_HOST_JS" file="pdf/elements/viewer-ink-host/viewer-ink-host.js" type="BINDATA" />
+           <include name="IDR_PDF_VIEWER_PEN_OPTIONS_HTML" file="pdf/elements/viewer-pen-options/viewer-pen-options.html" type="BINDATA" />
+           <include name="IDR_PDF_VIEWER_PEN_OPTIONS_JS" file="pdf/elements/viewer-pen-options/viewer-pen-options.js" type="BINDATA" />
+           <include name="IDR_PDF_VIEWER_FORM_WARNING_HTML" file="pdf/elements/viewer-form-warning/viewer-form-warning.html" type="BINDATA" />
+diff --git a/third_party/ink/BUILD.gn b/third_party/ink/BUILD.gn
+index 132b29e..0d91ec9 100644
+--- a/third_party/ink/BUILD.gn
++++ b/third_party/ink/BUILD.gn
+@@ -4,7 +4,7 @@
+ 
+ import("//tools/grit/grit_rule.gni")
+ 
+-if (is_chromeos) {
++if (false) {
+   grit("ink_resources") {
+     source = "ink_resources.grd"
+ 
+diff --git a/chrome/chrome_paks.gni b/chrome/chrome_paks.gni
+index 8ff44c7..af991ce 100644
+--- a/chrome/chrome_paks.gni
++++ b/chrome/chrome_paks.gni
+@@ -160,7 +160,6 @@ template("chrome_extra_paks") {
+         "$root_gen_dir/chrome/multidevice_setup_resources.pak",
+         "$root_gen_dir/chrome/os_settings_resources.pak",
+         "$root_gen_dir/chromeos/chromeos_resources.pak",
+-        "$root_gen_dir/third_party/ink/ink_resources.pak",
+         "$root_gen_dir/ui/file_manager/file_manager_resources.pak",
+       ]
+       deps += [
+@@ -169,7 +168,6 @@ template("chrome_extra_paks") {
+         "//chrome/browser/resources/chromeos:cellular_setup_resources",
+         "//chrome/browser/resources/chromeos:multidevice_setup_resources",
+         "//chromeos/resources",
+-        "//third_party/ink:ink_resources",
+         "//ui/file_manager:resources",
+       ]
+       if (enable_kiosk_next && is_chrome_branded) {

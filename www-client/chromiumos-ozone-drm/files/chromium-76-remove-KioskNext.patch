@@ -1,0 +1,578 @@
+From a08dc03616b3c157b673315fd348a933c7b11092 Mon Sep 17 00:00:00 2001
+From: Michael Giuffrida <michaelpg@chromium.org>
+Date: Wed, 14 Aug 2019 02:11:51 +0000
+Subject: [PATCH] Remove KioskNext feature and directory
+
+Removes remaining KioskNext code and references.
+
+Bug: 977019
+Change-Id: Ic1d554d9771996f87e85ee2d335cbf82da2ec19d
+Reviewed-on: https://chromium-review.googlesource.com/c/chromium/src/+/1750264
+Auto-Submit: Michael Giuffrida <michaelpg@chromium.org>
+Reviewed-by: James Cook <jamescook@chromium.org>
+Reviewed-by: Dominick Ng <dominickn@chromium.org>
+Reviewed-by: Ben Wells <benwells@chromium.org>
+Commit-Queue: Michael Giuffrida <michaelpg@chromium.org>
+Cr-Commit-Position: refs/heads/master@{#686671}
+---
+ ash/public/cpp/ash_features.cc                            | 3 ---
+ ash/public/cpp/ash_features.h                             | 3 ---
+ chrome/browser/apps/app_service/arc_apps.cc               | 3 ---
+ chrome/browser/apps/app_service/built_in_chromeos_apps.cc | 1 -
+ chrome/browser/apps/app_service/extension_apps.cc         | 1 -
+ chrome/browser/apps/app_service/launch_util.cc            | 1 -
+ chrome/browser/chromeos/kiosk_next_home/kiosk_next.gni    | 4 ----
+ chrome/browser/extensions/component_loader.h              | 4 ----
+ chrome/browser/ui/BUILD.gn                                | 8 --------
+ chrome/common/extensions/extension_constants.cc           | 2 --
+ chrome/common/extensions/extension_constants.h            | 2 --
+ chrome/services/app_service/public/mojom/types.mojom      | 1 -
+ chrome/test/BUILD.gn                                      | 4 ----
+ 13 files changed, 37 deletions(-)
+ delete mode 100644 chrome/browser/chromeos/kiosk_next_home/kiosk_next.gni
+
+diff --git a/ash/public/cpp/ash_features.cc b/ash/public/cpp/ash_features.cc
+index 3b9d9f859f516..02d006d8c2b7a 100644
+--- a/ash/public/cpp/ash_features.cc
++++ b/ash/public/cpp/ash_features.cc
+@@ -67,9 +67,6 @@ const base::Feature kTrilinearFiltering{"TrilinearFiltering",
+ const base::Feature kUnlockWithExternalBinary{
+     "UnlockWithExternalBinary", base::FEATURE_DISABLED_BY_DEFAULT};
+ 
+-const base::Feature kKioskNextShell{"KioskNextShell",
+-                                    base::FEATURE_DISABLED_BY_DEFAULT};
+-
+ const base::Feature kViewsLogin{"ViewsLogin", base::FEATURE_ENABLED_BY_DEFAULT};
+ 
+ const base::Feature kVirtualDesks{"VirtualDesks",
+diff --git a/ash/public/cpp/ash_features.h b/ash/public/cpp/ash_features.h
+index 2c1b93915e5c1..d4e3451a16762 100644
+--- a/ash/public/cpp/ash_features.h
++++ b/ash/public/cpp/ash_features.h
+@@ -85,9 +85,6 @@ ASH_PUBLIC_EXPORT extern const base::Feature kTrilinearFiltering;
+ // Enables running an external binary which provides lock screen authentication.
+ ASH_PUBLIC_EXPORT extern const base::Feature kUnlockWithExternalBinary;
+ 
+-// Enables the KioskNextShell feature.
+-ASH_PUBLIC_EXPORT extern const base::Feature kKioskNextShell;
+-
+ // Enables views login.
+ ASH_PUBLIC_EXPORT extern const base::Feature kViewsLogin;
+ 
+diff --git a/chrome/browser/apps/app_service/arc_apps.cc b/chrome/browser/apps/app_service/arc_apps.cc
+index c084cedc1a693..190a3760551fc 100644
+--- a/chrome/browser/apps/app_service/arc_apps.cc
++++ b/chrome/browser/apps/app_service/arc_apps.cc
+@@ -317,9 +317,6 @@ void ArcApps::Launch(const std::string& app_id,
+     case apps::mojom::LaunchSource::kFromAppListRecommendation:
+       uit = arc::UserInteractionType::APP_STARTED_FROM_LAUNCHER_SUGGESTED_APP;
+       break;
+-    case apps::mojom::LaunchSource::kFromKioskNextHome:
+-      uit = arc::UserInteractionType::APP_STARTED_FROM_KIOSK_NEXT_HOME;
+-      break;
+     case apps::mojom::LaunchSource::kFromParentalControls:
+       uit = arc::UserInteractionType::APP_STARTED_FROM_SETTINGS;
+       break;
+diff --git a/chrome/browser/apps/app_service/built_in_chromeos_apps.cc b/chrome/browser/apps/app_service/built_in_chromeos_apps.cc
+index 6eb7ec55ce3da..1fe0480d5622d 100644
+--- a/chrome/browser/apps/app_service/built_in_chromeos_apps.cc
++++ b/chrome/browser/apps/app_service/built_in_chromeos_apps.cc
+@@ -156,7 +156,6 @@ void BuiltInChromeOsApps::Launch(const std::string& app_id,
+                                  int64_t display_id) {
+   switch (launch_source) {
+     case apps::mojom::LaunchSource::kUnknown:
+-    case apps::mojom::LaunchSource::kFromKioskNextHome:
+     case apps::mojom::LaunchSource::kFromParentalControls:
+       break;
+     case apps::mojom::LaunchSource::kFromAppListGrid:
+diff --git a/chrome/browser/apps/app_service/extension_apps.cc b/chrome/browser/apps/app_service/extension_apps.cc
+index 5f14956344210..f991e9118f163 100644
+--- a/chrome/browser/apps/app_service/extension_apps.cc
++++ b/chrome/browser/apps/app_service/extension_apps.cc
+@@ -169,7 +169,6 @@ void ExtensionApps::Launch(const std::string& app_id,
+ 
+   switch (launch_source) {
+     case apps::mojom::LaunchSource::kUnknown:
+-    case apps::mojom::LaunchSource::kFromKioskNextHome:
+     case apps::mojom::LaunchSource::kFromParentalControls:
+       break;
+     case apps::mojom::LaunchSource::kFromAppListGrid:
+diff --git a/chrome/browser/apps/app_service/launch_util.cc b/chrome/browser/apps/app_service/launch_util.cc
+index 49ac382c10e8f..a55ee1e906bf7 100644
+--- a/chrome/browser/apps/app_service/launch_util.cc
++++ b/chrome/browser/apps/app_service/launch_util.cc
+@@ -13,7 +13,6 @@ ash::ShelfLaunchSource ConvertLaunchSource(
+     apps::mojom::LaunchSource launch_source) {
+   switch (launch_source) {
+     case apps::mojom::LaunchSource::kUnknown:
+-    case apps::mojom::LaunchSource::kFromKioskNextHome:
+     case apps::mojom::LaunchSource::kFromParentalControls:
+       return ash::LAUNCH_FROM_UNKNOWN;
+     case apps::mojom::LaunchSource::kFromAppListGrid:
+diff --git a/chrome/browser/chromeos/kiosk_next_home/kiosk_next.gni b/chrome/browser/chromeos/kiosk_next_home/kiosk_next.gni
+deleted file mode 100644
+index 3a411a9f38430..0000000000000
+--- a/chrome/browser/chromeos/kiosk_next_home/kiosk_next.gni
++++ /dev/null
+@@ -1,4 +0,0 @@
+-declare_args() {
+-  # Whether Kiosk Next should be enabled.
+-  enable_kiosk_next = is_chromeos
+-}
+diff --git a/chrome/browser/ui/BUILD.gn b/chrome/browser/ui/BUILD.gn
+index 2c534657b9cf2..d9de71261fe08 100644
+--- a/chrome/browser/ui/BUILD.gn
++++ b/chrome/browser/ui/BUILD.gn
+@@ -26,10 +26,6 @@ import("//third_party/protobuf/proto_library.gni")
+ import("//ui/base/ui_features.gni")
+ import("//ui/views/features.gni")
+ 
+-if (is_chromeos) {
+-  import("//chrome/browser/chromeos/kiosk_next_home/kiosk_next.gni")
+-}
+-
+ # Use a static library here because many test binaries depend on this but don't
+ # require many files from it. This makes linking more efficient.
+ jumbo_split_static_library("ui") {
+@@ -1957,10 +1953,6 @@ jumbo_split_static_library("ui") {
+     if (use_cras) {
+       defines += [ "USE_CRAS" ]
+     }
+-
+-    if (enable_kiosk_next) {
+-      defines += [ "KIOSK_NEXT" ]
+-    }
+   }
+ 
+   if (is_win || is_mac || is_desktop_linux || is_chromeos) {
+diff --git a/chrome/common/extensions/extension_constants.cc b/chrome/common/extensions/extension_constants.cc
+index 0f1a64f0dfcf2..53d88ca26dfa5 100644
+--- a/chrome/common/extensions/extension_constants.cc
++++ b/chrome/common/extensions/extension_constants.cc
+@@ -119,7 +118,6 @@ const char kZipArchiverExtensionPath[] = "chromeos/zip_archiver";
+ const char kChromeCameraAppId[] = "hfhhnacclhffhdffklopdkcgdhifgngh";
+ const char kChromeCameraAppDevId[] = "flgnmkgjffmkephdokeeliiopbjaafpm";
+ const char kChromeCameraAppPath[] = "chromeos/camera";
+-const char kKioskNextHomeAppId[] = "nbaolgedfgoedkjbfmpediclncanmpbc";
+ #endif
+
+ const char kAppStateNotInstalled[] = "not_installed";
+diff --git a/chrome/common/extensions/extension_constants.h b/chrome/common/extensions/extension_constants.h
+index bfbb9d2f92dfe..75717b341f9b8 100644
+--- a/chrome/common/extensions/extension_constants.h
++++ b/chrome/common/extensions/extension_constants.h
+@@ -243,8 +243,6 @@ extern const char kChromeCameraAppId[];
+ extern const char kChromeCameraAppDevId[];
+ // Path to preinstalled Chrome camera app.
+ extern const char kChromeCameraAppPath[];
+-// The app ID of the Kiosk Next Home app.
+-extern const char kKioskNextHomeAppId[];
+ #endif
+ 
+ // What causes an extension to be installed? Used in histograms, so don't
+diff --git a/chrome/services/app_service/public/mojom/types.mojom b/chrome/services/app_service/public/mojom/types.mojom
+index 97e0192260ba5..e292ea64c3442 100644
+--- a/chrome/services/app_service/public/mojom/types.mojom
++++ b/chrome/services/app_service/public/mojom/types.mojom
+@@ -155,7 +155,6 @@ enum LaunchSource {
+   kFromAppListQuery,             // Query-dependent results (larger icons).
+   kFromAppListQueryContextMenu,  // Query-dependent results; context menu.
+   kFromAppListRecommendation,    // Query-less recommendations (smaller icons).
+-  kFromKioskNextHome,            // Kiosk Next Home app.
+   kFromParentalControls,         // Parental Controls Settings Section.
+ };
+ 
+diff --git a/chrome/chrome_paks.gni b/chrome/chrome_paks.gni
+index 8ff44c7..0c1e0c2 100644
+--- a/chrome/chrome_paks.gni
++++ b/chrome/chrome_paks.gni
+@@ -8,9 +8,9 @@ import("//extensions/buildflags/buildflags.gni")
+ import("//ui/base/ui_features.gni")
+ import("chrome_repack_locales.gni")
+ 
+-if (is_chromeos) {
+-  import("//chrome/browser/chromeos/kiosk_next_home/kiosk_next.gni")
+-}
++#if (is_chromeos) {
++#  import("//chrome/browser/chromeos/kiosk_next_home/kiosk_next.gni")
++#}
+ 
+ # Generates a rule to repack a set of resources, substituting a given string
+ # in for the percentage (e.g. "100", "200"). It generates the repacked files in
+@@ -172,10 +172,10 @@ template("chrome_extra_paks") {
+         "//third_party/ink:ink_resources",
+         "//ui/file_manager:resources",
+       ]
+-      if (enable_kiosk_next && is_chrome_branded) {
+-        sources += [ "$root_gen_dir/chrome/kiosk_next_internal_resources.pak" ]
+-        deps += [ "//chrome/browser/resources:kiosk_next_internal_resources" ]
+-      }
++#      if (enable_kiosk_next && is_chrome_branded) {
++#        sources += [ "$root_gen_dir/chrome/kiosk_next_internal_resources.pak" ]
++#        deps += [ "//chrome/browser/resources:kiosk_next_internal_resources" ]
++#      }
+     }
+     if (!is_android && !is_chromeos) {
+       sources += [ "$root_gen_dir/chrome/onboarding_welcome_resources.pak" ]
+diff --git a/chrome/browser/resources/BUILD.gn b/chrome/browser/resources/BUILD.gn
+index 9b4adc9..0c676a7 100644
+--- a/chrome/browser/resources/BUILD.gn
++++ b/chrome/browser/resources/BUILD.gn
+@@ -5,9 +5,9 @@
+ import("//chrome/common/features.gni")
+ import("//tools/grit/grit_rule.gni")
+ 
+-if (is_chromeos) {
+-  import("//chrome/browser/chromeos/kiosk_next_home/kiosk_next.gni")
+-}
++#if (is_chromeos) {
++#  import("//chrome/browser/chromeos/kiosk_next_home/kiosk_next.gni")
++#}
+ 
+ assert(!is_ios, "Chromium/iOS shouldn't use anything in //chrome")
+ 
+@@ -112,16 +112,16 @@ if (!is_android) {
+     }
+ 
+     if (is_chromeos) {
+-      if (enable_kiosk_next) {
+-        defines += [ "_kiosk_next" ]
+-      }
++#      if (enable_kiosk_next) {
++#        defines += [ "_kiosk_next" ]
++#      }
+ 
+       # The .grd contains references to generated files.
+       source_is_generated = true
+ 
+-      deps = [
+-        "//chrome/browser/resources/chromeos/kiosk_next_home:mojom_bin",
+-      ]
++#      deps = [
++#        "//chrome/browser/resources/chromeos/kiosk_next_home:mojom_bin",
++#      ]
+ 
+       grit_flags = [
+         "-E",
+@@ -240,19 +240,19 @@ if (is_chromeos) {
+     output_dir = "$root_gen_dir/chrome"
+   }
+ 
+-  if (enable_kiosk_next && is_chrome_branded) {
+-    grit("kiosk_next_internal_resources") {
+-      source = "kiosk_next_internal_resources.grd"
+-      defines = chrome_grit_defines
+-      outputs = [
+-        "grit/kiosk_next_internal_resources.h",
+-        "grit/kiosk_next_internal_resources_map.cc",
+-        "grit/kiosk_next_internal_resources_map.h",
+-        "kiosk_next_internal_resources.pak",
+-      ]
+-      output_dir = "$root_gen_dir/chrome"
+-    }
+-  }
++#  if (enable_kiosk_next && is_chrome_branded) {
++#    grit("kiosk_next_internal_resources") {
++#      source = "kiosk_next_internal_resources.grd"
++#      defines = chrome_grit_defines
++#      outputs = [
++#        "grit/kiosk_next_internal_resources.h",
++#        "grit/kiosk_next_internal_resources_map.cc",
++#        "grit/kiosk_next_internal_resources_map.h",
++#        "kiosk_next_internal_resources.pak",
++#      ]
++#      output_dir = "$root_gen_dir/chrome"
++#    }
++#  }
+ }
+ 
+ if (!is_android && !is_chromeos) {
+diff --git a/chrome/browser/BUILD.gn b/chrome/browser/BUILD.gn
+index d4985d8..d73f50f 100644
+--- a/chrome/browser/BUILD.gn
++++ b/chrome/browser/BUILD.gn
+@@ -38,9 +38,9 @@ if (is_android) {
+   import("//tools/grit/grit_rule.gni")
+ }
+ 
+-if (is_chromeos) {
+-  import("//chrome/browser/chromeos/kiosk_next_home/kiosk_next.gni")
+-}
++#if (is_chromeos) {
++#  import("//chrome/browser/chromeos/kiosk_next_home/kiosk_next.gni")
++#}
+ 
+ additional_modules_list_file =
+     "$root_gen_dir/chrome/browser/internal/additional_modules_list.txt"
+@@ -3521,7 +3521,7 @@ jumbo_split_static_library("browser") {
+     deps += [
+       "//ash/public/cpp",
+       "//chrome/browser/chromeos",
+-      "//chrome/browser/chromeos/kiosk_next_home/mojom",
++#      "//chrome/browser/chromeos/kiosk_next_home/mojom",
+       "//chrome/services/cups_proxy",
+       "//chromeos/services/assistant/public:feature_flags",
+       "//chromeos/services/cellular_setup",
+@@ -5099,9 +5099,9 @@ grit("resources") {
+     defines += [ "enable_hangout_services_extension" ]
+   }
+ 
+-  if (is_chromeos && enable_kiosk_next) {
+-    defines += [ "_kiosk_next" ]
+-  }
++#  if (is_chromeos && enable_kiosk_next) {
++#    defines += [ "_kiosk_next" ]
++#  }
+ 
+   output_dir = "$root_gen_dir/chrome"
+   outputs = [
+diff --git a/chrome/browser/chromeos/BUILD.gn b/chrome/browser/chromeos/BUILD.gn
+index 99dd19f..0c7a71a 100644
+--- a/chrome/browser/chromeos/BUILD.gn
++++ b/chrome/browser/chromeos/BUILD.gn
+@@ -4,7 +4,7 @@
+ 
+ import("//build/config/features.gni")
+ import("//build/config/ui.gni")
+-import("//chrome/browser/chromeos/kiosk_next_home/kiosk_next.gni")
++#import("//chrome/browser/chromeos/kiosk_next_home/kiosk_next.gni")
+ import("//extensions/buildflags/buildflags.gni")
+ import("//media/media_options.gni")
+ import("//printing/buildflags/buildflags.gni")
+@@ -59,7 +59,7 @@ source_set("chromeos") {
+     "//chrome/app:command_ids",
+     "//chrome/browser/apps/platform_apps",
+     "//chrome/browser/apps/platform_apps/api",
+-    "//chrome/browser/chromeos/kiosk_next_home/mojom",
++#    "//chrome/browser/chromeos/kiosk_next_home/mojom",
+     "//chrome/browser/chromeos/power/ml/smart_dim",
+     "//chrome/browser/chromeos/supervision/mojom",
+     "//chrome/browser/devtools",
+@@ -212,7 +212,7 @@ source_set("chromeos") {
+     "//dbus",
+     "//device/bluetooth",
+     "//extensions/browser",
+-    "//extensions/browser/kiosk",
++#    "//extensions/browser/kiosk",
+     "//extensions/common",
+     "//google_apis/drive",
+     "//gpu",
+@@ -358,49 +358,49 @@ source_set("chromeos") {
+     "app_mode/app_launch_utils.h",
+     "app_mode/app_session.cc",
+     "app_mode/app_session.h",
+-    "app_mode/arc/arc_kiosk_app_data.cc",
+-    "app_mode/arc/arc_kiosk_app_data.h",
+-    "app_mode/arc/arc_kiosk_app_launcher.cc",
+-    "app_mode/arc/arc_kiosk_app_launcher.h",
+-    "app_mode/arc/arc_kiosk_app_manager.cc",
+-    "app_mode/arc/arc_kiosk_app_manager.h",
+-    "app_mode/arc/arc_kiosk_app_service.cc",
+-    "app_mode/arc/arc_kiosk_app_service.h",
+-    "app_mode/arc/arc_kiosk_app_service_factory.cc",
+-    "app_mode/arc/arc_kiosk_app_service_factory.h",
++#    "app_mode/arc/arc_kiosk_app_data.cc",
++#    "app_mode/arc/arc_kiosk_app_data.h",
++#    "app_mode/arc/arc_kiosk_app_launcher.cc",
++#    "app_mode/arc/arc_kiosk_app_launcher.h",
++#    "app_mode/arc/arc_kiosk_app_manager.cc",
++#    "app_mode/arc/arc_kiosk_app_manager.h",
++#    "app_mode/arc/arc_kiosk_app_service.cc",
++#    "app_mode/arc/arc_kiosk_app_service.h",
++#    "app_mode/arc/arc_kiosk_app_service_factory.cc",
++#    "app_mode/arc/arc_kiosk_app_service_factory.h",
+     "app_mode/certificate_manager_dialog.cc",
+     "app_mode/certificate_manager_dialog.h",
+-    "app_mode/kiosk_app_data.cc",
+-    "app_mode/kiosk_app_data.h",
+-    "app_mode/kiosk_app_data_base.cc",
+-    "app_mode/kiosk_app_data_base.h",
+-    "app_mode/kiosk_app_data_delegate.h",
+-    "app_mode/kiosk_app_external_loader.cc",
+-    "app_mode/kiosk_app_external_loader.h",
+-    "app_mode/kiosk_app_icon_loader.cc",
+-    "app_mode/kiosk_app_icon_loader.h",
+-    "app_mode/kiosk_app_launch_error.cc",
+-    "app_mode/kiosk_app_launch_error.h",
+-    "app_mode/kiosk_app_manager.cc",
+-    "app_mode/kiosk_app_manager.h",
+-    "app_mode/kiosk_app_manager_observer.h",
+-    "app_mode/kiosk_app_update_install_gate.cc",
+-    "app_mode/kiosk_app_update_install_gate.h",
+-    "app_mode/kiosk_app_update_service.cc",
+-    "app_mode/kiosk_app_update_service.h",
+-    "app_mode/kiosk_diagnosis_runner.cc",
+-    "app_mode/kiosk_diagnosis_runner.h",
+-    "app_mode/kiosk_external_update_validator.cc",
+-    "app_mode/kiosk_external_update_validator.h",
+-    "app_mode/kiosk_external_updater.cc",
+-    "app_mode/kiosk_external_updater.h",
+-    "app_mode/kiosk_mode_idle_app_name_notification.cc",
+-    "app_mode/kiosk_mode_idle_app_name_notification.h",
+-    "app_mode/kiosk_profile_loader.cc",
+-    "app_mode/kiosk_profile_loader.h",
+-    "app_mode/kiosk_session_plugin_handler.cc",
+-    "app_mode/kiosk_session_plugin_handler.h",
+-    "app_mode/kiosk_session_plugin_handler_delegate.h",
++#    "app_mode/kiosk_app_data.cc",
++#    "app_mode/kiosk_app_data.h",
++#    "app_mode/kiosk_app_data_base.cc",
++#    "app_mode/kiosk_app_data_base.h",
++#    "app_mode/kiosk_app_data_delegate.h",
++#    "app_mode/kiosk_app_external_loader.cc",
++#    "app_mode/kiosk_app_external_loader.h",
++#    "app_mode/kiosk_app_icon_loader.cc",
++#    "app_mode/kiosk_app_icon_loader.h",
++#    "app_mode/kiosk_app_launch_error.cc",
++#    "app_mode/kiosk_app_launch_error.h",
++#    "app_mode/kiosk_app_manager.cc",
++#    "app_mode/kiosk_app_manager.h",
++#    "app_mode/kiosk_app_manager_observer.h",
++#    "app_mode/kiosk_app_update_install_gate.cc",
++#    "app_mode/kiosk_app_update_install_gate.h",
++#    "app_mode/kiosk_app_update_service.cc",
++#    "app_mode/kiosk_app_update_service.h",
++#    "app_mode/kiosk_diagnosis_runner.cc",
++#    "app_mode/kiosk_diagnosis_runner.h",
++#    "app_mode/kiosk_external_update_validator.cc",
++#    "app_mode/kiosk_external_update_validator.h",
++#    "app_mode/kiosk_external_updater.cc",
++#    "app_mode/kiosk_external_updater.h",
++#    "app_mode/kiosk_mode_idle_app_name_notification.cc",
++#    "app_mode/kiosk_mode_idle_app_name_notification.h",
++#    "app_mode/kiosk_profile_loader.cc",
++#    "app_mode/kiosk_profile_loader.h",
++#    "app_mode/kiosk_session_plugin_handler.cc",
++#    "app_mode/kiosk_session_plugin_handler.h",
++#    "app_mode/kiosk_session_plugin_handler_delegate.h",
+     "app_mode/startup_app_launcher.cc",
+     "app_mode/startup_app_launcher.h",
+     "app_mode/startup_app_launcher_update_checker.cc",
+@@ -2135,13 +2135,13 @@ source_set("chromeos") {
+   if (use_cras) {
+     defines += [ "USE_CRAS" ]
+   }
+-  if (enable_kiosk_next) {
+-    defines += [ "KIOSK_NEXT" ]
+-    if (is_chrome_branded) {
+-      public_deps +=
+-          [ "//chrome/browser/resources:kiosk_next_internal_resources" ]
+-    }
+-  }
++#  if (enable_kiosk_next) {
++#    defines += [ "KIOSK_NEXT" ]
++#    if (is_chrome_branded) {
++#      public_deps +=
++#          [ "//chrome/browser/resources:kiosk_next_internal_resources" ]
++#    }
++#  }
+ }
+ 
+ copy("dbus_service_files") {
+@@ -2150,7 +2150,7 @@ copy("dbus_service_files") {
+     "dbus/org.chromium.ComponentUpdaterService.conf",
+     "dbus/org.chromium.CryptohomeKeyDelegate.conf",
+     "dbus/org.chromium.DriveFileStreamService.conf",
+-    "dbus/org.chromium.KioskAppService.conf",
++#    "dbus/org.chromium.KioskAppService.conf",
+     "dbus/org.chromium.LibvdaService.conf",
+     "dbus/org.chromium.MetricsEventService.conf",
+     "dbus/org.chromium.NetworkProxyService.conf",
+@@ -2190,8 +2190,8 @@ static_library("test_support") {
+     "android_sms/fake_android_sms_app_setup_controller.h",
+     "android_sms/fake_connection_establisher.cc",
+     "android_sms/fake_connection_establisher.h",
+-    "app_mode/test_kiosk_extension_builder.cc",
+-    "app_mode/test_kiosk_extension_builder.h",
++#    "app_mode/test_kiosk_extension_builder.cc",
++#    "app_mode/test_kiosk_extension_builder.h",
+     "attestation/mock_enrollment_certificate_uploader.cc",
+     "attestation/mock_enrollment_certificate_uploader.h",
+     "attestation/mock_machine_certificate_uploader.cc",
+@@ -2323,7 +2323,7 @@ source_set("unit_tests") {
+     "arc/intent_helper/arc_intent_picker_app_fetcher_unittest.cc",
+     "arc/intent_helper/arc_settings_service_unittest.cc",
+     "arc/intent_helper/open_with_menu_unittest.cc",
+-    "arc/kiosk/arc_kiosk_bridge_unittest.cc",
++#    "arc/kiosk/arc_kiosk_bridge_unittest.cc",
+     "arc/notification/arc_provision_notification_service_unittest.cc",
+     "arc/notification/arc_supervision_transition_notification_unittest.cc",
+     "arc/optin/arc_terms_of_service_default_negotiator_unittest.cc",
+@@ -2468,9 +2468,9 @@ source_set("unit_tests") {
+     "input_method/input_method_engine_unittest.cc",
+     "input_method/input_method_manager_impl_unittest.cc",
+     "input_method/input_method_persistence_unittest.cc",
+-    "kiosk_next_home/app_controller_service_unittest.cc",
+-    "kiosk_next_home/identity_controller_impl_unittest.cc",
+-    "kiosk_next_home/intent_config_helper_unittest.cc",
++#    "kiosk_next_home/app_controller_service_unittest.cc",
++#    "kiosk_next_home/identity_controller_impl_unittest.cc",
++#    "kiosk_next_home/intent_config_helper_unittest.cc",
+     "locale_change_guard_unittest.cc",
+     "lock_screen_apps/app_manager_impl_unittest.cc",
+     "lock_screen_apps/lock_screen_profile_creator_impl_unittest.cc",
+diff --git a/chrome/browser/extensions/BUILD.gn b/chrome/browser/extensions/BUILD.gn
+index e5d69b2..0b89efe 100644
+--- a/chrome/browser/extensions/BUILD.gn
++++ b/chrome/browser/extensions/BUILD.gn
+@@ -12,9 +12,9 @@ import("//mojo/public/tools/bindings/mojom.gni")
+ import("//pdf/features.gni")
+ import("//rlz/buildflags/buildflags.gni")
+ 
+-if (is_chromeos) {
+-  import("//chrome/browser/chromeos/kiosk_next_home/kiosk_next.gni")
+-}
++#if (is_chromeos) {
++#  import("//chrome/browser/chromeos/kiosk_next_home/kiosk_next.gni")
++#}
+ 
+ assert(enable_extensions)
+ 
+@@ -476,7 +476,7 @@ jumbo_static_library("extensions") {
+     "chrome_extensions_browser_client.h",
+     "chrome_extensions_interface_registration.cc",
+     "chrome_extensions_interface_registration.h",
+-    "chrome_kiosk_delegate.h",
++#    "chrome_kiosk_delegate.h",
+     "chrome_process_manager_delegate.cc",
+     "chrome_process_manager_delegate.h",
+     "chrome_url_request_util.cc",
+@@ -956,7 +956,7 @@ jumbo_static_library("extensions") {
+       "api/virtual_keyboard_private/chrome_virtual_keyboard_delegate.cc",
+       "api/virtual_keyboard_private/chrome_virtual_keyboard_delegate.h",
+       "api/vpn_provider/vpn_service_factory.cc",
+-      "chrome_kiosk_delegate_chromeos.cc",
++#      "chrome_kiosk_delegate_chromeos.cc",
+       "updater/chromeos_extension_cache_delegate.cc",
+       "updater/chromeos_extension_cache_delegate.h",
+       "updater/extension_cache_impl.cc",
+@@ -1008,13 +1008,13 @@ jumbo_static_library("extensions") {
+       "//ui/ozone",
+       "//ui/views",
+     ]
+-    if (enable_kiosk_next) {
+-      defines += [ "KIOSK_NEXT" ]
+-      deps += [ "//chrome/browser/chromeos/kiosk_next_home/mojom" ]
+-      if (is_chrome_branded) {
+-        deps += [ "//chrome/browser/resources:kiosk_next_internal_resources" ]
+-      }
+-    }
++#    if (enable_kiosk_next) {
++#      defines += [ "KIOSK_NEXT" ]
++#      deps += [ "//chrome/browser/chromeos/kiosk_next_home/mojom" ]
++#      if (is_chrome_branded) {
++#        deps += [ "//chrome/browser/resources:kiosk_next_internal_resources" ]
++#      }
++#    }
+     if (enable_nacl) {
+       deps += [ "//chrome/browser/resources/chromeos/zip_archiver" ]
+     }
+@@ -1034,7 +1034,7 @@ jumbo_static_library("extensions") {
+       "api/messaging/native_process_launcher.h",
+       "api/messaging/native_process_launcher_win.cc",
+       "api/tabs/tabs_util.cc",
+-      "chrome_kiosk_delegate.cc",
++#      "chrome_kiosk_delegate.cc",
+       "default_apps.cc",
+       "default_apps.h",
+     ]
