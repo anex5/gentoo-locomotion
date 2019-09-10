@@ -1,0 +1,79 @@
+From 37396fa7d3b241ff12230bac28fdf8011b92b355 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?St=C3=A9phane=20Marchesin?= <marcheu@chromium.org>
+Date: Mon, 15 Jul 2019 20:54:12 -0700
+Subject: [PATCH] CHROMIUM: drm_fourcc.h: Add Rockchip AFBC modifier
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Old-BUG=chrome-os-partner:56407
+Old-TEST=drm-tests null_platform_test with AFBC support
+
+Reviewed-on: https://chromium-review.googlesource.com/387205
+Commit-Ready: Kristian H. Kristensen <hoegsberg@chromium.org>
+Tested-by: Kristian H. Kristensen <hoegsberg@chromium.org>
+Reviewed-by: Stéphane Marchesin <marcheu@chromium.org>
+Reviewed-by: Anders Pedersen <anders.pedersen@arm.com>
+(rebased from chromeos-2.4.87)
+
+BUG=b:112720782
+Signed-off-by: Kristian H. Kristensen <hoegsberg@chromium.org>
+Signed-off-by: Stéphane Marchesin <marcheu@chromium.org>
+
+Change-Id: Id0d35736047e1fede88c1ce844d834262c7db2ef
+---
+ include/drm/drm_fourcc.h  | 17 +++++++++++++++++
+ tests/modetest/modetest.c |  2 ++
+ 2 files changed, 19 insertions(+)
+
+diff --git a/include/drm/drm_fourcc.h b/include/drm/drm_fourcc.h
+index 5c69090d..5b1444f0 100644
+--- a/include/drm/drm_fourcc.h
++++ b/include/drm/drm_fourcc.h
+@@ -314,6 +314,9 @@ extern "C" {
+ 
+ #define DRM_FORMAT_RESERVED	      ((1ULL << 56) - 1)
+ 
++/* Vendor ID for downstream, interim ChromeOS specific modifiers. */
++#define DRM_FORMAT_MOD_VENDOR_CHROMEOS 0xf0
++
+ #define fourcc_mod_code(vendor, val) \
+ 	((((__u64)DRM_FORMAT_MOD_VENDOR_## vendor) << 56) | ((val) & 0x00ffffffffffffffULL))
+ 
+@@ -756,6 +759,20 @@ extern "C" {
+  */
+ #define DRM_FORMAT_MOD_ALLWINNER_TILED fourcc_mod_code(ALLWINNER, 1)
+ 
++/*
++ * Rockchip ARM Framebuffer Compression (AFBC)
++ *
++ * This modifier identifies the specific variant of AFBC supported by the
++ * Rockchip display hardware. It's technically a two-plane format: first a
++ * header with 16 bytes per block, followed by the block data aligned to 1024
++ * bytes. Each block is 16x16 pixels.
++ *
++ * Eventually ARM should define modifiers for the various AFBC types, but
++ * we'll use this in the meantime. We use the CHROMEOS vendor ID to make sure
++ * we don't clash with future vendor modifiers.
++ */
++#define DRM_FORMAT_MOD_CHROMEOS_ROCKCHIP_AFBC	fourcc_mod_code(CHROMEOS, 1)
++
+ #if defined(__cplusplus)
+ }
+ #endif
+diff --git a/tests/modetest/modetest.c b/tests/modetest/modetest.c
+index e66be660..4cdbcd21 100644
+--- a/tests/modetest/modetest.c
++++ b/tests/modetest/modetest.c
+@@ -298,6 +298,8 @@ static const char *modifier_to_string(uint64_t modifier)
+ 		return "MOD_BROADCOM_VC4_T_TILED";
+ 	case DRM_FORMAT_MOD_QCOM_COMPRESSED:
+ 		return "QCOM_COMPRESSED";
++	case DRM_FORMAT_MOD_CHROMEOS_ROCKCHIP_AFBC:
++		return "MOD_CHROMEOS_ROCKCHIP_AFBC";
+ 	default:
+ 		return "(UNKNOWN MODIFIER)";
+ 	}
+-- 
+2.22.0.510.g264f2c817a-goog
+
