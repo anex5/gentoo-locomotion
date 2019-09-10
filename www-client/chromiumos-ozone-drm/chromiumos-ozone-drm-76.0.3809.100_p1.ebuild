@@ -233,7 +233,8 @@ PATCHES=(
  	"${FILESDIR}/chromium-optional-atk-r0.patch"
 	"${FILESDIR}/chromium-optional-dbus-r8.patch"
 	"${FILESDIR}/chromium-gclient_args.gni.patch"
-	"${FILESDIR}/chromium-disable-ink_lib.patch"
+	"${FILESDIR}/chromium-76-remove-ink.patch"
+	"${FILESDIR}/chromium-76-remove-KioskNext.patch"
 )
 
 S="${WORKDIR}/chromium-${PV/_*}"
@@ -827,8 +828,7 @@ src_configure() {
 
 		# UGC's "common" GN flags (config_bundles/common/gn_flags.map
 		"enable_hangout_services_extension=false"
-		"enable_kiosk_next=false"
-
+		
 		"enable_mdns=false"
 
 		# Disable nacl, we can't build without pnacl (http://crbug.com/269560).
@@ -924,9 +924,9 @@ src_configure() {
 		"enable_mpeg_h_audio_demuxing=true"
 		"enable_vulkan=false"
 		"angle_enable_vulkan=false"
-		"angle_enable_vulkan_validation_layers=false"
-		"angle_shared_libvulkan=false"
-		"ndk_supports_vulkan=false"
+		#"angle_enable_vulkan_validation_layers=false"
+		#"angle_shared_libvulkan=false"
+		#"ndk_supports_vulkan=false"
 		"use_vaapi=$(usetf vaapi)"
 		"enable_plugins=true"
 		"use_cras=false"
