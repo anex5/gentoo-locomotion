@@ -133,6 +133,7 @@ CDEPEND="
 	)
 	system-icu? ( >=dev-libs/icu-64:= )
 	system-jsoncpp? ( dev-libs/jsoncpp )
+	system-libdrm? ( x11-libs/libdrm )
 	system-libevent? ( dev-libs/libevent )
 	system-libvpx? ( >=media-libs/libvpx-1.7.0:=[postproc,svc] )
 	system-openh264? ( >=media-libs/openh264-1.6.0:= )
@@ -913,7 +914,7 @@ src_configure() {
 		"enable_mse_mpeg2ts_stream_parser=true"
 		"media_use_ffmpeg=true"
 		"enable_ffmpeg_video_decoders=true"
-		"rtc_initialize_ffmpeg=true"
+		#"rtc_initialize_ffmpeg=true"
 		"use_v4l2_codec=$(usetf v4l2)"
 		"use_linux_v4l2_only=false"
 		"use_v4lplugin=$(usetf v4lplugin)"
@@ -922,8 +923,8 @@ src_configure() {
 		"rtc_libvpx_build_vp9=false"
 		#"enable_runtime_media_renderer_selection=true"
 		"enable_mpeg_h_audio_demuxing=true"
-		"enable_vulkan=false"
-		"angle_enable_vulkan=false"
+		"enable_vulkan=true"
+		"angle_enable_vulkan=true"
 		#"angle_enable_vulkan_validation_layers=false"
 		#"angle_shared_libvulkan=false"
 		#"ndk_supports_vulkan=false"
