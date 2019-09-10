@@ -827,6 +827,7 @@ src_configure() {
 
 		# UGC's "common" GN flags (config_bundles/common/gn_flags.map
 		"enable_hangout_services_extension=false"
+		"enable_kiosk_next=false"
 
 		"enable_mdns=false"
 
@@ -922,6 +923,10 @@ src_configure() {
 		#"enable_runtime_media_renderer_selection=true"
 		"enable_mpeg_h_audio_demuxing=true"
 		"enable_vulkan=false"
+		"angle_enable_vulkan=false"
+		"angle_enable_vulkan_validation_layers=false"
+		"angle_shared_libvulkan=false"
+		"ndk_supports_vulkan=false"
 		"use_vaapi=$(usetf vaapi)"
 		"enable_plugins=true"
 		"use_cras=false"
