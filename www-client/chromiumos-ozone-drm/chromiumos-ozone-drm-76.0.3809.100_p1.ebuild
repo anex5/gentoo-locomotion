@@ -632,7 +632,8 @@ src_prepare() {
 		third_party/freetype
 		third_party/harfbuzz-ng
 	)
-	use system-icu || keeplibs+=( third_party/icu )
+	#use system-icu || 
+	keeplibs+=( third_party/icu )
 	use system-jsoncpp || keeplibs+=( third_party/jsoncpp )
 	use libcxx || keeplibs+=( buildtools/third_party/libc++ buildtools/third_party/libc++abi )
 	use system-libdrm || keeplibs+=( third_party/libdrm third_party/libdrm/src/include/drm )
