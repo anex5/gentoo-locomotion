@@ -884,7 +884,7 @@ src_configure() {
 		# FreeType and HarfBuzz to meet that need. (https://crbug.com/694137)
 		"use_system_freetype=$(usetf system-harfbuzz)"
 		"use_system_harfbuzz=$(usetf system-harfbuzz)"
-		"use_bundled_fontconfig=false"
+		#"use_bundled_fontconfig=false"
 		"use_system_lcms2=$(usetf pdf)"
 		"use_system_libsync=true"
 		"use_system_libjpeg=$(usetf system-openjpeg)"
