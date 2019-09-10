@@ -43,7 +43,8 @@ src_unpack() {
 src_prepare() {
 	default
 	[[ -n ${PATCH_VER} ]] && eapply "${WORKDIR}"/${PV}/*.patch
-
+	
+	eapply "${FILESDIR}/Add-H264-Slice-format.patch"
 	eapply "${FILESDIR}/Add-back-VENDOR_NV-name.patch"
 	eapply "${FILESDIR}/Add-Evdi-module-userspace-api-file.patch"
 	eapply "${FILESDIR}/Add-header-for-Mediatek-DRM-userspace.patch"
