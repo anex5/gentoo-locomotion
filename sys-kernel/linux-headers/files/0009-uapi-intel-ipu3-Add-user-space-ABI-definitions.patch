@@ -1,222 +1,34 @@
-From 08c83f6264d5894009506c6a8b23fa63ced390bf Mon Sep 17 00:00:00 2001
-From: Rajmohan Mani <rajmohan.mani@intel.com>
-Date: Mon, 27 Aug 2018 14:48:44 -0700
-Subject: [PATCH] From 63ede21fb383c39f4e5bf3262fc5a4cdb975cf17 Mon Sep 17
- 00:00:00 2001 From: Yong Zhi <yong.zhi@intel.com> Date: Wed, 28 Jun 2017
- 11:47:50 -0500 Subject: FROMLIST: uapi: intel-ipu3: Add user space ABI
- definitions
+From 4be2c5e5feffe0fd9305e73ba56b22bab3990fed Mon Sep 17 00:00:00 2001
+From: Tomasz Figa <tfiga@chromium.org>
+Date: Tue, 23 Jul 2019 12:43:40 +0900
+Subject: [PATCH] CHROMIUM: media/uapi: Add Intel IPU3 UAPI definitions
 
-Change-Id: Ib7e047f107ca779d400244bdd325780168f997d7
-Signed-off-by: Yong Zhi <yong.zhi@intel.com>
-Signed-off-by: Yang Liang <liang.l.yang@intel.com>
-(am from https://patchwork.linuxtv.org/patch/41877/)
+Extract the UAPI header changes from the following chromeos-4.4 commits:
 
-v2: squash in upstream changes:
+9d754a71902b CHROMIUM: media: intel-ipu3: uAPI: Address style related issues
+d813f6f20b13 CHROMIUM: media: intel-ipu3: Use __attribute__((aligned(x))) format
+287ef505fec7 FROMLIST: BACKPORT: v4l: Document Intel IPU3 meta data uAPI
+1fad1ab1768d CHROMIUM: media: intel-ipu3: fixup for noise reduction parameters processing
+eff5d1eed5af CHROMIUM: media: intel-ipu3: Add a custom ctrl for pipe mode
+f6807d9bc57a CHROMIUM: media: intel-ipu3: Move some ANR settings out of uAPI
+17b53ea1905c CHROMIUM: media: intel-ipu3: Move bds related structs to abi header
+c30916e8a517 CHROMIUM: media: ipu3-imgu: Synchronize the code with FROMLIST v6
+83de95d0f4ed CHROMIUM: intel-ipu3: Update uAPI and ABI definitions
+bf88e162b8a0 CHROMIUM: intel-ipu3: add __packed to structs defined in uapi header
+e87da1fa0858 CHROMIUM: [media] intel-ipu3: Add user space ABI definitions
 
-From 8a4dc013135d7fe3c521877ce9eb4d6ea907ff4a Mon Sep 17 00:00:00 2001
-From: Rajmohan Mani <rajmohan.mani@intel.com>
-Date: Mon, 9 Oct 2017 17:03:51 -0500
-Subject: [PATCH] CHROMIUM: intel-ipu3: add __packed to structs defined in uapi
- header
-
-Added __packed qualifier and explicit paddings to uapi structs.
-
-The changes are present in v5 upstream at:
-https://patchwork.kernel.org/patch/10088511/
-
-BUG=none
-TEST=Built and run on soraka.
-
-Change-Id: Id87152b8a43d5efb58b6132ccf42b7c4206a5617
-Signed-off-by: Rajmohan Mani <rajmohan.mani@intel.com>
-Signed-off-by: Yong Zhi <yong.zhi@intel.com>
-
-v3: squash changes to be upstreamed:
-
-From 31b2b4a24fa3ea55f12870b6bcd910b782558dcd Mon Sep 17 00:00:00 2001
-From: Yong Zhi <yong.zhi@intel.com>
-Date: Thu, 11 Jan 2018 10:04:46 -0600
-Subject: [PATCH] CHROMIUM: intel-ipu3: Update uAPI and ABI definitions
-
-Move definitions not used by user space to ImgU internal
-and update the driver accordingly.
-
-BUG=b:71598254
-TEST=check basic camera functions with Nexus app
-
-Change-Id: Ie5a0087c420855db3df1ea98a2d6d24f00bc852b
-Signed-off-by: Yong Zhi <yong.zhi@intel.com>
-Signed-off-by: Tianshu Qiu <tian.shu.qiu@intel.com>
-Signed-off-by: Rajmohan Mani <rajmohan.mani@intel.com>
-
-commit 0339d44c1079d12606acd0633e6de51bc076d36b
-Author: Yong Zhi <yong.zhi@intel.com>
-Date:   Wed Jun 6 16:33:50 2018 -0700
-
-CHROMIUM: media: intel-ipu3: Move bds related structs to abi header
-
-bds config settings from user space are not currently
-used by ImgU driver, so move the structs to ipu3-abi.h.
-
-ipu3_uapi_bds* in intel-ipu3.h are moved
-into ipu3-abi.h as ipu3_abi_bds*.
-
-BUG=b:113187542
-TEST=check basic camera functions with Nexus app
-CQ-DEPEND=CL:1189434
-
-Change-Id: Iaa234fee33672674e2ff5e686e06c168a822bc64
-Signed-off-by: Yong Zhi <yong.zhi@intel.com>
-Signed-off-by: Tianshu Qiu <tian.shu.qiu@intel.com>
-Signed-off-by: Rajmohan Mani <rajmohan.mani@intel.com>
-
-commit f3f02f92471a576b743b94c8a8d9092fd85177ec
-Author: Yong Zhi <yong.zhi@intel.com>
-Date:   Thu Jun 7 10:16:07 2018 -0700
-
-CHROMIUM: media: intel-ipu3: Move some ANR settings out of uAPI
-
-Some ANR settings like w and h are calculated by
-the driver itself, so remove them from uAPI.
-
-BUG=b:113187542
-TEST=check basic camera functions with Nexus app
-CQ-DEPEND=CL:1189435
-
-Change-Id: Ia594928108bcdc72f1195acdb309077d6e48632f
-Signed-off-by: Yong Zhi <yong.zhi@intel.com>
-Signed-off-by: Tianshu Qiu <tian.shu.qiu@intel.com>
-Signed-off-by: Rajmohan Mani <rajmohan.mani@intel.com>
-
-commit 25f310b36f4d0d1590da4ce5830d5cb6d2b48206
-Author: Bingbu Cao <bingbu.cao@intel.com>
-Date:   Thu Aug 23 15:51:05 2018 +0800
-
-CHROMIUM: intel-ipu3: Add a custom ctrl for pipe mode
-
-Add a custom control V4L2_CID_INTEL_IPU3_MODE for ipu3
-to allow user to set the pipe mode - video or still.
-
-BUG=none
-TEST=verify basic camera functions via application
-CQ-DEPEND=CL:1179466, CL:1182953
-
-Change-Id: Ief89a39fe38d850e211e2f7cdfb78b1c36a7195a
-Signed-off-by: Bingbu Cao <bingbu.cao@intel.com>
-Signed-off-by: Rajmohan Mani <rajmohan.mani@intel.com>
-
-FROMLIST: BACKPORT: v4l: Document Intel IPU3 meta data uAPI
-
-These meta formats are used on Intel IPU3 ImgU video queues
-to carry 3A statistics and ISP pipeline parameters.
-
-V4L2_META_FMT_IPU3_3A
-V4L2_META_FMT_IPU3_PARAMS
-
-Signed-off-by: Yong Zhi <yong.zhi@intel.com>
-Signed-off-by: Chao C Li <chao.c.li@intel.com>
-Signed-off-by: Rajmohan Mani <rajmohan.mani@intel.com>
-
-(am from https://patchwork.kernel.org/patch/10465665
-Dropped the documentation text file below as there are no
-matching files in 4.4 kernel
-Documentation/media/uapi/v4l/meta-formats.rst)
-
-Besides adding documentation, the original patch also does the
-following.
-
-- Move YTM struct to abi header (as the kernel driver
-  is not using it)
-- Clean up comments
-- Rename unused fields as reserved in struct ipu3_uapi_flags
-- Uniformly use IPU3_ALIGN at the end of declarations
-- Fix copyright year
-
-BUG=b:113187542
-TEST=check basic camera functions with Nexus app
-
-Change-Id: I4744ce8634efa338ab6371039cb508a1f878ba73
-Signed-off-by: Rajmohan Mani <rajmohan.mani@intel.com>
-
-CHROMIUM: intel-ipu3: Fix compilation error
-
-Y-tone LUT structs / definitions are moved into abi header,
-with appropriate renaming, which results in compilation
-errors.
-
-Fixed the same by using the new definitions.
-
-BUG=b:113187542
-TEST=check basic camera functions with Nexus app
-
-Change-Id: I98dc5c1f4bd17bfbe0bd01e570951e96261ca248
-Signed-off-by: Rajmohan Mani <rajmohan.mani@intel.com>
-
-CHROMIUM: media: intel-ipu3: Use __attribute__((aligned(x))) format
-
-Currently the following gcc specific dialect is used
-in alignment declarations.
-Followed the recommendations from Mauro/Hans to use
-generic __attribute__((aligned(x))) format.
-Using this format also fixes Sphinx warnings seen
-during "make htmldocs".
-
-Also uniformly placed the __attribute__((aligned(x))) format at
-the end of struct / array / data type declarations.
-
-BUG=b:113187542
-TEST=check basic camera functions with Nexus app
-
-Change-Id: Id43f71adeb135d29cf820db0e0caa369b5214bb1
-Signed-off-by: Yong Zhi <yong.zhi@intel.com>
-Signed-off-by: Tianshu Qiu <tian.shu.qiu@intel.com>
-Signed-off-by: Rajmohan Mani <rajmohan.mani@intel.com>
-
-CHROMIUM: media: intel-ipu3: uAPI: Address style related issues
-
-Addressed style related issues on IPU3 documentation in upstream
-review (https://patchwork.kernel.org/patch/10465665)
-
-Notable changes include the following.
-
-- Use uniform notation [a, b] for integer ranges
-- Add details on ux.y format of certain variables
-- Use decimal notation uniformly for definitions
-- Remove kernel headers
-
-BUG=b:113187542
-TEST=check basic camera functions with Nexus app
-
-Change-Id: I21a1ddbb929fcf12ab0e9831ea43385ccc969b2a
-
-Signed-off-by: Yong Zhi <yong.zhi@intel.com>
-Signed-off-by: Rajmohan Mani <rajmohan.mani@intel.com>
-
-CHROMIUM: media: ipu3-imgu: abi: Arrange registers, enums and defines
-
-Address comments from Tomasz on v6, by listing defines,
-enum at the top, followed by structs.
-
-(https://patchwork.kernel.org/patch/10316733/)
-
-BUG=b:113187542
-TEST=check basic camera functions with Nexus app
-
-Change-Id: I92cec947ca9ff4e6b6a890d52762762bd0669e96
-Signed-off-by: Rajmohan Mani <rajmohan.mani@intel.com>
-
+Change-Id: Id10cb33ecc2f233651d14809d66e926912968412
+Signed-off-by: Tomasz Figa <tfiga@chromium.org>
 ---
-Brian: dropped include/uapi/linux/Kbuild changes (no longer necessary)
-
  include/uapi/linux/intel-ipu3.h | 2827 +++++++++++++++++++++++++++++++
  1 file changed, 2827 insertions(+)
  create mode 100644 include/uapi/linux/intel-ipu3.h
 
 diff --git a/include/uapi/linux/intel-ipu3.h b/include/uapi/linux/intel-ipu3.h
 new file mode 100644
-index 000000000000..35cd6e628b1c
+index 000000000000..019b7fdb876b
 --- /dev/null
-+++ include/uapi/linux/intel-ipu3.h
++++ b/include/uapi/linux/intel-ipu3.h
 @@ -0,0 +1,2827 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +/* Copyright (C) 2017 - 2018 Intel Corporation */
@@ -3046,5 +2858,5 @@ index 000000000000..35cd6e628b1c
 +};
 +#endif
 -- 
-2.7.4
+2.22.0.657.g960e92d24f-goog
 

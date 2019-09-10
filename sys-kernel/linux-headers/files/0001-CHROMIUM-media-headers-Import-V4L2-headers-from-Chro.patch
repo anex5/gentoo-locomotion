@@ -1,37 +1,47 @@
-From 80c9a8000da26c98df5f491c2720812ffe71a5e5 Mon Sep 17 00:00:00 2001
+From f4801626a551c7a9acc6e98318233bf4afe9fdf5 Mon Sep 17 00:00:00 2001
 From: Daniel Wang <wonderfly@google.com>
 Date: Mon, 13 Mar 2017 15:21:58 -0700
 Subject: [PATCH] CHROMIUM: v4l: Add H264 low-level decoder API compound
  controls.
 
+This patch adds pre v4.19 H264 header as legacy where new h264 headers will
+be added in a different patch for Chromium to support both versions later.
+This patch also adds config store support.
+
+Change-Id: I5968831097ab093391783565c821266c4a337f00
+Signed-off-by: Francois Buergisser <fbuergisser@chromium.org>
 ---
+ include/uapi/linux/media/h264-ctrls-legacy.h | 168 +++++++++++++++++++
+ include/uapi/linux/videodev2.h               |   9 +-
+ 2 files changed, 176 insertions(+), 1 deletion(-)
+ create mode 100644 include/uapi/linux/media/h264-ctrls-legacy.h
 
- include/uapi/linux/v4l2-controls.h | 153 +++++++++++++++++++++++++++++++++++++
- include/uapi/linux/videodev2.h     |  22 +++++-
- 2 files changed, 173 insertions(+), 2 deletions(-)
-
-diff --git a/include/uapi/linux/v4l2-controls.h b/include/uapi/linux/v4l2-controls.h
-index 1bdce50..35aa1db 100644
---- a/include/uapi/linux/v4l2-controls.h
-+++ b/include/uapi/linux/v4l2-controls.h
-@@ -518,6 +518,12 @@ enum v4l2_mpeg_video_h264_hierarchical_coding_type {
- };
- #define V4L2_CID_MPEG_VIDEO_H264_HIERARCHICAL_CODING_LAYER	(V4L2_CID_MPEG_BASE+381)
- #define V4L2_CID_MPEG_VIDEO_H264_HIERARCHICAL_CODING_LAYER_QP	(V4L2_CID_MPEG_BASE+382)
-+#define V4L2_CID_MPEG_VIDEO_H264_SPS		(V4L2_CID_MPEG_BASE+383)
-+#define V4L2_CID_MPEG_VIDEO_H264_PPS		(V4L2_CID_MPEG_BASE+384)
-+#define V4L2_CID_MPEG_VIDEO_H264_SCALING_MATRIX	(V4L2_CID_MPEG_BASE+385)
-+#define V4L2_CID_MPEG_VIDEO_H264_SLICE_PARAM	(V4L2_CID_MPEG_BASE+386)
-+#define V4L2_CID_MPEG_VIDEO_H264_DECODE_PARAM	(V4L2_CID_MPEG_BASE+387)
+diff --git a/include/uapi/linux/media/h264-ctrls-legacy.h b/include/uapi/linux/media/h264-ctrls-legacy.h
+new file mode 100644
+index 000000000000..463f97cf01c4
+--- /dev/null
++++ b/include/uapi/linux/media/h264-ctrls-legacy.h
+@@ -0,0 +1,168 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/*
++ * These are the H.264 state controls for use with stateless H.264
++ * codec drivers.
++ *
++ * These headers are legacy H264 headers and specific to Chromium only.
++ * Chromium needs to support pre v4.19 headers but will be removed in the
++ * future when Chromium will support only v4.19 and onward.
++ */
 +
- #define V4L2_CID_MPEG_VIDEO_MPEG4_I_FRAME_QP	(V4L2_CID_MPEG_BASE+400)
- #define V4L2_CID_MPEG_VIDEO_MPEG4_P_FRAME_QP	(V4L2_CID_MPEG_BASE+401)
- #define V4L2_CID_MPEG_VIDEO_MPEG4_B_FRAME_QP	(V4L2_CID_MPEG_BASE+402)
-@@ -945,6 +951,153 @@ enum v4l2_deemphasis {
- #define V4L2_CID_RF_TUNER_IF_GAIN		(V4L2_CID_RF_TUNER_CLASS_BASE + 62)
- #define V4L2_CID_RF_TUNER_PLL_LOCK			(V4L2_CID_RF_TUNER_CLASS_BASE + 91)
- 
-+/* Complex controls */
++#ifndef _H264_CTRLS_LEGACY_H_
++#define _H264_CTRLS_LEGACY_H_
++
++#include <linux/videodev2.h>
++
++#define V4L2_CID_MPEG_VIDEO_H264_SPS            (V4L2_CID_MPEG_BASE+383)
++#define V4L2_CID_MPEG_VIDEO_H264_PPS            (V4L2_CID_MPEG_BASE+384)
++#define V4L2_CID_MPEG_VIDEO_H264_SCALING_MATRIX (V4L2_CID_MPEG_BASE+385)
++#define V4L2_CID_MPEG_VIDEO_H264_SLICE_PARAM    (V4L2_CID_MPEG_BASE+386)
++#define V4L2_CID_MPEG_VIDEO_H264_DECODE_PARAM   (V4L2_CID_MPEG_BASE+387)
 +
 +#define V4L2_H264_SPS_CONSTRAINT_SET0_FLAG			0x01
 +#define V4L2_H264_SPS_CONSTRAINT_SET1_FLAG			0x02
@@ -155,7 +165,7 @@ index 1bdce50..35aa1db 100644
 +};
 +
 +/* If not set, this entry is unused for reference. */
-+#define V4L2_H264_DPB_ENTRY_FLAG_ACTIVE		0x01
++#define V4L2_H264_DPB_ENTRY_FLAG_ACTIVE	0x01
 +#define V4L2_H264_DPB_ENTRY_FLAG_LONG_TERM	0x02
 +struct v4l2_h264_dpb_entry {
 +	__u32 buf_index; /* v4l2_buffer index */
@@ -178,14 +188,21 @@ index 1bdce50..35aa1db 100644
 +	__u8 ref_pic_list_b1[32];
 +	struct v4l2_h264_dpb_entry dpb[16];
 +};
- 
- /*  Detection-class control IDs defined by V4L2 */
- #define V4L2_CID_DETECT_CLASS_BASE		(V4L2_CTRL_CLASS_DETECT | 0x900)
++
++#endif /* __LINUX_MEDIA_H264_CTRLS_LEGACY_H_ */
 diff --git a/include/uapi/linux/videodev2.h b/include/uapi/linux/videodev2.h
-index a0e87d1..5606acb 100644
+index 1c095b5a99c5..c2c9e44e70a7 100644
 --- a/include/uapi/linux/videodev2.h
 +++ b/include/uapi/linux/videodev2.h
-@@ -585,6 +585,7 @@ struct v4l2_pix_format {
+@@ -65,6 +65,7 @@
+ #include <linux/types.h>
+ #include <linux/v4l2-common.h>
+ #include <linux/v4l2-controls.h>
++#include <linux/media/h264-ctrls-legacy.h>
+ 
+ /*
+  * Common stuff for both V4L1 and V4L2
+@@ -626,6 +627,7 @@ struct v4l2_pix_format {
  #define V4L2_PIX_FMT_H264     v4l2_fourcc('H', '2', '6', '4') /* H264 with start codes */
  #define V4L2_PIX_FMT_H264_NO_SC v4l2_fourcc('A', 'V', 'C', '1') /* H264 without start codes */
  #define V4L2_PIX_FMT_H264_MVC v4l2_fourcc('M', '2', '6', '4') /* H264 MVC */
@@ -193,20 +210,24 @@ index a0e87d1..5606acb 100644
  #define V4L2_PIX_FMT_H263     v4l2_fourcc('H', '2', '6', '3') /* H263          */
  #define V4L2_PIX_FMT_MPEG1    v4l2_fourcc('M', 'P', 'G', '1') /* MPEG-1 ES     */
  #define V4L2_PIX_FMT_MPEG2    v4l2_fourcc('M', 'P', 'G', '2') /* MPEG-2 ES     */
-@@ -1471,17 +1473,23 @@ struct v4l2_ext_control {
- 		__u8 __user *p_u8;
- 		__u16 __user *p_u16;
- 		__u32 __user *p_u32;
-+		struct v4l2_ctrl_h264_sps __user *p_h264_sps;
-+		struct v4l2_ctrl_h264_pps __user *p_h264_pps;
-+		struct v4l2_ctrl_h264_scaling_matrix __user *p_h264_scal_mtrx;
-+		struct v4l2_ctrl_h264_slice_param __user *p_h264_slice_param;
-+		struct v4l2_ctrl_h264_decode_param __user *p_h264_decode_param;
- 		void __user *ptr;
- 	};
- } __attribute__ ((packed));
+@@ -902,6 +904,7 @@ struct v4l2_plane {
+  * @length:	size in bytes of the buffer (NOT its payload) for single-plane
+  *		buffers (when type != *_MPLANE); number of elements in the
+  *		planes array for multi-plane buffers
++ * @config_store: this buffer should use this configuration store
+  *
+  * Contains data exchanged by application and driver using one of the Streaming
+  * I/O methods.
+@@ -925,7 +928,7 @@ struct v4l2_buffer {
+ 		__s32		fd;
+ 	} m;
+ 	__u32			length;
+-	__u32			reserved2;
++	__u32			config_store;
+ 	__u32			reserved;
+ };
  
- struct v4l2_ext_controls {
+@@ -1579,6 +1582,7 @@ struct v4l2_ext_controls {
  	union {
  #ifndef __KERNEL__
  		__u32 ctrl_class;
@@ -214,31 +235,23 @@ index a0e87d1..5606acb 100644
  #endif
  		__u32 which;
  	};
- 	__u32 count;
- 	__u32 error_idx;
- 	__u32 reserved[2];
-@@ -1504,6 +1514,13 @@ enum v4l2_ctrl_type {
+@@ -1614,6 +1618,8 @@ enum v4l2_ctrl_type {
  	V4L2_CTRL_TYPE_U8	     = 0x0100,
  	V4L2_CTRL_TYPE_U16	     = 0x0101,
  	V4L2_CTRL_TYPE_U32	     = 0x0102,
-+	V4L2_CTRL_TYPE_H264_SPS      = 0x0103,
-+	V4L2_CTRL_TYPE_H264_PPS      = 0x0104,
-+	V4L2_CTRL_TYPE_H264_SCALING_MATRIX = 0x0105,
-+	V4L2_CTRL_TYPE_H264_SLICE_PARAM = 0x0106,
-+	V4L2_CTRL_TYPE_H264_DECODE_PARAM = 0x0107,
 +
-+	V4L2_CTRL_TYPE_PRIVATE       = 0xffff,
++	V4L2_CTRL_TYPE_PRIVATE	     = 0xffff,
  };
  
  /*  Used in the VIDIOC_QUERYCTRL ioctl for querying controls */
-@@ -1558,6 +1575,7 @@ struct v4l2_querymenu {
- #define V4L2_CTRL_FLAG_VOLATILE		0x0080
+@@ -1669,6 +1675,7 @@ struct v4l2_querymenu {
  #define V4L2_CTRL_FLAG_HAS_PAYLOAD	0x0100
  #define V4L2_CTRL_FLAG_EXECUTE_ON_WRITE	0x0200
  #define V4L2_CTRL_FLAG_MODIFY_LAYOUT	0x0400
 +#define V4L2_CTRL_FLAG_CAN_STORE	0x8000
  
  /*  Query flags, to be ORed with the control ID */
+ #define V4L2_CTRL_FLAG_NEXT_CTRL	0x80000000
 -- 
-2.6.6
+2.22.0.657.g960e92d24f-goog
 

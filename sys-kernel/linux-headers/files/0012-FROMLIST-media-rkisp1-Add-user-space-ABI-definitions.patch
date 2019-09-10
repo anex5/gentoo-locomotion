@@ -1,4 +1,4 @@
-From cb80c06651fe5b30e94a3019448280ecbe11f60d Mon Sep 17 00:00:00 2001
+From 0e069f663beddca2d3652393b57e91a281e9d426 Mon Sep 17 00:00:00 2001
 From: Jeffy Chen <jeffy.chen@rock-chips.com>
 Date: Mon, 18 Dec 2017 20:03:07 +0800
 Subject: [PATCH] FROMLIST: media: rkisp1: Add user space ABI definitions
@@ -14,15 +14,15 @@ TEST=Camera works on Scarlet with the whole series
 
 Change-Id: I2ae3db2f719c4a5de2dc631a5692b333effe5ea3
 ---
- include/uapi/linux/rkisp1-config.h | 757 +++++++++++++++++++++++++++++++++++++
- 1 files changed, 757 insertions(+)
+ include/uapi/linux/rkisp1-config.h | 757 +++++++++++++++++++++++++++++
+ 1 file changed, 757 insertions(+)
  create mode 100644 include/uapi/linux/rkisp1-config.h
 
 diff --git a/include/uapi/linux/rkisp1-config.h b/include/uapi/linux/rkisp1-config.h
 new file mode 100644
 index 000000000000..0f9f42265a7a
 --- /dev/null
-+++ include/uapi/linux/rkisp1-config.h
++++ b/include/uapi/linux/rkisp1-config.h
 @@ -0,0 +1,757 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +/*
@@ -782,5 +782,5 @@ index 000000000000..0f9f42265a7a
 +
 +#endif /* _UAPI_RKISP1_CONFIG_H */
 -- 
-2.13.5
+2.22.0.657.g960e92d24f-goog
 

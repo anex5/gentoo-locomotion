@@ -41,10 +41,13 @@ Signed-off-by: Keiichi Watanabe <keiichiw@chromium.org>
 
 --- a/include/uapi/linux/v4l2-controls.h
 +++ b/include/uapi/linux/v4l2-controls.h
-@@ -595,6 +595,14 @@ enum v4l2_vp8_golden_frame_sel {
+@@ -583,7 +583,16 @@ enum v4l2_vp8_golden_frame_sel {
+ #define V4L2_CID_MPEG_VIDEO_VPX_MAX_QP			(V4L2_CID_MPEG_BASE+508)
+ #define V4L2_CID_MPEG_VIDEO_VPX_I_FRAME_QP		(V4L2_CID_MPEG_BASE+509)
  #define V4L2_CID_MPEG_VIDEO_VPX_P_FRAME_QP		(V4L2_CID_MPEG_BASE+510)
- 
- #define V4L2_CID_MPEG_VIDEO_VP8_PROFILE			(V4L2_CID_MPEG_BASE+511)
+-#define V4L2_CID_MPEG_VIDEO_VPX_PROFILE			(V4L2_CID_MPEG_BASE+511)
++
++#define V4L2_CID_MPEG_VIDEO_VP8_PROFILE			(V4L2_CID_MPEG_BASE+511)
 +enum v4l2_mpeg_video_vp8_profile {
 +	V4L2_MPEG_VIDEO_VP8_PROFILE_0				= 0,
 +	V4L2_MPEG_VIDEO_VP8_PROFILE_1				= 1,
