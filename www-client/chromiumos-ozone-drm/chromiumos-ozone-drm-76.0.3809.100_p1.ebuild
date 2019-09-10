@@ -580,8 +580,8 @@ src_prepare() {
 	keeplibs+=( 
 		#build/linux/libbrlapi
 		third_party/android_ndk
-		third_party/ashmem
 		third_party/android_sdk
+		third_party/ashmem
 		third_party/closure_compiler
 		third_party/chromevox
 		third_party/chromevox/third_party
@@ -610,7 +610,10 @@ src_prepare() {
 		third_party/pdfium/third_party/skia_shared
 	)
 	# To do system-openjpeg req files
-	#use system-openjpeg || 
+	use system-openjpeg || keeplibs+=(
+		third_party/libjpeg
+		third_party/libjpeg_turbo
+	)
 	keeplibs+=(
 		third_party/pdfium/third_party/libopenjpeg20
 	)
