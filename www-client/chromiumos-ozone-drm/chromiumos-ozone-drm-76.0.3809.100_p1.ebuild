@@ -917,7 +917,7 @@ src_configure() {
 		"enable_ffmpeg_video_decoders=true"
 		#"rtc_initialize_ffmpeg=true"
 		"use_v4l2_codec=$(usetf v4l2)"
-		"use_linux_v4l2_only=false"
+		#"use_linux_v4l2_only=true"
 		"use_v4lplugin=$(usetf v4lplugin)"
 		"rtc_build_libvpx=$(usetf libvpx)"
 		"media_use_libvpx=$(usetf libvpx)"
