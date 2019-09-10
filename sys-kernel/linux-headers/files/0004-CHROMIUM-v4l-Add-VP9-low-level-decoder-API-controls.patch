@@ -1,4 +1,4 @@
-From 2ee7da4dbe934f60eccf880e5b59ac9c82a23b1c Mon Sep 17 00:00:00 2001
+V4L2_CTRL_FLAG_CAN_STORE From 2ee7da4dbe934f60eccf880e5b59ac9c82a23b1c Mon Sep 17 00:00:00 2001
 From: Pawel Osciak <posciak@chromium.org>
 Date: Mon, 11 Jul 2016 18:25:17 +0900
 Subject: [PATCH] CHROMIUM: v4l: Add VP9 low-level decoder API controls.
@@ -10,8 +10,6 @@ Signed-off-by: Pawel Osciak <posciak@chromium.org>
  Keeping part of the original patch for context.]
 ---
  include/uapi/linux/v4l2-controls.h | 147 +++++++++++++++++++++++++++++
- include/uapi/linux/videodev2.h     |   7 ++
- 2 files changed, 154 insertions(+)
 
 diff --git a/include/uapi/linux/v4l2-controls.h b/include/uapi/linux/v4l2-controls.h
 index a692623e0236..3e7bb32fd3e8 100644
@@ -178,38 +176,3 @@ index a692623e0236..3e7bb32fd3e8 100644
  /*  Detection-class control IDs defined by V4L2 */
  #define V4L2_CID_DETECT_CLASS_BASE		(V4L2_CTRL_CLASS_DETECT | 0x900)
  #define V4L2_CID_DETECT_CLASS			(V4L2_CTRL_CLASS_DETECT | 1)
-diff --git a/include/uapi/linux/videodev2.h b/include/uapi/linux/videodev2.h
-index 41e080891916..17332b06ef77 100644
---- a/include/uapi/linux/videodev2.h
-+++ b/include/uapi/linux/videodev2.h
-@@ -639,6 +639,7 @@ struct v4l2_pix_format {
- #define V4L2_PIX_FMT_VP8      v4l2_fourcc('V', 'P', '8', '0') /* VP8 */
- #define V4L2_PIX_FMT_VP8_FRAME v4l2_fourcc('V', 'P', '8', 'F') /* VP8 parsed frames */
- #define V4L2_PIX_FMT_VP9      v4l2_fourcc('V', 'P', '9', '0') /* VP9 */
-+#define V4L2_PIX_FMT_VP9_FRAME v4l2_fourcc('V', 'P', '9', 'F') /* VP9 parsed frames */
- 
- /*  Vendor-specific formats   */
- #define V4L2_PIX_FMT_CPIA1    v4l2_fourcc('C', 'P', 'I', 'A') /* cpia1 YUV */
-@@ -1576,6 +1577,9 @@ struct v4l2_ext_control {
- 		__u8 __user *p_u8;
- 		__u16 __user *p_u16;
- 		__u32 __user *p_u32;
-+		struct v4l2_ctrl_vp9_frame_hdr __user *p_vp9_frame_hdr;
-+		struct v4l2_ctrl_vp9_decode_param __user *p_vp9_decode_param;
-+		struct v4l2_ctrl_vp9_entropy __user *p_vp9_entropy;
- 		void __user *ptr;
- 	};
- } __attribute__ ((packed));
-@@ -1620,6 +1624,9 @@ enum v4l2_ctrl_type {
- 	V4L2_CTRL_TYPE_U8	     = 0x0100,
- 	V4L2_CTRL_TYPE_U16	     = 0x0101,
- 	V4L2_CTRL_TYPE_U32	     = 0x0102,
-+	V4L2_CTRL_TYPE_VP9_FRAME_HDR    = 0x109,
-+	V4L2_CTRL_TYPE_VP9_DECODE_PARAM = 0x110,
-+	V4L2_CTRL_TYPE_VP9_ENTROPY      = 0x111,
- 
- 	V4L2_CTRL_TYPE_PRIVATE	     = 0xffff,
- };
--- 
-2.22.0.709.g102302147b-goog
-
