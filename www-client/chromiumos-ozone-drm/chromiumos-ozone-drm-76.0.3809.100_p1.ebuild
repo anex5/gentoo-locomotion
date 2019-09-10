@@ -642,7 +642,7 @@ src_prepare() {
 		third_party/libvpx
 		third_party/libvpx/source/libvpx/third_party/x86inc
 	)
-	use system-wayland || keeplibs+=( third_party/wayland third_party/wayland-protocols )
+	#use system-wayland || keeplibs+=( third_party/wayland third_party/wayland-protocols )
 	use system-minigbm || keeplibs+=( third_party/minigbm )
 	use system-openh264 || keeplibs+=( third_party/openh264 )
 	use tcmalloc && keeplibs+=( third_party/tcmalloc )
