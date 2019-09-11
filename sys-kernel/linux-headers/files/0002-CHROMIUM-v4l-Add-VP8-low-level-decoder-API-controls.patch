@@ -179,5 +179,26 @@ index 000000000000..9713ffe81ad2
 +};
 +
 +#endif
+diff --git a/include/uapi/linux/videodev2.h b/include/uapi/linux/videodev2.h
+index c2c9e44e70a7..41e080891916 100644
+--- a/include/uapi/linux/videodev2.h
++++ b/include/uapi/linux/videodev2.h
+@@ -66,6 +66,7 @@
+ #include <linux/v4l2-common.h>
+ #include <linux/v4l2-controls.h>
+ #include <linux/media/h264-ctrls-legacy.h>
++#include <linux/media/vp8-ctrls-legacy.h>
+ 
+ /*
+  * Common stuff for both V4L1 and V4L2
+@@ -636,6 +637,7 @@ struct v4l2_pix_format {
+ #define V4L2_PIX_FMT_VC1_ANNEX_G v4l2_fourcc('V', 'C', '1', 'G') /* SMPTE 421M Annex G compliant stream */
+ #define V4L2_PIX_FMT_VC1_ANNEX_L v4l2_fourcc('V', 'C', '1', 'L') /* SMPTE 421M Annex L compliant stream */
+ #define V4L2_PIX_FMT_VP8      v4l2_fourcc('V', 'P', '8', '0') /* VP8 */
++#define V4L2_PIX_FMT_VP8_FRAME v4l2_fourcc('V', 'P', '8', 'F') /* VP8 parsed frames */
+ #define V4L2_PIX_FMT_VP9      v4l2_fourcc('V', 'P', '9', '0') /* VP9 */
+ 
+ /*  Vendor-specific formats   */
 -- 
 2.22.0.709.g102302147b-goog
+
