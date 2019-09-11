@@ -30,10 +30,10 @@ src_prepare() {
 	default
 
 	[[ -n ${PATCH_VER} ]] && eapply "${WORKDIR}"/${PV}/*.patch
-	eapply "${FILESDIR}/0001-CHROMIUM-media-headers-Import-V4L2-headers-from-Chro.patch"
-	eapply "${FILESDIR}/0002-CHROMIUM-v4l-Add-VP8-low-level-decoder-API-controls.patch"
+	#eapply "${FILESDIR}/0001-CHROMIUM-media-headers-Import-V4L2-headers-from-Chro.patch"
+	#eapply "${FILESDIR}/0002-CHROMIUM-v4l-Add-VP8-low-level-decoder-API-controls.patch"
 	eapply "${FILESDIR}/0003-v4l-add-pixelformat-change-event.patch"
-	eapply "${FILESDIR}/0004-CHROMIUM-v4l-Add-VP9-low-level-decoder-API-controls.patch"
+	#eapply "${FILESDIR}/0004-CHROMIUM-v4l-Add-VP9-low-level-decoder-API-controls.patch"
 	eapply "${FILESDIR}/0005-CHROMIUM-v4l-Add-V4L2_CID_MPEG_VIDEO_H264_SPS_PPS_BE.patch"
 	eapply "${FILESDIR}/0007-media-videodev2.h-add-IPU3-raw10-color.patch"
 	eapply "${FILESDIR}/0008-videodev2.h-add-IPU3-meta-buffer-format.patch"
