@@ -44,6 +44,7 @@ src_prepare() {
 	default
 	[[ -n ${PATCH_VER} ]] && eapply "${WORKDIR}"/${PV}/*.patch
 	
+	eapply "${FILESDIR}/Add-DRM_FORMAT_MT21.patch"
 	eapply "${FILESDIR}/Add-H264-Slice-format.patch"
 	eapply "${FILESDIR}/Add-back-VENDOR_NV-name.patch"
 	eapply "${FILESDIR}/Add-Evdi-module-userspace-api-file.patch"
