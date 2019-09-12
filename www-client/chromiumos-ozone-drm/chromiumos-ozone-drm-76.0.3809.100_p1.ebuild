@@ -40,12 +40,12 @@ VIDEO_CARDS="
 "
 
 IUSE="
-	atk cfi component-build closure-compile cups custom-cflags +dbus gnome gold jumbo-build kerberos libcxx
+	atk cfi component-build +closure-compile cups custom-cflags +dbus gnome gold jumbo-build kerberos libcxx
 	lld new-tcmalloc optimize-thinlto optimize-webui +pdf +proprietary-codecs
-	pulseaudio selinux +suid system-ffmpeg system-harfbuzz +system-icu
+	pulseaudio selinux +suid system-ffmpeg system-harfbuzz system-icu
 	-system-jsoncpp +system-libevent +system-libvpx system-openh264
 	+system-openjpeg +system-libdrm system-minigbm -system-wayland +tcmalloc +thinlto 
-	vaapi widevine wayland X libvpx gtk xkbcommon v4l2 v4lplugin +clang swiftshader udev debug
+	vaapi widevine X libvpx gtk xkbcommon v4l2 v4lplugin +clang swiftshader udev debug
 "
 
 for card in ${VIDEO_CARDS}; do
@@ -66,7 +66,6 @@ REQUIRED_USE="
 	gtk? ( X )
 	gnome? ( gtk dbus )
 	atk? ( gnome )
-	system-wayland? ( wayland )
 "
 RESTRICT="mirror
 	!system-ffmpeg? ( proprietary-codecs? ( bindist ) )
@@ -234,7 +233,7 @@ PATCHES=(
  	"${FILESDIR}/chromium-optional-atk-r0.patch"
 	"${FILESDIR}/chromium-optional-dbus-r8.patch"
 	"${FILESDIR}/chromium-gclient_args.gni.patch"
-	"${FILESDIR}/chromium-76-remove-ink.patch"
+	#"${FILESDIR}/chromium-76-remove-ink.patch"
 	"${FILESDIR}/chromium-76-remove-KioskNext.patch"
 )
 
@@ -279,98 +278,47 @@ src_unpack(){
 	
 	default
 
-	#EGIT_CLONE_TYPE="shallow"
+	EGIT_CLONE_TYPE="shallow"
 	#EGIT_REPO_URI="https://chromium.googlesource.com/chromium/src.git"
 	#EGIT_COMMIT="refs/tags/${PV/_*/}"
 	#EGIT_CHECKOUT_DIR="${S}"
-	#
-	#git-r3_src_unpack
-	#git-r3_fetch "https://chromium.googlesource.com/external/github.com/googlei18n/emoji-segmenter.git" "refs/heads/upstream/master"
-	#git-r3_checkout "https://chromium.googlesource.com/external/github.com/googlei18n/emoji-segmenter.git" "${S}/third_party/emoji-segmenter/src"
-
+	
 	git-r3_fetch "https://chromium.googlesource.com/android_ndk.git" "refs/heads/master"
 	git-r3_checkout "https://chromium.googlesource.com/android_ndk.git" "${S}/third_party/android_ndk"
 
-	rm -r "${S}/third_party/depot_tools" || die
-	git-r3_fetch "https://chromium.googlesource.com/chromium/tools/depot_tools.git" "refs/heads/master"
- 	git-r3_checkout "https://chromium.googlesource.com/chromium/tools/depot_tools.git" "${S}/third_party/depot_tools"
+	#rm -r "${S}/third_party/depot_tools" || die
+	#git-r3_fetch "https://chromium.googlesource.com/chromium/tools/depot_tools.git" "refs/heads/master"
+ 	#git-r3_checkout "https://chromium.googlesource.com/chromium/tools/depot_tools.git" "${S}/third_party/depot_tools"
  	
 	mv "${WORKDIR}/gn" "chromium-${PV/_*}/buildtools/linux64" || die
 	mv "${WORKDIR}/checkstyle-8.0-all.jar" "chromium-${PV/_*}/third_party/checkstyle" || die
-	#mv "${WORKDIR}/gn" "chromium-${PV/_*}/third_party/openscreen/src/buildtools/linux64" || die
 	mv "${WORKDIR}/isolate" "chromium-${PV/_*}/tools/luci-go" || die
 	mv "${WORKDIR}/isolated" "chromium-${PV/_*}/tools/luci-go" || die
 	mv "${WORKDIR}/swarming" "chromium-${PV/_*}/tools/luci-go" || die
 	mv "${WORKDIR}/goldctl" "chromium-${PV/_*}/tools/skia_goldctl" || die
 
-	wget "https://chromium.googlesource.com/android_tools/+/HEAD/sdk/platforms/android-28/android.jar" || die
+	#ln -s "chromium-${PV/_*}" "src"	
 	mkdir -p "${S}/third_party/android_sdk/public/platforms/android-28" || die
-	mv "${WORKDIR}/android.jar" "${S}/third_party/android_sdk/public/platforms/android-28/" || die
-	ln -s "chromium-${PV/_*}" "src"	
+	mv "${FILES}/android.jar" "${S}/third_party/android_sdk/public/platforms/android-28/" || die
+	#cp "${FILES}/ink_lib_binary.js" "${S}/third_party/ink/build"
+	#cp "${FILES}/glcore_base.wasm" "${S}/third_party/ink/build/wasm"
+	touch "${S}/third_party/ink/build/ink_lib_externs.js"
+	touch "${S}/third_party/ink/build/ink_lib_binary.js"
+	touch "${S}/third_party/ink/build/wasm/glcore_base.wasm"
+	touch "${S}/third_party/ink/build/wasm/glcore_base.js"
+	touch "${S}/third_party/ink/build/wasm/glcore_wasm_bootstrap_compiled.js"
+
+	# Needed to build NACL and Android stuff
+	mkdir -p "chromium-${PV/_*}/third_party/llvm-build/Release+Asserts/bin"
+	ln -s "${CBUILD}-clang third_party/llvm-build/Release+Asserts/bin/clang"
+	ln -s "${CBUILD}-clang++ third_party/llvm-build/Release+Asserts/bin/clang++"
+	ln -s "${CBUILD}-ar third_party/llvm-build/Release+Asserts/bin/ar"
+	ln -s "${CBUILD}-ar third_party/llvm-build/Release+Asserts/bin/llvm-ar"
+	ln -s "${CBUILD}-nm third_party/llvm-build/Release+Asserts/bin/nm"
+	ln -s "${CBUILD}-nm third_party/llvm-build/Release+Asserts/bin/llvm-nm"
 }
 
 src_prepare() {
- if false; then
-	eapply "${FILESDIR}/chromium-DEPS-chromeos.patch"
-
-	cd "${WORKDIR}"
-
-	python_setup 'python2*'
-	# Prevents gclient from updating self.
-	export DEPOT_TOOLS_UPDATE=0
-	# Prevent gclient metrics collection.
-	export DEPOT_TOOLS_METRICS=0
-	# Prevent gclient use windows toolchain.
-	export DEPOT_TOOLS_WIN_TOOLCHAIN=0
-
-	export PATH="${PATH}:${S}/third_party/depot_tools"
-	export EGCLIENT="${S}/third_party/depot_tools/gclient"
-
-	if ! [[ -f .gclient ]]; then
-		local cmd=( 
-			${EGCLIENT} config --name=src --spec 'solutions=[{\
-			"url": "https://chromium.googlesource.com/chromium/src.git@refs/tags/'${PV/_*/}'",\
-			"managed": False,\
-			"name": "src",\
-			"deps_file": "DEPS",\
-			"custom_deps": {\
-				"src/third_party/blink/web_tests/platform/linux": None,\
-				"src/third_party/blink/web_tests/platform/mac": None,\
-				"src/third_party/blink/web_tests/platform/win": None,\
-				"src/third_party/WebKit/LayoutTests": None,\
-				"src/content/test/data/layout_tests/LayoutTests": None,\
-				"src/chrome/tools/test/reference_build/chrome_win": None,\
-				"src/chrome_frame/tools/test/reference_build/chrome_win": None,\
-				"src/chrome/tools/test/reference_build/chrome_linux": None,\
-				"src/chrome/tools/test/reference_build/chrome_mac": None,\
-				"src/native_client_sdk/src/build_tools/toolchain_archives": None,\
-				"src/chrome/test/data/extensions/api_test/permissions/nacl_enabled/bin": None,\
-				"src/chrome/test/data/layout_tests": None,\
-				"src/chrome/tools/test/reference_build": None,\
-				"src/third_party/ffmpeg/binaries": None,\
-				"src/chrome/test/data/layout_tests": None,\
-				"src/chrome/tools/test/reference_build/chrome_linux": None,\
-				"src/third_party/ffmpeg/source/patched-ffmpeg-mt": None,\
-				"src/third_party/hunspell_dictionaries": None,\
-				"src/third_party/yasm/source/patched-yasm": None,\
-				"src/native_client/toolchain": None,\
-				},\
-			}]; target_os = ["chromeos"]; target_os_only = True\'
-		)
-
-		elog "${cmd[*]}"
-		"${cmd[@]}" || die
-	fi
-	
-	local cmd=(
-		${EGCLIENT} runhooks --jobs=1
-	)
-	elog "${cmd[*]}"
-	"${cmd[@]}" || die
-
-	cd "${S}"
- fi
-
 	# Calling this here supports resumption via FEATURES=keepwork
 	python_setup 'python3*'
 
@@ -580,8 +528,8 @@ src_prepare() {
 
 	#use closure-compile && 
 	keeplibs+=( 
-		#build/linux/libbrlapi
-		third_party/android_ndk
+		third_party/android_ndk/toolchains/x86-4.9
+		third_party/android_ndk/toolchains/x86_64-4.9
 		third_party/android_sdk
 		third_party/ashmem
 		third_party/closure_compiler
@@ -727,6 +675,12 @@ setup_compile_flags() {
 	append-cxxflags -Wno-builtin-macro-redefined
 	append-cppflags "-D__DATE__= -D__TIME__= -D__TIMESTAMP__="
 
+	if not use debug; then
+		append-cflags " -fno-unwind-tables -fno-asynchronous-unwind-tables"
+    	append-cxxflags " -fno-unwind-tables -fno-asynchronous-unwind-tables"
+    	append-cppflags " -DNO_UNWIND_TABLES"
+    fi
+
 	# Enable std::vector []-operator bounds checking.
 	append-cxxflags -D__google_stl_debug_vector=1
 
@@ -823,9 +777,7 @@ src_configure() {
 		"use_thin_lto=$(usetf thinlto)"
 		"rtc_use_lto=$(usetf thinlto)"
 		"clang_use_default_sample_profile=false"
-		#"cros_host_is_clang=$(usetf clang)"
-		#"cros_v8_snapshot_is_clang=$(usetf clang)"
-
+		
 		#"use_system_libcxx=$(usetf libcxx)"
 
 		# UGC's "common" GN flags (config_bundles/common/gn_flags.map
@@ -834,8 +786,8 @@ src_configure() {
 		"enable_mdns=false"
 
 		# Disable nacl, we can't build without pnacl (http://crbug.com/269560).
-		"enable_nacl=false"
-		"enable_nacl_nonsfi=false"
+		"enable_nacl=true"
+		"enable_nacl_nonsfi=true"
 		"enable_native_notifications=false"
 		
 		"enable_one_click_signin=false"
@@ -900,7 +852,7 @@ src_configure() {
 		#"sanitizer_no_symbols=$(usex debug false true)"
 		"blink_symbol_level=$(usex debug 2 0)"
 		"enable_iterator_debugging=$(usetf debug)"
-		#"remove_webcore_debug_symbols=$(usex debug false true)"
+		"remove_webcore_debug_symbols=$(usex debug false true)"
 
 		# Codecs
 		"proprietary_codecs=$(usetf proprietary-codecs)"
@@ -921,7 +873,7 @@ src_configure() {
 		"use_v4lplugin=$(usetf v4lplugin)"
 		"rtc_build_libvpx=$(usetf libvpx)"
 		"media_use_libvpx=$(usetf libvpx)"
-		"rtc_libvpx_build_vp9=false"
+		"rtc_libvpx_build_vp9=$(usetf libvpx)"
 		#"enable_runtime_media_renderer_selection=true"
 		"enable_mpeg_h_audio_demuxing=true"
 		"enable_vulkan=true"
@@ -987,38 +939,38 @@ src_configure() {
 		"rtc_build_json=false"
 	)
 	
-	# wayland
-	if use wayland; then
-		myconf_gn+=(
-			"use_egl=true"
-			#"toolkit_views=true" 
-			"use_system_libwayland=$(usetf system-wayland)"
-			"use_ozone=true"
-			"use_aura=true"
-			#"use_wayland_gbm=true"
-			"ozone_auto_platforms=false"
-			"ozone_platform_x11=false"
-			"ozone_platform_wayland=false"
-			"ozone_platform_headless=true"
-			"ozone_platform_gbm=true"
-			"ozone_platform=\"gbm\""
-			"enable_mus=false"
-			"enable_wayland_server=true" #Exo parts (aura shell)
-			"enable_background_mode=true"
-			"use_system_minigbm=$(usetf system-minigbm)"
-			"use_system_libdrm=$(usetf system-libdrm)"
-			"use_intel_minigbm=$(usetf video_cards_intel)" 
-			"use_radeon_minigbm=$(usetf video_cards_radeon)"
-		   	"use_amdgpu_minigbm=$(usetf video_cards_amdgpu)"
-			"use_exynos_minigbm=$(usetf video_cards_exynos)"
-			"use_marvell_minigbm=$(usetf video_cards_marvell)"
-			"use_mediatek_minigbm=$(usetf video_cards_mediatek)"
-			"use_msm_minigbm=$(usetf video_cards_msm)"
-			"use_rockchip_minigbm=$(usetf video_cards_rockchip)"
-			"use_tegra_minigbm=$(usetf video_cards_tegra)"
-			"use_vc4_minigbm=$(usetf video_cards_vc4)"
-		)
-	fi
+	# ozone
+	
+	myconf_gn+=(
+		"use_egl=true"
+		#"toolkit_views=true" 
+		"use_system_libwayland=$(usetf system-wayland)"
+		"use_ozone=true"
+		"use_aura=true"
+		#"use_wayland_gbm=true"
+		"ozone_auto_platforms=false"
+		"ozone_platform_x11=false"
+		"ozone_platform_wayland=false"
+		"ozone_platform_headless=true"
+		"ozone_platform_gbm=true"
+		"ozone_platform=\"gbm\""
+		"enable_mus=false"
+		"enable_wayland_server=true" #Exo parts (aura shell)
+		"enable_background_mode=true"
+		"use_system_minigbm=$(usetf system-minigbm)"
+		"use_system_libdrm=$(usetf system-libdrm)"
+		"use_intel_minigbm=$(usetf video_cards_intel)" 
+		"use_radeon_minigbm=$(usetf video_cards_radeon)"
+	   	"use_amdgpu_minigbm=$(usetf video_cards_amdgpu)"
+		"use_exynos_minigbm=$(usetf video_cards_exynos)"
+		"use_marvell_minigbm=$(usetf video_cards_marvell)"
+		"use_mediatek_minigbm=$(usetf video_cards_mediatek)"
+		"use_msm_minigbm=$(usetf video_cards_msm)"
+		"use_rockchip_minigbm=$(usetf video_cards_rockchip)"
+		"use_tegra_minigbm=$(usetf video_cards_tegra)"
+		"use_vc4_minigbm=$(usetf video_cards_vc4)"
+	)
+	
 
 	setup_compile_flags
 
