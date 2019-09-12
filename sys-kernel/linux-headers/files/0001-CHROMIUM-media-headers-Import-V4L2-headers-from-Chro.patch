@@ -227,15 +227,6 @@ index 1c095b5a99c5..c2c9e44e70a7 100644
  	union {
  		__s32		request_fd;
  		__u32		reserved;
-@@ -1614,6 +1618,8 @@ enum v4l2_ctrl_type {
- 	V4L2_CTRL_TYPE_U8	     = 0x0100,
- 	V4L2_CTRL_TYPE_U16	     = 0x0101,
- 	V4L2_CTRL_TYPE_U32	     = 0x0102,
-+
-+	V4L2_CTRL_TYPE_PRIVATE	     = 0xffff,
- };
- 
- /*  Used in the VIDIOC_QUERYCTRL ioctl for querying controls */
 @@ -1471,17 +1473,23 @@ struct v4l2_ext_control {
  		__u8 __user *p_u8;
  		__u16 __user *p_u16;
@@ -271,6 +262,15 @@ index 1c095b5a99c5..c2c9e44e70a7 100644
 +	V4L2_CTRL_TYPE_H264_DECODE_PARAM = 0x0107,
 +
 +	V4L2_CTRL_TYPE_PRIVATE       = 0xffff,
+ };
+ 
+ /*  Used in the VIDIOC_QUERYCTRL ioctl for querying controls */
+@@ -1614,6 +1618,8 @@ enum v4l2_ctrl_type {
+ 	V4L2_CTRL_TYPE_U8	     = 0x0100,
+ 	V4L2_CTRL_TYPE_U16	     = 0x0101,
+ 	V4L2_CTRL_TYPE_U32	     = 0x0102,
++
++	V4L2_CTRL_TYPE_PRIVATE	     = 0xffff,
  };
  
  /*  Used in the VIDIOC_QUERYCTRL ioctl for querying controls */
