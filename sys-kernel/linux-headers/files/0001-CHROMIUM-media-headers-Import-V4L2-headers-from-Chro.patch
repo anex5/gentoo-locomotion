@@ -236,6 +236,44 @@ index 1c095b5a99c5..c2c9e44e70a7 100644
  };
  
  /*  Used in the VIDIOC_QUERYCTRL ioctl for querying controls */
+@@ -1471,17 +1473,23 @@ struct v4l2_ext_control {
+ 		__u8 __user *p_u8;
+ 		__u16 __user *p_u16;
+ 		__u32 __user *p_u32;
++		struct v4l2_ctrl_h264_sps __user *p_h264_sps;
++		struct v4l2_ctrl_h264_pps __user *p_h264_pps;
++		struct v4l2_ctrl_h264_scaling_matrix __user *p_h264_scal_mtrx;
++		struct v4l2_ctrl_h264_slice_param __user *p_h264_slice_param;
++		struct v4l2_ctrl_h264_decode_param __user *p_h264_decode_param;
+ 		void __user *ptr;
+ 	};
+ } __attribute__ ((packed));
+ 
+ struct v4l2_ext_controls {
+ 	union {
+ #ifndef __KERNEL__
+ 		__u32 ctrl_class;
++		__u32 config_store;
+ #endif
+ 		__u32 which;
+ 	};
+ 	__u32 count;
+ 	__u32 error_idx;
+ 	__u32 reserved[2];
+@@ -1504,6 +1514,13 @@ enum v4l2_ctrl_type {
+ 	V4L2_CTRL_TYPE_U8	     = 0x0100,
+ 	V4L2_CTRL_TYPE_U16	     = 0x0101,
+ 	V4L2_CTRL_TYPE_U32	     = 0x0102,
++	V4L2_CTRL_TYPE_H264_SPS      = 0x0103,
++	V4L2_CTRL_TYPE_H264_PPS      = 0x0104,
++	V4L2_CTRL_TYPE_H264_SCALING_MATRIX = 0x0105,
++	V4L2_CTRL_TYPE_H264_SLICE_PARAM = 0x0106,
++	V4L2_CTRL_TYPE_H264_DECODE_PARAM = 0x0107,
++
++	V4L2_CTRL_TYPE_PRIVATE       = 0xffff,
+ };
+ 
+ /*  Used in the VIDIOC_QUERYCTRL ioctl for querying controls */
 @@ -1669,6 +1675,7 @@ struct v4l2_querymenu {
  #define V4L2_CTRL_FLAG_HAS_PAYLOAD	0x0100
  #define V4L2_CTRL_FLAG_EXECUTE_ON_WRITE	0x0200
