@@ -675,12 +675,6 @@ setup_compile_flags() {
 	append-cxxflags -Wno-builtin-macro-redefined
 	append-cppflags "-D__DATE__= -D__TIME__= -D__TIMESTAMP__="
 
-	if not use debug; then
-		append-cflags " -fno-unwind-tables -fno-asynchronous-unwind-tables"
-    	append-cxxflags " -fno-unwind-tables -fno-asynchronous-unwind-tables"
-    	append-cppflags " -DNO_UNWIND_TABLES"
-    fi
-
 	# Enable std::vector []-operator bounds checking.
 	append-cxxflags -D__google_stl_debug_vector=1
 
@@ -786,8 +780,8 @@ src_configure() {
 		"enable_mdns=false"
 
 		# Disable nacl, we can't build without pnacl (http://crbug.com/269560).
-		"enable_nacl=true"
-		"enable_nacl_nonsfi=true"
+		"enable_nacl=false"
+		"enable_nacl_nonsfi=false"
 		"enable_native_notifications=false"
 		
 		"enable_one_click_signin=false"
@@ -852,7 +846,7 @@ src_configure() {
 		#"sanitizer_no_symbols=$(usex debug false true)"
 		"blink_symbol_level=$(usex debug 2 0)"
 		"enable_iterator_debugging=$(usetf debug)"
-		"remove_webcore_debug_symbols=$(usex debug false true)"
+		#"remove_webcore_debug_symbols=$(usex debug false true)"
 
 		# Codecs
 		"proprietary_codecs=$(usetf proprietary-codecs)"
