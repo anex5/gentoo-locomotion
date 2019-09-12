@@ -71,20 +71,6 @@ index 32ca2b0..afaf3a1 100644
 -    "//chrome/browser/resources/pdf/ink:ink_api",
    ]
  }
-diff --git a/chrome/browser/resources/component_extension_resources.grd b/chrome/browser/resources/component_extension_resources.grd
-index 83d54e2..a3739f7 100644
---- a/chrome/browser/resources/component_extension_resources.grd
-+++ b/chrome/browser/resources/component_extension_resources.grd
-@@ -126,9 +126,7 @@
-         <include name="IDR_PDF_VIEWER_ERROR_SCREEN_JS" file="pdf/elements/viewer-error-screen/viewer-error-screen.js" type="BINDATA" />
-         <if expr="chromeos">
-           <include name="IDR_PDF_VIEWER_INK_INDEX_HTML" file="pdf/ink/index.html" type="BINDATA" />
--          <include name="IDR_PDF_VIEWER_INK_INK_API_JS" file="pdf/ink/ink_api.js" type="BINDATA" />
-           <include name="IDR_PDF_VIEWER_INK_HOST_HTML" file="pdf/elements/viewer-ink-host/viewer-ink-host.html" type="BINDATA" />
--          <include name="IDR_PDF_VIEWER_INK_HOST_JS" file="pdf/elements/viewer-ink-host/viewer-ink-host.js" type="BINDATA" />
-           <include name="IDR_PDF_VIEWER_PEN_OPTIONS_HTML" file="pdf/elements/viewer-pen-options/viewer-pen-options.html" type="BINDATA" />
-           <include name="IDR_PDF_VIEWER_PEN_OPTIONS_JS" file="pdf/elements/viewer-pen-options/viewer-pen-options.js" type="BINDATA" />
-           <include name="IDR_PDF_VIEWER_FORM_WARNING_HTML" file="pdf/elements/viewer-form-warning/viewer-form-warning.html" type="BINDATA" />
 diff --git a/third_party/ink/BUILD.gn b/third_party/ink/BUILD.gn
 index 132b29e..0d91ec9 100644
 --- a/third_party/ink/BUILD.gn
