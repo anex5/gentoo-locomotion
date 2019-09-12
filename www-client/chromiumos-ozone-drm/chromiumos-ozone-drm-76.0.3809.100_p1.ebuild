@@ -995,7 +995,7 @@ src_configure() {
 			"use_system_libwayland=$(usetf system-wayland)"
 			"use_ozone=true"
 			"use_aura=true"
-			"use_wayland_gbm=true"
+			#"use_wayland_gbm=true"
 			"ozone_auto_platforms=false"
 			"ozone_platform_x11=false"
 			"ozone_platform_wayland=false"
