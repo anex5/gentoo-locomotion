@@ -814,9 +814,9 @@ src_configure() {
 		"rtc_libvpx_build_vp9=$(usetf libvpx)"
 		"enable_mpeg_h_audio_demuxing=true"
 		"enable_vulkan=$(usetf vulkan)" 
-		"angle_enable_vulkan==$(usetf vulkan)"
-		"angle_enable_vulkan_validation_layers==$(usetf vulkan)"
-		"angle_shared_libvulkan==$(usetf vulkan)"
+		"angle_enable_vulkan=$(usetf vulkan)"
+		"angle_enable_vulkan_validation_layers=$(usetf vulkan)"
+		"angle_shared_libvulkan=$(usetf vulkan)"
 
 		"use_vaapi=$(usetf vaapi)"
 		"enable_plugins=true"
