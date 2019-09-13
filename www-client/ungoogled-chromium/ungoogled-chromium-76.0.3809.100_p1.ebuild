@@ -28,7 +28,7 @@ SRC_URI="
 
 LICENSE="BSD"
 SLOT="0"
-KEYWORDS="~amd64 ~x86"
+KEYWORDS="~amd64 ~x86 ~arm64"
 VIDEO_CARDS="
 	amdgpu exynos intel marvell mediatek msm radeon radeonsi rockchip tegra vc4 virgl
 "
@@ -38,7 +38,7 @@ IUSE="
 	lld new-tcmalloc optimize-thinlto optimize-webui +pdf +proprietary-codecs
 	pulseaudio selinux +suid system-ffmpeg system-harfbuzz +system-icu
 	-system-jsoncpp +system-libevent +system-libvpx system-openh264
-	+system-openjpeg +system-libdrm -system-wayland +tcmalloc +thinlto vaapi widevine
+	+system-openjpeg +system-libdrm -system-wayland +tcmalloc +thinlto vulkan vaapi widevine
 	wayland X libvpx gtk xkbcommon v4l2 v4lplugin +clang swiftshader udev debug
 "
 
@@ -127,6 +127,7 @@ CDEPEND="
 	)
 	system-icu? ( >=dev-libs/icu-64:= )
 	system-jsoncpp? ( dev-libs/jsoncpp )
+	system-libdrm? ( x11-libs/libdrm )
 	system-libevent? ( dev-libs/libevent )
 	system-libvpx? ( >=media-libs/libvpx-1.7.0:=[postproc,svc] )
 	system-openh264? ( >=media-libs/openh264-1.6.0:= )
@@ -777,7 +778,8 @@ src_configure() {
 		"use_system_freetype=$(usetf system-harfbuzz)"
 		"use_system_harfbuzz=$(usetf system-harfbuzz)"
 		"use_system_lcms2=$(usetf pdf)"
-		#"use_system_libopenjpeg2=$(usetf system-openjpeg)"
+		"use_system_libjpeg=$(usetf system-openjpeg)"
+		"use_system_libopenjpeg2=$(usetf system-openjpeg)"
 
 		"use_system_zlib=true"
 		#"rtc_build_json=$(usex system-jsoncpp false true)"
@@ -804,16 +806,18 @@ src_configure() {
 		"enable_mse_mpeg2ts_stream_parser=true"
 		"media_use_ffmpeg=true"
 		"enable_ffmpeg_video_decoders=true"
-		#"rtc_initialize_ffmpeg=true"
 		"use_v4l2_codec=$(usetf v4l2)"
 		"use_linux_v4l2_only=$(usetf v4l2)"
 		"use_v4lplugin=$(usetf v4lplugin)"
 		"rtc_build_libvpx=$(usetf libvpx)"
 		"media_use_libvpx=$(usetf libvpx)"
-		"rtc_libvpx_build_vp9=false"
-		#"enable_runtime_media_renderer_selection=true"
+		"rtc_libvpx_build_vp9=$(usetf libvpx)"
 		"enable_mpeg_h_audio_demuxing=true"
-		"enable_vulkan=true" 
+		"enable_vulkan=$(usetf vulkan)" 
+		"angle_enable_vulkan==$(usetf vulkan)"
+		"angle_enable_vulkan_validation_layers==$(usetf vulkan)"
+		"angle_shared_libvulkan==$(usetf vulkan)"
+
 		"use_vaapi=$(usetf vaapi)"
 		"enable_plugins=true"
 		"use_cras=false"
@@ -829,7 +833,6 @@ src_configure() {
 		"enable_pdf=$(usetf pdf)"
 		"enable_print_preview=$(usetf pdf)"
 		"rtc_build_examples=false"
-	    #"use_boringssl_for_http_transport_socket=true"
 		"use_atk=$(usetf atk)"
 		"use_dbus=$(usetf dbus)"
 		"use_icf=true"
@@ -888,7 +891,6 @@ src_configure() {
 			"ozone_platform=\"wayland\""
 			"enable_mus=false"
 			#"enable_wayland_server=true" #Exo parts (aura shell)
-			#"enable_package_mash_services = true" #ChromeOS
 			"enable_background_mode=true"
 			#"use_system_minigbm=$(usetf system-minigbm)"
 			"use_system_minigbm=false"
