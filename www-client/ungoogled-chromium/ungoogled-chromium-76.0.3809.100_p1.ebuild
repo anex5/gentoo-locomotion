@@ -528,7 +528,9 @@ src_prepare() {
 		third_party/harfbuzz-ng
 	)
 	use system-icu || keeplibs+=( third_party/icu )
-	use system-jsoncpp || keeplibs+=( third_party/jsoncpp )
+	# webrtc require json.h
+	#use system-jsoncpp || 
+	keeplibs+=( third_party/jsoncpp )
 	use libcxx || keeplibs+=( buildtools/third_party/libc++ buildtools/third_party/libc++abi )
 	use system-libdrm || keeplibs+=( third_party/libdrm third_party/libdrm/src/include/drm )
 	use system-libevent || keeplibs+=( base/third_party/libevent )
@@ -780,9 +782,7 @@ src_configure() {
 		"use_system_lcms2=$(usetf pdf)"
 		"use_system_libjpeg=$(usetf system-openjpeg)"
 		"use_system_libopenjpeg2=$(usetf system-openjpeg)"
-
 		"use_system_zlib=true"
-		#"rtc_build_json=$(usex system-jsoncpp false true)"
 
 		# Debug flags
 		"is_debug=$(usetf debug)"
@@ -796,10 +796,10 @@ src_configure() {
 		# Codecs
 		"proprietary_codecs=$(usetf proprietary-codecs)"
 		"ffmpeg_branding=\"$(usex proprietary-codecs Chrome Chromium)\""
-		"enable_hls_sample_aes=true"
+		"enable_hls_sample_aes=true" 
 		"use_openh264=true" #Encoding
 		"rtc_use_h264=true" #Decoding
-		"enable_ac3_eac3_audio_demuxing=false"
+		"enable_ac3_eac3_audio_demuxing=false" #enabling affects system-jsoncpp
 		"enable_hevc_demuxing=true"
 		"enable_dolby_vision_demuxing=true"
 		"enable_av1_decoder=true"
@@ -849,7 +849,6 @@ src_configure() {
 
 		"rtc_use_gtk=$(usetf gtk)"
 		"rtc_use_x11=$(usetf X)"
-		"rtc_build_examples=false"
 		"use_gio=$(usetf gnome)"
 		#"use_gconf=$(usetf gnome)"
 		"use_xkbcommon=$(usetf xkbcommon)"
@@ -869,10 +868,10 @@ src_configure() {
 		myconf_gn+=(" host_toolchain=\"//build/toolchain/linux/unbundle:default\"")
 	fi
 
-	use system-jsoncpp && myconf_gn+=(
-		"rtc_build_json=false"
-		#"rtc_jsoncpp_root=\"/usr/include/json\""
-	)
+	#use system-jsoncpp && myconf_gn+=(
+	#	"rtc_build_json=false"
+	#	"rtc_jsoncpp_root=\"/usr/include/json\""
+	#)
 	
 	# wayland
 	if use wayland; then
@@ -895,7 +894,6 @@ src_configure() {
 			#"use_system_minigbm=$(usetf system-minigbm)"
 			"use_system_minigbm=false"
 			"use_system_libdrm=$(usetf system-libdrm)"
-
 			"use_intel_minigbm=$(usetf video_cards_intel)" 
 			"use_radeon_minigbm=$(usetf video_cards_radeon)"
 		   	"use_amdgpu_minigbm=$(usetf video_cards_amdgpu)"
