@@ -234,6 +234,7 @@ PATCHES=(
 	# Personal patches
  	"${FILESDIR}/chromium-optional-atk-r0.patch"
 	"${FILESDIR}/chromium-optional-dbus-r8.patch"
+	"${FILESDIR}/chromium-76-fix-linking.patch"
 	"${FILESDIR}/chromium-gclient_args.gni.patch"
 	#"${FILESDIR}/chromium-76-remove-ink.patch"
 	"${FILESDIR}/chromium-76-remove-KioskNext.patch"
