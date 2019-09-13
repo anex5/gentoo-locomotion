@@ -45,7 +45,7 @@ IUSE="
 	pulseaudio selinux +suid system-ffmpeg system-harfbuzz system-icu
 	-system-jsoncpp +system-libevent +system-libvpx system-openh264
 	+system-openjpeg +system-libdrm system-minigbm -system-wayland +tcmalloc +thinlto 
-	vaapi widevine X libvpx gtk xkbcommon v4l2 v4lplugin +clang swiftshader udev debug
+	vaapi vulkan widevine X libvpx gtk xkbcommon v4l2 v4lplugin +clang swiftshader udev debug
 "
 
 for card in ${VIDEO_CARDS}; do
@@ -152,10 +152,12 @@ CDEPEND="
 	)
 	v4lplugin? ( media-tv/v4l-utils )
 	gtk? ( x11-libs/gtk+:3[X] )
+	( || ( dev-java/oracle-jdk-bin dev-java/openjdk dev-java/openjdk-bin dev-java/icedtea ) )
 "
 
 RDEPEND="${CDEPEND}
 	virtual/ttf-fonts
+	virtual/jdk
 	selinux? ( sec-policy/selinux-chromium )
 	widevine? ( !x86? ( www-plugins/chrome-binary-plugins[widevine(-)] ) )
 	!www-client/chromium
@@ -870,10 +872,10 @@ src_configure() {
 		"rtc_libvpx_build_vp9=$(usetf libvpx)"
 		#"enable_runtime_media_renderer_selection=true"
 		"enable_mpeg_h_audio_demuxing=true"
-		"enable_vulkan=true"
-		"angle_enable_vulkan=true"
-		#"angle_enable_vulkan_validation_layers=false"
-		#"angle_shared_libvulkan=false"
+		"enable_vulkan=$(usetf vulkan)"
+		"angle_enable_vulkan=$(usetf vulkan)"
+		"angle_enable_vulkan_validation_layers=$(usetf vulkan)"
+		"angle_shared_libvulkan=$(usetf vulkan)"
 		#"ndk_supports_vulkan=false"
 		"use_vaapi=$(usetf vaapi)"
 		"enable_plugins=true"
@@ -890,9 +892,7 @@ src_configure() {
 		"enable_pdf=$(usetf pdf)"
 		"enable_print_preview=$(usetf pdf)"
 		"rtc_build_examples=false"
-		#"use_remote=false"
-	    #"use_boringssl_for_http_transport_socket=true"
-		"use_atk=$(usetf atk)"
+	    "use_atk=$(usetf atk)"
 		"use_dbus=$(usetf dbus)"
 		"use_icf=true"
 		"use_udev=$(usetf udev)"
