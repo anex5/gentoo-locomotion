@@ -221,7 +221,6 @@ PATCHES=(
 	"${FILESDIR}/chromium-angle-inline.patch"
 	"${FILESDIR}/chromium-76-arm64-skia.patch"
 	"${FILESDIR}/chromium-76-quiche.patch"
-	"${FILESDIR}/chromium-76-no-cups.patch"
 	"${FILESDIR}/chromium-76-gcc-vulkan.patch"
 	"${FILESDIR}/chromium-76-gcc-private.patch"
 	"${FILESDIR}/chromium-76-gcc-noexcept.patch"
@@ -326,6 +325,8 @@ src_prepare() {
 	rm third_party/libusb/src/libusb/libusb.h || die
 	cp -a "${EPREFIX}/usr/include/libusb-1.0/libusb.h" \
 		third_party/libusb/src/libusb/libusb.h || die
+
+	use cups || eapply "${FILESDIR}/chromium-76-no-cups.patch"
 
 	use gold && eapply "${FILESDIR}/${PN}-gold-r4.patch" || die
 
