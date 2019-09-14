@@ -330,7 +330,7 @@ src_prepare() {
 
 	use gold && eapply "${FILESDIR}/${PN}-gold-r4.patch" || die
 
-	use widevine && eapply "${FILESDIR}/chromium-widevine-r4.patch" || die
+	#use widevine && eapply "${FILESDIR}/chromium-widevine-r4.patch" || die
 
 	use system-libdrm && eapply "${FILESDIR}/chromium-system-libdrm.patch" || die
 
