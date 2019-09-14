@@ -326,7 +326,7 @@ src_prepare() {
 	cp -a "${EPREFIX}/usr/include/libusb-1.0/libusb.h" \
 		third_party/libusb/src/libusb/libusb.h || die
 
-	use cups || eapply "${FILESDIR}/chromium-76-no-cups.patch"
+	use cups || eapply "${FILESDIR}/chromium-76-no-cups.patch" || die
 
 	use gold && eapply "${FILESDIR}/${PN}-gold-r4.patch" || die
 
