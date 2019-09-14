@@ -246,7 +246,6 @@ PATCHES=(
 	"${FILESDIR}/${PN}-empty-array-r0.patch"
 	
 	# Personal patches
-	"${FILESDIR}/chromium-widevine-r4.patch"
 	"${FILESDIR}/chromium-fix-nosafebrowsing-build-r0.patch"
  	"${FILESDIR}/chromium-optional-atk-r0.patch"
 	"${FILESDIR}/chromium-optional-dbus-r8.patch"
@@ -317,7 +316,6 @@ src_prepare() {
 	# Apply extra patches (taken from Igalia)
 	if use "wayland" ; then
 		local p="${FILESDIR}/igalia-$(ver_cut 1-1)"
-
 		eapply "${p}/0001-ozone-wayland-Fix-method-prototype-match.patch" || die
 		eapply "${p}/V4L2/0001-Add-support-for-V4L2VDA-on-Linux.patch" || die
 		eapply "${p}/V4L2/0002-Add-mmap-via-libv4l-to-generic_v4l2_device.patch" || die
