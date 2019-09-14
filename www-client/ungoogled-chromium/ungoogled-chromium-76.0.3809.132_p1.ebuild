@@ -37,9 +37,9 @@ IUSE="
 	atk cfi component-build closure-compile cups custom-cflags +dbus gnome gold jumbo-build kerberos libcxx
 	lld new-tcmalloc optimize-thinlto optimize-webui +pdf +proprietary-codecs
 	pulseaudio selinux +suid system-ffmpeg system-harfbuzz +system-icu
-	-system-jsoncpp +system-libevent +system-libvpx system-openh264
+	+system-jsoncpp +system-libevent +system-libvpx system-openh264
 	+system-openjpeg +system-libdrm -system-wayland +tcmalloc +thinlto vulkan vaapi widevine
-	wayland X libvpx gtk xkbcommon v4l2 v4lplugin +clang swiftshader udev debug
+	wayland X libvpx gtk xkbcommon +v4l2 +v4lplugin +clang swiftshader udev debug
 "
 
 for card in ${VIDEO_CARDS}; do
@@ -61,6 +61,7 @@ REQUIRED_USE="
 	gnome? ( gtk dbus )
 	atk? ( gnome )
 	system-wayland? ( wayland )
+	system-libvpx? ( libvpx )
 "
 RESTRICT="
 	!system-ffmpeg? ( proprietary-codecs? ( bindist ) )
@@ -245,6 +246,7 @@ PATCHES=(
 	"${FILESDIR}/${PN}-empty-array-r0.patch"
 	
 	# Personal patches
+	"${FILESDIR}/chromium-widevine-r4.patch"
 	"${FILESDIR}/chromium-fix-nosafebrowsing-build-r0.patch"
  	"${FILESDIR}/chromium-optional-atk-r0.patch"
 	"${FILESDIR}/chromium-optional-dbus-r8.patch"
@@ -326,15 +328,15 @@ src_prepare() {
 	cp -a "${EPREFIX}/usr/include/libusb-1.0/libusb.h" \
 		third_party/libusb/src/libusb/libusb.h || die
 
-	use cups || eapply "${FILESDIR}/chromium-76-no-cups.patch" || die
+	use "cups" || eapply "${FILESDIR}/chromium-76-no-cups.patch" || die
 
-	use gold && eapply "${FILESDIR}/${PN}-gold-r4.patch" || die
+	use "gold" && eapply "${FILESDIR}/${PN}-gold-r4.patch" || die
 
-	#use widevine && eapply "${FILESDIR}/chromium-widevine-r4.patch" || die
+	#use "widevine" && eapply "${FILESDIR}/chromium-widevine-r4.patch" || die
 
-	use system-libdrm && eapply "${FILESDIR}/chromium-system-libdrm.patch" || die
+	use "system-libdrm" && eapply "${FILESDIR}/chromium-system-libdrm.patch" || die
 
-	use vaapi && eapply "${FILESDIR}/${PN}-fix-enable-vaapi-r0.patch" || die
+	use "vaapi" && eapply "${FILESDIR}/${PN}-fix-enable-vaapi-r0.patch" || die
 
 	# From here we adapt ungoogled-chromium's patches to our needs
 	local ugc_pruning_list="${UGC_WD}/pruning.list"
