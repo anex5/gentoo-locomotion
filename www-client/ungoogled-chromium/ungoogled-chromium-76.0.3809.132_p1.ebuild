@@ -221,6 +221,7 @@ PATCHES=(
 	"${FILESDIR}/chromium-angle-inline.patch"
 	"${FILESDIR}/chromium-76-arm64-skia.patch"
 	"${FILESDIR}/chromium-76-quiche.patch"
+	"${FILESDIR}/chromium-76-no-cups.patch"
 	"${FILESDIR}/chromium-76-gcc-vulkan.patch"
 	"${FILESDIR}/chromium-76-gcc-private.patch"
 	"${FILESDIR}/chromium-76-gcc-noexcept.patch"
@@ -233,16 +234,19 @@ PATCHES=(
 	"${FILESDIR}/chromium-76-gcc-include.patch"
 	"${FILESDIR}/chromium-76-gcc-pure-virtual.patch"
 
-	# Ungoogled patches
+	# Debian patches
+	"${FILESDIR}/${PN}-disable-installer.patch"
+	# Extra patches taken from openSUSE
+	"${FILESDIR}/${PN}-system-libusb-r0.patch"
+	"${FILESDIR}/${PN}-system-nspr-r0.patch"
+	"${FILESDIR}/${PN}-libusb-interrupt-event-handler-r1.patch"
+	"${FILESDIR}/${PN}-system-fix-shim-headers-r0.patch"
+	# Patches from Ungoogled
 	"${FILESDIR}/${PN}-disable-third-party-lzma-sdk-r0.patch"
 	"${FILESDIR}/${PN}-empty-array-r0.patch"
-	"${FILESDIR}/${PN}-libusb-interrupt-event-handler-r1.patch"
-	"${FILESDIR}/${PN}-system-libusb-r0.patch"
-	#"${FILESDIR}/${PN}-system-nspr-r0.patch"
-	"${FILESDIR}/${PN}-system-fix-shim-headers-r0.patch"
-	"${FILESDIR}/${PN}-fix-nosafebrowsing-build-r0.patch"
-
+	
 	# Personal patches
+	"${FILESDIR}/chromium-fix-nosafebrowsing-build-r0.patch"
  	"${FILESDIR}/chromium-optional-atk-r0.patch"
 	"${FILESDIR}/chromium-optional-dbus-r8.patch"
 	"${FILESDIR}/chromium-76-fix-linking.patch"	
@@ -299,29 +303,58 @@ src_prepare() {
 		eapply "${FILESDIR}/${PN}-system-openjpeg-r0.patch" || die
 	fi
 
-	if use optimize-webui; then
+	if use "system-libvpx" ; then
+		eapply "${FILESDIR}/${PN}-system-vpx-r0.patch" || die
+	fi
+
+	if use "optimize-webui" ; then
 		mkdir -p third_party/node/linux/node-linux-x64/bin || die
 		ln -s "${EPREFIX}/usr/bin/node" \
 			third_party/node/linux/node-linux-x64/bin/node || die
 	fi
 	
 	# Apply extra patches (taken from Igalia)
-	local p="${FILESDIR}/igalia-$(ver_cut 1-1)"
+	if use "wayland" ; then
+		local p="${FILESDIR}/igalia-$(ver_cut 1-1)"
 
-	eapply "${p}/0001-ozone-wayland-Fix-method-prototype-match.patch" || die
-	eapply "${p}/V4L2/0001-Add-support-for-V4L2VDA-on-Linux.patch" || die
-	eapply "${p}/V4L2/0002-Add-mmap-via-libv4l-to-generic_v4l2_device.patch" || die
+		eapply "${p}/0001-ozone-wayland-Fix-method-prototype-match.patch" || die
+		eapply "${p}/V4L2/0001-Add-support-for-V4L2VDA-on-Linux.patch" || die
+		eapply "${p}/V4L2/0002-Add-mmap-via-libv4l-to-generic_v4l2_device.patch" || die
+	fi
 
 	# Hack for libusb stuff (taken from openSUSE)
 	rm third_party/libusb/src/libusb/libusb.h || die
 	cp -a "${EPREFIX}/usr/include/libusb-1.0/libusb.h" \
 		third_party/libusb/src/libusb/libusb.h || die
 
-	use gold && eapply "${FILESDIR}/${PN}-gold-r4.patch"
+	use gold && eapply "${FILESDIR}/${PN}-gold-r4.patch" || die
 
-	use widevine && eapply "${FILESDIR}/chromium-widevine-r4.patch"
+	use widevine && eapply "${FILESDIR}/chromium-widevine-r4.patch" || die
 
-	use system-libdrm && eapply "${FILESDIR}/chromium-system-libdrm.patch"
+	use system-libdrm && eapply "${FILESDIR}/chromium-system-libdrm.patch" || die
+
+	use vaapi && eapply "${FILESDIR}/${PN}-fix-enable-vaapi-r0.patch" || die
+
+	# From here we adapt ungoogled-chromium's patches to our needs
+	local ugc_pruning_list="${UGC_WD}/pruning.list"
+	local ugc_patch_series="${UGC_WD}/patches/series"
+
+	local ugc_unneeded=(
+		# GN bootstrap
+		extra/debian_buster/gn/parallel
+	)
+
+	local ugc_p ugc_dir
+	for p in "${ugc_unneeded[@]}"; do
+		einfo "Removing ${p}.patch"
+		sed -i "\!${p}.patch!d" "${ugc_patch_series}" || die
+	done
+
+	if use closure-compile; then
+		ewarn "Keeping binary compiler.jar for closure-compile"
+		sed -i '\!third_party/closure_compiler/compiler/compiler.jar!d' "${ugc_pruning_list}" || die
+	fi
+	# make it less noisy
 
 	ebegin "Pruning binaries"
 	"${UGC_WD}/utils/prune_binaries.py" . "${UGC_WD}/pruning.list"
@@ -529,9 +562,7 @@ src_prepare() {
 		third_party/harfbuzz-ng
 	)
 	use system-icu || keeplibs+=( third_party/icu )
-	# webrtc require json.h
-	#use system-jsoncpp || 
-	keeplibs+=( third_party/jsoncpp )
+	use system-jsoncpp || keeplibs+=( third_party/jsoncpp )
 	use libcxx || keeplibs+=( buildtools/third_party/libc++ buildtools/third_party/libc++abi )
 	use system-libdrm || keeplibs+=( third_party/libdrm third_party/libdrm/src/include/drm )
 	use system-libevent || keeplibs+=( base/third_party/libevent )
@@ -540,7 +571,7 @@ src_prepare() {
 		third_party/libvpx/source/libvpx/third_party/x86inc
 	)
 	use system-wayland || keeplibs+=( third_party/wayland third_party/wayland-protocols )
-	keeplibs+=( third_party/minigbm )
+	use wayland && keeplibs+=( third_party/minigbm )
 	use system-openh264 || keeplibs+=( third_party/openh264 )
 	use tcmalloc && keeplibs+=( third_party/tcmalloc )
 
@@ -686,6 +717,7 @@ src_configure() {
 	local gn_system_libraries=(
 		flac
 		fontconfig
+		libjpeg
 		libpng
 		libusb
 		libwebp
@@ -705,7 +737,6 @@ src_configure() {
 	use system-libvpx && gn_system_libraries+=( libvpx )
 	#use system-wayland && gn_system_libraries+=( libwayland )
 	use system-openh264 && gn_system_libraries+=( openh264 )
-	use system-openjpeg && gn_system_libraries+=( libjpeg )
 
 	build/linux/unbundle/replace_gn_files.py --system-libraries "${gn_system_libraries[@]}" || die
 
@@ -781,7 +812,7 @@ src_configure() {
 		"use_system_freetype=$(usetf system-harfbuzz)"
 		"use_system_harfbuzz=$(usetf system-harfbuzz)"
 		"use_system_lcms2=$(usetf pdf)"
-		"use_system_libjpeg=$(usetf system-openjpeg)"
+		"use_system_libjpeg=true"
 		"use_system_libopenjpeg2=$(usetf system-openjpeg)"
 		"use_system_zlib=true"
 
@@ -857,7 +888,6 @@ src_configure() {
 	
 	use gold || myconf_gn+=( "use_lld=true" )
 
-	use cfi	&& myconf_gn+=( "use_cfi_cast=$(usetf cfi)" )
 	# use_cfi_icall only works with LLD
 	use cfi && myconf_gn+=( "use_cfi_icall=$(usetf lld)" )
 
