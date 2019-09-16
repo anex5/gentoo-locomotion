@@ -334,7 +334,7 @@ src_prepare() {
 
 	use "cups" || eapply "${FILESDIR}/chromium-76-no-cups.patch" || die
 
-	use "gold" && eapply "${FILESDIR}/${PN}-gold-r4.patch" || die
+	use "gold" && eapply "${FILESDIR}/chromium-gold-r4.patch" || die
 
 	#use widevine && eapply "${FILESDIR}/chromium-widevine-r4.patch"
 
