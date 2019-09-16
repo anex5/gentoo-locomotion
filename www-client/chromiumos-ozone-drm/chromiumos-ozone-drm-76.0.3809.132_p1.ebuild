@@ -516,6 +516,7 @@ src_prepare() {
 	keeplibs+=( 
 		third_party/android_ndk/toolchains/x86-4.9
 		third_party/android_ndk/toolchains/x86_64-4.9
+		third_party/android_ndk/sources
 		third_party/android_sdk
 		third_party/ashmem
 		third_party/closure_compiler
