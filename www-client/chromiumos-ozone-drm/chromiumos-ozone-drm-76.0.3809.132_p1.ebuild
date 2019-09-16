@@ -42,10 +42,10 @@ VIDEO_CARDS="
 IUSE="
 	atk cfi component-build +closure-compile cups custom-cflags +dbus gnome gold jumbo-build kerberos libcxx
 	lld new-tcmalloc optimize-thinlto optimize-webui +pdf +proprietary-codecs
-	pulseaudio selinux +suid system-ffmpeg system-harfbuzz system-icu
-	-system-jsoncpp +system-libevent +system-libvpx system-openh264
+	pulseaudio selinux +suid system-ffmpeg system-harfbuzz +system-icu
+	+system-jsoncpp +system-libevent +system-libvpx system-openh264 domain_substitution
 	+system-openjpeg +system-libdrm system-minigbm -system-wayland +tcmalloc +thinlto 
-	vaapi vulkan widevine X libvpx gtk xkbcommon v4l2 v4lplugin +clang swiftshader udev debug
+	vaapi vulkan widevine libvpx gtk xkbcommon v4l2 v4lplugin +clang swiftshader udev debug
 "
 
 for card in ${VIDEO_CARDS}; do
@@ -63,9 +63,6 @@ REQUIRED_USE="
 	system-openjpeg? ( pdf )
 	x86? ( !lld !thinlto !widevine )
 	thinlto? ( clang || ( gold lld ) )
-	gtk? ( X )
-	gnome? ( gtk dbus )
-	atk? ( gnome )
 "
 RESTRICT="mirror
 	!system-ffmpeg? ( proprietary-codecs? ( bindist ) )
@@ -90,28 +87,6 @@ CDEPEND="
 	sys-apps/pciutils:=
 	sys-libs/zlib:=[minizip]
 	virtual/udev
-	X? ( 
-		x11-libs/cairo:=
-		x11-libs/gdk-pixbuf:2
-		x11-libs/gtk+:3[X]
-		x11-libs/libX11:=
-		x11-libs/libXcomposite:=
-		x11-libs/libXcursor:=
-		x11-libs/libXdamage:=
-		x11-libs/libXext:=
-		x11-libs/libXfixes:=
-		>=x11-libs/libXi-1.6.0:=
-		x11-libs/libXrandr:=
-		x11-libs/libXrender:=
-		x11-libs/libXScrnSaver:=
-		x11-libs/libXtst:=
-		x11-libs/pango:=
-		x11-misc/xdg-utils:=
-	)
-	atk? (
-		>=app-accessibility/at-spi2-atk-2.26:2
-		>=dev-libs/atk-2.26
-	)
 	closure-compile? ( virtual/jre:* )
 	cups? ( >=net-print/cups-1.3.11:= )
 	dbus? ( sys-apps/dbus:= )
@@ -151,8 +126,7 @@ CDEPEND="
 		sys-libs/libcxx
 	)
 	v4lplugin? ( media-tv/v4l-utils )
-	gtk? ( x11-libs/gtk+:3[X] )
-	( || ( dev-java/oracle-jdk-bin dev-java/openjdk dev-java/openjdk-bin dev-java/icedtea ) )
+	( || ( dev-java/oracle-jdk-bin[gentoo-vm] dev-java/openjdk[gentoo-vm] dev-java/openjdk-bin[gentoo-vm] dev-java/icedtea[gentoo-vm] ) )
 "
 
 RDEPEND="${CDEPEND}
@@ -160,8 +134,6 @@ RDEPEND="${CDEPEND}
 	virtual/jdk
 	selinux? ( sec-policy/selinux-chromium )
 	widevine? ( !x86? ( www-plugins/chrome-binary-plugins[widevine(-)] ) )
-	!www-client/chromium
-	!www-client/ungoogled-chromium-bin
 "
 # dev-vcs/git (Bug #593476)
 # sys-apps/sandbox - https://crbug.com/586444
@@ -196,7 +168,6 @@ BDEPEND="
 	optimize-webui? ( >=net-libs/nodejs-7.6.0[inspector] )
 "
 
-# shellcheck disable=SC2086
 if ! has chromium_pkg_die ${EBUILD_DEATH_HOOKS}; then
 	EBUILD_DEATH_HOOKS+=" chromium_pkg_die";
 fi
@@ -223,18 +194,22 @@ PATCHES=(
 	"${FILESDIR}/chromium-76-gcc-include.patch"
 	"${FILESDIR}/chromium-76-gcc-pure-virtual.patch"
 
-	# Ungoogled patches
-	"${FILESDIR}/ungoogled-chromium-disable-third-party-lzma-sdk-r0.patch"
-	"${FILESDIR}/ungoogled-chromium-empty-array-r0.patch"
-	"${FILESDIR}/ungoogled-chromium-libusb-interrupt-event-handler-r1.patch"
-	"${FILESDIR}/ungoogled-chromium-system-libusb-r0.patch"
-	"${FILESDIR}/ungoogled-chromium-system-fix-shim-headers-r0.patch"
-	"${FILESDIR}/ungoogled-chromium-fix-nosafebrowsing-build-r0.patch"
-
+	# Debian patches
+	"${FILESDIR}/chromium-disable-installer.patch"
+	# Extra patches taken from openSUSE
+	"${FILESDIR}/chromium-system-libusb-r0.patch"
+	"${FILESDIR}/chromium-system-nspr-r0.patch"
+	"${FILESDIR}/chromium-libusb-interrupt-event-handler-r1.patch"
+	"${FILESDIR}/chromium-system-fix-shim-headers-r0.patch"
+	# Patches from Ungoogled
+	"${FILESDIR}/chromium-disable-third-party-lzma-sdk-r0.patch"
+	"${FILESDIR}/chromium-empty-array-r0.patch"
+	
 	# Personal patches
+	"${FILESDIR}/chromium-fix-nosafebrowsing-build-r0.patch"
  	"${FILESDIR}/chromium-optional-atk-r0.patch"
 	"${FILESDIR}/chromium-optional-dbus-r8.patch"
-	"${FILESDIR}/chromium-76-fix-linking.patch"
+	"${FILESDIR}/chromium-76-fix-linking.patch"	
 	"${FILESDIR}/chromium-gclient_args.gni.patch"
 	#"${FILESDIR}/chromium-76-remove-ink.patch"
 	"${FILESDIR}/chromium-76-remove-KioskNext.patch"
@@ -335,7 +310,11 @@ src_prepare() {
 		eapply "${FILESDIR}/chromium-system-openjpeg-r0.patch" || die
 	fi
 
-	if use optimize-webui; then
+	if use "system-libvpx" ; then
+		eapply "${FILESDIR}/chromium-system-vpx-r0.patch" || die
+	fi
+
+	if use "optimize-webui"; then
 		mkdir -p third_party/node/linux/node-linux-x64/bin || die
 		ln -s "${EPREFIX}/usr/bin/node" \
 			third_party/node/linux/node-linux-x64/bin/node || die
@@ -353,11 +332,13 @@ src_prepare() {
 	cp -a "${EPREFIX}/usr/include/libusb-1.0/libusb.h" \
 		third_party/libusb/src/libusb/libusb.h || die
 
-	use gold && eapply "${FILESDIR}/chromium-gold-r4.patch"
+	use "cups" || eapply "${FILESDIR}/chromium-76-no-cups.patch" || die
 
-	use widevine && eapply "${FILESDIR}/chromium-widevine-r4.patch"
+	use "gold" && eapply "${FILESDIR}/${PN}-gold-r4.patch" || die
 
-	use system-libdrm && eapply "${FILESDIR}/chromium-system-libdrm.patch"
+	#use widevine && eapply "${FILESDIR}/chromium-widevine-r4.patch"
+
+	use "system-libdrm" && eapply "${FILESDIR}/chromium-system-libdrm.patch"
 
 	#ebegin "Pruning binaries"
 	#"${UGC_WD}/utils/prune_binaries.py" . "${UGC_WD}/pruning.list"
@@ -367,9 +348,11 @@ src_prepare() {
 	"${UGC_WD}/utils/patches.py" apply . "${UGC_WD}/patches"
 	eend $? || die
 
-	ebegin "Applying domain substitution"
-	"${UGC_WD}/utils/domain_substitution.py" apply -r "${UGC_WD}/domain_regex.list" -f "${UGC_WD}/domain_substitution.list" -c build/domsubcache.tar.gz .
-	eend $? || die
+	if use "domain_substitution"; then
+		ebegin "Applying domain substitution"
+		"${UGC_WD}/utils/domain_substitution.py" apply -r "${UGC_WD}/domain_regex.list" -f "${UGC_WD}/domain_substitution.list" -c build/domsubcache.tar.gz .
+		eend $? || die
+	fi
 
 	local keeplibs=(
 		base/third_party/cityhash
@@ -529,7 +512,7 @@ src_prepare() {
 		v8/third_party/v8
 	)
 
-	#use closure-compile && 
+	#use "closure-compile" && 
 	keeplibs+=( 
 		third_party/android_ndk/toolchains/x86-4.9
 		third_party/android_ndk/toolchains/x86_64-4.9
@@ -547,11 +530,11 @@ src_prepare() {
 		third_party/wayland
 		third_party/wayland-protocols
 	)
-	use optimize-webui && keeplibs+=(
+	use "optimize-webui" && keeplibs+=(
 		third_party/node
 		third_party/node/node_modules/polymer-bundler/lib/third_party/UglifyJS2
 	)
-	use pdf && keeplibs+=(
+	use "pdf" && keeplibs+=(
 		third_party/pdfium
 		third_party/pdfium/third_party/agg23
 		third_party/pdfium/third_party/base
@@ -562,41 +545,38 @@ src_prepare() {
 		third_party/pdfium/third_party/libtiff
 		third_party/pdfium/third_party/skia_shared
 	)
-	# To do system-openjpeg req files
-	use system-openjpeg || keeplibs+=(
+	use "system-openjpeg" || keeplibs+=(
 		third_party/libjpeg
 		third_party/libjpeg_turbo
 	)
 	keeplibs+=(
 		third_party/pdfium/third_party/libopenjpeg20
 	)
-	use swiftshader && keeplibs+=(
+	use "swiftshader" && keeplibs+=(
 		third_party/swiftshader
 		third_party/swiftshader/third_party/llvm-subzero
 		third_party/swiftshader/third_party/subzero
 	)
-	use v4l2 && keeplibs+=(
+	use "v4l2" && keeplibs+=(
 		third_party/v4l-utils
 	)
-	use system-ffmpeg || keeplibs+=( third_party/ffmpeg third_party/opus )
-	use system-harfbuzz || keeplibs+=(
+	use "system-ffmpeg" || keeplibs+=( third_party/ffmpeg third_party/opus )
+	use "system-harfbuzz" || keeplibs+=(
 		third_party/freetype
 		third_party/harfbuzz-ng
 	)
-	#use system-icu || 
-	keeplibs+=( third_party/icu )
-	use system-jsoncpp || keeplibs+=( third_party/jsoncpp )
-	use libcxx || keeplibs+=( buildtools/third_party/libc++ buildtools/third_party/libc++abi )
-	use system-libdrm || keeplibs+=( third_party/libdrm third_party/libdrm/src/include/drm )
-	use system-libevent || keeplibs+=( base/third_party/libevent )
-	use system-libvpx || keeplibs+=(
+	use "system-icu" || keeplibs+=( third_party/icu )
+	use "system-jsoncpp" || keeplibs+=( third_party/jsoncpp )
+	use "libcxx" || keeplibs+=( buildtools/third_party/libc++ buildtools/third_party/libc++abi )
+	use "system-libdrm" || keeplibs+=( third_party/libdrm third_party/libdrm/src/include/drm )
+	use "system-libevent" || keeplibs+=( base/third_party/libevent )
+	use "system-libvpx" || keeplibs+=(
 		third_party/libvpx
 		third_party/libvpx/source/libvpx/third_party/x86inc
 	)
-	#use system-wayland || keeplibs+=( third_party/wayland third_party/wayland-protocols )
-	use system-minigbm || keeplibs+=( third_party/minigbm )
-	use system-openh264 || keeplibs+=( third_party/openh264 )
-	use tcmalloc && keeplibs+=( third_party/tcmalloc )
+	use "system-minigbm" || keeplibs+=( third_party/minigbm )
+	use "system-openh264" || keeplibs+=( third_party/openh264 )
+	use "tcmalloc" && keeplibs+=( third_party/tcmalloc )
 
 	# Remove most bundled libraries, some are still needed
 	python_setup 'python2*'
@@ -740,6 +720,7 @@ src_configure() {
 	local gn_system_libraries=(
 		flac
 		fontconfig
+		libjpeg
 		libpng
 		#libusb
 		libwebp
@@ -759,7 +740,6 @@ src_configure() {
 	use system-libvpx && gn_system_libraries+=( libvpx )
 	#use system-wayland && gn_system_libraries+=( libwayland )
 	use system-openh264 && gn_system_libraries+=( openh264 )
-	use system-openjpeg && gn_system_libraries+=( libjpeg )
 
 	build/linux/unbundle/replace_gn_files.py --system-libraries "${gn_system_libraries[@]}" || die
 
@@ -857,7 +837,7 @@ src_configure() {
 		"enable_hls_sample_aes=true"
 		"use_openh264=true" #Encoding
 		"rtc_use_h264=true" #Decoding
-		"enable_ac3_eac3_audio_demuxing=true"
+		"enable_ac3_eac3_audio_demuxing=false"
 		"enable_hevc_demuxing=true"
 		"enable_dolby_vision_demuxing=true"
 		"enable_av1_decoder=true"
@@ -866,7 +846,7 @@ src_configure() {
 		"enable_ffmpeg_video_decoders=true"
 		#"rtc_initialize_ffmpeg=true"
 		"use_v4l2_codec=$(usetf v4l2)"
-		#"use_linux_v4l2_only=true"
+		#"use_linux_v4l2_only=$(usetf v4l2)"
 		"use_v4lplugin=$(usetf v4lplugin)"
 		"rtc_build_libvpx=$(usetf libvpx)"
 		"media_use_libvpx=$(usetf libvpx)"
@@ -907,17 +887,15 @@ src_configure() {
 		"use_allocator=\"$(usex tcmalloc tcmalloc none)\""
 		"use_allocator_shim=$(usetf tcmalloc)"
 
-		"rtc_use_gtk=$(usetf gtk)"
-		"rtc_use_x11=$(usetf X)"
-		"rtc_build_examples=false"
-		"use_gio=$(usetf gnome)"
-		#"use_gconf=$(usetf gnome)"
+		"rtc_use_gtk=false"
+		"rtc_use_x11=false"
+		"use_gio=false"
+		#"use_gconf=false"
 		"use_xkbcommon=$(usetf xkbcommon)"
 	)
 	
 	use gold || myconf_gn+=( "use_lld=true" )
 
-	use cfi	&& myconf_gn+=( "use_cfi_cast=$(usetf cfi)" )
 	# use_cfi_icall only works with LLD
 	use cfi && myconf_gn+=( "use_cfi_icall=$(usetf lld)" )
 
@@ -929,10 +907,10 @@ src_configure() {
 		myconf_gn+=(" host_toolchain=\"//build/toolchain/linux/unbundle:default\"")
 	fi
 
-	use system-jsoncpp && myconf_gn+=(
-		"rtc_jsoncpp_root=\"/include/jsoncpp/json\""
-		"rtc_build_json=false"
-	)
+	#use system-jsoncpp && myconf_gn+=(
+	#	"rtc_jsoncpp_root=\"/include/jsoncpp/json\""
+	#	"rtc_build_json=false"
+	#)
 	
 	# ozone
 	
@@ -1037,8 +1015,8 @@ src_compile() {
 }
 
 src_install() {
-	local CHROMIUM_HOME # SC2155
-	CHROMIUM_HOME="/usr/$(get_libdir)/chromium-browser"
+	local CHROMIUM_HOME
+	CHROMIUM_HOME="/usr/$(get_libdir)/chromeos"
 	exeinto "${CHROMIUM_HOME}"
 	doexe out/Release/chrome
 
@@ -1062,8 +1040,8 @@ src_install() {
 	dosym "${CHROMIUM_HOME}/chromedriver" /usr/bin/chromedriver
 
 	# Allow users to override command-line options (Bug #357629)
-	insinto /etc/chromium
-	newins "${FILESDIR}/chromium.default" "default"
+	#insinto /etc/chromium
+	#newins "${FILESDIR}/chromium.default" "default"
 
 	pushd out/Release/locales > /dev/null || die
 	chromium_remove_language_paks
@@ -1119,16 +1097,6 @@ usetf() {
 	usex "$1" true false
 }
 
-update_caches() {
-	xdg_icon_cache_update
-	xdg_desktop_database_update
-}
-
-pkg_postrm() {
-	use gnome && update_caches
-}
-
 pkg_postinst() {
-	use gnome && update_caches
 	readme.gentoo_print_elog
 }
