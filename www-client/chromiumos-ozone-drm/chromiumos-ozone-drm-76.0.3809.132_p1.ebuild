@@ -277,9 +277,9 @@ src_unpack(){
 
 	#ln -s "chromium-${PV/_*}" "src"	
 	mkdir -p "${S}/third_party/android_sdk/public/platforms/android-28" || die
-	cp "${FILES}/android.jar" "${S}/third_party/android_sdk/public/platforms/android-28/" || die
-	#cp "${FILES}/ink_lib_binary.js" "${S}/third_party/ink/build"
-	#cp "${FILES}/glcore_base.wasm" "${S}/third_party/ink/build/wasm"
+	cp "${FILESDIR}/android.jar" "${S}/third_party/android_sdk/public/platforms/android-28/" || die
+	#cp "${FILESDIR}/ink_lib_binary.js" "${S}/third_party/ink/build"
+	#cp "${FILESDIR}/glcore_base.wasm" "${S}/third_party/ink/build/wasm"
 	touch "${S}/third_party/ink/build/ink_lib_externs.js"
 	touch "${S}/third_party/ink/build/ink_lib_binary.js"
 	touch "${S}/third_party/ink/build/wasm/glcore_base.wasm"
