@@ -887,9 +887,12 @@ src_configure() {
 
 		# Enables the soon-to-be default tcmalloc (https://crbug.com/724399)
 		# It is relevant only when use_allocator == "tcmalloc"
-		"use_new_tcmalloc=$(usetf new-tcmalloc)"
+		#"use_new_tcmalloc=$(usetf new-tcmalloc)" 
 		"use_allocator=\"$(usex tcmalloc tcmalloc none)\""
 		"use_allocator_shim=$(usetf tcmalloc)"
+
+		"use_prebuilt_instrumented_libraries=false"
+		"enable_openscreen=false"
 
 		"rtc_use_gtk=false"
 		"rtc_use_x11=false"
