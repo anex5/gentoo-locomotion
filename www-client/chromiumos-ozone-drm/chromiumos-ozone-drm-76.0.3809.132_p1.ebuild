@@ -198,7 +198,7 @@ PATCHES=(
 	"${FILESDIR}/chromium-disable-installer.patch"
 	# Extra patches taken from openSUSE
 	"${FILESDIR}/chromium-system-libusb-r0.patch"
-	"${FILESDIR}/chromium-system-nspr-r0.patch"
+	#"${FILESDIR}/chromium-system-nspr-r0.patch"
 	"${FILESDIR}/chromium-libusb-interrupt-event-handler-r1.patch"
 	"${FILESDIR}/chromium-system-fix-shim-headers-r0.patch"
 	# Patches from Ungoogled
@@ -209,7 +209,6 @@ PATCHES=(
 	"${FILESDIR}/chromium-fix-nosafebrowsing-build-r0.patch"
  	"${FILESDIR}/chromium-optional-atk-r0.patch"
 	"${FILESDIR}/chromium-optional-dbus-r8.patch"
-	"${FILESDIR}/chromium-76-fix-linking.patch"	
 	"${FILESDIR}/chromium-gclient_args.gni.patch"
 	#"${FILESDIR}/chromium-76-remove-ink.patch"
 	"${FILESDIR}/chromium-76-remove-KioskNext.patch"
@@ -285,15 +284,19 @@ src_unpack(){
 	touch "${S}/third_party/ink/build/wasm/glcore_base.wasm"
 	touch "${S}/third_party/ink/build/wasm/glcore_base.js"
 	touch "${S}/third_party/ink/build/wasm/glcore_wasm_bootstrap_compiled.js"
+	touch "${S}/third_party/ink/build/wasm-threads/pthread-main.js"
+	touch "${S}/third_party/ink/build/wasm-threads/glcore_base.wasm"
+	touch "${S}/third_party/ink/build/wasm-threads/glcore_base.js.mem"
+	touch "${S}/third_party/ink/build/wasm-threads/glcore_wasm_bootstrap_compiled.js"
 
 	# Needed to build NACL and Android stuff
-	mkdir -p "chromium-${PV/_*}/third_party/llvm-build/Release+Asserts/bin"
-	ln -s "${CBUILD}-clang third_party/llvm-build/Release+Asserts/bin/clang"
-	ln -s "${CBUILD}-clang++ third_party/llvm-build/Release+Asserts/bin/clang++"
-	ln -s "${CBUILD}-ar third_party/llvm-build/Release+Asserts/bin/ar"
-	ln -s "${CBUILD}-ar third_party/llvm-build/Release+Asserts/bin/llvm-ar"
-	ln -s "${CBUILD}-nm third_party/llvm-build/Release+Asserts/bin/nm"
-	ln -s "${CBUILD}-nm third_party/llvm-build/Release+Asserts/bin/llvm-nm"
+	mkdir -p "${S}/third_party/llvm-build/Release+Asserts/bin"
+	ln -s "${CBUILD}-clang" "${S}/third_party/llvm-build/Release+Asserts/bin/clang"
+	ln -s "${CBUILD}-clang++" "${S}/third_party/llvm-build/Release+Asserts/bin/clang++"
+	ln -s "${CBUILD}-ar" "${S}/third_party/llvm-build/Release+Asserts/bin/ar"
+	ln -s "${CBUILD}-ar" "${S}/third_party/llvm-build/Release+Asserts/bin/llvm-ar"
+	ln -s "${CBUILD}-nm" "${S}/third_party/llvm-build/Release+Asserts/bin/nm"
+	ln -s "${CBUILD}-nm" "${S}/third_party/llvm-build/Release+Asserts/bin/llvm-nm"
 }
 
 src_prepare() {
