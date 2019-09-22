@@ -3,22 +3,13 @@
 
 EAPI=7
 
-inherit eutils toolchain-funcs
+inherit git-r3 eutils toolchain-funcs
 
 DESCRIPTION="SYSLINUX, PXELINUX, ISOLINUX, EXTLINUX and MEMDISK bootloaders"
 HOMEPAGE="https://www.syslinux.org/"
 
-# Final releases in 6.xx/$PV.tar.* (literal "xx")
-# Testing releases in Testing/$PV/$PV.tar.*
-SRC_URI_DIR=${PV:0:1}.xx
-SRC_URI_TESTING=Testing/${PV:0:4}
-[[ ${PV/_alpha} != $PV ]] && SRC_URI_DIR=$SRC_URI_TESTING
-[[ ${PV/_beta} != $PV ]] && SRC_URI_DIR=$SRC_URI_TESTING
-[[ ${PV/_pre} != $PV ]] && SRC_URI_DIR=$SRC_URI_TESTING
-[[ ${PV/_rc} != $PV ]] && SRC_URI_DIR=$SRC_URI_TESTING
-SRC_URI="mirror://kernel/linux/utils/boot/syslinux/${SRC_URI_DIR}/${P/_/-}.tar.xz"
-#EGIT_REPO_URI="https://repo.or.cz/syslinux"
-#EGIT_COMMIT="458a54133ecdf1685c02294d812cb562fe7bf4c3"
+EGIT_REPO_URI="https://repo.or.cz/syslinux"
+EGIT_COMMIT="458a54133ecdf1685c02294d812cb562fe7bf4c3"
 
 LICENSE="GPL-2"
 SLOT="0"
@@ -30,11 +21,11 @@ RDEPEND="sys-fs/mtools
 		dev-perl/Digest-SHA1"
 DEPEND="${RDEPEND}
 	dev-lang/nasm
+	app-arch/upx
 	>=sys-boot/gnu-efi-3.0u
 	virtual/os-headers"
 
-S=${WORKDIR}/${P/_/-}
-#S=${WORKDIR}/${P}
+S=${WORKDIR}/${P}
 
 # This ebuild is a departure from the old way of rebuilding everything in syslinux
 # This departure is necessary since hpa doesn't support the rebuilding of anything other
@@ -48,9 +39,8 @@ QA_PREBUILT="usr/share/${PN}/*.c32"
 src_prepare() {
 	rm -f gethostip #bug 137081
 
-	eapply "${FILESDIR}"/${PN}-6.03-sysmacros.patch #579928
-	eapply "${FILESDIR}"/${P}-singleloadsegment.patch #662678
-	eapply "${FILESDIR}"/${P}-acpi_off.patch
+	eapply "${FILESDIR}"/syslinux-6.04_pre1-singleloadsegment.patch #662678
+	#eapply "${FILESDIR}"/syslinux-6.04_pre3-acpi_off.patch
 
 	# Don't prestrip or override user LDFLAGS, bug #305783
 	local SYSLINUX_MAKEFILES="extlinux/Makefile linux/Makefile mtools/Makefile \
