@@ -688,10 +688,7 @@ src_configure() {
 	export NM_host=$(tc-getBUILD_NM)
 	export READELF="${CBUILD}-readelf"
 	export READELF_host="${CBUILD}-readelf"
-	# Temporarily use llvm-objcopy to generate split-debug file with non-debug
-	# sections preserved, b/127337806. This workaround only works because
-	# llvm-objcopy currently does not support "--only-keep-debug" flag.
-	export OBJCOPY=llvm-objcopy
+	
 	# Use g++ as the linker driver.
 	export LD="${CXX}"
 	export LD_host=${CXX_host}
@@ -709,6 +706,10 @@ src_configure() {
 		# crbug.com/731335
 		export AR_host="llvm-ar"
 		export RANLIB="llvm-ranlib"
+		# Temporarily use llvm-objcopy to generate split-debug file with non-debug
+		# sections preserved, b/127337806. This workaround only works because
+		# llvm-objcopy currently does not support "--only-keep-debug" flag.
+		export OBJCOPY=llvm-objcopy
 	fi
 
 	# Use system-provided libraries.
@@ -890,7 +891,7 @@ src_configure() {
 		"use_new_tcmalloc=$(usetf tcmalloc)" 
 		"use_allocator=\"$(usex tcmalloc tcmalloc none)\""
 		"use_allocator_shim=$(usetf tcmalloc)"
-		"android_use_tcmalloc=false"
+		#"android_use_tcmalloc=false"
 
 		"use_prebuilt_instrumented_libraries=false"
 		"enable_openscreen=false"
@@ -898,6 +899,8 @@ src_configure() {
 		"rtc_use_gtk=false"
 		"rtc_use_x11=false"
 		"use_gio=false"
+		"enable_vr=false"
+		#"enable_openxr=false"
 		#"use_gconf=false"
 		"use_xkbcommon=$(usetf xkbcommon)"
 	)
