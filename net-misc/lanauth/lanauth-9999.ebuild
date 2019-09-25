@@ -11,7 +11,7 @@ HOMEPAGE="visir@telenet.ru"
 EGIT_REPO_URI="https://github.com/TideSofDarK/lanauth"
 #EGIT_COMMIT=""
 
-LICENSE="THE BEER-WARE LICENSE"
+LICENSE="BEER-WARE"
 SLOT="0"
 IUSE=""
 KEYWORDS="~amd64 ~arm ~x86 ~mips"
