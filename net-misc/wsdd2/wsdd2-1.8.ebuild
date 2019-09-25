@@ -21,13 +21,10 @@ DEPEND="
 "
 
 src_compile() {
-	# By default, it builds a bunch of unittests that are missing wrapper
-	# scripts in the tarball
-	emake CC="$(tc-getCC)" STRIP=true wsdd2
+	emake CC="$(tc-getCC)" wsdd2
 }
 
 src_install() {
-	emake -j1 DESTDIR="${ED}" STRIP=true install wsdd2
 	dosbin wsdd2
 	if use "systemd"; then
 		systemd_dounit "wsdd2.service"
@@ -37,5 +34,5 @@ src_install() {
 }
 
 pkg_postinst() {
-	elog "WSD daemon is part of smbd service. To start use /usr/sbin/wsdd2"	
+	elog "WSD daemon is part of smbd service.\nRun: /usr/sbin/wsdd2"
 }
