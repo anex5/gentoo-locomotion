@@ -14,7 +14,7 @@ EGIT_COMMIT="9b1911358e1929632b15e4fe8527fddc42dc139d"
 LICENSE="GPL-3"
 SLOT="0"
 IUSE="systemd doc"
-KEYWORDS="~amd64 ~arm ~x86 ~mips ~mipsel ~mips64el"
+KEYWORDS="~amd64 ~arm ~x86 ~mips"
 
 DEPEND="
 	dev-vcs/git

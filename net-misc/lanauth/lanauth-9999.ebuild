@@ -14,7 +14,7 @@ EGIT_REPO_URI="https://github.com/TideSofDarK/lanauth"
 LICENSE="THE BEER-WARE LICENSE"
 SLOT="0"
 IUSE=""
-KEYWORDS="~amd64 ~arm ~x86 ~mips ~mipsel ~mips64el"
+KEYWORDS="~amd64 ~arm ~x86 ~mips"
 
 DEPEND="
 	dev-vcs/git
