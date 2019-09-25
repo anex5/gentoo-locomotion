@@ -16,9 +16,7 @@ SLOT="0"
 IUSE="systemd doc"
 KEYWORDS="~amd64 ~arm ~x86 ~mips"
 
-DEPEND="
-	dev-vcs/git
-"
+DEPEND=""
 
 src_compile() {
 	emake CC="$(tc-getCC)" wsdd2
