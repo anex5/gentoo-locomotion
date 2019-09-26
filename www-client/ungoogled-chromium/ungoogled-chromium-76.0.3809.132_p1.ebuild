@@ -249,7 +249,6 @@ PATCHES=(
 	"${FILESDIR}/chromium-fix-nosafebrowsing-build-r0.patch"
  	"${FILESDIR}/chromium-optional-atk-r0.patch"
 	"${FILESDIR}/chromium-optional-dbus-r8.patch"
-	"${FILESDIR}/chromium-76-fix-linking.patch"	
 )
 
 S="${WORKDIR}/chromium-${PV/_*}"
@@ -319,6 +318,7 @@ src_prepare() {
 		eapply "${p}/0001-ozone-wayland-Fix-method-prototype-match.patch" || die
 		eapply "${p}/V4L2/0001-Add-support-for-V4L2VDA-on-Linux.patch" || die
 		eapply "${p}/V4L2/0002-Add-mmap-via-libv4l-to-generic_v4l2_device.patch" || die
+		eapply "${FILESDIR}/chromium-76-fix-linking.patch" || die
 	fi
 
 	# Hack for libusb stuff (taken from openSUSE)
