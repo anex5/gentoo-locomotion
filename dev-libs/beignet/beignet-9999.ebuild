@@ -104,7 +104,7 @@ multilib_src_configure() {
 
 	use "opencl20" || mycmakeargs+=( -DENABLE_OPENCL_20=0 )
 	use "beignet-generic" || mycmakeargs+=( -DGEN_PCI_ID=$(. "${S}"/GetGenID.sh) )
-	use "ocl_icd" || mycmakeargs+=( -DOCLICD_COMPAT=0 )
+	use "ocl-icd" || mycmakeargs+=( -DOCLICD_COMPAT=0 )
 
 	multilib_is_native_abi || mycmakeargs+=(
 		-DLLVM_CONFIG_EXECUTABLE="${EPREFIX}/usr/bin/$(get_abi_CHOST ${ABI})-llvm-config"
