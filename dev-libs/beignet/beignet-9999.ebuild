@@ -36,6 +36,7 @@ COMMON="${PYTHON_DEPS}
 	x11-libs/libdrm[video_cards_intel]
 	x11-libs/libXext
 	x11-libs/libXfixes
+	ocl-icd? ( dev-libs/ocl-icd )
 	!beignet-generic? ( sys-apps/pciutils )
 "
 RDEPEND="${COMMON}
