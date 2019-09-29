@@ -32,9 +32,6 @@ DEPEND="${COMMON}"
 LLVM_MAX_SLOT=9
 
 PATCHES=(
-	"${FILESDIR}/no-debian-multiarch.patch"
-	"${FILESDIR}/${PN}-1.2.0_no-hardcoded-cflags.patch"
-	"${FILESDIR}/llvm-terminfo.patch"
 	"${FILESDIR}/${PN}-1.3.2-Debian-compliant-compiler-flags-handling.patch"
 	"${FILESDIR}/${PN}-1.3.2-support-kfreebsd.patch"
 	"${FILESDIR}/${PN}-1.3.2-reduce-notfound-output.patch"
@@ -44,22 +41,32 @@ PATCHES=(
 	"${FILESDIR}/${PN}-1.3.2-docs-broken-links.patch"
 	"${FILESDIR}/${PN}-1.3.2-cl_accelerator_intel.patch"
 	"${FILESDIR}/${PN}-1.3.2-add-appstream-metadata.patch"
-	"${FILESDIR}/${PN}-1.3.2-static-llvm.patch"
 	"${FILESDIR}/${PN}-1.3.2-grammar.patch"
 	"${FILESDIR}/${PN}-1.3.2-clearer-type-errors.patch"
 	"${FILESDIR}/${PN}-1.3.2-885423.patch"
 	"${FILESDIR}/${PN}-1.3.2-disable-wayland-warning.patch"
 	"${FILESDIR}/${PN}-1.3.2-eventchain-memory-leak.patch"
-	"${FILESDIR}/${PN}-1.3.2-llvm6-support.patch"
-	"${FILESDIR}/${PN}-1.3.2-llvm7-support.patch"
-	"${FILESDIR}/${PN}-1.3.2-llvm9-support.patch"
 	"${FILESDIR}/${PN}-1.3.2-accept-old-create-queue.patch"
 	"${FILESDIR}/${PN}-1.3.2-reduce-notfound-output2.patch"
 	"${FILESDIR}/${PN}-1.3.2-coffeelake.patch"
 	"${FILESDIR}/${PN}-1.3.2-in-order-queue.patch"
 	"${FILESDIR}/${PN}-1.3.2-reproducibility.patch"
 	"${FILESDIR}/${PN}-1.3.2-accept-ignore--g.patch"
+	"${FILESDIR}/no-debian-multiarch.patch"
+	"${FILESDIR}/${PN}-1.2.0_no-hardcoded-cflags.patch"
 )
+
+[ ${LLVM_SLOT} >= 6 ] && PATCHES+=( "${FILESDIR}/${PN}-1.3.2-llvm6-support.patch" )
+[ ${LLVM_SLOT} >= 7 ] && PATCHES+=( "${FILESDIR}/${PN}-1.3.2-llvm7-support.patch" )
+[ ${LLVM_SLOT} >= 8 ] && PATCHES+=( "${FILESDIR}/${PN}-1.3.2-llvm8-support.patch" )
+[ ${LLVM_SLOT} >= 9 ] && PATCHES+=( "${FILESDIR}/${PN}-1.3.2-llvm9-support.patch" )
+
+PATCHES+=( 
+	#"${FILESDIR}/${PN}-1.3.2-static-llvm.patch"
+	"${FILESDIR}/llvm-terminfo.patch"
+	"${FILESDIR}/llvm-libs-tr.patch"
+	"${FILESDIR}/llvm-empty-system-libs.patch"
+ )
 
 DOCS=(
 	docs/.
@@ -96,9 +103,19 @@ multilib_src_configure() {
 	fi
 
 	local mycmakeargs=(
+		-DBEIGNET_INSTALL_DIR="${VENDOR_DIR}"
+		-DCMAKE_INSTALL_LIBDIR="${EPREFIX}/usr/$(get_libdir)"
+		-DCMAKE_BUILD_TYPE=RELEASE
+	)
+
+	mycmakeargs+=(
 		-DCMAKE_INSTALL_PREFIX="${EPREFIX}${VENDOR_DIR}"
 		-DOCLICD_COMPAT=$(usex ocl-icd)
 		$(usex ocl20 "" "-DENABLE_OPENCL_20=0")
+	)
+
+	multilib_is_native_abi || mycmakeargs+=(
+		-DLLVM_CONFIG_EXECUTABLE="${EPREFIX}/usr/bin/$(get_abi_CHOST ${ABI})-llvm-config"
 	)
 
 	cmake-utils_src_configure

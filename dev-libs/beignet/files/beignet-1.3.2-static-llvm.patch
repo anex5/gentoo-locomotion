@@ -12,8 +12,8 @@ Bug: https://bugs.llvm.org/show_bug.cgi?id=30587
 Bug-Debian: https://bugs.debian.org/852746
 Forwarded: https://lists.freedesktop.org/archives/beignet/2019-January/009226.html
 
---- beignet-1.3.0.orig/CMake/FindLLVM.cmake
-+++ beignet-1.3.0/CMake/FindLLVM.cmake
+--- a/CMake/FindLLVM.cmake
++++ b/CMake/FindLLVM.cmake
 @@ -87,18 +87,34 @@ execute_process(
    OUTPUT_STRIP_TRAILING_WHITESPACE
  )
