@@ -240,7 +240,6 @@ PATCHES=(
 	"${FILESDIR}/${PN}-system-nspr-r0.patch"
 	"${FILESDIR}/${PN}-libusb-interrupt-event-handler-r1.patch"
 	"${FILESDIR}/${PN}-system-fix-shim-headers-r0.patch"
-	"${FILESDIR}/${PN}-unbundle-zlib.patch"
 	"${FILESDIR}/${PN}-skia-harmony.patch"
 
 	# Patches from Ungoogled
