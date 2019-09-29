@@ -32,14 +32,33 @@ DEPEND="${COMMON}"
 LLVM_MAX_SLOT=9
 
 PATCHES=(
-	"${FILESDIR}"/no-debian-multiarch.patch
-	"${FILESDIR}"/${PN}-1.3.2_disable-doNegAddOptimization.patch
-	"${FILESDIR}"/${PN}-1.3.2_cmake-llvm-config-multilib.patch
-	"${FILESDIR}"/${PN}-1.3.2_llvm6.patch
-	"${FILESDIR}"/${PN}-1.3.2_llvm7.patch
-	"${FILESDIR}"/${PN}-1.3.1-oclicd_no_upstream_icdfile.patch
-	"${FILESDIR}"/${PN}-1.2.0_no-hardcoded-cflags.patch
-	"${FILESDIR}"/llvm-terminfo.patch
+	"${FILESDIR}/no-debian-multiarch.patch"
+	"${FILESDIR}/${PN}-1.2.0_no-hardcoded-cflags.patch"
+	"${FILESDIR}/llvm-terminfo.patch"
+	"${FILESDIR}/${PN}-1.3.2-Debian-compliant-compiler-flags-handling.patch"
+	"${FILESDIR}/${PN}-1.3.2-support-kfreebsd.patch"
+	"${FILESDIR}/${PN}-1.3.2-reduce-notfound-output.patch"
+	"${FILESDIR}/${PN}-1.3.2-update-docs.patch"
+	"${FILESDIR}/${PN}-1.3.2-ship-test-tool.patch"
+	"${FILESDIR}/${PN}-1.3.2-find-python35.patch"
+	"${FILESDIR}/${PN}-1.3.2-docs-broken-links.patch"
+	"${FILESDIR}/${PN}-1.3.2-cl_accelerator_intel.patch"
+	"${FILESDIR}/${PN}-1.3.2-add-appstream-metadata.patch"
+	"${FILESDIR}/${PN}-1.3.2-static-llvm.patch"
+	"${FILESDIR}/${PN}-1.3.2-grammar.patch"
+	"${FILESDIR}/${PN}-1.3.2-clearer-type-errors.patch"
+	"${FILESDIR}/${PN}-1.3.2-885423.patch"
+	"${FILESDIR}/${PN}-1.3.2-disable-wayland-warning.patch"
+	"${FILESDIR}/${PN}-1.3.2-eventchain-memory-leak.patch"
+	"${FILESDIR}/${PN}-1.3.2-llvm6-support.patch"
+	"${FILESDIR}/${PN}-1.3.2-llvm7-support.patch"
+	"${FILESDIR}/${PN}-1.3.2-llvm9-support.patch"
+	"${FILESDIR}/${PN}-1.3.2-accept-old-create-queue.patch"
+	"${FILESDIR}/${PN}-1.3.2-reduce-notfound-output2.patch"
+	"${FILESDIR}/${PN}-1.3.2-coffeelake.patch"
+	"${FILESDIR}/${PN}-1.3.2-in-order-queue.patch"
+	"${FILESDIR}/${PN}-1.3.2-reproducibility.patch"
+	"${FILESDIR}/${PN}-1.3.2-accept-ignore--g.patch"
 )
 
 DOCS=(
@@ -54,9 +73,7 @@ pkg_setup() {
 }
 
 src_prepare() {
-	# See Bug #593968
-	append-flags -fPIC
-
+	append-flags -fno-strict-aliasing
 	cmake-utils_src_prepare
 	# We cannot run tests because they require permissions to access
 	# the hardware, and building them is very time-consuming.
@@ -66,10 +83,22 @@ src_prepare() {
 multilib_src_configure() {
 	VENDOR_DIR="/usr/$(get_libdir)/OpenCL/vendors/${PN}"
 
+	if [[ ${CC} == clang ]]; then
+		filter-flags -f*graphite -f*loop-*
+		filter-flags -mfpmath* -freorder-blocks-and-partition
+		filter-flags -flto* -fuse-linker-plugin
+		filter-flags -ftracer -fvect-cost-model -ftree*
+	fi
+
+	# Pre-compiled headers otherwise result in redefined symbols (gcc only)
+	if [[ ${CC} == gcc* ]]; then
+		append-flags -fpch-deps
+	fi
+
 	local mycmakeargs=(
 		-DCMAKE_INSTALL_PREFIX="${EPREFIX}${VENDOR_DIR}"
 		-DOCLICD_COMPAT=$(usex ocl-icd)
-		$(usex ocl20 "" "-DENABLE_OPENCL_20=OFF")
+		$(usex ocl20 "" "-DENABLE_OPENCL_20=0")
 	)
 
 	cmake-utils_src_configure
