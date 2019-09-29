@@ -241,10 +241,6 @@ PATCHES=(
 	"${FILESDIR}/${PN}-libusb-interrupt-event-handler-r1.patch"
 	"${FILESDIR}/${PN}-system-fix-shim-headers-r0.patch"
 	"${FILESDIR}/${PN}-skia-harmony.patch"
-
-	# Patches from Ungoogled
-	"${FILESDIR}/${PN}-disable-third-party-lzma-sdk-r0.patch"
-	"${FILESDIR}/${PN}-empty-array-r0.patch"
 	
 	# Personal patches
 	"${FILESDIR}/chromium-fix-nosafebrowsing-build-r0.patch"
