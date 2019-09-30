@@ -296,7 +296,7 @@ src_prepare() {
 	use "system-icu" && eapply "${FILESDIR}/chromium-77-system-icu.patch" || die
 	use "system-jsoncpp" &&	eapply "${FILESDIR}/${PN}-system-jsoncpp-r1.patch" || die
 	use "system-libvpx" && eapply "${FILESDIR}/${PN}-system-vpx-r1.patch" || die
-	has_version "=media-libs/libvpx-1.7*" && eapply "${FILESDIR}/${PN}-vpx-1.7-compatibility-r0.patch" || die
+	#has_version "=media-libs/libvpx-1.7*" && eapply "${FILESDIR}/${PN}-vpx-1.7-compatibility-r0.patch" || die
 	use "system-openjpeg" && eapply "${FILESDIR}/${PN}-system-openjpeg-r1.patch" || die
 	use "convert-dict" && eapply "${FILESDIR}/${PN}-ucf-dict-utility.patch" || die
 	#use "cups" || eapply "${FILESDIR}/chromium-77-no-cups.patch" || die
