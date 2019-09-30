@@ -291,22 +291,22 @@ src_prepare() {
 
 	default
 
-	use "system-harfbuzz" && eapply "${FILESDIR}/chromium-77-system-hb.patch" || die
-	use "system-icu" && eapply "${FILESDIR}/${PN}-system-icu.patch" || die
-	use "system-icu" && eapply "${FILESDIR}/chromium-77-system-icu.patch" || die
-	use "system-jsoncpp" &&	eapply "${FILESDIR}/${PN}-system-jsoncpp-r1.patch" || die
-	use "system-libvpx" && eapply "${FILESDIR}/${PN}-system-vpx-r1.patch" || die
-	#has_version "=media-libs/libvpx-1.7*" && eapply "${FILESDIR}/${PN}-vpx-1.7-compatibility-r0.patch" || die
-	use "system-openjpeg" && eapply "${FILESDIR}/${PN}-system-openjpeg-r1.patch" || die
-	use "convert-dict" && eapply "${FILESDIR}/${PN}-ucf-dict-utility.patch" || die
-	#use "cups" || eapply "${FILESDIR}/chromium-77-no-cups.patch" || die
-	use "clang" && eapply "${FILESDIR}/chromium-77-clang.patch" || die
-	use "gold" && eapply "${FILESDIR}/${PN}-gold-r4.patch" || die
-	use "swiftshader" || eapply "${FILESDIR}/${PN}-disable-swiftshader.patch" || die
-	use "widevine" && eapply "${FILESDIR}/chromium-widevine.patch" || die
-	use "system-libdrm" && eapply "${FILESDIR}/chromium-system-libdrm.patch" || die
-	use "vaapi" && eapply "${FILESDIR}/${PN}-enable-vaapi.patch" || die
-	use "vaapi" && eapply "${FILESDIR}/${PN}-fix-vaapi.patch" || die
+	use "system-harfbuzz" && eapply "${FILESDIR}/chromium-77-system-hb.patch" 
+	use "system-icu" && eapply "${FILESDIR}/${PN}-system-icu.patch"
+	use "system-icu" && eapply "${FILESDIR}/chromium-77-system-icu.patch"
+	use "system-jsoncpp" &&	eapply "${FILESDIR}/${PN}-system-jsoncpp-r1.patch"
+	use "system-libvpx" && eapply "${FILESDIR}/${PN}-system-vpx-r1.patch"
+	#has_version "=media-libs/libvpx-1.7*" && eapply "${FILESDIR}/${PN}-vpx-1.7-compatibility-r0.patch"
+	use "system-openjpeg" && eapply "${FILESDIR}/${PN}-system-openjpeg-r1.patch" 
+	use "convert-dict" && eapply "${FILESDIR}/${PN}-ucf-dict-utility.patch"
+	#use "cups" || eapply "${FILESDIR}/chromium-77-no-cups.patch"
+	use "clang" && eapply "${FILESDIR}/chromium-77-clang.patch"
+	use "gold" && eapply "${FILESDIR}/${PN}-gold-r4.patch"
+	use "swiftshader" || eapply "${FILESDIR}/${PN}-disable-swiftshader.patch"
+	use "widevine" && eapply "${FILESDIR}/chromium-widevine.patch"
+	use "system-libdrm" && eapply "${FILESDIR}/chromium-system-libdrm.patch"
+	use "vaapi" && eapply "${FILESDIR}/${PN}-enable-vaapi.patch"
+	use "vaapi" && eapply "${FILESDIR}/${PN}-fix-vaapi.patch"
 
 	if use "optimize-webui" ; then
 		mkdir -p third_party/node/linux/node-linux-x64/bin || die
@@ -317,10 +317,10 @@ src_prepare() {
 	# Apply extra patches (taken from Igalia)
 	if use "wayland" ; then
 		local p="${FILESDIR}/igalia-$(ver_cut 1-1)"
-		eapply "${p}/0001-ozone-wayland-Implement-CreateNativePixmapAsync.patch" || die
-		eapply "${p}/V4L2/0001-Add-support-for-V4L2VDA-on-Linux.patch" || die
-		eapply "${p}/V4L2/0002-Add-mmap-via-libv4l-to-generic_v4l2_device.patch" || die
-		eapply "${FILESDIR}/chromium-76-fix-linking.patch" || die
+		eapply "${p}/0001-ozone-wayland-Implement-CreateNativePixmapAsync.patch" 
+		eapply "${p}/V4L2/0001-Add-support-for-V4L2VDA-on-Linux.patch" 
+		eapply "${p}/V4L2/0002-Add-mmap-via-libv4l-to-generic_v4l2_device.patch" 
+		eapply "${FILESDIR}/chromium-76-fix-linking.patch" 
 	fi
 
 	# Hack for libusb stuff (taken from openSUSE)
