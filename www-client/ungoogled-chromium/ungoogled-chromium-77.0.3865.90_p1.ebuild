@@ -245,7 +245,7 @@ PATCHES=(
 	# Personal patches
 	"${FILESDIR}/chromium-fix-nosafebrowsing-build-r0.patch"
  	"${FILESDIR}/chromium-optional-atk-r0.patch"
-	"${FILESDIR}/chromium-optional-dbus-r8.patch"
+	"${FILESDIR}/chromium-optional-dbus-r9.patch"
 )
 
 S="${WORKDIR}/chromium-${PV/_*}"
