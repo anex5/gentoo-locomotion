@@ -366,6 +366,7 @@ src_prepare() {
 		base/third_party/dmg_fp
 		base/third_party/dynamic_annotations
 		base/third_party/icu
+		base/third_party/nspr
 		base/third_party/superfasthash
 		base/third_party/symbolize
 		base/third_party/valgrind
