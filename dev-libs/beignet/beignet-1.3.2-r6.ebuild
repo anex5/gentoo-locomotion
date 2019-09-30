@@ -54,32 +54,36 @@ PATCHES=(
 	"${FILESDIR}/${PN}-1.3.2-accept-ignore--g.patch"
 	"${FILESDIR}/no-debian-multiarch.patch"
 	"${FILESDIR}/${PN}-1.2.0_no-hardcoded-cflags.patch"
-)
-
-[[ ${LLVM_SLOT} -gt 6 ]] && PATCHES+=( "${FILESDIR}/${PN}-1.3.2-llvm6-support.patch" )
-[[ ${LLVM_SLOT} -gt 7 ]] && PATCHES+=( "${FILESDIR}/${PN}-1.3.2-llvm7-support.patch" )
-[[ ${LLVM_SLOT} -gt 8 ]] && PATCHES+=( "${FILESDIR}/${PN}-1.3.2-llvm8-support.patch" )
-[[ ${LLVM_SLOT} -gt 9 ]] && PATCHES+=( "${FILESDIR}/${PN}-1.3.2-llvm9-support.patch" )
-
-PATCHES+=( 
 	#"${FILESDIR}/${PN}-1.3.2-static-llvm.patch"
 	"${FILESDIR}/llvm-terminfo.patch"
 	"${FILESDIR}/llvm-libs-tr.patch"
 	"${FILESDIR}/llvm-empty-system-libs.patch"
- )
+)
 
 DOCS=(
 	docs/.
 )
-
-S="${WORKDIR}"/Beignet-${PV}-Source
 
 pkg_setup() {
 	llvm_pkg_setup
 	python_setup
 }
 
+get_llvm_slot() {
+	local prefix=$(get_llvm_prefix "${LLVM_MAX_SLOT}")
+	echo "${prefix##*\/}"
+}
+
+S="${WORKDIR}"/Beignet-${PV}-Source
+
 src_prepare() {
+	local LLVM_SLOT=$(get_llvm_slot)
+	
+	[[ ${LLVM_SLOT} -ge 6 ]] && eapply "${FILESDIR}/${PN}-1.3.2-llvm6-support.patch"
+	[[ ${LLVM_SLOT} -ge 7 ]] && eapply "${FILESDIR}/${PN}-1.3.2-llvm7-support.patch"
+	[[ ${LLVM_SLOT} -ge 8 ]] && eapply "${FILESDIR}/${PN}-1.3.2-llvm8-support.patch"
+	[[ ${LLVM_SLOT} -ge 9 ]] && eapply "${FILESDIR}/${PN}-1.3.2-llvm9-support.patch"
+
 	append-flags -fno-strict-aliasing
 	cmake-utils_src_prepare
 	# We cannot run tests because they require permissions to access
