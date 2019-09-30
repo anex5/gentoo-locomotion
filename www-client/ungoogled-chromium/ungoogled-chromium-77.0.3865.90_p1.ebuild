@@ -237,7 +237,7 @@ PATCHES=(
 
 	# Extra patches taken from openSUSE
 	"${FILESDIR}/${PN}-system-libusb-r0.patch"
-	"${FILESDIR}/${PN}-system-nspr-r0.patch"
+	#"${FILESDIR}/${PN}-system-nspr-r0.patch"
 	"${FILESDIR}/${PN}-libusb-interrupt-event-handler-r1.patch"
 	"${FILESDIR}/${PN}-system-fix-shim-headers-r0.patch"
 	"${FILESDIR}/${PN}-skia-harmony.patch"
@@ -851,7 +851,7 @@ src_configure() {
 
 		# Additional flags
 		"is_component_build=$(usetf component-build)"
-		"enable_desktop_in_product_help=false"
+		#"enable_desktop_in_product_help=false"
 		"enable_offline_pages=false" #Android
 		"closure_compile=$(usetf closure-compile)"
 		"enable_swiftshader=$(usetf swiftshader)"
@@ -866,6 +866,7 @@ src_configure() {
 		"rtc_build_libevent=$(usetf udev)"
 		"rtc_enable_libevent=$(usetf udev)"
 		"is_desktop_linux=true"
+		"enable_openscreen=false" #enabling affects system-jsoncpp
 
 		# Enables the soon-to-be default tcmalloc (https://crbug.com/724399)
 		# It is relevant only when use_allocator == "tcmalloc"
