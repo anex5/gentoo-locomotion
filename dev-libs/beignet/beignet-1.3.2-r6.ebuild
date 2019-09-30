@@ -56,10 +56,10 @@ PATCHES=(
 	"${FILESDIR}/${PN}-1.2.0_no-hardcoded-cflags.patch"
 )
 
-[ ${LLVM_SLOT} >= 6 ] && PATCHES+=( "${FILESDIR}/${PN}-1.3.2-llvm6-support.patch" )
-[ ${LLVM_SLOT} >= 7 ] && PATCHES+=( "${FILESDIR}/${PN}-1.3.2-llvm7-support.patch" )
-[ ${LLVM_SLOT} >= 8 ] && PATCHES+=( "${FILESDIR}/${PN}-1.3.2-llvm8-support.patch" )
-[ ${LLVM_SLOT} >= 9 ] && PATCHES+=( "${FILESDIR}/${PN}-1.3.2-llvm9-support.patch" )
+[[ ${LLVM_SLOT} -gt 6 ]] && PATCHES+=( "${FILESDIR}/${PN}-1.3.2-llvm6-support.patch" )
+[[ ${LLVM_SLOT} -gt 7 ]] && PATCHES+=( "${FILESDIR}/${PN}-1.3.2-llvm7-support.patch" )
+[[ ${LLVM_SLOT} -gt 8 ]] && PATCHES+=( "${FILESDIR}/${PN}-1.3.2-llvm8-support.patch" )
+[[ ${LLVM_SLOT} -gt 9 ]] && PATCHES+=( "${FILESDIR}/${PN}-1.3.2-llvm9-support.patch" )
 
 PATCHES+=( 
 	#"${FILESDIR}/${PN}-1.3.2-static-llvm.patch"
