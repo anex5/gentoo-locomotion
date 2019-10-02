@@ -463,7 +463,7 @@ src_install-libs() {
 		nv_libdir="${NV_OBJ}"/32
 	fi
 
-#	if use X; then
+	if use X; then
 		NV_GLX_LIBRARIES=(
 			"libEGL.so.$(usex compat ${NV_SOVER} 1.1.0) ${GL_ROOT}"
 			"libEGL_nvidia.so.${NV_SOVER} ${GL_ROOT}"
@@ -492,13 +492,6 @@ src_install-libs() {
 			"libvdpau_nvidia.so.${NV_SOVER}"
 		)
 
-		if use wayland && has_multilib_profile && [[ ${ABI} == "amd64" ]];
-		then
-			NV_GLX_LIBRARIES+=(
-				"libnvidia-egl-wayland.so.1.0.2"
-			)
-		fi
-
 		if use kernel_linux && has_multilib_profile && [[ ${ABI} == "amd64" ]];
 		then
 			NV_GLX_LIBRARIES+=(
@@ -518,11 +511,45 @@ src_install-libs() {
 				"tls/libnvidia-tls.so.${NV_SOVER}"
 			)
 		fi
+	fi
 
-		for NV_LIB in "${NV_GLX_LIBRARIES[@]}"; do
-			donvidia "${nv_libdir}"/${NV_LIB}
-		done
-#	fi
+	if use wayland && [[ ${ABI} == "amd64" ]];
+	then
+		NV_GLX_LIBRARIES+=(
+			"libEGL.so.$(usex compat ${NV_SOVER} 1.1.0) ${GL_ROOT}"
+			"libEGL_nvidia.so.${NV_SOVER} ${GL_ROOT}"
+			"libGL.so.$(usex compat ${NV_SOVER} 1.7.0) ${GL_ROOT}"
+			"libGLESv1_CM.so.1.2.0 ${GL_ROOT}"
+			"libGLESv1_CM_nvidia.so.${NV_SOVER} ${GL_ROOT}"
+			"libGLESv2.so.2.1.0 ${GL_ROOT}"
+			"libGLESv2_nvidia.so.${NV_SOVER} ${GL_ROOT}"
+			"libGLX.so.0 ${GL_ROOT}"
+			"libGLX_nvidia.so.${NV_SOVER} ${GL_ROOT}"
+			"libGLdispatch.so.0 ${GL_ROOT}"
+			"libOpenCL.so.1.0.0 ${CL_ROOT}"
+			"libOpenGL.so.0 ${GL_ROOT}"
+			"libnvidia-egl-wayland.so.1.0.2"
+			"libnvidia-wfb.so.${NV_SOVER}"
+			"libnvidia-ml.so.${NV_SOVER}"
+			"tls/libnvidia-tls.so.${NV_SOVER}"
+			"libcuda.so.${NV_SOVER}"
+			"libnvcuvid.so.${NV_SOVER}"
+			"libnvidia-compiler.so.${NV_SOVER}"
+			"libnvidia-eglcore.so.${NV_SOVER}"
+			"libnvidia-encode.so.${NV_SOVER}"
+			"libnvidia-fatbinaryloader.so.${NV_SOVER}"
+			"libnvidia-fbc.so.${NV_SOVER}"
+			"libnvidia-glcore.so.${NV_SOVER}"
+			"libnvidia-glsi.so.${NV_SOVER}"
+			"libnvidia-ifr.so.${NV_SOVER}"
+			"libnvidia-opencl.so.${NV_SOVER}"
+			"libnvidia-ptxjitcompiler.so.${NV_SOVER}"
+		)
+	fi
+
+	for NV_LIB in "${NV_GLX_LIBRARIES[@]}"; do
+		donvidia "${nv_libdir}"/${NV_LIB}
+	done
 }
 
 pkg_preinst() {
