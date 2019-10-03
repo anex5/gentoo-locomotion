@@ -24,7 +24,7 @@ index 000000000000..0f9f42265a7a
 --- /dev/null
 +++ b/include/uapi/linux/rkisp1-config.h
 @@ -0,0 +1,757 @@
-+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
++// SPDX-License-Identifier: (GPL-2.0+ OR MIT) WITH Linux-syscall-note 
 +/*
 + * Rockchip isp1 driver
 + * Copyright (C) 2017 Rockchip Electronics Co., Ltd.

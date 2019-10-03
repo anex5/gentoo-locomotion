@@ -22,7 +22,7 @@ index 000000000000..463f97cf01c4
 --- /dev/null
 +++ b/include/uapi/linux/media/h264-ctrls-legacy.h
 @@ -0,0 +1,168 @@
-+/* SPDX-License-Identifier: GPL-2.0 */
++/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
 +/*
 + * These are the H.264 state controls for use with stateless H.264
 + * codec drivers.

@@ -37,7 +37,7 @@ index 000000000000..6cc2eeea4c90
 --- /dev/null
 +++ b/include/uapi/linux/media/vp8-ctrls.h
 @@ -0,0 +1,112 @@
-+/* SPDX-License-Identifier: GPL-2.0 */
++/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
 +/*
 + * These are the VP8 state controls for use with stateless VP8
 + * codec drivers.

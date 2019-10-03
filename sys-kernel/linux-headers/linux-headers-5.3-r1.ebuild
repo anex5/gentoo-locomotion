@@ -38,7 +38,7 @@ src_prepare() {
 	eapply "${FILESDIR}/0007-media-videodev2.h-add-IPU3-raw10-color.patch"
 	eapply "${FILESDIR}/0008-videodev2.h-add-IPU3-meta-buffer-format.patch"
 	eapply "${FILESDIR}/0009-uapi-intel-ipu3-Add-user-space-ABI-definitions.patch"
-	eapply "${FILESDIR}/0010-virtwl-add-virtwl-driver.patch"
+	#eapply "${FILESDIR}/0010-virtwl-add-virtwl-driver.patch"
 	#eapply "${FILESDIR}/0011-BACKPORT-FROMLIST-v4l-Add-support-for-V4L2_BUF_TYPE_.patch"
 	eapply "${FILESDIR}/0012-FROMLIST-media-rkisp1-Add-user-space-ABI-definitions.patch"
 	eapply "${FILESDIR}/0013-FROMLIST-media-videodev2.h-v4l2-ioctl-add-rkisp1-met.patch"

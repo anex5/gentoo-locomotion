@@ -30,7 +30,7 @@ index 000000000000..019b7fdb876b
 --- /dev/null
 +++ b/include/uapi/linux/intel-ipu3.h
 @@ -0,0 +1,2827 @@
-+/* SPDX-License-Identifier: GPL-2.0 */
++/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
 +/* Copyright (C) 2017 - 2018 Intel Corporation */
 +
 +#ifndef __IPU3_UAPI_H
