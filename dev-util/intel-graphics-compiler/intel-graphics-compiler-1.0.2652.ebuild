@@ -34,6 +34,7 @@ multilib_src_configure() {
 		-DCMAKE_LIBRARY_PATH=$(get_llvm_prefix)/$(get_libdir)
 		-DIGC_OPTION__FORCE_SYSTEM_LLVM=ON
 		-DIGC_PREFERRED_LLVM_VERSION=9
+		-DIGC_ShaderDumpEnable=0
 	)
 	cmake-utils_src_configure
 }

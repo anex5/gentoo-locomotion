@@ -20,11 +20,9 @@ IUSE="ocl-icd ocl20"
 BDEPEND="${PYTHON_DEPS}
 	virtual/pkgconfig"
 COMMON="app-eselect/eselect-opencl
-	media-libs/mesa[X(+),${MULTILIB_USEDEP}]
+	media-libs/mesa[${MULTILIB_USEDEP}]
 	sys-devel/clang:=[static-analyzer,${MULTILIB_USEDEP}]
 	>=x11-libs/libdrm-2.4.70[video_cards_intel,${MULTILIB_USEDEP}]
-	x11-libs/libXext[${MULTILIB_USEDEP}]
-	x11-libs/libXfixes[${MULTILIB_USEDEP}]
 	ocl-icd? ( dev-libs/ocl-icd )"
 RDEPEND="${COMMON}"
 DEPEND="${COMMON}"
@@ -77,14 +75,16 @@ get_llvm_slot() {
 S="${WORKDIR}"/Beignet-${PV}-Source
 
 src_prepare() {
-	local LLVM_SLOT=$(get_llvm_slot)
+	if tc-is-clang; then
+		local LLVM_SLOT=$(get_llvm_slot)
 	
-	[[ ${LLVM_SLOT} -ge 6 ]] && eapply "${FILESDIR}/${PN}-1.3.2-llvm6-support.patch"
-	[[ ${LLVM_SLOT} -ge 7 ]] && eapply "${FILESDIR}/${PN}-1.3.2-llvm7-support.patch"
-	[[ ${LLVM_SLOT} -ge 8 ]] && eapply "${FILESDIR}/${PN}-1.3.2-llvm8-support.patch"
-	[[ ${LLVM_SLOT} -ge 9 ]] && eapply "${FILESDIR}/${PN}-1.3.2-llvm9-support.patch"
+		[[ ${LLVM_SLOT} -ge 6 ]] && eapply "${FILESDIR}/${PN}-1.3.2-llvm6-support.patch"
+		[[ ${LLVM_SLOT} -ge 7 ]] && eapply "${FILESDIR}/${PN}-1.3.2-llvm7-support.patch"
+		[[ ${LLVM_SLOT} -ge 8 ]] && eapply "${FILESDIR}/${PN}-1.3.2-llvm8-support.patch"
+		[[ ${LLVM_SLOT} -ge 9 ]] && eapply "${FILESDIR}/${PN}-1.3.2-llvm9-support.patch"
 
-	append-flags -fno-strict-aliasing
+		append-flags -fno-strict-aliasing
+	fi
 	cmake-utils_src_prepare
 	# We cannot run tests because they require permissions to access
 	# the hardware, and building them is very time-consuming.
@@ -94,7 +94,7 @@ src_prepare() {
 multilib_src_configure() {
 	VENDOR_DIR="/usr/$(get_libdir)/OpenCL/vendors/${PN}"
 
-	if [[ ${CC} == clang ]]; then
+	if tc-is-clang; then
 		filter-flags -f*graphite -f*loop-*
 		filter-flags -mfpmath* -freorder-blocks-and-partition
 		filter-flags -flto* -fuse-linker-plugin
@@ -102,7 +102,7 @@ multilib_src_configure() {
 	fi
 
 	# Pre-compiled headers otherwise result in redefined symbols (gcc only)
-	if [[ ${CC} == gcc* ]]; then
+	if tc-is-gcc; then
 		append-flags -fpch-deps
 	fi
 
