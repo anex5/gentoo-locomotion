@@ -19,6 +19,8 @@ DEPEND="${COMMON}
 	dev-util/spirv-llvm-translator:9=[${MULTILIB_USEDEP}]"
 RDEPEND="${COMMON}"
 
+RESTRICT="mirror"
+
 LLVM_MAX_SLOT=9
 
 PATCHES=(

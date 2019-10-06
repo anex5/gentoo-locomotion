@@ -18,17 +18,19 @@ COMMON="sys-devel/llvm:9=[${MULTILIB_USEDEP}]
 DEPEND="${COMMON}"
 RDEPEND="${COMMON}"
 
+RESTRICT="mirror"
+
 LLVM_MAX_SLOT=9
 
 PATCHES=(
 	"${FILESDIR}"/${PN}-1.0.9-no_Werror.patch
-	"${FILESDIR}"/${PN}-1.0.9-opencl-clang_solib_filename.patch
 )
 
 S="${WORKDIR}"/${PN}-igc-${PV}
 
 multilib_src_configure() {
 	local mycmakeargs=(
+		-DCMAKE_BUILD_TYPE=RELEASE
 		-DCMAKE_LIBRARY_PATH=$(get_llvm_prefix)/$(get_libdir)
 		-DIGC_OPTION__FORCE_SYSTEM_LLVM=ON
 		-DIGC_PREFERRED_LLVM_VERSION=9

@@ -11,8 +11,7 @@ MY_P="${MY_PN}-${MY_PV}"
 
 DESCRIPTION="Bi-directional translator between SPIR-V and LLVM IR"
 HOMEPAGE="https://github.com/KhronosGroup/SPIRV-LLVM-Translator"
-SRC_URI="https://github.com/KhronosGroup/${MY_PN}/archive/v${MY_PV}.tar.gz -> ${P}.tar.gz
-	https://dev.gentoo.org/~marecki/dists/${PN}/${PN}-8.0.0.1-LowerOpenCL_new_block_representation.patch.xz"
+SRC_URI="https://github.com/KhronosGroup/${MY_PN}/archive/v${MY_PV}.tar.gz -> ${P}.tar.gz"
 
 LICENSE="UoI-NCSA"
 SLOT="9"
@@ -29,7 +28,6 @@ RDEPEND="${COMMON}"
 LLVM_MAX_SLOT=9
 
 PATCHES=(
-	#"${WORKDIR}"/${PN}-8.0.0.1-LowerOpenCL_new_block_representation.patch
 	"${FILESDIR}"/${PN}-8.0.0.1-no_pkgconfig_files.patch
 )
 
@@ -42,6 +40,7 @@ multilib_src_configure() {
 	local mycmakeargs=(
 		-DCMAKE_INSTALL_PREFIX="$(get_llvm_prefix)"
 		$(usex test "-DLLVM_INCLUDE_TESTS=ON" "")
+		-DLLVM_SPIRV_INCLUDE_TESTS=OFF
 	)
 	cmake-utils_src_configure
 }
