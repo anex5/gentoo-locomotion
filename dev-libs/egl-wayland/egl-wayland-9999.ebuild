@@ -50,11 +50,12 @@ src_install(){
 	else
 		VER=${PV}
 	fi
-	into .libs
-	dolib.so libnvidia-egl-wayland.so.${VER}
+	into "${S}/.libs"
+	dolib.so "${S}/.libs/libnvidia-egl-wayland.so.${VER}"
+	
 	local v
 	for v in libnvidia-egl-wayland.so{,.{${VER%%.*},${VER%.*}}} ; do
-		dosym llibnvidia-egl-wayland.so.${VER} /usr/$(get_libdir)/${v}
+		dosym libnvidia-egl-wayland.so.${VER} /usr/$(get_libdir)/${v}
 	done
 	use static-libs && dolib.a libnvidia-egl-wayland.a
 	
