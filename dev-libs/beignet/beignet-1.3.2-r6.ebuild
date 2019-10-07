@@ -23,6 +23,8 @@ COMMON="app-eselect/eselect-opencl
 	media-libs/mesa[${MULTILIB_USEDEP}]
 	sys-devel/clang:=[static-analyzer,${MULTILIB_USEDEP}]
 	>=x11-libs/libdrm-2.4.70[video_cards_intel,${MULTILIB_USEDEP}]
+	x11-libs/libXext[${MULTILIB_USEDEP}]
+	x11-libs/libXfixes[${MULTILIB_USEDEP}]
 	ocl-icd? ( dev-libs/ocl-icd )"
 RDEPEND="${COMMON}"
 DEPEND="${COMMON}"
@@ -75,16 +77,16 @@ get_llvm_slot() {
 S="${WORKDIR}"/Beignet-${PV}-Source
 
 src_prepare() {
-	if tc-is-clang; then
-		local LLVM_SLOT=$(get_llvm_slot)
-	
-		[[ ${LLVM_SLOT} -ge 6 ]] && eapply "${FILESDIR}/${PN}-1.3.2-llvm6-support.patch"
-		[[ ${LLVM_SLOT} -ge 7 ]] && eapply "${FILESDIR}/${PN}-1.3.2-llvm7-support.patch"
-		[[ ${LLVM_SLOT} -ge 8 ]] && eapply "${FILESDIR}/${PN}-1.3.2-llvm8-support.patch"
-		[[ ${LLVM_SLOT} -ge 9 ]] && eapply "${FILESDIR}/${PN}-1.3.2-llvm9-support.patch"
 
-		append-flags -fno-strict-aliasing
-	fi
+	local LLVM_SLOT=$(get_llvm_slot)
+	
+	[[ ${LLVM_SLOT} -ge 6 ]] && eapply "${FILESDIR}/${PN}-1.3.2-llvm6-support.patch"
+	[[ ${LLVM_SLOT} -ge 7 ]] && eapply "${FILESDIR}/${PN}-1.3.2-llvm7-support.patch"
+	[[ ${LLVM_SLOT} -ge 8 ]] && eapply "${FILESDIR}/${PN}-1.3.2-llvm8-support.patch"
+	[[ ${LLVM_SLOT} -ge 9 ]] && eapply "${FILESDIR}/${PN}-1.3.2-llvm9-support.patch"
+
+	append-flags -fno-strict-aliasing
+
 	cmake-utils_src_prepare
 	# We cannot run tests because they require permissions to access
 	# the hardware, and building them is very time-consuming.
@@ -105,6 +107,8 @@ multilib_src_configure() {
 	if tc-is-gcc; then
 		append-flags -fpch-deps
 	fi
+
+	append-cxxflags -fPIC
 
 	local mycmakeargs=(
 		-DBEIGNET_INSTALL_DIR="${VENDOR_DIR}"
