@@ -20,7 +20,7 @@ RDEPEND="
 	dev-python/six[${PYTHON_USEDEP}]
 	dev-python/click[${PYTHON_USEDEP}]
 	dev-python/unicodecsv[${PYTHON_USEDEP}]
-	
+	dev-python/normality[${PYTHON_USEDEP}]
 	test? (
 		dev-python/nose[${PYTHON_USEDEP}]
 		dev-python/coverage[${PYTHON_USEDEP}]
