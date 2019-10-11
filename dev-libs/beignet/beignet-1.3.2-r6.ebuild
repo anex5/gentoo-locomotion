@@ -108,7 +108,8 @@ multilib_src_configure() {
 		append-flags -fpch-deps
 	fi
 
-	append-cxxflags -fPIC
+	# See Bug #593968
+	append-flags -fPIC
 
 	local mycmakeargs=(
 		-DBEIGNET_INSTALL_DIR="${VENDOR_DIR}"
