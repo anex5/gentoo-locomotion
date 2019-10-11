@@ -1,13 +1,7 @@
-Upstream-Status: Backport
-
-https://crrev.com/c/1728655
-
-Signed-off-by: Maksim Sisov <msisov@igalia.com>
----
-From c9b2ec4801d317817c786e16d5d9c7bec187e8e3 Mon Sep 17 00:00:00 2001
+From 5543ce4044356138c590f1602c25bcd7cdd98169 Mon Sep 17 00:00:00 2001
 From: Maksim Sisov <msisov@igalia.com>
 Date: Thu, 1 Aug 2019 08:22:39 +0000
-Subject: [PATCH] [ozone/wayland] Implement CreateNativePixmapAsync
+Subject: [PATCH 6/6] [ozone/wayland] Implement CreateNativePixmapAsync
 
 Fix native GpuMemoryBuffers for Ozone/Wayland by implementing
 non implemented CreateNativePixmapAsync call.
@@ -24,10 +18,10 @@ Cr-Commit-Position: refs/heads/master@{#683102}
  2 files changed, 19 insertions(+)
 
 diff --git a/ui/ozone/platform/wayland/gpu/wayland_surface_factory.cc b/ui/ozone/platform/wayland/gpu/wayland_surface_factory.cc
-index b5dba5fd525b..2446ce76298f 100644
+index a5db42ef1b18..789488397808 100644
 --- a/ui/ozone/platform/wayland/gpu/wayland_surface_factory.cc
 +++ b/ui/ozone/platform/wayland/gpu/wayland_surface_factory.cc
-@@ -168,6 +168,19 @@ scoped_refptr<gfx::NativePixmap> WaylandSurfaceFactory::CreateNativePixmap(
+@@ -170,6 +170,19 @@ scoped_refptr<gfx::NativePixmap> WaylandSurfaceFactory::CreateNativePixmap(
  #endif
  }
  

@@ -13,13 +13,13 @@ CHROMIUM_LANGS="
 
 inherit check-reqs chromium-2 desktop flag-o-matic ninja-utils pax-utils python-r1 readme.gentoo-r1 toolchain-funcs xdg-utils
 
-UGC_PV="${PV/_p/-}"
-# UGC_PV="76.0.3809.100-1"
+#UGC_PV="${PV/_p/-}"
+UGC_PV="77.0.3865.90-1"
 UGC_P="${PN}-${UGC_PV}"
 UGC_WD="${WORKDIR}/${UGC_P}"
 
 DESCRIPTION="Modifications to Chromium for removing Google integration and enhancing privacy"
-HOMEPAGE="https://github.com/Eloston/ungoogled-chromium https://www.chromium.org/ https://github.com/Igalia/chromium"
+HOMEPAGE="https://github.com/Eloston/ungoogled-chromium https://www.chromium.org/"
 
 SRC_URI="
 	https://commondatastorage.googleapis.com/chromium-browser-official/chromium-${PV/_*}.tar.xz
@@ -225,7 +225,6 @@ PATCHES=(
 	"${FILESDIR}/chromium-77-fix-gn-gen.patch"
 	"${FILESDIR}/chromium-77-blink-include.patch"
 	"${FILESDIR}/chromium-77-std-string.patch"
-	"${FILESDIR}/chromium-77-no-cups.patch"
 	"${FILESDIR}/chromium-77-gcc-abstract.patch"
 	"${FILESDIR}/chromium-77-gcc-include.patch"
 
@@ -299,7 +298,7 @@ src_prepare() {
 	#has_version "=media-libs/libvpx-1.7*" && eapply "${FILESDIR}/${PN}-vpx-1.7-compatibility-r0.patch"
 	use "system-openjpeg" && eapply "${FILESDIR}/${PN}-system-openjpeg-r1.patch" 
 	use "convert-dict" && eapply "${FILESDIR}/${PN}-ucf-dict-utility.patch"
-	#use "cups" || eapply "${FILESDIR}/chromium-77-no-cups.patch"
+	use "cups" || eapply "${FILESDIR}/chromium-77-no-cups.patch"
 	use "clang" && eapply "${FILESDIR}/chromium-77-clang.patch"
 	use "gold" && eapply "${FILESDIR}/${PN}-gold-r4.patch"
 	use "swiftshader" || eapply "${FILESDIR}/${PN}-disable-swiftshader.patch"
@@ -317,10 +316,15 @@ src_prepare() {
 	# Apply extra patches (taken from Igalia)
 	if use "wayland" ; then
 		local p="${FILESDIR}/igalia-$(ver_cut 1-1)"
-		eapply "${p}/0001-ozone-wayland-Implement-CreateNativePixmapAsync.patch" 
+		eapply "${p}/0001-ozone-wayland-Sway-avoid-sending-presentation-early.patch"
+        eapply "${p}/0002-ozone-wayland-Use-mutex-before-accessing-surfaces-ma.patch"
+        eapply "${p}/0003-ozone-wayland-Stop-using-wl_display_roundtrip.patch"
+        eapply "${p}/0004-ozone-wayland-Extract-window-management-methods-to-o.patch"
+        eapply "${p}/0005-ozone-wayland-Do-not-use-possibly-blocking-dispatch-.patch"
+        eapply "${p}/0006-ozone-wayland-Implement-CreateNativePixmapAsync.patch" 
 		eapply "${p}/V4L2/0001-Add-support-for-V4L2VDA-on-Linux.patch" 
 		eapply "${p}/V4L2/0002-Add-mmap-via-libv4l-to-generic_v4l2_device.patch" 
-		eapply "${FILESDIR}/chromium-76-fix-linking.patch" 
+        eapply "${FILESDIR}/chromium-76-fix-linking.patch"
 	fi
 
 	# Hack for libusb stuff (taken from openSUSE)
@@ -780,7 +784,7 @@ src_configure() {
 		"treat_warnings_as_errors=false"
 		"use_gnome_keyring=false" # Deprecated by libsecret
 		"use_jumbo_build=$(usetf jumbo-build)"
-		"jumbo_file_merge_limit=50"
+		#"jumbo_file_merge_limit=40"
 		"use_official_google_api_keys=false"
 
 		"use_sysroot=false"
@@ -914,8 +918,6 @@ src_configure() {
 			"ozone_platform_headless=true"
 			"ozone_platform_gbm=true"
 			"ozone_platform=\"wayland\""
-			"enable_mus=false"
-			#"enable_wayland_server=true" #Exo parts (aura shell)
 			"enable_background_mode=true"
 			#"use_system_minigbm=$(usetf system-minigbm)"
 			"use_system_minigbm=false"
