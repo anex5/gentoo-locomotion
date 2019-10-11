@@ -85,8 +85,6 @@ src_prepare() {
 	[[ ${LLVM_SLOT} -ge 8 ]] && eapply "${FILESDIR}/${PN}-1.3.2-llvm8-support.patch"
 	[[ ${LLVM_SLOT} -ge 9 ]] && eapply "${FILESDIR}/${PN}-1.3.2-llvm9-support.patch"
 
-	append-flags -fno-strict-aliasing
-
 	cmake-utils_src_prepare
 	# We cannot run tests because they require permissions to access
 	# the hardware, and building them is very time-consuming.
@@ -109,11 +107,10 @@ multilib_src_configure() {
 	fi
 
 	# See Bug #593968
-	append-flags -fPIC
+	append-flags -fPIC -fno-strict-aliasing
 
 	local mycmakeargs=(
 		-DBEIGNET_INSTALL_DIR="${VENDOR_DIR}"
-		-DCMAKE_INSTALL_LIBDIR="${EPREFIX}/usr/$(get_libdir)"
 		-DCMAKE_BUILD_TYPE=RELEASE
 	)
 
@@ -135,7 +132,13 @@ multilib_src_install() {
 
 	cmake-utils_src_install
 
-	insinto /etc/OpenCL/vendors/
+	# Headers should only be in VENDOR_DIR
+	rm -rf "${ED}"/usr/include
+
+	mkdir -p "${ED}/${VENDOR_DIR}/lib/${PN}"
+	mv "${ED}/${VENDOR_DIR}/libcl.so" "${ED}/${VENDOR_DIR}/lib/${PN}/"
+
+	insinto "/etc/OpenCL/vendors/"
 	echo "${EPREFIX}${VENDOR_DIR}/lib/${PN}/libcl.so" > "${PN}-${ABI}.icd" || die "Failed to generate ICD file"
 	doins "${PN}-${ABI}.icd"
 
