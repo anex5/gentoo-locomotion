@@ -54,6 +54,7 @@ PATCHES=(
 	"${FILESDIR}/${PN}-1.3.2-accept-ignore--g.patch"
 	"${FILESDIR}/no-debian-multiarch.patch"
 	"${FILESDIR}/${PN}-1.2.0_no-hardcoded-cflags.patch"
+	"${FILESDIR}/${PN}-9999-libOpenCL.patch"
 	#"${FILESDIR}/${PN}-1.3.2-static-llvm.patch"
 	"${FILESDIR}/llvm-terminfo.patch"
 	"${FILESDIR}/llvm-libs-tr.patch"
@@ -133,19 +134,15 @@ multilib_src_install() {
 	cmake-utils_src_install
 
 	# Headers should only be in VENDOR_DIR
-	rm -rf "${ED}"/usr/include
-
-	mkdir -p "${ED}/${VENDOR_DIR}/lib/${PN}"
-	mv "${ED}/${VENDOR_DIR}/libcl.so" "${ED}/${VENDOR_DIR}/lib/${PN}/"
+	rm -rf "${ED}/usr/include"
 
 	insinto "/etc/OpenCL/vendors/"
 	echo "${EPREFIX}${VENDOR_DIR}/lib/${PN}/libcl.so" > "${PN}-${ABI}.icd" || die "Failed to generate ICD file"
 	doins "${PN}-${ABI}.icd"
 
-	dosym "lib/${PN}/libcl.so" "${VENDOR_DIR}"/libOpenCL.so.1
-	dosym "lib/${PN}/libcl.so" "${VENDOR_DIR}"/libOpenCL.so
-	dosym "lib/${PN}/libcl.so" "${VENDOR_DIR}"/libcl.so.1
-	dosym "lib/${PN}/libcl.so" "${VENDOR_DIR}"/libcl.so
+	dosym "libOpenCL.so.1.0.0" "${VENDOR_DIR}/libOpenCL.so.1"
+	dosym "libOpenCL.so.1.0.0" "${VENDOR_DIR}/libOpenCL.so"
+
 }
 
 pkg_postinst() {
