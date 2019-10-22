@@ -61,7 +61,7 @@ src_install(){
 	
 	insinto "${EPREFIX}/usr/$(get_libdir)"
 	doins "${S}/.libs/"*.so*
-	insinto "${EPREFIX}/usr/local/share/wayland-eglstream"
+	insinto "${EPREFIX}/usr/share/wayland-eglstream"
 	doins "${S}/wayland-eglstream/"*.xml
 	insinto "${EPREFIX}/usr/$(get_libdir)/pkgconfig"
 	doins "${S}/"*.pc
