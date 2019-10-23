@@ -3,7 +3,7 @@
 
 EAPI=7
 
-inherit autotools git-r3 libtool toolchain-funcs
+inherit git-r3 libtool meson toolchain-funcs
 
 EGIT_REPO_URI="https://github.com/NVIDIA/egl-wayland.git"
 
@@ -30,28 +30,31 @@ BDEPEND="
 DEPEND="
 	>=dev-libs/wayland-1.11.0
 	media-libs/mesa[wayland,egl]
-	
+	dev-libs/eglexternalplatform
 "
 RDEPEND="${DEPEND}
 	!<media-libs/mesa-18.1.1-r1
 "
 
 src_configure(){
-	./autogen.sh || die
+	local emesonargs=(
+		--buildtype=release
+	)
+	meson_src_configure
 }
 
 src_compile(){
-	emake
+	meson_src_compile
 }
 
 src_install(){
 	if [[ ${PV} = *9999* ]]; then
-		VER=$(cat ${S}/wayland-eglstream.pc | awk '/Version/ { print $2 }' )
+		VER=$(cat ${S}-build/wayland-eglstream.pc | awk '/Version/ { print $2 }' )
 	else
 		VER=${PV}
 	fi
-	into "${S}/.libs"
-	dolib.so "${S}/.libs/libnvidia-egl-wayland.so.${VER}"
+	into "${S}-build/src"
+	dolib.so "${S}-build/src/libnvidia-egl-wayland.so.${VER}"
 	
 	local v
 	for v in libnvidia-egl-wayland.so{,.{${VER%%.*},${VER%.*}}} ; do
@@ -60,9 +63,9 @@ src_install(){
 	use static-libs && dolib.a libnvidia-egl-wayland.a
 	
 	insinto "${EPREFIX}/usr/$(get_libdir)"
-	doins "${S}/.libs/"*.so*
+	doins "${S}-build/src/"*.so*
 	insinto "${EPREFIX}/usr/share/wayland-eglstream"
 	doins "${S}/wayland-eglstream/"*.xml
 	insinto "${EPREFIX}/usr/$(get_libdir)/pkgconfig"
-	doins "${S}/"*.pc
+	doins "${S}-build/"*.pc
 }
