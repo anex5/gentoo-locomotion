@@ -1,4 +1,4 @@
-# Copyright 1999-2017 Gentoo Foundation
+# Copyright 1999-2020 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=7
@@ -15,7 +15,7 @@ else
 	KEYWORDS="~amd64 ~x86"
 fi
 
-DESCRIPTION="Linux kernel module driver rtl8821cu/rtl8822cu for wireless abgn usb dongle device Realtek c811"
+DESCRIPTION="Linux kernel module driver rtl8811cu/rtl8812bu/rtl8821cu/rtl8822cu for wireless abgn usb dongle device from Realtek"
 HOMEPAGE="https://github.com/ulli-kroll/rtl8821cu"
 
 PATCHES=( "${FILESDIR}/RTL8812AU-02-fix-multiple-definitions.patch" )
