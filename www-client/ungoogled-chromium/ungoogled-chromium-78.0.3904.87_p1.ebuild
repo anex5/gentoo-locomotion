@@ -87,7 +87,7 @@ CDEPEND="
 	sys-libs/zlib:=[minizip]
 	virtual/udev
 	X? ( 
-		x11-libs/cairo:=
+		x11-libs/cairo:=[X]
 		x11-libs/gdk-pixbuf:2
 		x11-libs/libX11:=
 		x11-libs/libXcomposite:=
@@ -100,11 +100,11 @@ CDEPEND="
 		x11-libs/libXrender:=
 		x11-libs/libXScrnSaver:=
 		x11-libs/libXtst:=
-		x11-libs/pango:=
-		x11-misc/xdg-utils
+		x11-libs/pango:=[X]
 	)
 	gtk? (
 		x11-libs/gtk+:3[X]
+		x11-misc/xdg-utils
 	)
 	atk? (
 		>=app-accessibility/at-spi2-atk-2.26:2
@@ -150,7 +150,6 @@ CDEPEND="
 		sys-libs/libcxx
 	)
 	v4lplugin? ( media-tv/v4l-utils )
-	gtk? ( x11-libs/gtk+:3[X] )
 "
 RDEPEND="${CDEPEND}
 	virtual/ttf-fonts
@@ -268,7 +267,7 @@ pre_build_checks() {
 
 	# Check build requirements, bug #541816 and bug #471810 .
 	CHECKREQS_MEMORY="3G"
-	CHECKREQS_DISK_BUILD="5G"
+	CHECKREQS_DISK_BUILD="7G"
 	if ( shopt -s extglob; is-flagq '-g?(gdb)?([1-9])' ); then
 		CHECKREQS_DISK_BUILD="25G"
 		if ! use component-build; then
