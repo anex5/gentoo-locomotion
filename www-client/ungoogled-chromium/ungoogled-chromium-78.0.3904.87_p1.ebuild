@@ -299,12 +299,11 @@ src_prepare() {
 	default
 
 	local p="${FILESDIR}/chromium-$(ver_cut 1-1)"
-	#use "system-harfbuzz" && eapply "${p}/chromium-77-system-hb.patch" 
 	use "system-icu" && eapply "${p}/${PN}-system-icu.patch"
 	use "system-icu" && eapply "${p}/chromium-79-icu-65.patch"
 	use "system-jsoncpp" &&	eapply "${p}/${PN}-system-jsoncpp-r1.patch"
 	use "system-libvpx" && eapply "${p}/${PN}-system-vpx-r1.patch"
-	has_version ">=media-libs/libvpx-1.7*" && eapply "${p}/${PN}-vpx-1.7-compatibility-r1.patch"
+	has_version ">=media-libs/libvpx-1.7.0" && eapply "${p}/${PN}-vpx-1.7-compatibility-r1.patch"
 	use "system-openjpeg" && eapply "${p}/${PN}-system-openjpeg-r2.patch" 
 	use "convert-dict" && eapply "${p}/${PN}-ucf-dict-utility.patch"
 	use "clang" && eapply "${p}/chromium-77-clang.patch"
@@ -322,13 +321,12 @@ src_prepare() {
 	fi
 	
 	# Apply extra patches (taken from Igalia)
-	#if use "wayland" ; then
-	#	p="${FILESDIR}/igalia-$(ver_cut 1-1)"
-        #eapply "${p}/0001-ozone-wayland-Implement-CreateNativePixmapAsync.patch" 
-	#	eapply "${p}/V4L2/0001-Add-support-for-V4L2VDA-on-Linux.patch" 
-	#	eapply "${p}/V4L2/0002-Add-mmap-via-libv4l-to-generic_v4l2_device.patch" 
-    #    eapply "${FILESDIR}/chromium-76-fix-linking.patch"
-	#fi
+	if use "wayland" && use "v4l2" && use "v4lplugin" ; then
+		eapply "${p}/chromium-76-fix-linking.patch"
+		p="${FILESDIR}/igalia-$(ver_cut 1-1)" 
+		eapply "${p}/V4L2/0001-Add-support-for-V4L2VDA-on-Linux.patch" 
+		eapply "${p}/V4L2/0002-Add-mmap-via-libv4l-to-generic_v4l2_device.patch"     
+	fi
 
 	# Hack for libusb stuff (taken from openSUSE)
 	rm third_party/libusb/src/libusb/libusb.h || die
@@ -791,7 +789,6 @@ src_configure() {
 		"treat_warnings_as_errors=false"
 		"use_gnome_keyring=false" # Deprecated by libsecret
 		"use_jumbo_build=$(usetf jumbo-build)"
-		#"jumbo_file_merge_limit=40"
 		"use_official_google_api_keys=false"
 
 		"use_sysroot=false"
@@ -844,7 +841,7 @@ src_configure() {
 		"media_use_ffmpeg=true"
 		"enable_ffmpeg_video_decoders=true"
 		"use_v4l2_codec=$(usetf v4l2)"
-		#"use_linux_v4l2_only=$(usetf v4l2)"
+		"use_linux_v4l2_only=$(usetf v4l2)"
 		"use_v4lplugin=$(usetf v4lplugin)"
 		"rtc_build_libvpx=$(usetf libvpx)"
 		"media_use_libvpx=$(usetf libvpx)"
