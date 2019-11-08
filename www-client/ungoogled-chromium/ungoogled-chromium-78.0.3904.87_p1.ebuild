@@ -35,7 +35,7 @@ VIDEO_CARDS="
 
 IUSE="
 	atk cfi component-build closure-compile convert-dict cups custom-cflags +dbus gnome gold 
-	jumbo-build kerberos libcxx lld new-tcmalloc optimize-thinlto optimize-webui 
+	jumbo-build kerberos libcxx lld optimize-thinlto optimize-webui 
 	+pdf +proprietary-codecs pulseaudio selinux +suid system-ffmpeg system-harfbuzz 
 	+system-icu +system-jsoncpp +system-libevent +system-libvpx system-openh264
 	+system-openjpeg +system-libdrm -system-wayland +tcmalloc +thinlto vulkan vaapi widevine
@@ -51,8 +51,7 @@ REQUIRED_USE="
 	|| ( $(python_gen_useflags 'python3*') )
 	|| ( $(python_gen_useflags 'python2*') )
 	cfi? ( thinlto )
-	libcxx? ( clang new-tcmalloc )
-	new-tcmalloc? ( tcmalloc )
+	libcxx? ( clang )
 	optimize-thinlto? ( thinlto )
 	system-openjpeg? ( pdf )
 	x86? ( !lld !thinlto !widevine )
@@ -876,9 +875,6 @@ src_configure() {
 		"is_desktop_linux=true"
 		"enable_openscreen=false" #enabling affects system-jsoncpp
 
-		# Enables the soon-to-be default tcmalloc (https://crbug.com/724399)
-		# It is relevant only when use_allocator == "tcmalloc"
-		#"use_new_tcmalloc=$(usetf new-tcmalloc)"
 		"use_allocator=\"$(usex tcmalloc tcmalloc none)\""
 		"use_allocator_shim=$(usetf tcmalloc)"
 		"use_gtk=$(usetf gtk)"
