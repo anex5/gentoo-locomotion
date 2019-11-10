@@ -266,7 +266,7 @@ pre_build_checks() {
 
 	# Check build requirements, bug #541816 and bug #471810 .
 	CHECKREQS_MEMORY="3G"
-	CHECKREQS_DISK_BUILD="7G"
+	CHECKREQS_DISK_BUILD="6G"
 	if ( shopt -s extglob; is-flagq '-g?(gdb)?([1-9])' ); then
 		CHECKREQS_DISK_BUILD="25G"
 		if ! use component-build; then
@@ -308,7 +308,7 @@ src_prepare() {
 	use "clang" && eapply "${p}/chromium-77-clang.patch"
 	use "gold" && eapply "${p}/${PN}-gold-r4.patch"
 	use "swiftshader" || eapply "${p}/${PN}-disable-swiftshader.patch"
-	use "widevine" && eapply "${p}/chromium-widevine-r1.patch"
+	use "widevine" && eapply "${p}/chromium-widevine-r4.patch"
 	use "system-libdrm" && eapply "${p}/chromium-system-libdrm.patch"
 	use "vaapi" && eapply "${p}/${PN}-enable-vaapi-r1.patch"
 	use "vaapi" && eapply "${p}/${PN}-fix-vaapi-r1.patch"
@@ -321,7 +321,7 @@ src_prepare() {
 	
 	# Apply extra patches (taken from Igalia)
 	if use "wayland" && use "v4l2" && use "v4lplugin" ; then
-		eapply "${p}/chromium-76-fix-linking.patch"
+		eapply "${p}/chromium-76-v4l-fix-linking.patch"
 		p="${FILESDIR}/igalia-$(ver_cut 1-1)" 
 		eapply "${p}/V4L2/0001-Add-support-for-V4L2VDA-on-Linux.patch" 
 		eapply "${p}/V4L2/0002-Add-mmap-via-libv4l-to-generic_v4l2_device.patch"     
