@@ -35,12 +35,12 @@ MODULE_NAMES="rtl8821cu(net/wireless/realtek)"
 pkg_setup() {
 	linux-mod_pkg_setup
 	BUILD_TARGETS="all"
-	BUILD_PARAMS="KVERSION=${KV_FULL}"
+	BUILD_PARAMS="KVER=${KV_FULL} KSRC=${KERNEL_DIR}"
 }
 
 src_prepare() {
-	# Fix build failure, bug #513542
-	sed -i 's/^KDIR.*$/KDIR\ \:= \/usr\/src\/linux/g' Makefile || die
+	sed -i 's#CONFIG_80211W = n#CONFIG_80211W = y#' Makefile || die
+	sed -i 's#-DCONFIG_IEEE80211W#-DCONFIG_IEEE80211W -DCONFIG_RTW_80211R#' Makefile || die
 	default
 }
 
