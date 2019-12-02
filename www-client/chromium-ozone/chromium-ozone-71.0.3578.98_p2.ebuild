@@ -32,7 +32,7 @@ VIDEO_CARDS="
 "
 
 IUSE="
-	atk +cfi component-build cups custom-cflags +dbus gnome gold jumbo-build kerberos libcxx
+	atk cfi component-build cups custom-cflags +dbus gnome gold jumbo-build kerberos libcxx
 	lld new-tcmalloc optimize-thinlto optimize-webui +pdf +proprietary-codecs
 	pulseaudio selinux +suid system-ffmpeg system-harfbuzz +system-icu
 	+system-jsoncpp +system-libevent +system-libvpx system-openh264
@@ -759,10 +759,9 @@ src_configure() {
 	local myconf_gn=(
 		# Clang features
 		"is_cfi=$(usetf cfi)" # Implies use_cfi_icall=true
-		"use_cfi_cast=$(usetf cfi)"
 		# use_cfi_icall only works with LLD
-		"use_cfi_icall=$(usetf $(cfi && lld))" 
-		"is_clang=(usetf clang)"
+		"use_cfi_icall=$(usetf lld)" 
+		"is_clang=$(usetf clang)"
 		"clang_use_chrome_plugins=false"
 		"thin_lto_enable_optimizations=$(usetf optimize-thinlto)"
 		"use_lld=$(usetf lld)"
@@ -846,7 +845,7 @@ src_configure() {
 		"media_use_ffmpeg=true"
 		"enable_ffmpeg_video_decoders=true"
 		"use_v4l2_codec=$(usetf v4l2)"
-		"use_linux_v4l2_only=$(usetf v4l2)"
+		#"use_linux_v4l2_only=$(usetf v4l2)"
 		"use_v4lplugin=$(usetf v4lplugin)"
 
 		#"enable_runtime_media_renderer_selection=true"
@@ -883,10 +882,12 @@ src_configure() {
 		#"use_gconf=$(usetf gnome)"
 		"use_xkbcommon=$(usetf xkbcommon)"
 	)
+	
+	use cfi	&& myconf_gn+=( "use_cfi_cast=$(usetf cfi)" )
 
 	# wayland
-	if use wayland; then	
-		#"target_os=\"chromeos\""
+	if use wayland; then
+		myconf_gn+=(
 		"toolkit_views=true" 
 		"use_system_libwayland=true"
 		"use_ozone=true"
@@ -918,15 +919,16 @@ src_configure() {
 		#"use_system_libdrm=$(usetf system-libdrm)"
 		"enable_background_mode=true"
 		#"enable_resource_whitelist_generation=false"
+		)
 	fi
 
-	if [[ "${ARCH}" = amd64 ]]; then
-		myconf_gn+=" target_cpu=\"x64\""
-	elif [[ "${ARCH}" = x86 ]]; then
-		myconf_gn+=" target_cpu=\"x86\""
-	else
-		die "Failed to determine target arch, got '${ARCH}'."
-	fi
+	#if [[ "${ARCH}" = amd64 ]]; then
+	#	myconf_gn+=" target_cpu=\"x64\""
+	#elif [[ "${ARCH}" = x86 ]]; then
+	#	myconf_gn+=" target_cpu=\"x86\""
+	#else
+	#	die "Failed to determine target arch, got '${ARCH}'."
+	#fi
 
 	setup_compile_flags
 
@@ -938,7 +940,7 @@ src_configure() {
 	addpredict /dev/dri/ #nowarn
 
 	einfo "Configuring Chromium..."
-	set -- gn gen --args="${myconf_gn} ${EXTRA_GN}" out/Release
+	set -- gn gen --args="${myconf_gn[*]} ${EXTRA_GN}" out/Release
 	echo "$@"
 	"$@" || die	
 }
