@@ -32,7 +32,7 @@ KEYWORDS="-* amd64 x86 ~amd64-fbsd ~x86-fbsd"
 RESTRICT="bindist mirror"
 EMULTILIB_PKG="true"
 
-IUSE="acpi compat +driver gtk3 kernel_FreeBSD kernel_linux +kms multilib static-libs +tools uvm wayland +X"
+IUSE="acpi compat +driver gtk3 libglvnd kernel_FreeBSD kernel_linux +kms multilib static-libs +tools uvm wayland +X"
 REQUIRED_USE="
 	tools? ( X )
 	static-libs? ( tools )
@@ -88,7 +88,7 @@ RDEPEND="
 QA_PREBUILT="opt/* usr/lib*"
 S=${WORKDIR}/
 PATCHES=(
-	"${FILESDIR}"/${PN}-440.26-locale.patch
+	"${FILESDIR}"/nvidia-linux-5.4.patch
 )
 NV_KV_MAX_PLUS="5.5"
 CONFIG_CHECK="!DEBUG_MUTEXES ~!I2C_NVIDIA_GPU ~!LOCKDEP ~MTRR ~SYSVIPC ~ZONE_DMA"
