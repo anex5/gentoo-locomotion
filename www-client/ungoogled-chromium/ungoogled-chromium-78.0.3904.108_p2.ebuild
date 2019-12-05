@@ -155,6 +155,7 @@ RDEPEND="${CDEPEND}
 	selinux? ( sec-policy/selinux-chromium )
 	widevine? ( !x86? ( www-plugins/chrome-binary-plugins[widevine(-)] ) )
 	!www-client/chromium
+	!www-client/chromium-bin
 	!www-client/ungoogled-chromium-bin
 "
 # dev-vcs/git (Bug #593476)
@@ -226,7 +227,7 @@ PATCHES=(
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-78-icon.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-78-protobuf-export.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-78-pm-crash.patch"
-	"${WORKDIR}/chromium-78-revert-noexcept-r1.patch"
+	#"${WORKDIR}/chromium-78-revert-noexcept-r1.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-78-gcc-enum-range.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-78-gcc-std-vector.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-78-gcc-noexcept.patch"
@@ -354,15 +355,15 @@ src_prepare() {
 	# make it less noisy
 
 	ebegin "Pruning binaries"
-	"${UGC_WD}/utils/prune_binaries.py" . "${UGC_WD}/pruning.list"
+	"${UGC_WD}/utils/prune_binaries.py" -q . "${UGC_WD}/pruning.list"
 	eend $? || die
 
 	ebegin "Applying ungoogled-chromium patches"
-	"${UGC_WD}/utils/patches.py" apply . "${UGC_WD}/patches"
+	"${UGC_WD}/utils/patches.py" -q apply . "${UGC_WD}/patches"
 	eend $? || die
 
 	ebegin "Applying domain substitution"
-	"${UGC_WD}/utils/domain_substitution.py" apply -r "${UGC_WD}/domain_regex.list" -f "${UGC_WD}/domain_substitution.list" -c build/domsubcache.tar.gz .
+	"${UGC_WD}/utils/domain_substitution.py" -q apply -r "${UGC_WD}/domain_regex.list" -f "${UGC_WD}/domain_substitution.list" -c build/domsubcache.tar.gz .
 	eend $? || die
 
 	local keeplibs=(
@@ -639,20 +640,15 @@ setup_compile_flags() {
 
 		use gold && thinlto_ldflag+=(
 			"-Wl,-plugin-opt=thinlto"
-			"-Wl,-plugin-opt,jobs=$(makeopts_jobs)"
+			"-Wl,-plugin-opt,jobs=$(($(makeopts_jobs)-1))"
 		)
 
-		use lld && thinlto_ldflag+=( "-Wl,--thinlto-jobs=$(makeopts_jobs)" )
+		use lld && thinlto_ldflag+=( "-Wl,--thinlto-jobs=$(($(makeopts_jobs)-1))" )
 
 		append-ldflags "${thinlto_ldflag[*]}"
 	else
-		use gold && append-ldflags "-Wl,--threads -Wl,--thread-count=$(makeopts_jobs)"
+		use gold && append-ldflags "-Wl,--threads -Wl,--thread-count=$(($(makeopts_jobs)-1))"
 	fi
-
-	# Don't complain if Chromium uses a diagnostic option that is not yet
-	# implemented in the compiler version used by the user. This is only
-	# supported by Clang.
-	append-flags -Wno-unknown-warning-option
 
 	# Facilitate deterministic builds (taken from build/config/compiler/BUILD.gn)
 	append-cflags -Wno-builtin-macro-redefined
@@ -734,7 +730,7 @@ src_configure() {
 	)
 
 	use system-ffmpeg && gn_system_libraries+=( ffmpeg opus )
-	use system-harfbuzz && gn_system_libraries+=( freetype )
+	use system-harfbuzz && gn_system_libraries+=( freetype harfbuzz-ng )
 	use system-icu && gn_system_libraries+=( icu )
 	use system-libdrm && gn_system_libraries+=( libdrm )
 	use system-libevent && gn_system_libraries+=( libevent )
@@ -989,8 +985,13 @@ src_compile() {
 	# Build mksnapshot and pax-mark it
 	local x
 	for x in mksnapshot v8_context_snapshot_generator; do
-		eninja -C out/Release "${x}"
-		pax-mark m "out/Release/${x}"
+		if tc-is-cross-compiler; then
+			eninja -C out/Release "host/${x}"
+			pax-mark m "out/Release/host/${x}"
+		else
+			eninja -C out/Release "${x}"
+			pax-mark m "out/Release/${x}"
+		fi
 	done
 
 	# Work around broken deps
@@ -1019,7 +1020,7 @@ src_install() {
 	doexe out/Release/chrome
 
 	if use convert-dict; then
-		newexe "${FILESDIR}/${PN}-update-dicts.sh" ungoogled-chromium-update-dicts.sh
+		newexe "${FILESDIR}/update-dicts.sh" update-dicts.sh
 		doexe out/Release/convert_dict
 	fi
 
@@ -1030,7 +1031,7 @@ src_install() {
 
 	doexe out/Release/chromedriver
 
-	newexe "${FILESDIR}/${PN}-launcher-r3.sh" chromium-launcher.sh
+	newexe "${FILESDIR}/chromium-launcher-r3.sh" chromium-launcher.sh
 	sed -i "s:/usr/lib/:/usr/$(get_libdir)/:g" \
 		"${ED}${CHROMIUM_HOME}/chromium-launcher.sh" || die
 
@@ -1044,7 +1045,7 @@ src_install() {
 
 	# Allow users to override command-line options (Bug #357629)
 	insinto /etc/chromium
-	newins "${FILESDIR}/${PN}.default" "default"
+	newins "${FILESDIR}/chromium.default" "default"
 
 	pushd out/Release/locales > /dev/null || die
 	chromium_remove_language_paks
@@ -1085,7 +1086,7 @@ src_install() {
 			"Chromium" \
 			chromium-browser \
 			"Network;WebBrowser" \
-			"MimeType=${mime_types}\\nStartupWMClass=chromium-browser"
+			"MimeType=${mime_types}\nStartupWMClass=chromium-browser"
 		sed -i "/^Exec/s/$/ %U/" "${ED}"/usr/share/applications/*.desktop || die
 	
 		# Install GNOME default application entry (Bug #303100)
