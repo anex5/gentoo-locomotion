@@ -30,7 +30,7 @@ DEPEND="
 "
 RDEPEND=""
 
-MODULE_NAMES="rtl8821cu(net/wireless/realtek)"
+MODULE_NAMES="rtl8821cu(net/wireless:)"
 
 pkg_setup() {
 	linux-mod_pkg_setup

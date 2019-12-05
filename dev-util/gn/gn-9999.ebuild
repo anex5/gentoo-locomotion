@@ -14,7 +14,7 @@ fi
 
 LICENSE="BSD"
 SLOT="0"
-KEYWORDS="~amd64 ~x86"
+KEYWORDS=""
 IUSE="vim-syntax"
 
 BDEPEND="
