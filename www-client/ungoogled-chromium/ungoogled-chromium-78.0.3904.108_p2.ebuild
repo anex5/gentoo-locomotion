@@ -227,11 +227,12 @@ PATCHES=(
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-78-icon.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-78-protobuf-export.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-78-pm-crash.patch"
-	#"${WORKDIR}/chromium-78-revert-noexcept-r1.patch"
+	"${WORKDIR}/chromium-78-revert-noexcept-r1.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-78-gcc-enum-range.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-78-gcc-std-vector.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-78-gcc-noexcept.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-78-gcc-alignas.patch"
+	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-78-gcc-fix-partial-specialization.patch"
 
 	# Debian patches
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/${PN}-disable-font-tests.patch"
@@ -323,9 +324,10 @@ src_prepare() {
 	# Apply extra patches (taken from Igalia)
 	if use "wayland" && use "v4l2" && use "v4lplugin" ; then
 		eapply "${p}/chromium-76-v4l-fix-linking.patch"
-		p="${FILESDIR}/igalia-$(ver_cut 1-1)" 
-		eapply "${p}/V4L2/0001-Add-support-for-V4L2VDA-on-Linux.patch" 
-		eapply "${p}/V4L2/0002-Add-mmap-via-libv4l-to-generic_v4l2_device.patch"     
+		p="${FILESDIR}/igalia-$(ver_cut 1-1)"
+		eapply "${p}/0001-ozone-wayland-Complete-submission-of-a-buffer-submit.patch"
+		eapply "${p}/V4L2/0001-Add-support-for-V4L2VDA-on-Linux.patch"
+		eapply "${p}/V4L2/0002-Add-mmap-via-libv4l-to-generic_v4l2_device.patch"
 	fi
 
 	# Hack for libusb stuff (taken from openSUSE)
