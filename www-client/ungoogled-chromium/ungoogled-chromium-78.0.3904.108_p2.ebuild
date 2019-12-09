@@ -247,7 +247,7 @@ PATCHES=(
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/${PN}-skia-harmony.patch"
 	
 	# Personal patches
-	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-fix-nosafebrowsing-build-r0.patch"
+	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-fix-nosafebrowsing-build-r1.patch"
  	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-optional-atk-r0.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-optional-dbus-r9.patch"
 )
@@ -342,6 +342,7 @@ src_prepare() {
 	local ugc_unneeded=(
 		# GN bootstrap
 		extra/debian_buster/gn/parallel
+		#core/ungoogled-chromium/replace-google-search-engine-with-nosearch.patch
 	)
 
 	local ugc_p ugc_dir
