@@ -231,7 +231,6 @@ PATCHES=(
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-78-gcc-enum-range.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-78-gcc-std-vector.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-78-gcc-noexcept.patch"
-	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-78-gcc-alignas.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-78-gcc-fix-partial-specialization.patch"
 
 	# Debian patches
