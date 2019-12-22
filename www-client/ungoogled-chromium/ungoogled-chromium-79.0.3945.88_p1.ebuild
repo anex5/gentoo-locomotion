@@ -34,7 +34,7 @@ IUSE="
 	+dbus gnome gold jumbo-build kerberos libcxx lld optimize-thinlto optimize-webui perfetto
 	+pdf +proprietary-codecs pulseaudio selinux +suid system-ffmpeg system-harfbuzz 
 	+system-icu +system-jsoncpp +system-libevent +system-libvpx system-openh264
-	+system-openjpeg +system-libdrm -system-wayland +tcmalloc tracing +thinlto vulkan vaapi widevine
+	+system-openjpeg +system-libdrm -system-wayland +tcmalloc tracing +thinlto +vulkan vaapi widevine
 	wayland X libvpx gtk xkbcommon +v4l2 +v4lplugin +clang swiftshader udev debug man
 "
 RESTRICT="mirror
@@ -574,6 +574,7 @@ src_prepare() {
 		third_party/swiftshader
 		third_party/swiftshader/third_party/llvm-7.0
 		third_party/swiftshader/third_party/llvm-subzero
+		third_party/swiftshader/third_party/marl
 		third_party/swiftshader/third_party/subzero
 		third_party/swiftshader/third_party/SPIRV-Headers/include/spirv/unified1
 	)
@@ -857,7 +858,7 @@ src_configure() {
 		"media_use_ffmpeg=true"
 		"enable_ffmpeg_video_decoders=true"
 		"use_v4l2_codec=$(usetf v4l2)"
-		"use_linux_v4l2_only=$(usetf v4l2)"
+		#"use_linux_v4l2_only=$(usetf v4l2)"
 		"use_v4lplugin=$(usetf v4lplugin)"
 		"rtc_build_libvpx=$(usetf libvpx)"
 		"media_use_libvpx=$(usetf libvpx)"
