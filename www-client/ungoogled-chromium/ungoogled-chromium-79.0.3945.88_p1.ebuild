@@ -214,6 +214,7 @@ PATCHES=(
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-unbundle-zlib-r1.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-78-protobuf-export.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-79-include.patch"
+	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-79-fix-find_if.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-79-icu-65.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-79-gcc-ambiguous-nodestructor.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-79-gcc-name-clash.patch"
