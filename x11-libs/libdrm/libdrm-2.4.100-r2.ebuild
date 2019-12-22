@@ -46,12 +46,14 @@ src_prepare() {
 	
 	eapply "${FILESDIR}/Add-DRM_FORMAT_MT21.patch"
 	eapply "${FILESDIR}/Add-H264-Slice-format.patch"
-	eapply "${FILESDIR}/Add-back-VENDOR_NV-name.patch"
-	eapply "${FILESDIR}/Add-Evdi-module-userspace-api-file.patch"
-	eapply "${FILESDIR}/Add-header-for-Mediatek-DRM-userspace.patch"
 	eapply "${FILESDIR}/Add-header-for-Rockchip-DRM-userspace.patch"
+	eapply "${FILESDIR}/Add-header-for-Mediatek-DRM-userspace.patch"
+	eapply "${FILESDIR}/Add-Evdi-module-userspace-api-file.patch"
 	eapply "${FILESDIR}/Add-Rockchip-AFBC-modifier.patch"
+	eapply "${FILESDIR}/Add-back-VENDOR_NV-name.patch"
 	eapply "${FILESDIR}/CHROMIUM-add-resource-info-header.patch"
+	eapply "${FILESDIR}/FROMLIST-Add-drmModeGetFB2.patch"
+	eapply "${FILESDIR}/intel-sync-i915_pciids.h-with-kernel.patch"
 }
 
 multilib_src_configure() {
