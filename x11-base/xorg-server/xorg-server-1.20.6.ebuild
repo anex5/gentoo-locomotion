@@ -126,6 +126,15 @@ PATCHES=(
 	"${FILESDIR}"/${PN}-1.12-unloadsubmodule.patch
 	# needed for new eselect-opengl, bug #541232
 	"${FILESDIR}"/${PN}-1.18-support-multiple-Files-sections.patch
+	"${FILESDIR}"/${PN}-1.20.4-shm-reindent-shm_tmpfile-to-follow-our-standards.patch
+	"${FILESDIR}"/${PN}-1.20.4-shm-Pick-the-shm-dir-at-run-time-not-build-time.patch
+	"${FILESDIR}"/${PN}-1.20.4-shm-Use-memfd_create-when-possible.patch
+	"${FILESDIR}"/${PN}-1.21-autobind-gpu.patch
+	"${FILESDIR}"/${PN}-1.21-multigpu-00-7f962c70.patch
+	"${FILESDIR}"/${PN}-1.21-multigpu-01-37a36a6b.patch
+	"${FILESDIR}"/${PN}-1.21-multigpu-02-8b67ec7c.patch
+	"${FILESDIR}"/${PN}-1.21-multigpu-03-56c0a71f.patch
+	"${FILESDIR}"/${PN}-1.21-multigpu-04-b4231d69.patch
 )
 
 pkg_setup() {
