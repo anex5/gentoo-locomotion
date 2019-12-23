@@ -1042,7 +1042,7 @@ src_install() {
 		fperms 4755 "${CHROMIUM_HOME}/chrome-sandbox"
 	fi
 
-	use enable-driver && doexe out/Release/chromedriver
+	use chromedriver && doexe out/Release/chromedriver
 
 	newexe "${FILESDIR}/chromium-launcher-r3.sh" chromium-launcher.sh
 	sed -i "s:/usr/lib/:/usr/$(get_libdir)/:g" \
