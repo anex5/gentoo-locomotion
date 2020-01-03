@@ -315,7 +315,6 @@ src_prepare() {
 	use "convert-dict" && eapply "${p}/chromium-ucf-dict-utility.patch"
 	use "tracing" || eapply "${p}/chromium-disable-tracing.patch"
 	use "perfetto" || eapply "${p}/chromium-disable-perfetto.patch"
-	#use "system-harfbuzz" && eapply "${p}/chromium-79-system-hb.patch"
 
 	if use "system-icu" ; then
 		eapply "${p}/chromium-system-icu.patch"
@@ -338,6 +337,7 @@ src_prepare() {
 	use "system-libdrm" && eapply "${p}/chromium-system-libdrm.patch"
 	use "vaapi" && eapply "${p}/chromium-enable-vaapi-r1.patch"
 	use "vaapi" && eapply "${p}/chromium-fix-vaapi-r1.patch"
+	use "gtk" && eapply "{p}/chromium-78-fix-capture-x11.patch" 
 
 	# Apply extra patches (taken from Igalia)
 	if use "wayland" && use "v4l2" && use "v4lplugin" ; then
