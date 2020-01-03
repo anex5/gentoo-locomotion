@@ -30,8 +30,8 @@ SLOT="0"
 KEYWORDS="~amd64 ~arm64 ~x86"
 
 IUSE="
-	atk cfi component-build closure-compile convert-dict cups custom-cflags chromedriver 
-	+dbus gnome gold jumbo-build kerberos libcxx lld optimize-thinlto optimize-webui perfetto
+	atk cfi chromedriver closure-compile convert-dict cups custom-cflags +dbus gnome gold 
+	jumbo-build kerberos libcxx lld optimize-thinlto optimize-webui perfetto
 	+pdf +proprietary-codecs pulseaudio selinux +suid system-ffmpeg system-harfbuzz 
 	+system-icu +system-jsoncpp +system-libevent +system-libvpx system-openh264
 	+system-openjpeg +system-libdrm -system-wayland +tcmalloc tracing +thinlto +vulkan vaapi widevine
@@ -249,9 +249,9 @@ pre_build_checks() {
 			die "At least gcc 8.0 is required"
 		fi
 		# component build hangs with tcmalloc enabled due to sandbox issue, bug #695976.
-		if has usersandbox ${FEATURES} && use tcmalloc && use component-build; then
-			die "Component build with tcmalloc requires FEATURES=-usersandbox."
-		fi
+		#if has usersandbox ${FEATURES} && use tcmalloc && use component-build; then
+		#	die "Component build with tcmalloc requires FEATURES=-usersandbox."
+		#fi
 	fi
 
 	# Check build requirements, bug #541816 and bug #471810 .
@@ -259,9 +259,9 @@ pre_build_checks() {
 	CHECKREQS_DISK_BUILD="6G"
 	if ( shopt -s extglob; is-flagq '-g?(gdb)?([1-9])' ); then
 		CHECKREQS_DISK_BUILD="25G"
-		if ! use component-build; then
-			CHECKREQS_MEMORY="16G"
-		fi
+		#if ! use component-build; then
+		#	CHECKREQS_MEMORY="16G"
+		#fi
 	fi
 	check-reqs_pkg_setup
 }
@@ -860,7 +860,6 @@ src_configure() {
 		"media_use_ffmpeg=true"
 		"enable_ffmpeg_video_decoders=true"
 		"use_v4l2_codec=$(usetf v4l2)"
-		#"use_linux_v4l2_only=$(usetf v4l2)"
 		"use_v4lplugin=$(usetf v4lplugin)"
 		"rtc_build_libvpx=$(usetf libvpx)"
 		"media_use_libvpx=$(usetf libvpx)"
@@ -877,7 +876,7 @@ src_configure() {
 		"use_low_quality_image_interpolation=false"
 
 		# Additional flags
-		"is_component_build=$(usetf component-build)"
+		#"is_component_build=$(usetf component-build)"
 		#"enable_desktop_in_product_help=false"
 		"enable_offline_pages=false" #Android
 		"closure_compile=$(usetf closure-compile)"
@@ -894,7 +893,6 @@ src_configure() {
 		"rtc_enable_libevent=$(usetf udev)"
 		"is_desktop_linux=true"
 		"enable_openscreen=false" #enabling affects system-jsoncpp
-
 		"use_allocator=\"$(usex tcmalloc tcmalloc none)\""
 		"use_allocator_shim=$(usetf tcmalloc)"
 		"use_gtk=$(usetf gtk)"
@@ -905,6 +903,7 @@ src_configure() {
 		"use_xkbcommon=$(usetf xkbcommon)"
 		# Explicitly disable ICU data file support for system-icu builds.
 		"icu_use_data_file=$(usex system-icu false true)"
+		"use_system_libdrm=$(usetf system-libdrm)"
 	)
 	
 	use gold || myconf_gn+=( "use_lld=true" )
@@ -943,7 +942,7 @@ src_configure() {
 			"enable_background_mode=true"
 			#"use_system_minigbm=$(usetf system-minigbm)"
 			"use_system_minigbm=false"
-			"use_system_libdrm=$(usetf system-libdrm)"
+			"use_linux_v4l2_only=$(usetf v4l2)"
 		)
 	fi
 

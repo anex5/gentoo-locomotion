@@ -3,7 +3,7 @@
 
 EAPI=7
 
-PYTHON_COMPAT=( python{2_7,3_{5,6,7}} )
+PYTHON_COMPAT=( python{2_7,3_{5,6,7,8}} )
 
 CHROMIUM_LANGS="
 	am ar bg bn ca cs da de el en-GB es es-419 et fa fi fil fr gu he hi hr hu id
@@ -29,22 +29,20 @@ SRC_URI="
 LICENSE="BSD"
 SLOT="0"
 KEYWORDS="~amd64 ~arm64 ~x86"
-VIDEO_CARDS="
-	amdgpu exynos intel marvell mediatek msm radeon radeonsi rockchip tegra vc4 virgl
-"
 
 IUSE="
-	atk cfi component-build closure-compile convert-dict cups custom-cflags +dbus gnome gold 
-	jumbo-build kerberos libcxx lld optimize-thinlto optimize-webui 
+	atk cfi chromedriver closure-compile convert-dict cups custom-cflags +dbus gnome gold 
+	jumbo-build kerberos libcxx lld optimize-thinlto optimize-webui -perfetto
 	+pdf +proprietary-codecs pulseaudio selinux +suid system-ffmpeg system-harfbuzz 
 	+system-icu +system-jsoncpp +system-libevent +system-libvpx system-openh264
-	+system-openjpeg +system-libdrm -system-wayland +tcmalloc +thinlto vulkan vaapi widevine
+	+system-openjpeg +system-libdrm -system-wayland +tcmalloc -tracing +thinlto +vulkan vaapi widevine
 	wayland X libvpx gtk xkbcommon +v4l2 +v4lplugin +clang swiftshader udev debug man
 "
 
-for card in ${VIDEO_CARDS}; do
-	IUSE+=" video_cards_${card}"
-done
+RESTRICT="mirror
+	!system-ffmpeg? ( proprietary-codecs? ( bindist ) )
+	!system-openh264? ( bindist )
+"
 
 REQUIRED_USE="
 	^^ ( gold lld )
@@ -61,10 +59,6 @@ REQUIRED_USE="
 	atk? ( gnome )
 	system-wayland? ( wayland )
 	system-libvpx? ( libvpx )
-"
-RESTRICT="mirror
-	!system-ffmpeg? ( proprietary-codecs? ( bindist ) )
-	!system-openh264? ( bindist )
 "
 
 CDEPEND="
@@ -150,6 +144,7 @@ CDEPEND="
 	)
 	v4lplugin? ( media-tv/v4l-utils )
 "
+
 RDEPEND="${CDEPEND}
 	virtual/ttf-fonts
 	selinux? ( sec-policy/selinux-chromium )
@@ -158,6 +153,7 @@ RDEPEND="${CDEPEND}
 	!www-client/chromium-bin
 	!www-client/ungoogled-chromium-bin
 "
+
 # dev-vcs/git (Bug #593476)
 # sys-apps/sandbox - https://crbug.com/586444
 DEPEND="${CDEPEND}"
@@ -234,16 +230,17 @@ PATCHES=(
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-78-gcc-fix-partial-specialization.patch"
 
 	# Debian patches
-	"${FILESDIR}/chromium-$(ver_cut 1-1)/${PN}-disable-font-tests.patch"
-	"${FILESDIR}/chromium-$(ver_cut 1-1)/${PN}-disable-third-party-lzma-sdk-r0.patch"
-	"${FILESDIR}/chromium-$(ver_cut 1-1)/${PN}-system-convertutf.patch"
+	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-disable-installer-r1.patch"
+	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-disable-chromeos.patch"
+	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-disable-font-tests.patch"
+	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-disable-third-party-lzma-sdk-r0.patch"
 
 	# Extra patches taken from openSUSE
-	"${FILESDIR}/chromium-$(ver_cut 1-1)/${PN}-system-libusb-r0.patch"
-	#"${FILESDIR}/chromium-$(ver_cut 1-1)/${PN}-system-nspr-r0.patch"
-	"${FILESDIR}/chromium-$(ver_cut 1-1)/${PN}-libusb-interrupt-event-handler-r1.patch"
-	"${FILESDIR}/chromium-$(ver_cut 1-1)/${PN}-system-fix-shim-headers-r0.patch"
-	"${FILESDIR}/chromium-$(ver_cut 1-1)/${PN}-skia-harmony.patch"
+	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-system-libusb-r0.patch"
+	#"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-system-nspr-r0.patch"
+	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-libusb-interrupt-event-handler-r1.patch"
+	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-system-fix-shim-headers-r0.patch"
+	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-skia-harmony.patch"
 	
 	# Personal patches
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-fix-nosafebrowsing-build-r1.patch"
@@ -260,9 +257,9 @@ pre_build_checks() {
 			die "At least gcc 8.0 is required"
 		fi
 		# component build hangs with tcmalloc enabled due to sandbox issue, bug #695976.
-		if has usersandbox ${FEATURES} && use tcmalloc && use component-build; then
-			die "Component build with tcmalloc requires FEATURES=-usersandbox."
-		fi
+		#if has usersandbox ${FEATURES} && use tcmalloc && use component-build; then
+		#	die "Component build with tcmalloc requires FEATURES=-usersandbox."
+		#fi
 	fi
 
 	# Check build requirements, bug #541816 and bug #471810 .
@@ -270,9 +267,9 @@ pre_build_checks() {
 	CHECKREQS_DISK_BUILD="6G"
 	if ( shopt -s extglob; is-flagq '-g?(gdb)?([1-9])' ); then
 		CHECKREQS_DISK_BUILD="25G"
-		if ! use component-build; then
-			CHECKREQS_MEMORY="16G"
-		fi
+		#if ! use component-build; then
+		#	CHECKREQS_MEMORY="16G"
+		#fi
 	fi
 	check-reqs_pkg_setup
 }
@@ -284,6 +281,14 @@ pkg_pretend() {
 		ewarn "Expect build failures. Don't file bugs using that unsupported USE flag!"
 		ewarn
 	fi
+
+	if ! has_version ">=sys-devel/lld-9.0.0" && use thinlto; then
+		ewarn
+		ewarn "thinlto fails compilation on clang/lld 8,"
+		ewarn "therefore it is only enabled on >8"
+		ewarn
+	fi
+
 	pre_build_checks
 }
 
@@ -299,27 +304,40 @@ src_prepare() {
 	default
 
 	local p="${FILESDIR}/chromium-$(ver_cut 1-1)"
-	use "system-icu" && eapply "${p}/${PN}-system-icu.patch"
-	use "system-icu" && eapply "${p}/chromium-79-icu-65.patch"
-	use "system-jsoncpp" &&	eapply "${p}/${PN}-system-jsoncpp-r1.patch"
-	use "system-libvpx" && eapply "${p}/${PN}-system-vpx-r1.patch"
-	has_version ">=media-libs/libvpx-1.7.0" && eapply "${p}/${PN}-vpx-1.7-compatibility-r1.patch"
-	use "system-openjpeg" && eapply "${p}/${PN}-system-openjpeg-r2.patch" 
-	use "convert-dict" && eapply "${p}/${PN}-ucf-dict-utility.patch"
-	use "clang" && eapply "${p}/chromium-77-clang.patch"
-	use "gold" && eapply "${p}/${PN}-gold-r4.patch"
-	use "swiftshader" || eapply "${p}/${PN}-disable-swiftshader.patch"
-	use "widevine" && eapply "${p}/chromium-widevine-r4.patch"
-	use "system-libdrm" && eapply "${p}/chromium-system-libdrm.patch"
-	use "vaapi" && eapply "${p}/${PN}-enable-vaapi-r1.patch"
-	use "vaapi" && eapply "${p}/${PN}-fix-vaapi-r1.patch"
-
+	
 	if use "optimize-webui" ; then
 		mkdir -p third_party/node/linux/node-linux-x64/bin || die
 		ln -s "${EPREFIX}/usr/bin/node" \
 			third_party/node/linux/node-linux-x64/bin/node || die
 	fi
 	
+	use "convert-dict" && eapply "${p}/chromium-ucf-dict-utility.patch"
+	use "tracing" || eapply "${p}/chromium-disable-tracing.patch"
+	use "perfetto" || eapply "${p}/chromium-disable-perfetto.patch"
+	#use "system-harfbuzz" && eapply "${p}/chromium-79-system-hb.patch"
+
+	if use "system-icu" ; then
+		eapply "${p}/chromium-system-icu.patch"
+		eapply "${p}/chromium-77-system-icu.patch"
+		eapply "${p}/chromium-system-convertutf.patch"
+	fi
+
+	use "system-jsoncpp" &&	eapply "${p}/chromium-system-jsoncpp-r1.patch"
+	
+	if use "system-libvpx" ; then
+		eapply "${p}/chromium-system-vpx-r1.patch"
+		has_version "=media-libs/libvpx-1.7*" && eapply "${p}/chromium-vpx-1.7-compatibility-r1.patch"
+	fi
+
+	use "system-openjpeg" && eapply "${p}/chromium-system-openjpeg-r2.patch" 
+	use "clang" && eapply "${p}/chromium-77-clang.patch"
+	use "gold" && eapply "${p}/chromium-gold-r4.patch"
+	use "swiftshader" || eapply "${p}/chromium-disable-swiftshader.patch"
+	use "widevine" && eapply "${p}/chromium-widevine-r4.patch"
+	use "system-libdrm" && eapply "${p}/chromium-system-libdrm.patch"
+	use "vaapi" && eapply "${p}/chromium-enable-vaapi-r1.patch"
+	use "vaapi" && eapply "${p}/chromium-fix-vaapi-r1.patch"
+
 	# Apply extra patches (taken from Igalia)
 	if use "wayland" && use "v4l2" && use "v4lplugin" ; then
 		eapply "${p}/chromium-76-v4l-fix-linking.patch"
@@ -420,13 +438,6 @@ src_prepare() {
 		third_party/catapult/third_party/html5lib-python
 		third_party/catapult/third_party/polymer
 		third_party/catapult/third_party/six
-		third_party/catapult/tracing/third_party/d3
-		third_party/catapult/tracing/third_party/gl-matrix
-		third_party/catapult/tracing/third_party/jpeg-js
-		third_party/catapult/tracing/third_party/jszip
-		third_party/catapult/tracing/third_party/mannwhitneyu
-		third_party/catapult/tracing/third_party/oboe
-		third_party/catapult/tracing/third_party/pako
 		third_party/ced
 		third_party/cld_3
 		third_party/crashpad
@@ -480,7 +491,6 @@ src_prepare() {
 		third_party/openscreen
 		third_party/openscreen/src/third_party/tinycbor/src/src
 		third_party/ots
-		third_party/perfetto
 		third_party/pffft
 		third_party/ply
 		third_party/polymer
@@ -535,6 +545,16 @@ src_prepare() {
 
 	#use closure-compile && 
 	keeplibs+=( third_party/closure_compiler )
+	use perfetto &&	keeplibs+=( third_party/perfetto )
+	use tracing && keeplibs+=(
+		third_party/catapult/tracing/third_party/d3
+		third_party/catapult/tracing/third_party/gl-matrix
+		third_party/catapult/tracing/third_party/jpeg-js
+		third_party/catapult/tracing/third_party/jszip
+		third_party/catapult/tracing/third_party/mannwhitneyu
+		third_party/catapult/tracing/third_party/oboe
+		third_party/catapult/tracing/third_party/pako
+	)
 	use optimize-webui && keeplibs+=(
 		third_party/node
 		third_party/node/node_modules/polymer-bundler/lib/third_party/UglifyJS2
@@ -838,7 +858,6 @@ src_configure() {
 		"media_use_ffmpeg=true"
 		"enable_ffmpeg_video_decoders=true"
 		"use_v4l2_codec=$(usetf v4l2)"
-		"use_linux_v4l2_only=$(usetf v4l2)"
 		"use_v4lplugin=$(usetf v4lplugin)"
 		"rtc_build_libvpx=$(usetf libvpx)"
 		"media_use_libvpx=$(usetf libvpx)"
@@ -855,7 +874,7 @@ src_configure() {
 		"use_low_quality_image_interpolation=false"
 
 		# Additional flags
-		"is_component_build=$(usetf component-build)"
+		#"is_component_build=$(usetf component-build)"
 		#"enable_desktop_in_product_help=false"
 		"enable_offline_pages=false" #Android
 		"closure_compile=$(usetf closure-compile)"
@@ -872,7 +891,6 @@ src_configure() {
 		"rtc_enable_libevent=$(usetf udev)"
 		"is_desktop_linux=true"
 		"enable_openscreen=false" #enabling affects system-jsoncpp
-
 		"use_allocator=\"$(usex tcmalloc tcmalloc none)\""
 		"use_allocator_shim=$(usetf tcmalloc)"
 		"use_gtk=$(usetf gtk)"
@@ -881,6 +899,9 @@ src_configure() {
 		"use_gio=$(usetf gnome)"
 		#"use_gconf=$(usetf gnome)"
 		"use_xkbcommon=$(usetf xkbcommon)"
+		# Explicitly disable ICU data file support for system-icu builds.
+		#"icu_use_data_file=$(usex system-icu false true)"
+		"use_system_libdrm=$(usetf system-libdrm)"
 	)
 	
 	use gold || myconf_gn+=( "use_lld=true" )
@@ -919,17 +940,7 @@ src_configure() {
 			"enable_background_mode=true"
 			#"use_system_minigbm=$(usetf system-minigbm)"
 			"use_system_minigbm=false"
-			"use_system_libdrm=$(usetf system-libdrm)"
-			"use_intel_minigbm=$(usetf video_cards_intel)" 
-			"use_radeon_minigbm=$(usetf video_cards_radeon)"
-		   	"use_amdgpu_minigbm=$(usetf video_cards_amdgpu)"
-			"use_exynos_minigbm=$(usetf video_cards_exynos)"
-			"use_marvell_minigbm=$(usetf video_cards_marvell)"
-			"use_mediatek_minigbm=$(usetf video_cards_mediatek)"
-			"use_msm_minigbm=$(usetf video_cards_msm)"
-			"use_rockchip_minigbm=$(usetf video_cards_rockchip)"
-			"use_tegra_minigbm=$(usetf video_cards_tegra)"
-			"use_vc4_minigbm=$(usetf video_cards_vc4)"
+			"use_linux_v4l2_only=$(usetf v4l2)"
 		)
 	fi
 
@@ -1001,7 +1012,8 @@ src_compile() {
 
 	# Even though ninja autodetects number of CPUs, we respect
 	# user's options, for debugging with -j 1 or any other reason
-	eninja -C out/Release chrome chromedriver
+	eninja -C out/Release chrome
+	use chromedriver && eninja -C out/Release chromedriver
 	use suid && eninja -C out/Release chrome_sandbox
 
 	pax-mark m out/Release/chrome
@@ -1031,7 +1043,7 @@ src_install() {
 		fperms 4755 "${CHROMIUM_HOME}/chrome-sandbox"
 	fi
 
-	doexe out/Release/chromedriver
+	use chromedriver && doexe out/Release/chromedriver
 
 	newexe "${FILESDIR}/chromium-launcher-r3.sh" chromium-launcher.sh
 	sed -i "s:/usr/lib/:/usr/$(get_libdir)/:g" \
@@ -1043,7 +1055,7 @@ src_install() {
 	# keep the old symlink around for consistency
 	dosym "${CHROMIUM_HOME}/chromium-launcher.sh" /usr/bin/chromium
 
-	dosym "${CHROMIUM_HOME}/chromedriver" /usr/bin/chromedriver
+	use chromedriver && dosym "${CHROMIUM_HOME}/chromedriver" /usr/bin/chromedriver
 
 	# Allow users to override command-line options (Bug #357629)
 	insinto /etc/chromium
