@@ -36,6 +36,10 @@ RDEPEND="${DEPEND}
 	!<media-libs/mesa-18.1.1-r1
 "
 
+PATCHES=(
+	"${FILESDIR}/egl-wayland-define-EGL_WAYLAND_Y_INVERTED_WL.patch"
+)
+
 src_configure(){
 	local emesonargs=(
 		--buildtype=release
