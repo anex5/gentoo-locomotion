@@ -1,0 +1,12 @@
+diff --git a/./CMake/FindLLVM.cmake b/./CMake/FindLLVM.cmake
+index c616657..c4c6a37 100644
+--- a/./CMake/FindLLVM.cmake
++++ b/./CMake/FindLLVM.cmake
+@@ -117,7 +117,6 @@ endmacro()
+ if (LLVM_VERSION_NODOT VERSION_GREATER 80)
+ add_one_lib("clang-cpp")
+ endif (LLVM_VERSION_NODOT VERSION_GREATER 80)
+-add_one_lib("clangCodeGen")
+ add_one_lib("clangFrontend")
+ add_one_lib("clangSerialization")
+ add_one_lib("clangDriver")

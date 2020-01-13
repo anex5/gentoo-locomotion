@@ -336,7 +336,8 @@ src_prepare() {
 	use "system-libdrm" && eapply "${p}/chromium-system-libdrm.patch"
 	use "vaapi" && eapply "${p}/chromium-enable-vaapi-r1.patch"
 	use "vaapi" && eapply "${p}/chromium-fix-vaapi-r2.patch"
-		
+ 	use "gtk" && eapply "${p}/chromium-78-fix-capture-x11.patch"
+
 	# Apply extra patches (taken from Igalia)
 	if use "wayland" ; then
 		eapply "${p}/chromium-76-v4l-fix-linking.patch"
