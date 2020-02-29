@@ -286,7 +286,6 @@ pkg_pretend() {
 }
 
 pkg_setup() {
-	pre_build_checks
 	chromium_suid_sandbox_check_kernel_config
 }
 
@@ -331,7 +330,7 @@ src_prepare() {
 	use "vaapi" && eapply "${p}/chromium-enable-vaapi-r1.patch"
 	use "vaapi" && eapply "${p}/chromium-fix-vaapi-r2.patch"
  	use "gtk" && eapply "${p}/chromium-78-fix-capture-x11.patch"
-
+	
 	# Apply extra patches (taken from Igalia)
 	#if use "wayland" ; then
 	#	eapply "${p}/chromium-76-v4l-fix-linking.patch"
@@ -567,7 +566,8 @@ src_prepare() {
 		third_party/pdfium/third_party/libtiff
 		third_party/pdfium/third_party/skia_shared
 	)
-	use swiftshader && keeplibs+=(
+	##use swiftshader && 
+	keeplibs+=(
 		third_party/swiftshader
 		third_party/swiftshader/third_party/llvm-7.0
 		third_party/swiftshader/third_party/llvm-subzero
