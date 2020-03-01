@@ -540,7 +540,8 @@ src_prepare() {
 	#use perfetto &&	
 	keeplibs+=( third_party/perfetto )
 
-	use tracing && keeplibs+=(
+	#use tracing && 
+	keeplibs+=(
 		third_party/catapult/tracing/third_party/d3
 		third_party/catapult/tracing/third_party/gl-matrix
 		third_party/catapult/tracing/third_party/jpeg-js
