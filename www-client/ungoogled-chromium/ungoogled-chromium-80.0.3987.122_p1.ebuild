@@ -34,7 +34,7 @@ IUSE="
 	kerberos libcxx lld optimize-thinlto optimize-webui perfetto
 	+pdf +proprietary-codecs pulseaudio selinux +suid system-ffmpeg system-harfbuzz 
 	+system-icu +system-jsoncpp +system-libevent +system-libvpx system-openh264
-	+system-openjpeg +system-libdrm -system-wayland +tcmalloc tracing +thinlto +vulkan vaapi widevine
+	+system-openjpeg +system-libdrm -system-wayland +tcmalloc +thinlto +vulkan vaapi widevine
 	wayland X libvpx gtk xkbcommon +v4l2 +v4lplugin +clang swiftshader udev debug man
 "
 RESTRICT="mirror
@@ -230,7 +230,7 @@ PATCHES=(
 
 	# Extra patches taken from openSUSE
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-system-libusb-r0.patch"
-	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-system-nspr-r1.patch"
+	#"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-system-nspr-r1.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-libusb-interrupt-event-handler-r1.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-system-fix-shim-headers-r0.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-skia-harmony.patch"
