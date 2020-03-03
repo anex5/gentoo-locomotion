@@ -179,7 +179,7 @@ BDEPEND="
 		sys-libs/libcxxabi
 	)
 	lld? ( >=sys-devel/lld-8.0.0 )
-	optimize-webui? ( >=net-libs/nodejs-7.6.0[inspector] )
+	>=net-libs/nodejs-7.6.0[inspector] 
 "
 
 # shellcheck disable=SC2086
@@ -297,11 +297,10 @@ src_prepare() {
 
 	local p="${FILESDIR}/chromium-$(ver_cut 1-1)"
 
-	if use "optimize-webui" ; then
-		mkdir -p third_party/node/linux/node-linux-x64/bin || die
-		ln -s "${EPREFIX}/usr/bin/node" \
-			third_party/node/linux/node-linux-x64/bin/node || die
-	fi
+	#if use "optimize-webui" ; then
+	mkdir -p third_party/node/linux/node-linux-x64/bin || die
+	ln -s "${EPREFIX}/usr/bin/node" third_party/node/linux/node-linux-x64/bin/node || die
+	#fi
 
 	use "convert-dict" && eapply "${p}/chromium-ucf-dict-utility.patch"
 	#use "tracing" || eapply "${p}/chromium-disable-tracing-r1.patch"
@@ -551,7 +550,8 @@ src_prepare() {
 		third_party/catapult/tracing/third_party/pako
 	)
 
-	use optimize-webui && keeplibs+=(
+	#use optimize-webui && 
+	keeplibs+=(
 		third_party/node
 		third_party/node/node_modules/polymer-bundler/lib/third_party/UglifyJS2
 	)
