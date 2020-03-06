@@ -30,9 +30,9 @@ SLOT="0"
 KEYWORDS="~amd64 ~arm64 ~x86"
 
 IUSE="
-	atk cfi chromedriver closure-compile convert-dict cups custom-cflags +dbus gnome gold 
+	atk cfi chromedriver closure-compile convert-dict cups custom-cflags +dbus gnome gnome-keyring gold 
 	kerberos libcxx lld optimize-thinlto optimize-webui perfetto
-	+pdf +proprietary-codecs pulseaudio selinux +suid system-ffmpeg system-harfbuzz 
+	+pdf +proprietary-codecs pulseaudio selinux +suid +system-ffmpeg +system-harfbuzz 
 	+system-icu +system-jsoncpp +system-libevent +system-libvpx system-openh264
 	+system-openjpeg +system-libdrm -system-wayland +tcmalloc +thinlto +vulkan vaapi widevine
 	wayland X libvpx gtk xkbcommon +v4l2 +v4lplugin +clang swiftshader udev debug man
@@ -54,6 +54,7 @@ REQUIRED_USE="
 	gtk? ( X )
 	gnome? ( gtk dbus )
 	atk? ( gnome )
+	gnome-keyring? ( gnome )
 	system-wayland? ( wayland )
 	system-libvpx? ( libvpx )
 "
@@ -95,6 +96,10 @@ CDEPEND="
 		x11-libs/gtk+:3[X]
 		x11-misc/xdg-utils
 	)
+	gnome? (
+		gnome-base/gnome:3
+	)
+	gnome-keyring? ( >=gnome-base/libgnome-keyring-3.12:= )
 	atk? (
 		>=app-accessibility/at-spi2-atk-2.26:2
 		>=dev-libs/atk-2.26
@@ -220,7 +225,7 @@ PATCHES=(
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-80-gcc-permissive.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-80-gcc-blink.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-80-gcc-abstract.patch"
-	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-80-gcc-incomplete-type.patch"
+	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-80-move-RemoteTreeNode-declaration.patch"
 
 	# Debian patches
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-disable-installer-r2.patch"
@@ -228,12 +233,14 @@ PATCHES=(
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-disable-font-tests.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-disable-third-party-lzma-sdk-r0.patch"
 
-	# Extra patches taken from openSUSE
+	# Extra patches taken from openSUSE and Arch
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-system-libusb-r0.patch"
-	#"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-system-nspr-r1.patch"
+	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-system-nspr-r1.patch"
+	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-system-libevent.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-libusb-interrupt-event-handler-r1.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-system-fix-shim-headers-r0.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-skia-harmony.patch"
+	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-fix-cfi-failures-with-unbundled-libxml.patch"
 	
 	# Personal patches
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-fix-nosafebrowsing-build-r1.patch"
@@ -310,34 +317,37 @@ src_prepare() {
 	if use "system-icu" ; then
 		eapply "${p}/chromium-system-icu.patch"
 		eapply "${p}/chromium-77-system-icu.patch"
-		#eapply "${p}/chromium-system-convertutf.patch"
+		eapply "${p}/chromium-system-convertutf.patch"
 	fi
 
-	use "system-jsoncpp" &&	eapply "${p}/chromium-system-jsoncpp-r1.patch"
+	use "system-jsoncpp" &&	eapply "${p}/chromium-system-jsoncpp-r2.patch"
 	
 	if use "system-libvpx" ; then
 		eapply "${p}/chromium-system-vpx-r1.patch"
 		has_version "=media-libs/libvpx-1.7*" && eapply "${p}/chromium-vpx-1.7-compatibility-r1.patch"
 	fi
 
-	use "system-openjpeg" && eapply "${p}/chromium-system-openjpeg-r2.patch" 
+	use "system-openjpeg" && ( 
+		eapply "${p}/chromium-system-openjpeg-r3.patch" && \
+		eapply "${p}/chromium-system-jpeg.patch"
+	)
+
 	use "clang" && eapply "${p}/chromium-77-clang.patch"
 	use "gold" && eapply "${p}/chromium-gold-r5.patch"
-	#use "swiftshader" || eapply "${p}/chromium-disable-swiftshader-r1.patch"
+	use "swiftshader" || eapply "${p}/chromium-disable-swiftshader-r2.patch"
 	use "widevine" && eapply "${p}/chromium-widevine-r4.patch"
 	use "system-libdrm" && eapply "${p}/chromium-system-libdrm.patch"
 	use "vaapi" && eapply "${p}/chromium-enable-vaapi-r1.patch"
-	use "vaapi" && eapply "${p}/chromium-fix-vaapi-r2.patch"
+	use "vaapi" && eapply "${p}/chromium-fix-vaapi-r3.patch"
  	use "gtk" && eapply "${p}/chromium-78-fix-capture-x11.patch"
 	
 	# Apply extra patches (taken from Igalia)
-	#if use "wayland" ; then
-	#	eapply "${p}/chromium-76-v4l-fix-linking.patch"
-	#	p="${FILESDIR}/igalia-$(ver_cut 1-1)"
-	#	eapply "${p}/0001-ozone-wayland-Complete-submission-of-a-buffer-submit.patch"
-		#eapply "${p}/V4L2/0001-Add-support-for-V4L2VDA-on-Linux.patch"
-		#eapply "${p}/V4L2/0002-Add-mmap-via-libv4l-to-generic_v4l2_device.patch"
-	#fi
+	if use "wayland" ; then
+		eapply "${p}/chromium-76-v4l-fix-linking.patch"
+		p="${FILESDIR}/igalia-$(ver_cut 1-1)"
+		eapply "${p}/0001-Add-missing-algorithm-header-in-bitmap_cursor_factor.patch"
+        eapply "${p}/0001-ozone-wayland-do-not-use-modifiers-for-linear-buffer.patch"
+	fi
 
 	# Hack for libusb stuff (taken from openSUSE)
 	rm third_party/libusb/src/libusb/libusb.h || die
@@ -499,7 +509,6 @@ src_prepare() {
 		third_party/skia/third_party/skcms
 		third_party/skia/third_party/vulkan
 		third_party/smhasher
-		third_party/speech-dispatcher
 		third_party/spirv-headers
 		third_party/SPIRV-Tools
 		third_party/sqlite
@@ -593,7 +602,11 @@ src_prepare() {
 		third_party/libvpx
 		third_party/libvpx/source/libvpx/third_party/x86inc
 	)
-	use system-wayland || keeplibs+=( third_party/wayland third_party/wayland-protocols )
+	use system-wayland || keeplibs+=( 
+		third_party/wayland 
+		third_party/wayland-protocols
+		third_party/speech-dispatcher
+	)
 	use wayland && keeplibs+=( third_party/minigbm )
 	use system-openh264 || keeplibs+=( third_party/openh264 )
 	use tcmalloc && keeplibs+=( third_party/tcmalloc )
@@ -847,9 +860,6 @@ src_configure() {
 		"enable_hls_sample_aes=true" 
 		"use_openh264=true" #Encoding
 		"rtc_use_h264=true" #Decoding
-		#"enable_ac3_eac3_audio_demuxing=false" #enabling affects system-jsoncpp
-		#"enable_hevc_demuxing=true"
-		#"enable_dolby_vision_demuxing=true"
 		"enable_av1_decoder=true"
 		"enable_mse_mpeg2ts_stream_parser=true"
 		"media_use_ffmpeg=true"
@@ -859,7 +869,6 @@ src_configure() {
 		"rtc_build_libvpx=$(usetf libvpx)"
 		"media_use_libvpx=$(usetf libvpx)"
 		"rtc_libvpx_build_vp9=$(usetf libvpx)"
-		#"enable_mpeg_h_audio_demuxing=true"
 		"enable_vulkan=$(usetf vulkan)" 
 		"angle_enable_vulkan=$(usetf vulkan)"
 		"angle_enable_vulkan_validation_layers=$(usetf vulkan)"
@@ -872,7 +881,6 @@ src_configure() {
 
 		# Additional flags
 		#"is_component_build=$(usetf component-build)"
-		#"enable_desktop_in_product_help=false"
 		"enable_offline_pages=false" #Android
 		"closure_compile=$(usetf closure-compile)"
 		"enable_swiftshader=$(usetf swiftshader)"
@@ -892,8 +900,9 @@ src_configure() {
 		"use_allocator_shim=$(usetf tcmalloc)"
 		"use_gtk=$(usetf gtk)"
 		"rtc_use_gtk=$(usetf gtk)"
-		"rtc_use_x11=false"
-		"use_gio=$(usetf gnome)"
+		"rtc_use_x11=$(usetf X)"
+		"use_gio=true"
+		"use_gnome_keyring=$(usetf gnome-keyring)"
 		#"use_gconf=$(usetf gnome)"
 		"use_xkbcommon=$(usetf xkbcommon)"
 		# Explicitly disable ICU data file support for system-icu builds.
@@ -914,17 +923,13 @@ src_configure() {
 		myconf_gn+=(" host_toolchain=\"//build/toolchain/linux/unbundle:default\"")
 	fi
 
-	#use system-jsoncpp && myconf_gn+=(
-	#	"rtc_build_json=false"
-	#	"rtc_jsoncpp_root=\"/usr/include/json\""
-	#)
-	
 	# wayland
 	if use wayland; then
 		myconf_gn+=(
 			"use_egl=true"
 			#"toolkit_views=true" 
 			"use_system_libwayland=$(usetf system-wayland)"
+			"use_gtk=false"
 			"use_ozone=true"
 			"use_aura=true"
 			"use_wayland_gbm=true"
@@ -935,9 +940,10 @@ src_configure() {
 			"ozone_platform_gbm=true"
 			"ozone_platform=\"wayland\""
 			"enable_background_mode=true"
+			#"system_wayland_scanner_path=/usr/bin/wayland-scanner"
 			#"use_system_minigbm=$(usetf system-minigbm)"
 			"use_system_minigbm=false"
-			"use_linux_v4l2_only=$(usetf v4l2)"
+			#"use_linux_v4l2_only=$(usetf v4l2)"
 		)
 	fi
 

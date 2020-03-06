@@ -1,20 +1,18 @@
 description: use system jsoncpp
-author: Michael Gilbert <mgilbert@debian.org>
 
 --- a/third_party/jsoncpp/BUILD.gn
 +++ b/third_party/jsoncpp/BUILD.gn
-@@ -3,52 +3,14 @@
- # found in the LICENSE file.
+@@ -4,51 +4,14 @@
  
  import("//testing/libfuzzer/fuzzer_test.gni")
-+import("//build/config/linux/pkg_config.gni")
  
 -config("jsoncpp_config") {
 -  include_dirs = [
 -    "source/include",
 -    "generated",
 -  ]
--
++import("//build/config/linux/pkg_config.gni")
+ 
 -  # TODO(crbug.com/983223): Update JsonCpp BUILD.gn to remove deprecated
 -  # declaration flag.
 -  # This temporary flag allowing clients to update to the new version, and then
@@ -23,7 +21,7 @@ author: Michael Gilbert <mgilbert@debian.org>
 -    cflags_cc = [ "-Wno-deprecated-declarations" ]
 -  }
 +pkg_config("jsoncpp_config") {
-+  packages = [ "jsoncpp" ]
++    packages= [ "jsoncpp" ]
  }
  
 -source_set("jsoncpp") {
@@ -59,5 +57,4 @@ author: Michael Gilbert <mgilbert@debian.org>
 -  }
  }
  
- fuzzer_test("jsoncpp_fuzzer") {
-
+ if (build_with_chromium) {

@@ -53,8 +53,6 @@ Auto-Submit: Raphael Kubo da Costa <raphael.kubo.da.costa@intel.com>
 Cr-Commit-Position: refs/heads/master@{#725070}
 ---
 
-diff --git a/components/sync_bookmarks/bookmark_model_merger.cc b/components/sync_bookmarks/bookmark_model_merger.cc
-index eae153ef..579848e 100644
 --- a/components/sync_bookmarks/bookmark_model_merger.cc
 +++ b/components/sync_bookmarks/bookmark_model_merger.cc
 @@ -5,7 +5,6 @@
@@ -65,7 +63,7 @@ index eae153ef..579848e 100644
  #include <set>
  #include <string>
  #include <utility>
-@@ -205,66 +204,44 @@
+@@ -203,66 +202,44 @@ UpdatesPerParentId GroupValidUpdatesByPa
  
  }  // namespace
  
@@ -79,33 +77,20 @@ index eae153ef..579848e 100644
 -  static RemoteTreeNode BuildTree(
 -      std::unique_ptr<syncer::UpdateResponseData> update,
 -      UpdatesPerParentId* updates_per_parent_id);
-+BookmarkModelMerger::RemoteTreeNode::RemoteTreeNode() = default;
- 
+-
 -  ~RemoteTreeNode() = default;
-+BookmarkModelMerger::RemoteTreeNode::~RemoteTreeNode() = default;
- 
+-
 -  // Allow moves, useful during construction.
 -  RemoteTreeNode(RemoteTreeNode&&) = default;
 -  RemoteTreeNode& operator=(RemoteTreeNode&&) = default;
-+BookmarkModelMerger::RemoteTreeNode::RemoteTreeNode(
-+    BookmarkModelMerger::RemoteTreeNode&&) = default;
-+BookmarkModelMerger::RemoteTreeNode& BookmarkModelMerger::RemoteTreeNode::
-+operator=(BookmarkModelMerger::RemoteTreeNode&&) = default;
- 
+-
 -  const syncer::EntityData& entity() const { return *update_->entity; }
 -  int64_t response_version() const { return update_->response_version; }
-+void BookmarkModelMerger::RemoteTreeNode::EmplaceSelfAndDescendantsByGUID(
-+    std::unordered_map<std::string, const RemoteTreeNode*>*
-+        guid_to_remote_node_map) const {
-+  DCHECK(guid_to_remote_node_map);
- 
+-
 -  // Direct children nodes, sorted by ascending unique position. These are
 -  // guaranteed to be valid updates (e.g. IsValidBookmarkSpecifics()).
 -  const std::vector<RemoteTreeNode>& children() const { return children_; }
-+  const std::string& guid = entity().specifics.bookmark().guid();
-+  if (!guid.empty()) {
-+    DCHECK(base::IsValidGUID(guid));
- 
+-
 -  // Recursively emplaces all GUIDs (this node and descendants) into
 -  // |*guid_to_remote_node_map|, which must not be null.
 -  void EmplaceSelfAndDescendantsByGUID(
@@ -121,10 +106,27 @@ index eae153ef..579848e 100644
 -      bool success = guid_to_remote_node_map->emplace(guid, this).second;
 -      DCHECK(success);
 -    }
--
++BookmarkModelMerger::RemoteTreeNode::RemoteTreeNode() = default;
+ 
 -    for (const RemoteTreeNode& child : children_) {
 -      child.EmplaceSelfAndDescendantsByGUID(guid_to_remote_node_map);
 -    }
++BookmarkModelMerger::RemoteTreeNode::~RemoteTreeNode() = default;
++
++BookmarkModelMerger::RemoteTreeNode::RemoteTreeNode(
++    BookmarkModelMerger::RemoteTreeNode&&) = default;
++BookmarkModelMerger::RemoteTreeNode& BookmarkModelMerger::RemoteTreeNode::
++operator=(BookmarkModelMerger::RemoteTreeNode&&) = default;
++
++void BookmarkModelMerger::RemoteTreeNode::EmplaceSelfAndDescendantsByGUID(
++    std::unordered_map<std::string, const RemoteTreeNode*>*
++        guid_to_remote_node_map) const {
++  DCHECK(guid_to_remote_node_map);
++
++  const std::string& guid = entity().specifics.bookmark().guid();
++  if (!guid.empty()) {
++    DCHECK(base::IsValidGUID(guid));
++
 +    // Duplicate GUIDs have been sorted out before.
 +    bool success = guid_to_remote_node_map->emplace(guid, this).second;
 +    DCHECK(success);
@@ -161,8 +163,6 @@ index eae153ef..579848e 100644
  
  // static
  BookmarkModelMerger::RemoteTreeNode
-diff --git a/components/sync_bookmarks/bookmark_model_merger.h b/components/sync_bookmarks/bookmark_model_merger.h
-index 9b59200..bf0783ec 100644
 --- a/components/sync_bookmarks/bookmark_model_merger.h
 +++ b/components/sync_bookmarks/bookmark_model_merger.h
 @@ -5,6 +5,7 @@
@@ -173,7 +173,7 @@ index 9b59200..bf0783ec 100644
  #include <string>
  #include <unordered_map>
  #include <vector>
-@@ -50,7 +51,52 @@
+@@ -50,7 +51,52 @@ class BookmarkModelMerger {
  
   private:
    // Internal representation of a remote tree, composed of nodes.
