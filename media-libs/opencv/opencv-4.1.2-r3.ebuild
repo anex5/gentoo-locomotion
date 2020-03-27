@@ -236,6 +236,7 @@ PATCHES=(
 	"${FILESDIR}/${PN}-3.4.1-cuda-add-relaxed-constexpr.patch"
 	"${FILESDIR}/${P}-pkg-config-file.patch"
 	"${FILESDIR}/${P}-opencl-license.patch"
+	"${FILESDIR}/${P}-fix-contribxfeatures2d-include.patch"
 )
 
 pkg_pretend() {
