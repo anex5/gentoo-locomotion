@@ -1,0 +1,26 @@
+diff --git a/../opencv_contrib-4.1.2/modules/sfm/src/simple_pipeline.cpp b/../opencv_contrib-4.1.2/modules/sfm/src/simple_pipeline.cpp
+index a081610..210414c 100644
+--- a/../opencv_contrib-4.1.2/modules/sfm/src/simple_pipeline.cpp
++++ b/../opencv_contrib-4.1.2/modules/sfm/src/simple_pipeline.cpp
+@@ -41,7 +41,7 @@
+ #include <Eigen/Core>
+ 
+ #include <opencv2/core/eigen.hpp>
+-#include <opencv2/xfeatures2d.hpp>
++#include <../../xfeatures2d/include/opencv2/xfeatures2d.hpp>
+ 
+ #include "libmv_capi.h"
+ 
+diff --git a/../opencv_contrib-4.1.2/modules/xfeatures2d/include/opencv2/xfeatures2d.hpp b/../opencv_contrib-4.1.2/modules/xfeatures2d/include/opencv2/xfeatures2d.hpp
+index 3ec7862..cf00dfb 100644
+--- a/../opencv_contrib-4.1.2/modules/xfeatures2d/include/opencv2/xfeatures2d.hpp
++++ b/../opencv_contrib-4.1.2/modules/xfeatures2d/include/opencv2/xfeatures2d.hpp
+@@ -40,7 +40,7 @@ the use of this software, even if advised of the possibility of such damage.
+ #define __OPENCV_XFEATURES2D_HPP__
+ 
+ #include "opencv2/features2d.hpp"
+-#include "opencv2/xfeatures2d/nonfree.hpp"
++#include "../../xfeatures2d/include/opencv2/xfeatures2d/nonfree.hpp"
+ 
+ /** @defgroup xfeatures2d Extra 2D Features Framework
+ @{

@@ -3,7 +3,7 @@
 
 EAPI=7
 
-inherit python-any-r1 cmake-multilib flag-o-matic llvm
+inherit cmake-multilib flag-o-matic llvm
 
 DESCRIPTION="OpenCL implementation for Intel Sandy Bridge, Ivy Bridge and Haswell GPUs"
 HOMEPAGE="https://01.org/beignet https://gitlab.freedesktop.org/beignet/beignet"
@@ -64,7 +64,6 @@ DOCS=(
 
 pkg_setup() {
 	llvm_pkg_setup
-	python_setup
 }
 
 get_llvm_slot() {
