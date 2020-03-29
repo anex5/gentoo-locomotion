@@ -1,7 +1,7 @@
-diff --git a/../opencv_contrib-4.1.2/modules/sfm/src/simple_pipeline.cpp b/../opencv_contrib-4.1.2/modules/sfm/src/simple_pipeline.cpp
+diff --git a/opencv_contrib-4.1.2/modules/sfm/src/simple_pipeline.cpp b/opencv_contrib-4.1.2/modules/sfm/src/simple_pipeline.cpp
 index a081610..210414c 100644
---- a/../opencv_contrib-4.1.2/modules/sfm/src/simple_pipeline.cpp
-+++ b/../opencv_contrib-4.1.2/modules/sfm/src/simple_pipeline.cpp
+--- a/modules/sfm/src/simple_pipeline.cpp
++++ b/modules/sfm/src/simple_pipeline.cpp
 @@ -41,7 +41,7 @@
  #include <Eigen/Core>
  
@@ -11,10 +11,10 @@ index a081610..210414c 100644
  
  #include "libmv_capi.h"
  
-diff --git a/../opencv_contrib-4.1.2/modules/xfeatures2d/include/opencv2/xfeatures2d.hpp b/../opencv_contrib-4.1.2/modules/xfeatures2d/include/opencv2/xfeatures2d.hpp
+diff --git a/opencv_contrib-4.1.2/modules/xfeatures2d/include/opencv2/xfeatures2d.hpp b/opencv_contrib-4.1.2/modules/xfeatures2d/include/opencv2/xfeatures2d.hpp
 index 3ec7862..cf00dfb 100644
---- a/../opencv_contrib-4.1.2/modules/xfeatures2d/include/opencv2/xfeatures2d.hpp
-+++ b/../opencv_contrib-4.1.2/modules/xfeatures2d/include/opencv2/xfeatures2d.hpp
+--- a/modules/xfeatures2d/include/opencv2/xfeatures2d.hpp
++++ b/modules/xfeatures2d/include/opencv2/xfeatures2d.hpp
 @@ -40,7 +40,7 @@ the use of this software, even if advised of the possibility of such damage.
  #define __OPENCV_XFEATURES2D_HPP__
  
