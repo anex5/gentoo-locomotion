@@ -1,0 +1,1 @@
+/var/overlay/gentoo-locomotion/sys-power/amdcovc/amdcovc-9999.ebuild
