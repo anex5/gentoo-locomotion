@@ -236,7 +236,7 @@ PATCHES=(
 	# Extra patches taken from openSUSE and Arch
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-system-libusb-r0.patch"
 	#"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-system-nspr-r1.patch"
-	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-system-libevent.patch"
+	#"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-system-libevent.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-libusb-interrupt-event-handler-r1.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-system-fix-shim-headers-r0.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-skia-harmony.patch"
