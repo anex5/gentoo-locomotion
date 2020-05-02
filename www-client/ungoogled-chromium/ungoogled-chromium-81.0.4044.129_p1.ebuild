@@ -336,7 +336,7 @@ src_prepare() {
 	local ugc_unneeded=(
 		# GN bootstrap
 		extra/debian_buster/gn/parallel
-		core/ungoogled-chromium/replace-google-search-engine-with-nosearch.patch
+		#core/ungoogled-chromium/replace-google-search-engine-with-nosearch.patch
 	)
 
 	local ugc_p ugc_dir
@@ -424,6 +424,8 @@ src_prepare() {
 		third_party/depot_tools
 		third_party/devscripts
 		third_party/devtools-frontend
+		third_party/devtools-frontend/src/front_end/third_party/fabricjs
+		third_party/devtools-frontend/src/front_end/third_party/wasmparser
 		third_party/devtools-frontend/src/third_party
 		third_party/dom_distiller_js
 		third_party/emoji-segmenter
