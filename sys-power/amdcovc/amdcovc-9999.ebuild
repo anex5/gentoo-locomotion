@@ -8,9 +8,13 @@ inherit linux-info toolchain-funcs
 DESCRIPTION="Control AMD Overdrive settings with or without X."
 HOMEPAGE="https://github.com/matszpk/amdcovc"
 
+if [ ${PR} == "r0" ]; then 
+	PR=""
+fi
+
 if [ ${PV} == "9999" ] ; then
 	inherit git-r3
-	EGIT_REPO_URI="https://matszpk/${PN}"
+	EGIT_REPO_URI="https://github.com/matszpk/${PN}"
 else
 	SRC_URI="https://github.com/matszpk/${PN}/archive/${PV}${PR/r/.}.tar.gz -> ${P}.tar.gz"
 	KEYWORDS="-* ~amd64"
@@ -29,6 +33,8 @@ DEPEND="
 RDEPEND="${DEPEND}"
 
 BDEPEND="virtual/pkgconfig"
+
+S=${WORKDIR}/${P}${PR/r/.}
 
 src_compile() {
     local myemakeargs=(
