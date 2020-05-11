@@ -328,7 +328,13 @@ src_prepare() {
 	use "vdpau" && eapply "${p}/vdpau-support.patch"
 	use "widevine" && eapply "${p}/chromium-widevine-r4.patch"
 	use "system-libdrm" && eapply "${p}/chromium-system-libdrm.patch"
-	use "wayland" && eapply "${p}/chromium-fix_vaapi_wayland.patch"
+	use "wayland" && use "vaapi" && eapply "${p}/chromium-fix_vaapi_wayland.patch"
+	if use "ozone"; then
+		eapply "${p}/chromium-76-v4l-fix-linking.patch"
+		p="${FILESDIR}/igalia-$(ver_cut 1-1)"
+		eapply "${p}/0001-rebuild-Linux-frame-button-cache-when-activation.patch"
+        eapply "${p}/0002-rename-Relayout-in-DesktopWindowTreeHostPlatform.patch"
+	fi
 
 	# Hack for libusb stuff (taken from openSUSE)
 	rm third_party/libusb/src/libusb/libusb.h || die
