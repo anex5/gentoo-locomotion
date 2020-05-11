@@ -13,13 +13,13 @@ inherit check-reqs chromium-2 desktop flag-o-matic multilib ninja-utils pax-util
 
 UGC_PV="${PV/_p/-}"
 UGC_P="${PN}-${UGC_PV}"
-UGC_WD="${WORKDIR}/${UGC_P}"
 UGC_URL="https://github.com/Eloston/${PN}/archive/"
 #UGC_COMMIT_ID="c6bed0c7d342d26c59c39798f4794a430c14a2f9"
 
 if [ -z "$UGC_COMMIT_ID" ]
 then
 	UGC_URL="${UGC_URL}${UGC_PV}.tar.gz -> ${UGC_P}.tar.gz"
+	UGC_WD="${WORKDIR}/${UGC_P}"
 else
 	UGC_URL="${UGC_URL}${UGC_COMMIT_ID}.tar.gz -> ${PN}-${UGC_COMMIT_ID}.tar.gz"
 	UGC_WD="${WORKDIR}/ungoogled-chromium-${UGC_COMMIT_ID}"
@@ -233,6 +233,8 @@ PATCHES=(
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-81-gcc-noexcept.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-81-gcc-constexpr.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-system-fix-shim-headers-r0.patch"
+	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-81-icu67.patch"
+	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-81-re2-0.2020.05.01.patch"
 	
 	# Extra patches taken from openSUSE and Arch
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-system-libusb-r0.patch"
@@ -292,6 +294,10 @@ src_prepare() {
 	default
 
 	local p="${FILESDIR}/chromium-$(ver_cut 1-1)"
+
+	if tc-is-gcc && ! ver_test "$(gcc-version)" -ge 10.0; then
+		eapply "${p}/chromium-81-gcc-10.patch"
+	fi
 
 	use "custom-cflags" && eapply "${p}/chromium-compiler-r11.patch"
 
