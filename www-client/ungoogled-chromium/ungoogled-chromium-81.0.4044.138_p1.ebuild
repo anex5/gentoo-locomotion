@@ -239,7 +239,7 @@ PATCHES=(
 	# Extra patches taken from openSUSE and Arch
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-system-libusb-r0.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-libusb-interrupt-event-handler-r1.patch"
-	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-skia-harmony-r2.patch"
+	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-skia-harmony.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-fix-cfi-failures-with-unbundled-libxml.patch"
 	
 	# Personal patches
