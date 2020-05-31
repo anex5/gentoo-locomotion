@@ -364,6 +364,7 @@ multilib_src_configure() {
 		-DBUILD_WITH_DYNAMIC_IPP=OFF
 		-DBUILD_FAT_JAVA_LIB=OFF
 	#	-DBUILD_ANDROID_SERVICE=OFF
+		-DBUILD_opencv_cudaoptflow=OFF
 		-DBUILD_CUDA_STUBS=$(multilib_native_usex cuda)
 		-DOPENCV_EXTRA_MODULES_PATH=$(usex contrib "${WORKDIR}/opencv_contrib-${PV}/modules" "")
 	# ===================================================
