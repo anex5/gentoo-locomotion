@@ -590,6 +590,7 @@ src_prepare() {
 		third_party/swiftshader/third_party/marl
 		third_party/swiftshader/third_party/subzero
 		third_party/swiftshader/third_party/SPIRV-Headers/include/spirv/unified1
+		third_party/swiftshader/third_party/astc-encoder/Source
 	)
 	use v4l2 && keeplibs+=(
 		third_party/v4l-utils
@@ -947,8 +948,8 @@ src_configure() {
 	# wayland
 	if use wayland; then
 		myconf_gn+=(
-			"use_system_libwayland=$(usetf system-wayland)"
-			"use_wayland_gbm=true"
+			#"use_system_libwayland=$(usetf system-wayland)"
+			"use_wayland_gbm=$(usetf gbm)"
 			"ozone_platform=\"wayland\""
 			"enable_background_mode=true"
 			#"system_wayland_scanner_path=/usr/bin/wayland-scanner"
