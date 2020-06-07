@@ -802,7 +802,7 @@ src_configure() {
 		# Disable nacl, we can't build without pnacl (http://crbug.com/269560).
 		"enable_nacl=false"
 		"enable_nacl_nonsfi=false"
-		"enable_native_notifications=false"
+		"enable_native_notifications=true"
 		
 		"enable_one_click_signin=false"
 		"enable_reading_list=false"
