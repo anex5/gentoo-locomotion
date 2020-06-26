@@ -344,7 +344,6 @@ src_prepare() {
         eapply "${p}/0003-Fix-sandbox-Aw-snap-for-syscalls-403-and-407.patch"
         eapply "${p}/0001-Add-missing-algorithm-header-in-crx_install_error.cc.patch"
         eapply "${p}/0002-Make-some-of-blink-custom-iterators-STL-compatible.patch"
-        eapply "${p}/0003-libstdc-fix-incomplete-type-in-AXTree-for-NodeSetSiz.patch"
         eapply "${p}/0004-Include-memory-header-to-get-the-definition-of-std-u.patch"
         eapply "${p}/0005-IWYU-std-numeric_limits-is-defined-in-limits.patch"
         eapply "${p}/0006-ozone-remove-x11-headers-from-accessibility-tree-for.patch"
@@ -954,7 +953,7 @@ src_configure() {
 	if use wayland; then
 		myconf_gn+=(
 			#"use_system_libwayland=$(usetf system-wayland)"
-			"use_wayland_gbm=$(usetf gbm)"
+			#"use_wayland_gbm=$(usetf gbm)"
 			"ozone_platform=\"wayland\""
 			"enable_background_mode=true"
 			#"system_wayland_scanner_path=/usr/bin/wayland-scanner"
