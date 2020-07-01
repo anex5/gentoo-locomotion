@@ -246,8 +246,10 @@ PATCHES=(
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-system-fix-shim-headers-r0.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-83-icu67.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-81-re2-0.2020.05.01.patch"
+	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-84-mediaalloc.patch"
 	
 	# Extra patches taken from openSUSE and Arch
+    "${FILESDIR}/chromium-$(ver_cut 1-1)/force-mp3-files-to-have-a-start-time-of-zero.patch" 
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-system-libusb-r0.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-libusb-interrupt-event-handler-r1.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-skia-harmony.patch"
@@ -325,7 +327,6 @@ src_prepare() {
 	use "system-openjpeg" && eapply "${p}/chromium-system-openjpeg-r2.patch"
 
 	if use "vaapi";	then
-		#eapply "${p}/vaapi-build-fix.patch"
 		elog "Even though ${PN} is built with vaapi support, #ignore-gpu-blacklist"
 		elog "should be enabled via flags or commandline for it to work."
 	fi
@@ -333,19 +334,22 @@ src_prepare() {
 	use "vdpau" && eapply "${p}/vdpau-support.patch"
 	use "widevine" && eapply "${p}/chromium-widevine-r4.patch"
 	use "system-libdrm" && eapply "${p}/chromium-system-libdrm.patch"
+	use "wayland" && eapply "${p}/wayland-egl.patch"
 	use "wayland" && use "vaapi" && eapply "${p}/chromium-fix_vaapi_wayland.patch"
 
+	#Igalia    
+	p="${FILESDIR}/igalia-$(ver_cut 1-1)"
+	eapply "${p}/0005-IWYU-std-numeric_limits-is-defined-in-limits.patch"
+    eapply "${p}/0002-Make-some-of-blink-custom-iterators-STL-compatible.patch"
+    eapply "${p}/0004-Include-memory-header-to-get-the-definition-of-std-u.patch"
+	
 	if use "ozone"; then
-		eapply "${p}/chromium-76-v4l-fix-linking.patch"
-		p="${FILESDIR}/igalia-$(ver_cut 1-1)"
+		eapply "${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-76-v4l-fix-linking.patch"
 		eapply "${p}/0001-Do-not-use-nullptr-initalization-of-fwd-declared-typ.patch"
         eapply "${p}/0002-media-do-not-use-fwd-decl-with-nullptr-instantiation.patch"
         eapply "${p}/chromium-Move-CharAllocator-definition-to-a-header-f.patch"
         eapply "${p}/0003-Fix-sandbox-Aw-snap-for-syscalls-403-and-407.patch"
         eapply "${p}/0001-Add-missing-algorithm-header-in-crx_install_error.cc.patch"
-        eapply "${p}/0002-Make-some-of-blink-custom-iterators-STL-compatible.patch"
-        eapply "${p}/0004-Include-memory-header-to-get-the-definition-of-std-u.patch"
-        eapply "${p}/0005-IWYU-std-numeric_limits-is-defined-in-limits.patch"
         eapply "${p}/0006-ozone-remove-x11-headers-from-accessibility-tree-for.patch"
         eapply "${p}/0001-stl_util-support-older-clang.patch"
         eapply "${p}/0001-IWYU-uint32_t-is-defined-in-cstdint.patch"
