@@ -942,15 +942,17 @@ src_configure() {
 
 	# ozone
 	if use ozone; then
-		"use_egl=true"
-		"use_gtk=false"
-		"use_ozone=true"
-		"use_aura=true"
-		"ozone_auto_platforms=false"
-		"ozone_platform_x11=$(usetf X)"
-		"ozone_platform_wayland=$(usetf wayland)"
-		"ozone_platform_headless=$(usetf headless)"
-		"ozone_platform_gbm=$(usetf gbm)"
+		myconf_gn+=(
+			"use_egl=true"
+			"use_gtk=false"
+			"use_ozone=true"
+			"use_aura=true"
+			"ozone_auto_platforms=false"
+			"ozone_platform_x11=$(usetf X)"
+			"ozone_platform_wayland=$(usetf wayland)"
+			"ozone_platform_headless=$(usetf headless)"
+			"ozone_platform_gbm=$(usetf gbm)"
+		)
 	fi
 
 	# wayland
