@@ -39,7 +39,8 @@ SRC_URI="https://commondatastorage.googleapis.com/chromium-browser-official/chro
 LICENSE="BSD"
 SLOT="0"
 KEYWORDS="amd64 ~x86"
-IUSE="atk cfi clang closure-compile convert-dict cups custom-cflags chromedriver dbus debug gold gnome gtk hangouts headless libcxx kerberos man musl optimize-thinlto optimize-webui ozone +pdf +proprietary-codecs pulseaudio selinux suid +system-ffmpeg +system-harfbuzz +system-icu +system-jsoncpp +system-libevent +system-libdrm +system-libvpx +system-openh264 system-openjpeg libvpx lld +tcmalloc thinlto v4l2 v4lplugin vaapi vdpau wayland widevine X xkbcommon"
+IUSE="atk cfi clang closure-compile convert-dict cups custom-cflags chromedriver dbus debug gold gnome gtk 
+hangouts headless libcxx kerberos man musl optimize-thinlto optimize-webui ozone +pdf +proprietary-codecs pulseaudio selinux suid +system-ffmpeg +system-harfbuzz +system-icu +system-jsoncpp +system-libevent +system-libdrm +system-libvpx +system-openh264 system-openjpeg libvpx lld swiftshader +tcmalloc thinlto udev v4l2 v4lplugin vaapi vdpau vulkan wayland widevine X xkbcommon"
 RESTRICT="
 	!system-ffmpeg? ( proprietary-codecs? ( bindist ) )
 	!system-openh264? ( bindist )
@@ -87,7 +88,7 @@ COMMON_DEPEND="
 	sys-apps/pciutils:=
 	sys-libs/zlib:=[minizip]
 	virtual/udev
-	X? ( 
+	X? (
 		x11-libs/cairo:=[X]
 		x11-libs/gdk-pixbuf:2
 		x11-libs/libX11:=
@@ -159,7 +160,6 @@ RDEPEND="${COMMON_DEPEND}
 	x11-misc/xdg-utils
 	virtual/opengl
 	virtual/ttf-fonts
-	virtual/libgl
 	selinux? ( sec-policy/selinux-chromium )
 	tcmalloc? ( !<x11-drivers/nvidia-drivers-331.20 )
 	widevine? ( !x86? ( www-plugins/chrome-binary-plugins[widevine(-)] ) )
@@ -229,19 +229,17 @@ in /etc/chromium/default.
 "
 
 PATCHES=(
-	"${FILESDIR}/chromium-84-mediaalloc.patch"
-
-	"${FILESDIR}/chromium-system-fix-shim-headers-r0.patch"
+	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-84-mediaalloc.patch"
+	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-system-fix-shim-headers-r0.patch"
 
 	# Extra patches taken from openSUSE and Arch
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/force-mp3-files-to-have-a-start-time-of-zero.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/remove-NotifyError-calls-and-just-send-a-normal-message.patch"
-	"${FILESDIR}/chromium-$(ver_cut 1-1)/avoid-calling-DeleteForCurrentDocument-from-destructor.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-system-libusb-r0.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-libusb-interrupt-event-handler-r1.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-skia-harmony.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-fix-cfi-failures-with-unbundled-libxml.patch"
-	
+
 	# Personal patches
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-fix-nosafebrowsing-build-r1.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-optional-atk-r1.patch"
@@ -327,24 +325,24 @@ src_prepare() {
 
 	#Igalia    
 	p="${FILESDIR}/igalia-$(ver_cut 1-1)"
-	eapply "${p}/0005-IWYU-std-numeric_limits-is-defined-in-limits.patch"
-	eapply "${p}/0002-Make-some-of-blink-custom-iterators-STL-compatible.patch"
-	eapply "${p}/0004-Include-memory-header-to-get-the-definition-of-std-u.patch"
+	#eapply "${p}/0005-IWYU-std-numeric_limits-is-defined-in-limits.patch"
+	#eapply "${p}/0002-Make-some-of-blink-custom-iterators-STL-compatible.patch"
+	#eapply "${p}/0004-Include-memory-header-to-get-the-definition-of-std-u.patch"
 	
-	if use "ozone"; then
-		eapply "${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-76-v4l-fix-linking.patch"
-		eapply "${p}/0001-Do-not-use-nullptr-initalization-of-fwd-declared-typ.patch"
-		eapply "${p}/0002-media-do-not-use-fwd-decl-with-nullptr-instantiation.patch"
-		eapply "${p}/chromium-Move-CharAllocator-definition-to-a-header-f.patch"
-		eapply "${p}/0003-Fix-sandbox-Aw-snap-for-syscalls-403-and-407.patch"
-		eapply "${p}/0001-Add-missing-algorithm-header-in-crx_install_error.cc.patch"
-		eapply "${p}/0006-ozone-remove-x11-headers-from-accessibility-tree-for.patch"
-		eapply "${p}/0001-stl_util-support-older-clang.patch"
- 		eapply "${p}/0001-IWYU-uint32_t-is-defined-in-cstdint.patch"
- 		eapply "${p}/0001-IWYU-size_t-is-defined-in-stddef.h-webrtc.patch"
-		eapply "${p}/0001-IWYU-size_t-is-defined-in-stddef.h.patch"
-		eapply "${p}/0001-IWYU-uint32_t-is-defined-in-cstdint-webrtc.patch"
-	fi
+	#if use "ozone"; then
+	#	eapply "${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-76-v4l-fix-linking.patch"
+	#	eapply "${p}/0001-Do-not-use-nullptr-initalization-of-fwd-declared-typ.patch"
+	#	eapply "${p}/0002-media-do-not-use-fwd-decl-with-nullptr-instantiation.patch"
+	#	eapply "${p}/chromium-Move-CharAllocator-definition-to-a-header-f.patch"
+	#	eapply "${p}/0003-Fix-sandbox-Aw-snap-for-syscalls-403-and-407.patch"
+	#	eapply "${p}/0001-Add-missing-algorithm-header-in-crx_install_error.cc.patch"
+	#	eapply "${p}/0006-ozone-remove-x11-headers-from-accessibility-tree-for.patch"
+	#	eapply "${p}/0001-stl_util-support-older-clang.patch"
+ 	#	eapply "${p}/0001-IWYU-uint32_t-is-defined-in-cstdint.patch"
+ 	#	eapply "${p}/0001-IWYU-size_t-is-defined-in-stddef.h-webrtc.patch"
+	#	eapply "${p}/0001-IWYU-size_t-is-defined-in-stddef.h.patch"
+	#	eapply "${p}/0001-IWYU-uint32_t-is-defined-in-cstdint-webrtc.patch"
+	#fi
 
 	if use "musl"; then
 		p="${FILESDIR}/musl-$(ver_cut 1-1)"
@@ -564,7 +562,6 @@ src_prepare() {
 		third_party/woff2
 		third_party/wuffs
 		third_party/xdg-utils
-		third_party/yasm/run_yasm.py
 		third_party/zlib/google
 		tools/grit/third_party/six
 		url/third_party/mozilla
@@ -609,7 +606,7 @@ src_prepare() {
 		third_party/pdfium/third_party/libtiff
 		third_party/pdfium/third_party/skia_shared
 	)
-	##use swiftshader && 
+	#use swiftshader && 
 	keeplibs+=(
 		third_party/swiftshader
 		third_party/swiftshader/third_party/llvm-7.0
@@ -830,7 +827,6 @@ src_configure() {
 		"blink_symbol_level=0"
 		"symbol_level=0"
 		"enable_iterator_debugging=false"
-		"enable_swiftshader=false"
 		"is_official_build=true"
 	)
 
