@@ -884,7 +884,7 @@ src_configure() {
 
 	# ozone
 	myconf_gn+=(
-		"use_egl=$(usetf ozone)"
+		"use_egl=true"
 		"use_ozone=$(usetf ozone)"
 		"use_aura=$(usetf ozone)"
 		"use_cras=false"
