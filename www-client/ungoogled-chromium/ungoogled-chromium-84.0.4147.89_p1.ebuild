@@ -889,12 +889,17 @@ src_configure() {
 		"use_aura=$(usetf ozone)"
 		"use_cras=false"
 		"is_desktop_linux=true"
-		"ozone_auto_platforms=false"
-		"ozone_platform_x11=$(usetf X)"
-		"ozone_platform_wayland=$(usetf wayland)"
-		"ozone_platform_headless=$(usetf headless)"
-		"ozone_platform_gbm=false"
 	)
+
+	if use ozone; then
+		myconf_gn+=(
+			"ozone_auto_platforms=false"
+			"ozone_platform_x11=$(usetf X)"
+			"ozone_platform_wayland=$(usetf wayland)"
+			"ozone_platform_headless=$(usetf headless)"
+			"ozone_platform_gbm=false"
+		)
+	fi
 
 	# wayland
 	if use wayland; then
