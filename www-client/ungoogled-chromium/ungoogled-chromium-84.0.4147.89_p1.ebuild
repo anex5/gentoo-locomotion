@@ -807,6 +807,13 @@ src_configure() {
 		"use_low_quality_image_interpolation=false"
 	)
 
+	# Disable nacl, we can't build without pnacl (http://crbug.com/269560).
+	myconf_gn+=(
+		"enable_nacl=false"
+		"enable_nacl_nonsfi=false"
+		"enable_native_notifications=true"
+	)
+
 	# Ungoogled flags
 	myconf_gn+=(
 		"enable_mdns=false"
@@ -876,21 +883,18 @@ src_configure() {
 	fi
 
 	# ozone
-	if use ozone; then
-		myconf_gn+=(
-			"use_egl=true"
-			"use_gtk=false"
-			"use_ozone=true"
-			"use_aura=true"
-			"use_cras=false"
-			"is_desktop_linux=true"
-			"ozone_auto_platforms=false"
-			"ozone_platform_x11=$(usetf X)"
-			"ozone_platform_wayland=$(usetf wayland)"
-			"ozone_platform_headless=$(usetf headless)"
-			"ozone_platform_gbm=false"
-		)
-	fi
+	myconf_gn+=(
+		"use_egl=$(usetf ozone)"
+		"use_ozone=$(usetf ozone)"
+		"use_aura=$(usetf ozone)"
+		"use_cras=false"
+		"is_desktop_linux=true"
+		"ozone_auto_platforms=false"
+		"ozone_platform_x11=$(usetf X)"
+		"ozone_platform_wayland=$(usetf wayland)"
+		"ozone_platform_headless=$(usetf headless)"
+		"ozone_platform_gbm=false"
+	)
 
 	# wayland
 	if use wayland; then
