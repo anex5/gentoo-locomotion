@@ -886,7 +886,7 @@ src_configure() {
 		"rtc_build_libvpx=$(usetf libvpx)"
 		"media_use_libvpx=$(usetf libvpx)"
 		"rtc_libvpx_build_vp9=$(usetf libvpx)"
-		"enable_vulkan=$(usetf vulkan)" 
+		"enable_vulkan=$(usetf vulkan)"
 		"angle_enable_vulkan=$(usetf vulkan)"
 		"angle_enable_vulkan_validation_layers=$(usetf vulkan)"
 		"angle_shared_libvulkan=$(usetf vulkan)"
@@ -926,7 +926,7 @@ src_configure() {
 		"icu_use_data_file=$(usex system-icu false true)"
 		"use_system_libdrm=$(usetf system-libdrm)"
 	)
-	
+
 	use gold || myconf_gn+=( "use_lld=true" )
 
 	# use_cfi_icall only works with LLD
@@ -1043,7 +1043,7 @@ src_compile() {
 	pax-mark m out/Release/chrome
 
 	# Build manpage; bug #684550
-	if use "man"; then 
+	if use "man"; then
 		sed -e 's|@@PACKAGE@@|chromium-browser|g;
 			s|@@MENUNAME@@|Chromium|g;' \
 			chrome/app/resources/manpage.1.in > \

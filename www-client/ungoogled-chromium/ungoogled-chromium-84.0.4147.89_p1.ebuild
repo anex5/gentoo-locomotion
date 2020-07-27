@@ -338,8 +338,8 @@ src_prepare() {
 	#	eapply "${p}/0001-Add-missing-algorithm-header-in-crx_install_error.cc.patch"
 	#	eapply "${p}/0006-ozone-remove-x11-headers-from-accessibility-tree-for.patch"
 	#	eapply "${p}/0001-stl_util-support-older-clang.patch"
- 	#	eapply "${p}/0001-IWYU-uint32_t-is-defined-in-cstdint.patch"
- 	#	eapply "${p}/0001-IWYU-size_t-is-defined-in-stddef.h-webrtc.patch"
+	#	eapply "${p}/0001-IWYU-uint32_t-is-defined-in-cstdint.patch"
+	#	eapply "${p}/0001-IWYU-size_t-is-defined-in-stddef.h-webrtc.patch"
 	#	eapply "${p}/0001-IWYU-size_t-is-defined-in-stddef.h.patch"
 	#	eapply "${p}/0001-IWYU-uint32_t-is-defined-in-cstdint-webrtc.patch"
 	#fi
@@ -347,24 +347,24 @@ src_prepare() {
 	if use "musl"; then
 		p="${FILESDIR}/musl-$(ver_cut 1-1)"
 		eapply "${p}/musl_no_mallinfo.patch"
-        eapply "${p}/musl_no_execinfo.patch"
-        eapply "${p}/musl_TEMP_FAILURE_RETRY.patch"
-        eapply "${p}/musl_fix-stack.patch"
-        eapply "${p}/musl_breakpad.patch"
-        eapply "${p}/musl_fontconfig.patch"
-        eapply "${p}/musl_libc_malloc.patch"
-        eapply "${p}/musl_gnu_libc-version.patch"
-        eapply "${p}/musl_resolver.patch"
-        eapply "${p}/musl_off64_t.patch"
-        eapply "${p}/musl_lss-match_syscalls.patch"
-        eapply "${p}/musl_crashpad.patch"
-        eapply "${p}/musl_replace_libc_fpstate.patch"
-        eapply "${p}/musl_fix_stack_trace.patch"
-        eapply "${p}/musl_portable_msghdr.patch"
-        eapply "${p}/musl_no__environ.patch"
-        eapply "${p}/musl_no_mallopt.patch"
-        eapply "${p}/musl_undef_mmap64.patch"
-        eapply "${p}/musl_no_sbrk.patch"
+		eapply "${p}/musl_no_execinfo.patch"
+		eapply "${p}/musl_TEMP_FAILURE_RETRY.patch"
+		eapply "${p}/musl_fix-stack.patch"
+		eapply "${p}/musl_breakpad.patch"
+		eapply "${p}/musl_fontconfig.patch"
+		eapply "${p}/musl_libc_malloc.patch"
+		eapply "${p}/musl_gnu_libc-version.patch"
+		eapply "${p}/musl_resolver.patch"
+		eapply "${p}/musl_off64_t.patch"
+		eapply "${p}/musl_lss-match_syscalls.patch"
+		eapply "${p}/musl_crashpad.patch"
+		eapply "${p}/musl_replace_libc_fpstate.patch"
+		eapply "${p}/musl_fix_stack_trace.patch"
+		eapply "${p}/musl_portable_msghdr.patch"
+		eapply "${p}/musl_no__environ.patch"
+		eapply "${p}/musl_no_mallopt.patch"
+		eapply "${p}/musl_undef_mmap64.patch"
+		eapply "${p}/musl_no_sbrk.patch"
 	fi
 
 	# Hack for libusb stuff (taken from openSUSE)
@@ -633,7 +633,7 @@ src_prepare() {
 		third_party/libvpx
 		third_party/libvpx/source/libvpx/third_party/x86inc
 	)
-	use wayland || keeplibs+=( 
+	use wayland || keeplibs+=(
 		#third_party/wayland 
 		#third_party/wayland-protocols
 		third_party/speech-dispatcher
@@ -688,7 +688,7 @@ src_configure() {
 
 	if tc-is-clang; then
 		myconf_gn+=(
-			"is_clang=true" 
+			"is_clang=true"
 			"clang_use_chrome_plugins=false"
 		)
 	else
@@ -706,7 +706,7 @@ src_configure() {
 		myconf_gn+=" host_toolchain=\"//build/toolchain/linux/unbundle:default\""
 	fi
 
-	myconf_gn+=( 
+	myconf_gn+=(
 		"use_allocator=$(usex tcmalloc \"tcmalloc\" \"none\")"
 		"use_allocator_shim=$(usetf tcmalloc)"
 	)
@@ -777,7 +777,7 @@ src_configure() {
 		"rtc_build_libvpx=$(usetf libvpx)"
 		"media_use_libvpx=$(usetf libvpx)"
 		"rtc_libvpx_build_vp9=$(usetf libvpx)"
-		"enable_vulkan=$(usetf vulkan)" 
+		"enable_vulkan=$(usetf vulkan)"
 		"angle_enable_vulkan=$(usetf vulkan)"
 		"angle_enable_vulkan_validation_layers=$(usetf vulkan)"
 		"angle_shared_libvulkan=$(usetf vulkan)"
@@ -792,11 +792,11 @@ src_configure() {
 		"optimize_webui=$(usetf optimize-webui)"
 		"use_openh264=$(usex system-openh264 false true)" #Encoding
 		"rtc_use_h264=$(usex system-openh264 false true)" #Decoding	
-		"enable_hls_sample_aes=true" 
+		"enable_hls_sample_aes=true"
 		"enable_av1_decoder=true"
 		"enable_mse_mpeg2ts_stream_parser=true"
 		"media_use_ffmpeg=true"
-		"enable_ffmpeg_video_decoders=true"			
+		"enable_ffmpeg_video_decoders=true"
 		"use_system_freetype=$(usetf system-harfbuzz)"
 		"use_system_libopenjpeg2=$(usetf system-openjpeg)"
 		"use_vaapi=$(usetf vaapi)"
@@ -841,13 +841,10 @@ src_configure() {
 		"fieldtrial_testing_like_official_build=true"
 	)
 
-	# Never use bundled gold binary. Disable gold linker flags for now.
-	# Do not use bundled clang.
-	# Trying to use gold results in linker crash.
-	myconf_gn+=( 
-		"use_gold=false" 
-		"use_sysroot=false" 
-		"linux_use_bundled_binutils=false" 
+	myconf_gn+=(
+		"use_gold=$(usetf gold)"
+		"use_sysroot=false"
+		"linux_use_bundled_binutils=false"
 		"use_custom_libcxx=false"
 	)
 
@@ -858,18 +855,18 @@ src_configure() {
 		"strip_debug_info=$(usex debug false true)"
 		#"sanitizer_no_symbols=$(usex debug false true)"
 		"blink_symbol_level=$(usex debug 2 0)"
-		"enable_iterator_debugging=$(usetf debug)"	
+		"enable_iterator_debugging=$(usetf debug)"
 	)
-	
+
 	myconf_gn+=( "use_lld=$(usetf lld)" )
 
 	# Control Flow Integrity 
-	use cfi && myconf_gn+=(
-		"is_cfi=$(usex cfi true false)" 
-		"use_cfi_icall=$(usetf lld)" # use_cfi_icall only works with LLD and x86-64 arch
-		"use_cfi_cast=true"
+	myconf_gn+=(
+		"is_cfi=$(usetf cfi)"
+		"use_cfi_icall=$(usex cfi $(usetf lld) false)" # use_cfi_icall only works with LLD and x86-64 arch
+		"use_cfi_cast=$(usetf cfi)"
 	)
-	
+
 	if tc-is-cross-compiler; then
 		tc-export BUILD_{AR,CC,CXX,NM}
 		myconf_gn+=( "host_toolchain=\"//build/toolchain/linux/unbundle:host\"")
@@ -1028,7 +1025,7 @@ src_configure() {
 	done
 
 	einfo "Configuring Chromium..."
-	set -- gn gen --args="${myconf_gn} ${EXTRA_GN}" out/Release
+	set -- gn gen --args="${myconf_gn[*]} ${EXTRA_GN}" out/Release
 	echo "$@"
 	"$@" || die
 }
