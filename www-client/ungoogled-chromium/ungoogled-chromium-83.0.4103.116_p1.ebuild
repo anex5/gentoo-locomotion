@@ -828,7 +828,6 @@ src_configure() {
 
 		"is_official_build=true"
 		"optimize_webui=$(usetf optimize-webui)"
-		"proprietary_codecs=$(usetf proprietary-codecs)"
 		"safe_browsing_mode=0"
 
 		"treat_warnings_as_errors=false"

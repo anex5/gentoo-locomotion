@@ -39,8 +39,7 @@ SRC_URI="https://commondatastorage.googleapis.com/chromium-browser-official/chro
 LICENSE="BSD"
 SLOT="0"
 KEYWORDS="amd64 ~x86"
-IUSE="atk cfi clang closure-compile convert-dict cups custom-cflags chromedriver dbus debug gold gnome gtk 
-hangouts headless libcxx kerberos man musl optimize-thinlto optimize-webui ozone +pdf +proprietary-codecs pulseaudio selinux suid +system-ffmpeg +system-harfbuzz +system-icu +system-jsoncpp +system-libevent +system-libdrm +system-libvpx +system-openh264 system-openjpeg libvpx lld swiftshader +tcmalloc thinlto udev v4l2 v4lplugin vaapi vdpau vulkan wayland widevine X xkbcommon"
+IUSE="atk cfi clang closure-compile convert-dict cups custom-cflags chromedriver dbus debug gold gnome gtk hangouts headless libcxx kerberos man musl optimize-thinlto optimize-webui ozone +pdf +proprietary-codecs pulseaudio selinux suid +system-ffmpeg +system-harfbuzz +system-icu +system-jsoncpp +system-libevent +system-libdrm +system-libvpx +system-openh264 system-openjpeg libvpx lld swiftshader +tcmalloc thinlto udev v4l2 v4lplugin vaapi vdpau vulkan wayland widevine X xkbcommon"
 RESTRICT="
 	!system-ffmpeg? ( proprietary-codecs? ( bindist ) )
 	!system-openh264? ( bindist )
@@ -797,6 +796,8 @@ src_configure() {
 		"enable_mse_mpeg2ts_stream_parser=true"
 		"media_use_ffmpeg=true"
 		"enable_ffmpeg_video_decoders=true"
+		"proprietary_codecs=$(usetf proprietary-codecs)"
+		"ffmpeg_branding=\"$(usex proprietary-codecs Chrome Chromium)\""
 		"use_system_freetype=$(usetf system-harfbuzz)"
 		"use_system_libopenjpeg2=$(usetf system-openjpeg)"
 		"use_vaapi=$(usetf vaapi)"
@@ -851,7 +852,7 @@ src_configure() {
 	myconf_gn+=(
 		"use_gold=$(usetf gold)"
 		"use_sysroot=false"
-		"linux_use_bundled_binutils=false"
+		#"linux_use_bundled_binutils=false"
 		"use_custom_libcxx=false"
 	)
 
@@ -884,9 +885,8 @@ src_configure() {
 
 	# ozone
 	myconf_gn+=(
-		"use_egl=true"
 		"use_ozone=$(usetf ozone)"
-		"use_aura=$(usetf ozone)"
+		"use_aura=true"
 		"use_cras=false"
 		"is_desktop_linux=true"
 	)
