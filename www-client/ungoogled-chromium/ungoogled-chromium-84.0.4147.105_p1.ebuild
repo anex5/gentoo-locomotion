@@ -11,7 +11,7 @@ CHROMIUM_LANGS="am ar bg bn ca cs da de el en-GB es es-419 et fa fi fil fr gu he
 
 inherit check-reqs chromium-2 desktop flag-o-matic multilib ninja-utils pax-utils portability python-r1 readme.gentoo-r1 toolchain-funcs xdg-utils
 
-UGC_PV="${PV/_p/-}"
+UGC_PV="84.0.4147.89-1"
 UGC_P="${PN}-${UGC_PV}"
 UGC_URL="https://github.com/Eloston/${PN}/archive/"
 #UGC_COMMIT_ID="058925cdb9b8391c0bfab250ac031cb9aaf3c614"
@@ -806,6 +806,7 @@ src_configure() {
 		"enable_print_preview=true"
 		"use_gio=true"
 		"use_low_quality_image_interpolation=false"
+		"use_glib=$(usex musl false true)"
 	)
 
 	# Disable nacl, we can't build without pnacl (http://crbug.com/269560).
@@ -819,7 +820,6 @@ src_configure() {
 	myconf_gn+=(
 		"enable_mdns=false"
 		"enable_mse_mpeg2ts_stream_parser=true"
-		"enable_nacl_nonsfi=false"
 		"enable_one_click_signin=false"
 		"enable_reading_list=false"
 		"enable_remoting=false"
@@ -873,6 +873,7 @@ src_configure() {
 		"is_cfi=$(usetf cfi)"
 		"use_cfi_icall=$(usex cfi $(usetf lld) false)" # use_cfi_icall only works with LLD and x86-64 arch
 		"use_cfi_cast=$(usetf cfi)"
+		"use_rtti=$(usetf cfi)"
 	)
 
 	if tc-is-cross-compiler; then
@@ -942,20 +943,31 @@ src_configure() {
 		myconf_gn+=( "target_cpu=\"x64\"" )
 		ffmpeg_target_arch=x64
 	elif [[ $myarch = x86 ]] ; then
-		myconf_gn+=( "target_cpu=\"x86\"" )
+		myconf_gn+=(
+			"target_cpu=\"x86\""
+			"v8_target_cpu=\"x86\""
+		)
 		ffmpeg_target_arch=ia32
-
 		# This is normally defined by compiler_cpu_abi in
 		# build/config/compiler/BUILD.gn, but we patch that part out.
 		append-flags -msse2 -mfpmath=sse -mmmx
 	elif [[ $myarch = arm64 ]] ; then
-		myconf_gn+=( "target_cpu=\"arm64\"" )
+		myconf_gn+=(
+			"target_cpu=\"arm64\""
+			"v8_target_cpu=\"arm64\""
+		)
 		ffmpeg_target_arch=arm64
 	elif [[ $myarch = arm ]] ; then
-		myconf_gn+=( "target_cpu=\"arm\"" )
+		myconf_gn+=(
+			"target_cpu=\"arm\""
+			"v8_target_cpu=\"arm\""
+		)
 		ffmpeg_target_arch=$(usex cpu_flags_arm_neon arm-neon arm)
 	elif [[ $myarch = ppc64 ]] ; then
-		myconf_gn+=( "target_cpu=\"ppc64\"" )
+		myconf_gn+=(
+			"target_cpu=\"ppc64\""
+			"v8_target_cpu=\"ppc64\""
+		)
 		ffmpeg_target_arch=ppc64
 	else
 		die "Failed to determine target arch, got '$myarch'."
