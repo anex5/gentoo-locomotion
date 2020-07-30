@@ -11,7 +11,7 @@ CHROMIUM_LANGS="am ar bg bn ca cs da de el en-GB es es-419 et fa fi fil fr gu he
 
 inherit check-reqs chromium-2 desktop flag-o-matic multilib ninja-utils pax-utils portability python-r1 readme.gentoo-r1 toolchain-funcs xdg-utils
 
-UGC_PV="84.0.4147.89-1"
+UGC_PV="${PV/_p/-}"
 UGC_P="${PN}-${UGC_PV}"
 UGC_URL="https://github.com/Eloston/${PN}/archive/"
 #UGC_COMMIT_ID="058925cdb9b8391c0bfab250ac031cb9aaf3c614"
@@ -832,8 +832,6 @@ src_configure() {
 		"google_default_client_secret=\"\""
 		"safe_browsing_mode=0"
 		"use_unofficial_version_number=false"
-		"blink_symbol_level=0"
-		"symbol_level=0"
 		"enable_iterator_debugging=false"
 		"is_official_build=true"
 	)
