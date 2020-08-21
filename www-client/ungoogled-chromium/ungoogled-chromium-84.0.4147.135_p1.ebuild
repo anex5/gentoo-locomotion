@@ -39,7 +39,7 @@ SRC_URI="https://commondatastorage.googleapis.com/chromium-browser-official/chro
 LICENSE="BSD"
 SLOT="0"
 KEYWORDS="amd64 ~x86"
-IUSE="atk cfi clang closure-compile convert-dict cups custom-cflags chromedriver dbus debug gold gnome gtk hangouts headless libcxx kerberos man musl optimize-thinlto optimize-webui ozone +pdf +proprietary-codecs pulseaudio selinux suid +system-ffmpeg +system-harfbuzz +system-icu +system-jsoncpp +system-libevent +system-libdrm +system-libvpx +system-openh264 system-openjpeg libvpx lld swiftshader +tcmalloc thinlto udev v4l2 v4lplugin vaapi vdpau vulkan wayland widevine X xkbcommon"
+IUSE="atk cfi clang closure-compile convert-dict cups custom-cflags chromedriver dbus debug gold gnome gtk hangouts headless libcxx kerberos man optimize-thinlto optimize-webui ozone +pdf +proprietary-codecs pulseaudio selinux suid +system-ffmpeg +system-harfbuzz +system-icu +system-jsoncpp +system-libevent +system-libdrm +system-libvpx +system-openh264 system-openjpeg libvpx lld swiftshader +tcmalloc thinlto udev v4l2 v4lplugin vaapi vdpau vulkan wayland widevine X xkbcommon"
 RESTRICT="
 	!system-ffmpeg? ( proprietary-codecs? ( bindist ) )
 	!system-openh264? ( bindist )
@@ -257,7 +257,7 @@ pre_build_checks() {
 	fi
 
 	# Check build requirements, bug #541816 and bug #471810 .
-	CHECKREQS_MEMORY="3G"
+	CHECKREQS_MEMORY="14G"
 	CHECKREQS_DISK_BUILD="7G"
 	if ( shopt -s extglob; is-flagq '-g?(gdb)?([1-9])' ); then
 		CHECKREQS_DISK_BUILD="25G"
@@ -317,33 +317,29 @@ src_prepare() {
 
 	use vdpau && eapply "${p}/vdpau-support.patch"
 
-	use "widevine" && eapply "${p}/chromium-widevine-r4.patch"
-	use "system-libdrm" && eapply "${p}/chromium-system-libdrm.patch"
-	use "wayland" && eapply "${p}/wayland-egl.patch"
-	use "wayland" && use "vaapi" && eapply "${p}/chromium-fix_vaapi_wayland.patch"
+	use widevine && eapply "${p}/chromium-widevine-r4.patch"
+	use system-libdrm && eapply "${p}/chromium-system-libdrm.patch"
+	use wayland && eapply "${p}/wayland-egl.patch"
+	use wayland && use "vaapi" && eapply "${p}/chromium-fix_vaapi_wayland.patch"
 
-	#Igalia    
+	#Igalia
 	p="${FILESDIR}/igalia-$(ver_cut 1-1)"
-	#eapply "${p}/0005-IWYU-std-numeric_limits-is-defined-in-limits.patch"
-	#eapply "${p}/0002-Make-some-of-blink-custom-iterators-STL-compatible.patch"
-	#eapply "${p}/0004-Include-memory-header-to-get-the-definition-of-std-u.patch"
-	
-	#if use "ozone"; then
-	#	eapply "${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-76-v4l-fix-linking.patch"
-	#	eapply "${p}/0001-Do-not-use-nullptr-initalization-of-fwd-declared-typ.patch"
-	#	eapply "${p}/0002-media-do-not-use-fwd-decl-with-nullptr-instantiation.patch"
-	#	eapply "${p}/chromium-Move-CharAllocator-definition-to-a-header-f.patch"
-	#	eapply "${p}/0003-Fix-sandbox-Aw-snap-for-syscalls-403-and-407.patch"
-	#	eapply "${p}/0001-Add-missing-algorithm-header-in-crx_install_error.cc.patch"
-	#	eapply "${p}/0006-ozone-remove-x11-headers-from-accessibility-tree-for.patch"
-	#	eapply "${p}/0001-stl_util-support-older-clang.patch"
-	#	eapply "${p}/0001-IWYU-uint32_t-is-defined-in-cstdint.patch"
-	#	eapply "${p}/0001-IWYU-size_t-is-defined-in-stddef.h-webrtc.patch"
-	#	eapply "${p}/0001-IWYU-size_t-is-defined-in-stddef.h.patch"
-	#	eapply "${p}/0001-IWYU-uint32_t-is-defined-in-cstdint-webrtc.patch"
-	#fi
 
-	if use "musl"; then
+	eapply "${p}/0001-IWYU-include-cstring-for-memset-and-memcpy-calls-in-.patch"
+	eapply "${p}/0001-scoped_nss_types.h-Include-certt.h-instead-of-nss-ce.patch"
+	eapply "${p}/0001-stl_util-support-older-clang.patch"
+	eapply "${p}/0001-Update-Crashpad-to-7a70b0f1513d2787437aafc6593c97cbd.patch"
+	eapply "${p}/0003-Fix-sandbox-Aw-snap-for-syscalls-403-and-407.patch"
+	eapply "${p}/chromium-Move-CharAllocator-definition-to-a-header-f.patch"
+	eapply "${p}/delete_not_yet_released_clang_warnings.patch"
+
+	if use ozone;then
+		eapply "${p}/chromium-76-v4l-fix-linking.patch"
+		eapply "${p}/0001-ozone-remove-x11-headers-from-accessibility-tree-for.patch"
+		eapply "${p}/0001-Remove-X11-deps-from-accessibility.patch"
+	fi
+
+	if use "elibc_musl"; then
 		p="${FILESDIR}/musl-$(ver_cut 1-1)"
 		eapply "${p}/musl_no_mallinfo.patch"
 		eapply "${p}/musl_no_execinfo.patch"
@@ -608,7 +604,6 @@ src_prepare() {
 	#use swiftshader && 
 	keeplibs+=(
 		third_party/swiftshader
-		third_party/swiftshader/third_party/llvm-7.0
 		third_party/swiftshader/third_party/llvm-subzero
 		third_party/swiftshader/third_party/marl
 		third_party/swiftshader/third_party/subzero
@@ -806,7 +801,7 @@ src_configure() {
 		"enable_print_preview=true"
 		"use_gio=true"
 		"use_low_quality_image_interpolation=false"
-		"use_glib=$(usex musl false true)"
+		"use_glib=$(usex elibc_musl false true)"
 	)
 
 	# Disable nacl, we can't build without pnacl (http://crbug.com/269560).
