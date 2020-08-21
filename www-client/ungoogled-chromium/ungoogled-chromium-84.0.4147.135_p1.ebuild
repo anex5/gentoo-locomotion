@@ -321,6 +321,7 @@ src_prepare() {
 	use system-libdrm && eapply "${p}/chromium-system-libdrm.patch"
 	use wayland && eapply "${p}/wayland-egl.patch"
 	use wayland && use "vaapi" && eapply "${p}/chromium-fix_vaapi_wayland.patch"
+	use ozone && eapply "${p}/chromium-76-v4l-fix-linking.patch"
 
 	#Igalia
 	p="${FILESDIR}/igalia-$(ver_cut 1-1)"
@@ -334,7 +335,6 @@ src_prepare() {
 	eapply "${p}/delete_not_yet_released_clang_warnings.patch"
 
 	if use ozone;then
-		eapply "${p}/chromium-76-v4l-fix-linking.patch"
 		eapply "${p}/0001-ozone-remove-x11-headers-from-accessibility-tree-for.patch"
 		eapply "${p}/0001-Remove-X11-deps-from-accessibility.patch"
 	fi
