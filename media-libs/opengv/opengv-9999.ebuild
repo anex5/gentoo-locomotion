@@ -3,7 +3,7 @@
 
 EAPI=7
 
-inherit git-r3 cmake-utils
+inherit git-r3 cmake
 
 if [[ ${PV} == 9999 ]]; then
 	EGIT_REPO_URI="https://github.com/laurentkneip/opengv"
@@ -15,13 +15,13 @@ else
 	KEYWORDS="~amd64 ~x86"
 fi
 
-DESCRIPTION="A library for solving calibrated central and non-central geometric vision problems"
+DESCRIPTION="Library for solving calibrated central and non-central geometric vision problems"
 HOMEPAGE="http://laurentkneip.github.io/opengv"
 
 #PATCHES=( "${FILESDIR}/.patch" )
 
 SLOT="0"
-LICENSE="MPLv2"
+LICENSE="MPL-2"
 IUSE="python test"
 
 DEPEND="
@@ -37,11 +37,11 @@ src_configure() {
 		-DBUILD_TESTS=$(usex test ON OFF)
 	)
 
-	cmake-utils_src_configure
+	cmake_src_configure
 }
 
 src_install() {
 	#insinto /usr/$(get_libdir)
-	cmake-utils_src_install
+	cmake_src_install
 	mv ${D}/usr/lib/ ${D}/usr/$(get_libdir) || die
 }
