@@ -47,7 +47,6 @@ BDEPEND="
 PATCHES=(
 	"${FILESDIR}/${PN}-1.14.0-cmake-gentoo-release.patch"
 	"${FILESDIR}/${PN}-1.14.0-llvm-10.patch"
-	"${FILESDIR}/${PN}-1.14.0-cmake-builtins.patch"
 )
 
 DOCS=( README.md "${S}"/docs/{ReleaseNotes.txt,faq.rst,ispc.rst,perf.rst,perfguide.rst} )
