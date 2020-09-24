@@ -37,13 +37,13 @@ BDEPEND="virtual/pkgconfig"
 S=${WORKDIR}/${P}${PR/r/.}
 
 src_compile() {
-    local myemakeargs=(
+	local myemakeargs=(
 		# it's a non-standard build system
 		$(usex catalyst -DHAVE_ADLSDK=1 -DHAVE_ADLSDK=0)
 		-DHAVE_TERMINFO=1
-	)    
+	)
 
-    CC=$(tc-getCC) CFLAGS=\"${myemakeargs[@]}\" emake
+	CC=$(tc-getCC) CFLAGS=\"${myemakeargs[@]}\" emake
 }
 
 src_install() {
@@ -54,5 +54,5 @@ src_install() {
 }
 
 pkg_postinst() {
-   	elog "To enable overclocking support in amdgpu driver use following kernel cmdline: amdgpu.ppfeaturemask=0xffffffff"
+	elog "To enable overclocking support in amdgpu driver use following kernel cmdline: amdgpu.ppfeaturemask=0xffffffff"
 }
