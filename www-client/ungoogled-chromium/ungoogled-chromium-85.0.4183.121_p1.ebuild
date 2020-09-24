@@ -782,7 +782,7 @@ src_configure() {
 	# Optional dependencies.
 	myconf_gn+=(
 		"enable_js_type_check=$(usetf closure-compile)"
-		"closure_compile=$(usetf closure-compile)"
+		#"closure_compile=$(usetf closure-compile)"
 		"enable_hangout_services_extension=$(usetf hangouts)"
 		"enable_widevine=$(usetf widevine)"
 		"use_cups=$(usetf cups)"
