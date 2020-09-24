@@ -40,6 +40,7 @@ BDEPEND="
 DOC_CONTENTS="
 Marble Marcher: Community Edition comes with a wealth of new features and improvements, including performance improvements and graphical enhancements.
 "
+#DOCS=( README.md )
 
 src_configure() {
 	cmake_src_configure
@@ -55,7 +56,7 @@ src_install() {
 	doins "${BUILD_DIR}/src/libMarbleMarcherSources.so"
 	echo "#! /bin/sh" > MarbleMarcher-launcher.sh
 	echo "pushd \"${MMCE_HOME}\" > /dev/null && LD_LIBRARY_PATH=\"${MMCE_HOME}\" exec \"./\$(basename \$0)\" \"\$\@\" && popd" >> MarbleMarcher-launcher.sh
-	doexe "${MMCE_HOME}/MarbleMarcher-launcher.sh"
+	doexe "MarbleMarcher-launcher.sh"
 	dosym "${MMCE_HOME}/MarbleMarcher-launcher.sh" /usr/bin/MarbleMarcher
 
 	mkdir -p ${D}/usr/share/${PN} || die
