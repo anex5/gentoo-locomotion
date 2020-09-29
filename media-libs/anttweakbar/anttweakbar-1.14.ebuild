@@ -3,7 +3,7 @@
 
 EAPI="7"
 
-DESCRIPTION="A library that adds an easy GUI into OpenGL applications to interactively tweak them on-screen"
+DESCRIPTION="A library that adds an easy GUI into OpenGL applications"
 HOMEPAGE="http://www.antisphere.com/Wiki/tools:anttweakbar?sb=tools"
 
 SRC_URI="https://sourceforge.net/projects/anttweakbar/files/latest/download?source=dlp -> ${P}.zip"
@@ -26,7 +26,7 @@ src_compile() {
 
 src_install() {
 	dolib.so lib/libAntTweakBar.so
-	dolib.so lib/libAntTweakBar.so.1
+	dosym libAntTweakBar.so ${EPREFIX}/usr/$(get_libdir)/libAntTweakBar.so.$(ver_cut 1)
 	insinto /usr/include
 	doins include/AntTweakBar.h
 }
