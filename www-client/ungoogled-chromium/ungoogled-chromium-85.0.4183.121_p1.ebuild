@@ -652,7 +652,7 @@ src_prepare() {
 		third_party/libvpx
 		third_party/libvpx/source/libvpx/third_party/x86inc
 	)
-	use wayland || keeplibs+=(
+	use wayland && keeplibs+=(
 		#third_party/wayland 
 		#third_party/wayland-protocols
 		third_party/speech-dispatcher
