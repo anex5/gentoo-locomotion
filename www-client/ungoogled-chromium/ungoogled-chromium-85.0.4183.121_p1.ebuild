@@ -236,7 +236,6 @@ PATCHES=(
 
 	# Extra patches taken from openSUSE and Arch
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/force-mp3-files-to-have-a-start-time-of-zero.patch"
-	#"${FILESDIR}/chromium-$(ver_cut 1-1)/remove-NotifyError-calls-and-just-send-a-normal-message.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-system-libusb-r0.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-libusb-interrupt-event-handler-r1.patch"
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-skia-harmony.patch"
@@ -782,7 +781,6 @@ src_configure() {
 	# Optional dependencies.
 	myconf_gn+=(
 		"enable_js_type_check=$(usetf closure-compile)"
-		#"closure_compile=$(usetf closure-compile)"
 		"enable_hangout_services_extension=$(usetf hangouts)"
 		"enable_widevine=$(usetf widevine)"
 		"use_cups=$(usetf cups)"
@@ -1045,9 +1043,6 @@ src_configure() {
 	if use system-icu; then
 		myconf_gn+=( "icu_use_data_file=false" )
 	fi
-
-	# Use bundled xcb-proto, bug #727000
-	myconf_gn+=( "xcbproto_path=\"${WORKDIR}/xcb-proto-${XCB_PROTO_VERSION}/src\"" )
 
 	if tc-is-clang; then
 		# Don't complain if Chromium uses a diagnostic option that is not yet
