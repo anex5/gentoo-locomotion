@@ -1,0 +1,13 @@
+diff --git a/ui/ozone/platform/drm/gpu/hardware_display_controller.cc b/ui/ozone/platform/drm/gpu/hardware_display_controller.cc
+index 828f2e4..f730951 100644
+--- a/ui/ozone/platform/drm/gpu/hardware_display_controller.cc
++++ b/ui/ozone/platform/drm/gpu/hardware_display_controller.cc
+@@ -14,7 +14,7 @@
+ #include "base/logging.h"
+ #include "base/stl_util.h"
+ #include "base/trace_event/trace_event.h"
+-#include "third_party/libdrm/src/include/drm/drm_fourcc.h"
++#include <libdrm/drm_fourcc.h>
+ #include "third_party/skia/include/core/SkCanvas.h"
+ #include "ui/gfx/geometry/point.h"
+ #include "ui/gfx/geometry/size.h"

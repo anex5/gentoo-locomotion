@@ -24,19 +24,18 @@ Signed-off-by: Khem Raj <raj.khem@gmail.com>
    struct mallinfo info = mallinfo();
  #if !defined(ADDRESS_SANITIZER) && !defined(THREAD_SANITIZER)
    // Sanitizers override mallinfo.
---- a/third_party/swiftshader/third_party/llvm-7.0/configs/linux/include/llvm/Config/config.h
-+++ b/third_party/swiftshader/third_party/llvm-7.0/configs/linux/include/llvm/Config/config.h
-@@ -122,8 +122,9 @@
+--- a/third_party/swiftshader/third_party/llvm-10.0/configs/linux/include/llvm/Config/config.h
++++ b/third_party/swiftshader/third_party/llvm-10.0/configs/linux/include/llvm/Config/config.h
+@@ -125,7 +125,9 @@
  /* #undef HAVE_MALLCTL */
  
  /* Define to 1 if you have the `mallinfo' function. */
-+#ifdef __GLIBC__
++#ifdef __GLIBC__ 
  #define HAVE_MALLINFO 1
--
 +#endif
- /* Define to 1 if you have the <malloc.h> header file. */
- #define HAVE_MALLOC_H 1
  
+ /* Define to 1 if you have the <malloc/malloc.h> header file. */
+ /* #undef HAVE_MALLOC_MALLOC_H */
 --- a/third_party/swiftshader/third_party/llvm-subzero/build/Linux/include/llvm/Config/config.h
 +++ b/third_party/swiftshader/third_party/llvm-subzero/build/Linux/include/llvm/Config/config.h
 @@ -130,7 +130,7 @@

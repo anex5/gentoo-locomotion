@@ -1,0 +1,40 @@
+--- a/build/config/compiler/BUILD.gn
++++ b/build/config/compiler/BUILD.gn
+@@ -413,9 +413,9 @@ config("compiler") {
+       # On Android, this isn't needed.  gcc in the NDK knows to look next to
+       # it with -fuse-ld=gold, and clang gets a --gcc-toolchain flag passed
+       # above.
+-      if (gold_path != "") {
+-        ldflags += [ "-B$gold_path" ]
+-      }
++      #if (gold_path != "") {
++      #  ldflags += [ "-B$gold_path" ]
++      #}
+ 
+       ldflags += [
+         # Experimentation found that using four linking threads
+@@ -635,8 +635,8 @@ config("compiler") {
+   # TODO(pcc): Make this conditional on is_official_build rather than on gn
+   # flags for specific features.
+   if (!is_debug && use_thin_lto && is_a_target_toolchain) {
+-    assert(use_lld || target_os == "chromeos",
+-           "gold plugin only supported with ChromeOS")
++    #assert(use_lld || target_os == "chromeos",
++           #"gold plugin only supported with ChromeOS")
+ 
+     cflags += [ "-flto=thin" ]
+ 
+@@ -635,6 +635,13 @@ config("compiler") {
+         ]
+       } else {
+         ldflags += [ "-Wl,-plugin-opt,jobs=" + max_jobs_per_link ]
++      }  
++      if (use_gold) {
++        ldflags += [
++          "-Wl,-plugin-opt,cache-dir=" +
++            rebase_path("$root_out_dir/thinlto-cache", root_build_dir),
++          "-Wl,-plugin-opt,cache-policy=$cache_policy",
++        ]
+       }
+ 
+       if (use_lld) {
