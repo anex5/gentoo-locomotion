@@ -14,7 +14,7 @@ inherit check-reqs chromium-2 desktop flag-o-matic multilib ninja-utils pax-util
 UGC_PV="${PV/_p/-}"
 UGC_P="${PN}-${UGC_PV}"
 UGC_URL="https://github.com/Eloston/${PN}/archive/"
-UGC_COMMIT_ID="a7da6b6b3ca775361929cc0439d83fd2b4f798a1"
+#UGC_COMMIT_ID="a7da6b6b3ca775361929cc0439d83fd2b4f798a1"
 
 if [ -z "$UGC_COMMIT_ID" ]
 then
@@ -231,6 +231,7 @@ in /etc/chromium/default.
 
 PATCHES=(
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-system-fix-shim-headers-r0.patch"
+	"${FILESDIR}/chromium-$(ver_cut 1-1)/chromium-87-xproto-crash.patch"
 
 	# Extra patches taken from openSUSE and Arch
 	"${FILESDIR}/chromium-$(ver_cut 1-1)/force-mp3-files-to-have-a-start-time-of-zero.patch"
@@ -356,11 +357,11 @@ src_prepare() {
 	eapply "${p}/0003-Fix-sandbox-Aw-snap-for-syscalls-403-and-407.patch"
 	eapply "${p}/0001-Revert-ui-gfx-linux-Remove-2-unnecessary-preprocesso.patch"
 	eapply "${p}/chromium-Move-CharAllocator-definition-to-a-header-f.patch"
-	#eapply "${p}/delete_not_yet_released_clang_warnings.patch"
+	#eapply "${p}/0001-Remove-dead-reloc-in-nonalloc-LD-flags.patch"
 
-	#if use ozone;then
-	#	eapply "${p}/0001-IWYU-missing-include-for-std-vector-usage-in-ozone-p.patch"
-	#fi
+	if use ozone;then
+		eapply "${p}/0001-Turn-TouchMove-to-async-after-the-first-GestureScrol.patch"
+	fi
 
 	if use "elibc_musl"; then
 		p="${FILESDIR}/musl"
