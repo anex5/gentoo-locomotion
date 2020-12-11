@@ -1,0 +1,36 @@
+diff --git a/chrome/browser/extensions/BUILD.gn b/chrome/browser/extensions/BUILD.gn
+index 5aea558..9d72d5f 100644
+--- a/chrome/browser/extensions/BUILD.gn
++++ b/chrome/browser/extensions/BUILD.gn
+@@ -249,8 +249,6 @@ static_library("extensions") {
+     "api/metrics_private/chrome_metrics_private_delegate.h",
+     "api/module/module.cc",
+     "api/module/module.h",
+-    "api/networking_private/networking_private_ui_delegate_factory_impl.cc",
+-    "api/networking_private/networking_private_ui_delegate_factory_impl.h",
+     "api/notifications/extension_notification_display_helper.cc",
+     "api/notifications/extension_notification_display_helper.h",
+     "api/notifications/extension_notification_display_helper_factory.cc",
+diff --git a/chrome/browser/BUILD.gn b/chrome/browser/BUILD.gn
+index d730660..0a41f4a 100644
+--- a/chrome/browser/BUILD.gn
++++ b/chrome/browser/BUILD.gn
+@@ -4142,12 +4142,12 @@ jumbo_split_static_library("browser") {
+     ]
+   }
+ 
+-  if (is_win || is_mac || (is_linux && !is_chromeos)) {
+-    sources += [
+-      "password_manager/password_store_signin_notifier_impl.cc",
+-      "password_manager/password_store_signin_notifier_impl.h",
+-    ]
+-  }
++  #if (is_win || is_mac || (is_linux && !is_chromeos)) {
++  #  sources += [
++  #    "password_manager/password_store_signin_notifier_impl.cc",
++  #    "password_manager/password_store_signin_notifier_impl.h",
++  #  ]
++  #}
+ 
+   if (is_win || is_mac || is_linux) {
+     sources += [
