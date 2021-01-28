@@ -1,0 +1,24 @@
+--- a/CHOLMOD/Tcov/Makefile
++++ b/CHOLMOD/Tcov/Makefile
+@@ -1252,7 +1252,7 @@ l_super_solve.o: ../Supernodal/cholmod_super_solve.c
+ cholmod_gpu_kernels.o: ../GPU/cholmod_gpu_kernels.c \
+         ../GPU/cholmod_gpu_kernels.cu
+ 	$(C) -DDLONG -c $(I) $<
+-	$(NVCC) -I../../SuiteSparse_config -Xcompiler -fPIC -O3  -gencode=arch=compute_20,code=sm_20 -gencode=arch=compute_30,code=sm_30 -gencode=arch=compute_35,code=sm_35 -c ../GPU/cholmod_gpu_kernels.cu
++	$(NVCC) -I../../SuiteSparse_config -Xcompiler -fPIC -c ../GPU/cholmod_gpu_kernels.cu
+ 
+ #-------------------------------------------------------------------------------
+
+--- a/SuiteSparse_config/SuiteSparse_config.mk
++++ b/SuiteSparse_config/SuiteSparse_config.mk
+@@ -258,8 +257,7 @@ SUITESPARSE_VERSION = 5.8.1
+                 MAGMA_INC     = -I/opt/magma-2.4.0/include/
+                 MAGMA_LIB     = -L/opt/magma-2.4.0/lib/ -lmagma
+         NVCC          = $(CUDA_PATH)/bin/nvcc
+-        NVCCFLAGS     = -Xcompiler -fPIC -O3 \
+-                            -gencode=arch=compute_30,code=sm_30 \
++        NVCCFLAGS     = -Xcompiler -fPIC \
+                             -gencode=arch=compute_35,code=sm_35 \
+                             -gencode=arch=compute_50,code=sm_50 \
+                             -gencode=arch=compute_53,code=sm_53 \
+ 
