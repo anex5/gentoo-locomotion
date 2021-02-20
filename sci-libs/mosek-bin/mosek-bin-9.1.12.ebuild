@@ -2,7 +2,7 @@
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=7
-PYTHON_COMPAT=( python3_{5,6,7,8} )
+PYTHON_COMPAT=( python3_{7..9} )
 
 MY_PN=${PN/-bin/}
 
@@ -31,7 +31,7 @@ DEPEND="${RDEPEND}
 	dev-python/setuptools[${PYTHON_USEDEP}]
 "
 
-QA_PREBUILT="opt/${MY_P}/usr/lib/{libcilkrts.so.5,libmosek64.so,libmosekxx9_1.so} opt/${MY_P}/usr/bin/mosek"
+QA_PREBUILT="opt/${MY_PN}/usr/lib/{libcilkrts.so.5,libmosek64.so,libmosekxx9_1.so} opt/${MY_PN}/usr/bin/mosek"
 
 src_compile(){
 	if use python ; then
@@ -42,12 +42,12 @@ src_compile(){
 
 src_install (){
 	dodir "/opt/${MY_PN}"
-	
+
 	# Install shared libraries.
 	dodir "/opt/${MY_PN}/usr/lib"
 	insinto "/opt/${MY_PN}/usr/lib"
 	cd "${S}/mosek/$(ver_cut 1-2)/tools/platform/linux64x86/bin"
-	
+
 	doins "libcilkrts.so.5"
 	doins "libmosek64.so.$(ver_cut 1-2)"
 	doins "libmosekxx9_1.so"
@@ -64,13 +64,13 @@ src_install (){
 	dodir "/opt/${MY_PN}/usr/include"
 	insinto "/opt/${MY_PN}/usr/include"
 	doins "mosek.h"
-	
+
 	# Install Python bindings.
 	if use python; then
 		cd "${S}/mosek/$(ver_cut 1-2)/tools/platform/linux64x86/python/3/" || die
 		distutils-r1_src_install
 	fi
-	
+
 	cd "${S}"
 	echo "PATH=\"/opt/${MY_PN}/usr/bin\"" > "99mosek"
 	echo "LDPATH=\"/opt/${MY_PN}/usr/lib\"" > "99mosek"

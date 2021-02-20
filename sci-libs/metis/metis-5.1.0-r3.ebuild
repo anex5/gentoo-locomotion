@@ -1,9 +1,9 @@
 # Copyright 1999-2017 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=6
+EAPI=7
 
-inherit cmake-utils
+inherit cmake
 
 DESCRIPTION="A package for unstructured serial graph partitioning"
 HOMEPAGE="http://www-users.cs.umn.edu/~karypis/metis/metis/"
@@ -31,7 +31,7 @@ src_prepare() {
 		-e 's:-O3::g' \
 		-i GKlib/GKlibSystem.cmake || die
 
-	cmake-utils_src_prepare
+	cmake_src_prepare
 }
 
 src_configure() {
@@ -40,7 +40,7 @@ src_configure() {
 		-DSHARED="$(usex static-libs no yes)"
 		-DOPENMP="$(usex openmp)"
 	)
-	cmake-utils_src_configure
+	cmake_src_configure
 }
 
 src_test() {
@@ -68,5 +68,5 @@ src_install() {
 
 	insinto /usr/$(get_libdir)/pkgconfig
 	doins "${T}"/metis.pc
-	cmake-utils_src_install
+	cmake_src_install
 }
