@@ -1,0 +1,22 @@
+diff --git a/ui/gl/BUILD.gn b/ui/gl/BUILD.gn
+index a3bc537..2bdc8d9 100644
+--- a/ui/gl/BUILD.gn
++++ b/ui/gl/BUILD.gn
+@@ -265,11 +265,12 @@ component("gl") {
+       "//ui/gfx/linux:gpu_memory_buffer_support_x11",
+     ]
+ 
+-    assert(use_egl)
+-    data_deps += [
+-      "//third_party/angle:libEGL",
+-      "//third_party/angle:libGLESv2",
+-    ]
++    if (use_egl) {
++        data_deps += [
++            "//third_party/angle:libEGL",
++            "//third_party/angle:libGLESv2",
++        ]
++    }
+   }
+   if (use_glx) {
+     sources += [
