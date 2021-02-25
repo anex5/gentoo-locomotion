@@ -961,7 +961,7 @@ src_configure() {
 		myconf_gn+=(
 			"use_ozone=true"
 			"use_aura=true"
-			"use_cras=false"
+			"use_egl=true"
 			"is_desktop_linux=true"
 			"ozone_auto_platforms=false"
 			"ozone_platform_x11=$(usetf X)"
@@ -1242,7 +1242,7 @@ src_install() {
 		doins out/Release/swiftshader/*.so
 	fi
 
-	use widevine && dosym WidevineCdm/_platform_specific/linux_x64/libwidevinecdm.so libwidevinecdm.so
+	use widevine && dosym ${CHROMIUM_HOME}/WidevineCdm/_platform_specific/linux_x64/libwidevinecdm.so ${CHROMIUM_HOME}/libwidevinecdm.so
 
 	# Install icons
 	local branding size
