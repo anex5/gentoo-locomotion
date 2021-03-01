@@ -1200,9 +1200,7 @@ src_install() {
 			s:@@FORCE_OZONE_PLATFORM@@:$(usex headless true false):g"
 	)
 	sed "${sedargs[@]}" "${FILESDIR}/chromium-launcher-r6.sh" > chromium-launcher.sh || die
-	if use pulseaudio; then
-		sed -i 's/exec -a "chromium-browser"/exec -a "chromium-browser" apulse/' chromium-launcher.sh || die
-	fi
+
 	doexe chromium-launcher.sh
 
 	# It is important that we name the target "chromium-browser",
