@@ -16,7 +16,7 @@ inherit check-reqs chromium-2 desktop flag-o-matic multilib ninja-utils pax-util
 UGC_PVR="${PVR/r}"
 UGC_PF="${PN}-${UGC_PVR}"
 UGC_URL="https://github.com/Eloston/${PN}/archive/"
-UGC_COMMIT_ID="27c9e9fabd38001b32d148f7b3f99b4d31e67277"
+#UGC_COMMIT_ID="27c9e9fabd38001b32d148f7b3f99b4d31e67277"
 
 if [ -z "$UGC_COMMIT_ID" ]
 then
@@ -28,8 +28,8 @@ else
 fi
 
 DESCRIPTION="Modifications to Chromium for removing Google integration and enhancing privacy"
-HOMEPAGE="https://www.chromium.org/Home https://github.com/Eloston/ungoogled-chromium"
-PATCHSET="3"
+HOMEPAGE="https://github.com/Eloston/ungoogled-chromium"
+PATCHSET="7"
 PATCHSET_NAME="chromium-$(ver_cut 1)-patchset-${PATCHSET}"
 SRC_URI="https://commondatastorage.googleapis.com/chromium-browser-official/chromium-${PV/_*}.tar.xz
 	https://files.pythonhosted.org/packages/ed/7b/bbf89ca71e722b7f9464ebffe4b5ee20a9e5c9a555a56e2d3914bb9119a6/setuptools-44.1.0.zip
@@ -38,8 +38,8 @@ SRC_URI="https://commondatastorage.googleapis.com/chromium-browser-official/chro
 
 LICENSE="BSD"
 SLOT="0"
-KEYWORDS="~amd64 ~x86"
-IUSE="atk alsa cfi clang closure-compile convert-dict cups custom-cflags chromedriver dbus debug gold gnome gtk hangouts headless libcxx kerberos man optimize-thinlto optimize-webui +pdf pgo +proprietary-codecs pulseaudio selinux +suid +system-re2 +system-ffmpeg +system-harfbuzz +system-icu +system-jsoncpp +system-libevent +system-libdrm +system-libvpx +system-openh264 +system-openjpeg libvpx lld swiftshader screencast +tcmalloc thinlto udev v4l2 v4lplugin vaapi vdpau vulkan wayland widevine X xkbcommon"
+KEYWORDS="amd64 ~x86"
+IUSE="atk alsa cfi clang convert-dict cups custom-cflags chromedriver dbus debug gold gtk hangouts headless js-type-check libcxx kerberos man optimize-thinlto optimize-webui +pdf pgo +proprietary-codecs pulseaudio selinux +suid +system-re2 +system-ffmpeg +system-harfbuzz +system-icu +system-jsoncpp +system-libevent +system-libdrm +system-libvpx +system-openh264 +system-openjpeg libvpx +lld swiftshader screencast +tcmalloc thinlto udev v4l2 v4lplugin vaapi vdpau vulkan wayland widevine X xkbcommon xdg"
 RESTRICT="
 	!system-ffmpeg? ( proprietary-codecs? ( bindist ) )
 	!system-openh264? ( bindist )
@@ -56,7 +56,6 @@ REQUIRED_USE="
 	system-openjpeg? ( pdf )
 	thinlto? ( clang )
 	gtk? ( || ( X wayland ) )
-	gnome? ( gtk dbus )
 	atk? ( gtk )
 	screencast? ( wayland )
 	system-libdrm? ( wayland )
@@ -102,15 +101,12 @@ COMMON_DEPEND="
 	gtk? (
 		x11-libs/gtk+:3[wayland?,X?]
 	)
-	gnome? (
-		gnome-base/gnome:3
-	)
 	atk? (
 		>=app-accessibility/at-spi2-atk-2.26:2
 		>=app-accessibility/at-spi2-core-2.26:2
 		>=dev-libs/atk-2.26
 	)
-	closure-compile? ( virtual/jre:* )
+	js-type-check? ( virtual/jre:* )
 	cups? ( >=net-print/cups-1.3.11:= )
 	dbus? ( sys-apps/dbus:= )
 	kerberos? ( virtual/krb5 )
@@ -187,7 +183,7 @@ BDEPEND="
 	>=sys-devel/bison-2.4.3
 	sys-devel/flex
 	virtual/pkgconfig
-	closure-compile? ( virtual/jre )
+	js-type-check? ( virtual/jre )
 	!system-libvpx? (
 		amd64? ( dev-lang/yasm )
 		x86? ( dev-lang/yasm )
@@ -288,30 +284,29 @@ pkg_setup() {
 }
 
 src_prepare() {
-	use custom-cflags || rm "${WORKDIR}/patches/chromium-$(ver_cut 1)-compiler.patch" || die
+	use custom-cflags || rm "${WORKDIR}/patches/chromium-88-compiler.patch" || die
 
-	rm "${WORKDIR}/patches/chromium-84-blink-disable-clang-format.patch" || die
+	#rm "${WORKDIR}/patches/chromium-84-blink-disable-clang-format.patch" || die
 
 	local p="${FILESDIR}/chromium-$(ver_cut 1-1)"
 
 	local PATCHES=(
 		"${WORKDIR}/patches"
 		"${p}/chromium-system-fix-shim-headers-r0.patch"
-		"${p}/chromium-88-ozone-deps.patch"
-		"${p}/chromium-87-webcodecs-deps.patch"
+		"${p}/chromium-89-webcodecs-deps.patch"
+		"${p}/chromium-89-EnumTable-crash.patch"
 
 		# Extra patches taken from openSUSE and Arch
 		"${p}/force-mp3-files-to-have-a-start-time-of-zero.patch"
-		"${p}/subpixel-anti-aliasing-in-FreeType-2.8.1.patch"
 		"${p}/chromium-glibc-2.33.patch"
+		"${p}/x11-ozone-fix-two-edge-cases.patch"
 		"${p}/chromium-system-libusb-r0.patch"
 		"${p}/chromium-libusb-interrupt-event-handler-r1.patch"
 		"${p}/chromium-skia-harmony.patch"
 		"${p}/chromium-fix-cfi-failures-with-unbundled-libxml.patch"
 
 		# Personal patches
-		#"${p}/chromium-fix-nosafebrowsing-build-r2.patch"
-		"${p}/chromium-optional-dbus-r10.patch"
+		"${p}/chromium-optional-dbus-r11.patch"
 		"${p}/chromium-optional-atk-r2.patch"
 		"${p}/chromium-optional-egl-r0.patch"
 	)
@@ -334,10 +329,10 @@ src_prepare() {
 		sed -i '/^.*json\/writer.h"$/{s//#include <json\/writer\.h>/;h};${x;/./{x;q0};x;q1}' components/mirroring/service/receiver_response.cc || die
 	fi
 
-	if use system-libvpx; then
-		eapply "${p}/chromium-system-vpx-r1.patch"
-		has_version "=media-libs/libvpx-1.7*" && eapply "${p}/chromium-vpx-1.7-compatibility-r4.patch"
-	fi
+	#if use system-libvpx; then
+		##eapply "${p}/chromium-system-vpx-r1.patch"
+		#has_version "=media-libs/libvpx-1.9*" && eapply "${p}/chromium-vpx-1.9-compatibility-r4.patch"
+	#fi
 
 	use system-openjpeg && eapply "${p}/chromium-system-openjpeg-r2.patch"
 
@@ -360,14 +355,11 @@ src_prepare() {
 	p="${FILESDIR}/chromium-$(ver_cut 1-1)/igalia"
 
 	eapply "${p}/0003-Fix-sandbox-Aw-snap-for-syscalls-403-and-407.patch"
-	eapply "${p}/0001-Fix-local-build.patch"
-	#eapply "${p}/0001-IWYU-ui-CursorFactory-is-required-without-Ozone.patch"
 	eapply "${p}/0001-RandBytes-Stop-including-sys-random.h-on-Linux.patch"
-	#eapply "${p}/0001-Build-fix-for-libstdc.patch"
-	eapply "${p}/0001-IWYU-add-missing-include-for-std-vector-and-std-uniq.patch"
-	eapply "${p}/0001-ozone-fix-include.patch"
-	eapply "${p}/0001-Fix-ill-formed-C-code.patch"
-	#eapply "${p}/CVE-2021-21148.patch"
+	eapply "${p}/0001-link-atomic-for-target-only.patch"
+	#eapply "${p}/0001-Fix-use-of-DCHECK-with-std-unique_ptr.patch"
+	#eapply "${p}/0001-IWYU-add-ctime-for-std-time.patch"
+
 	use vaapi && eapply "${p}/0001-ozone-add-va-api-support-to-wayland.patch"
 
 	if use "elibc_musl"; then
@@ -417,8 +409,8 @@ src_prepare() {
 		sed -i "\!${p}.patch!d" "${ugc_patch_series}" || die
 	done
 
-	if use closure-compile; then
-		ewarn "Keeping binary compiler.jar in sources tree for closure-compile"
+	if use js-type-check; then
+		ewarn "Keeping binary compiler.jar in sources tree for js-type-check"
 		sed -i "\!third_party/closure_compiler/compiler/compiler.jar!d" "${ugc_pruning_list}" || die
 	fi
 
@@ -459,7 +451,6 @@ src_prepare() {
 		net/third_party/quic
 		net/third_party/uri_template
 		third_party/abseil-cpp
-		third_party/adobe
 		third_party/angle
 		third_party/angle/src/common/third_party/base
 		third_party/angle/src/common/third_party/smhasher
@@ -468,13 +459,6 @@ src_prepare() {
 		third_party/angle/src/third_party/libXNVCtrl
 		third_party/angle/src/third_party/trace_event
 		third_party/angle/src/third_party/volk
-		third_party/angle/third_party/glslang
-		third_party/angle/third_party/spirv-headers
-		third_party/angle/third_party/spirv-tools
-		third_party/angle/third_party/vulkan-headers
-		third_party/angle/third_party/vulkan-loader
-		third_party/angle/third_party/vulkan-tools
-		third_party/angle/third_party/vulkan-validation-layers
 		third_party/apple_apsl
 		third_party/axe-core
 		third_party/blink
@@ -490,8 +474,21 @@ src_prepare() {
 		third_party/catapult/third_party/html5lib-python
 		third_party/catapult/third_party/polymer
 		third_party/catapult/third_party/six
+		third_party/catapult/tracing/third_party/d3
+		third_party/catapult/tracing/third_party/gl-matrix
+		third_party/catapult/tracing/third_party/jpeg-js
+		third_party/catapult/tracing/third_party/jszip
+		third_party/catapult/tracing/third_party/mannwhitneyu
+		third_party/catapult/tracing/third_party/oboe
+		third_party/catapult/tracing/third_party/pako
 		third_party/ced
 		third_party/cld_3
+	)
+	#use js-type-check &&
+	keeplibs+=(
+		third_party/closure_compiler
+	)
+	keeplibs+=(
 		third_party/crashpad
 		third_party/crashpad/crashpad/third_party/lss
 		third_party/crashpad/crashpad/third_party/zlib
@@ -520,9 +517,17 @@ src_prepare() {
 		third_party/dom_distiller_js
 		third_party/emoji-segmenter
 		third_party/flatbuffers
+	)
+	use system-ffmpeg || keeplibs+=( third_party/ffmpeg third_party/opus )
+	use system-harfbuzz || keeplibs+=(
+		third_party/freetype
+		third_party/harfbuzz-ng
+	)
+	use system-icu || keeplibs+=( third_party/icu )
+	keeplibs+=(
 		third_party/fusejs
 		third_party/libgifcodec
-		third_party/glslang
+		third_party/liburlpattern
 		third_party/google_input_tools
 		third_party/google_input_tools/third_party/closure_library
 		third_party/google_input_tools/third_party/closure_library/third_party/closure
@@ -532,6 +537,11 @@ src_prepare() {
 		third_party/iccjpeg
 		third_party/inspector_protocol
 		third_party/jinja2
+	)
+	use system-jsoncpp || keeplibs+=(
+		third_party/jsoncpp
+	)
+	keeplibs+=(
 		third_party/jstemplate
 		third_party/khronos
 		third_party/leveldatabase
@@ -541,12 +551,25 @@ src_prepare() {
 		third_party/libaom/source/libaom/third_party/vector
 		third_party/libaom/source/libaom/third_party/x86inc
 		third_party/libavif
+	)
+	use system-libdrm || keeplibs+=(
+		third_party/libdrm
+		third_party/libdrm/src/include/drm
+	)
+	keeplibs+=(
 		third_party/libjingle
 		third_party/libphonenumber
 		third_party/libsecret
 		third_party/libsrtp
 		third_party/libsync
 		third_party/libudev
+		third_party/libva_protected_content
+	)
+	use system-libvpx || keeplibs+=(
+		third_party/libvpx
+		third_party/libvpx/source/libvpx/third_party/x86inc
+	)
+	keeplibs+=(
 		third_party/libwebm
 		third_party/libx11
 		third_party/libxcb-keysyms
@@ -563,12 +586,39 @@ src_prepare() {
 		third_party/modp_b64
 		third_party/nasm
 		third_party/nearby
+	)
+	#use optimize-webui &&
+	keeplibs+=(
+		third_party/node
+		third_party/node/node_modules/polymer-bundler/lib/third_party/UglifyJS2
+	)
+	use system-openh264 || keeplibs+=( third_party/openh264 )
+	keeplibs+=(
 		third_party/one_euro_filter
 		third_party/opencv
 		third_party/openscreen
 		third_party/openscreen/src/third_party/mozilla
 		third_party/openscreen/src/third_party/tinycbor/src/src
 		third_party/ots
+	)
+	use pdf && keeplibs+=(
+		third_party/pdfium
+		third_party/pdfium/third_party/agg23
+		third_party/pdfium/third_party/base
+		third_party/pdfium/third_party/bigint
+		third_party/pdfium/third_party/freetype
+		third_party/pdfium/third_party/lcms
+		third_party/pdfium/third_party/libopenjpeg20
+		third_party/pdfium/third_party/libpng16
+		third_party/pdfium/third_party/libtiff
+		third_party/pdfium/third_party/skia_shared
+	)
+	#use perfetto &&
+	keeplibs+=(
+		third_party/perfetto
+		third_party/perfetto/protos/third_party/chromium
+	)
+	keeplibs+=(
 		third_party/pffft
 		third_party/ply
 		third_party/polymer
@@ -578,11 +628,15 @@ src_prepare() {
 		third_party/protobuf/third_party/six
 		third_party/pyjson5
 		third_party/qcms
+	)
+	use system-re2 || keeplibs+=(
+		third_party/re2
+	)
+	keeplibs+=(
 		third_party/rnnoise
 		third_party/s2cellid
 		third_party/schema_org
 		third_party/securemessage
-		third_party/shaka-player
 		third_party/shell-encryption
 		third_party/simplejson
 		third_party/skia
@@ -591,10 +645,21 @@ src_prepare() {
 		third_party/skia/third_party/skcms
 		third_party/skia/third_party/vulkan
 		third_party/smhasher
-		third_party/spirv-cross/spirv-cross
-		third_party/spirv-headers
-		third_party/SPIRV-Tools
 		third_party/sqlite
+	)
+	use swiftshader && keeplibs+=(
+		third_party/swiftshader
+		third_party/swiftshader/third_party/astc-encoder
+		third_party/swiftshader/third_party/llvm-subzero
+		third_party/swiftshader/third_party/marl
+		third_party/swiftshader/third_party/subzero
+		third_party/swiftshader/third_party/SPIRV-Headers/include/spirv/unified1
+		third_party/swiftshader/third_party/astc-encoder/Source
+	)
+	use tcmalloc && keeplibs+=(
+		third_party/tcmalloc
+	)
+	keeplibs+=(
 		third_party/tint
 		third_party/ukey2
 		third_party/usb_ids
@@ -611,6 +676,12 @@ src_prepare() {
 		third_party/webrtc/modules/third_party/g722
 		third_party/webrtc/rtc_base/third_party/base64
 		third_party/webrtc/rtc_base/third_party/sigslot
+	)
+	#use widevine &&
+	keeplibs+=(
+		third_party/widevine
+	)
+	keeplibs+=(
 		third_party/woff2
 		third_party/wuffs
 		third_party/x11proto
@@ -626,68 +697,13 @@ src_prepare() {
 		v8/third_party/inspector_protocol
 		v8/third_party/v8
 	)
-
-	#use closure-compile &&
-	keeplibs+=( third_party/closure_compiler )
-
-	#use perfetto &&
-	keeplibs+=( third_party/perfetto )
-
-	#use tracing &&
-	keeplibs+=(
-		third_party/catapult/tracing/third_party/d3
-		third_party/catapult/tracing/third_party/gl-matrix
-		third_party/catapult/tracing/third_party/jpeg-js
-		third_party/catapult/tracing/third_party/jszip
-		third_party/catapult/tracing/third_party/mannwhitneyu
-		third_party/catapult/tracing/third_party/oboe
-		third_party/catapult/tracing/third_party/pako
-	)
-
-	#use optimize-webui &&
-	keeplibs+=(
-		third_party/node
-		third_party/node/node_modules/polymer-bundler/lib/third_party/UglifyJS2
-	)
-	use pdf && keeplibs+=(
-		third_party/pdfium
-		third_party/pdfium/third_party/agg23
-		third_party/pdfium/third_party/base
-		third_party/pdfium/third_party/bigint
-		third_party/pdfium/third_party/freetype
-		third_party/pdfium/third_party/lcms
-		third_party/pdfium/third_party/libopenjpeg20
-		third_party/pdfium/third_party/libpng16
-		third_party/pdfium/third_party/libtiff
-		third_party/pdfium/third_party/skia_shared
-	)
-	use swiftshader && keeplibs+=(
-		third_party/swiftshader
-		third_party/swiftshader/third_party/llvm-subzero
-		third_party/swiftshader/third_party/astc-encoder
-		third_party/swiftshader/third_party/marl
-		third_party/swiftshader/third_party/subzero
-		third_party/swiftshader/third_party/SPIRV-Headers/include/spirv/unified1
-		third_party/swiftshader/third_party/astc-encoder/Source
+	use system-libevent || keeplibs+=(
+		base/third_party/libevent
 	)
 	use v4l2 && keeplibs+=(
 		third_party/v4l-utils
 	)
-	use system-ffmpeg || keeplibs+=( third_party/ffmpeg third_party/opus )
-	use system-harfbuzz || keeplibs+=(
-		third_party/freetype
-		third_party/harfbuzz-ng
-	)
-	use system-icu || keeplibs+=( third_party/icu )
-	use system-re2 || keeplibs+=( third_party/re2 )
-	use system-jsoncpp || keeplibs+=( third_party/jsoncpp )
 	use libcxx || keeplibs+=( buildtools/third_party/libc++ buildtools/third_party/libc++abi )
-	use system-libdrm || keeplibs+=( third_party/libdrm third_party/libdrm/src/include/drm )
-	use system-libevent || keeplibs+=( base/third_party/libevent )
-	use system-libvpx || keeplibs+=(
-		third_party/libvpx
-		third_party/libvpx/source/libvpx/third_party/x86inc
-	)
 	use wayland && keeplibs+=(
 		third_party/wayland
 		third_party/wayland-protocols
@@ -696,10 +712,6 @@ src_prepare() {
 	keeplibs+=( # needed when use_aura=true
 		third_party/speech-dispatcher
 	)
-	#use widevine &&
-	keeplibs+=( third_party/widevine )
-	use system-openh264 || keeplibs+=( third_party/openh264 )
-	use tcmalloc && keeplibs+=( third_party/tcmalloc )
 
 	if use arm64 || use ppc64 ; then
 		keeplibs+=( third_party/swiftshader/third_party/llvm-10.0 )
@@ -821,7 +833,7 @@ src_configure() {
 
 	# Optional dependencies.
 	myconf_gn+=(
-		"enable_js_type_check=$(usetf closure-compile)"
+		"enable_js_type_check=$(usetf js-type-check)"
 		"enable_hangout_services_extension=$(usetf hangouts)"
 		"enable_widevine=$(usetf widevine)"
 		"use_cups=$(usetf cups)"
@@ -862,7 +874,7 @@ src_configure() {
 		#"pgo_build=$(usetf pgo)"
 		"thin_lto_enable_optimizations=$(usetf optimize-thinlto)"
 		"optimize_webui=$(usetf optimize-webui)"
-		"use_openh264=$(usex system-openh264 false true)" #Encoding
+		#"use_openh264=$(usex system-openh264 false true)" #Encoding
 		"rtc_use_h264=$(usetf proprietary-codecs)" #Decoding
 		"enable_hls_sample_aes=true"
 		"enable_mse_mpeg2ts_stream_parser=true"
@@ -1167,7 +1179,7 @@ src_compile() {
 	fi
 
 	# Build desktop file; bug #706786
-	if use gnome; then
+	if use xdg; then
 		sed -e 's|@@MENUNAME@@|Chromium|g;
 		s|@@USR_BIN_SYMLINK_NAME@@|chromium-browser|g;
 		s|@@PACKAGE@@|chromium-browser|g;
@@ -1253,7 +1265,7 @@ src_install() {
 			chromium-browser.png
 	done
 
-	if use gnome; then
+	if use xdg; then
 		# Install desktop entry
 		domenu out/Release/chromium-browser-chromium.desktop
 		# Install GNOME default application entry (bug #303100).
@@ -1271,13 +1283,13 @@ src_install() {
 }
 
 pkg_postrm() {
-	use gnome && xdg_icon_cache_update
-	use gnome && xdg_desktop_database_update
+	use xdg && xdg_icon_cache_update
+	use xdg && xdg_desktop_database_update
 }
 
 pkg_postinst() {
-	use gnome && xdg_icon_cache_update
-	use gnome && xdg_desktop_database_update
+	use xdg && xdg_icon_cache_update
+	use sdg && xdg_desktop_database_update
 	readme.gentoo_print_elog
 
 	if use vaapi; then
