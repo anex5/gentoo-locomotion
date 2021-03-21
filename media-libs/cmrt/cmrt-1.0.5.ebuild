@@ -1,6 +1,6 @@
-# Copyright 1999-2012 Gentoo Foundation
+# Copyright 2021 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
-EAPI=5
+EAPI=7
 
 inherit autotools eutils
 
@@ -12,20 +12,26 @@ LICENSE="MIT"
 
 SLOT="0"
 
-KEYWORDS="-* amd64 x86"
+KEYWORDS="amd64 x86"
 
 RDEPEND="x11-libs/libdrm"
+
+RESTRICT="mirror"
 
 DEPEND="${RDEPEND}
 	x11-libs/libva
 	virtual/pkgconfig"
 
+PATCHES=(
+	"${FILESDIR}/${P}-use-right-cpp.patch"
+)
+
 src_prepare() {
-	epatch "${FILESDIR}/${P}-use-right-cpp.patch"
+	default
 	eautoreconf
 }
 
 src_install() {
 	default
-	prune_libtool_files
+	find "${D}" -name '*.la' -delete || die
 }
