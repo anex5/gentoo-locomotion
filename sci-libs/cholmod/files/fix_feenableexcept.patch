@@ -1,0 +1,13 @@
+diff --git a/CHOLMOD/GPU/t_cholmod_gpu.c b/CHOLMOD/GPU/t_cholmod_gpu.c
+index b4b1198..fe602f2 100644
+--- a/CHOLMOD/GPU/t_cholmod_gpu.c
++++ b/CHOLMOD/GPU/t_cholmod_gpu.c
+@@ -92,7 +92,7 @@ int TEMPLATE2 (CHOLMOD (gpu_init))
+     cudaError_t cudaErr ;
+     size_t maxBytesSize, HostPinnedSize ;
+ 
+-    feenableexcept (FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW );
++    feraiseexcept (FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW );
+ 
+     maxSize = L->maxcsize;
+ 

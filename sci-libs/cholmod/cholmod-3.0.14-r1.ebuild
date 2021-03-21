@@ -13,6 +13,7 @@ SRC_URI="https://github.com/DrTimothyAldenDavis/SuiteSparse/archive/v5.8.1.tar.g
 LICENSE="LGPL-2.1+ modify? ( GPL-2+ ) matrixops? ( GPL-2+ )"
 SLOT="0"
 KEYWORDS="~amd64 ~arm ~arm64 ~hppa ~ia64 ~mips ~ppc ~ppc64 ~sparc ~x86 ~amd64-linux ~x86-linux"
+#KEYWORDS=""
 IUSE="cuda doc +lapack +matrixops +modify +partition"
 
 BDEPEND="virtual/pkgconfig
@@ -40,6 +41,8 @@ S=${WORKDIR}/SuiteSparse-5\.8\.1
 
 PATCHES=(
 	"${FILESDIR}/suitesparseconfig.mk.patch"
+    "${FILESDIR}/fix_typos.patch"
+    "${FILESDIR}/fix_feenableexcept.patch"
 )
 
 src_prepare() {
@@ -51,12 +54,24 @@ src_prepare() {
 }
 
 multilib_src_compile() {
+	local cconfig=""
+	use cuda && cconfig+="-DGPU_BLAS "
+	use partition || cconfig+="-DNPARTITION "
+	use modify || cconfig+="-DNMODIFY "
+	use matrixops || cconfig+="-DNMATRIXOPS "
+	if use lapack; then
+		blas_libs="$($(tc-getPKG_CONFIG) --libs blas)"
+		lapack_libs=$($(tc-getPKG_CONFIG) --libs lapack)
+	fi
+
 	OPTIMIZATION="" SUITESPARSE=$(pwd) \
+	#CHOLMOD_CONFIG="$cconfig" \
+	BLAS="$blas_libs" LAPACK="$lapack_libs" \
 	emake library || die "make failed"
 }
 
 multilib_src_install() {
-	dolib.so lib/{lib${PN}.so.$(ver_cut 1-1),lib${PN}.so.$(ver_cut 1-3),lib${PN}.so} || die
+	dolib.so ../lib/{lib${PN}.so.$(ver_cut 1-1),lib${PN}.so.$(ver_cut 1-3),lib${PN}.so} || die
 }
 
 multilib_src_install_all() {
