@@ -1,7 +1,7 @@
-# Copyright 2017 The Chromium OS Authors. All rights reserved.
+# Copyright 2021 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
-EAPI="7" 
-inherit git-r3 multilib 
+EAPI="7"
+inherit git-r3 multilib
 DESCRIPTION="Library for Android sync objects"
 HOMEPAGE="https://android.googlesource.com/platform/system/core/libsync"
 EGIT_REPO_URI="https://chromium.googlesource.com/aosp/platform/system/core/libsync"
@@ -10,6 +10,8 @@ LICENSE="BSD-Google"
 SLOT="0"
 KEYWORDS="~*"
 RDEPEND="!media-libs/arc-camera3-libsync"
+
+RESTRICT="mirror"
 
 src_prepare() {
 	default
