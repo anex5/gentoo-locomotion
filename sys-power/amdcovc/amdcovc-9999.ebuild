@@ -8,7 +8,7 @@ inherit linux-info toolchain-funcs
 DESCRIPTION="Control AMD Overdrive settings with or without X."
 HOMEPAGE="https://github.com/matszpk/amdcovc"
 
-if [ ${PR} == "r0" ]; then 
+if [ ${PR} == "r0" ]; then
 	PR=""
 fi
 
@@ -23,6 +23,7 @@ fi
 LICENSE="GPL-3"
 SLOT="0"
 IUSE="catalyst"
+RESTRICT="mirror"
 
 DEPEND="
 	catalyst? ( x11-libs/amd-adl-sdk )
