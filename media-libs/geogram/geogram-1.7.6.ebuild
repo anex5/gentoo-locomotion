@@ -32,9 +32,10 @@ src_prepare(){
 	cmake_src_prepare
 }
 
+CMAKE_BUILD_TYPE=Release
+
 src_configure() {
 	local mycmakeargs=(
-		-DCMAKE_BUILD_TYPE=Release
 		-DCMAKE_INSTALL_PREFIX="${EPREFIX}/usr"
 		-DCMAKE_C_FLAGS="-fcommon"
 		-DGEOGRAM_LIB_ONLY=ON
