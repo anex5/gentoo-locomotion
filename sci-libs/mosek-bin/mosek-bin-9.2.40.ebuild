@@ -1,16 +1,17 @@
-# Copyright 2009-2020 Gentoo Authors
+# Copyright 2021 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=7
 PYTHON_COMPAT=( python3_{7..9} )
 
 MY_PN=${PN/-bin/}
+MY_PV=$(ver_rs 1-2 '_' $(ver_cut 1-2))
 
 inherit distutils-r1
 
 DESCRIPTION="A commercial solver for mathematical optimization problems."
 HOMEPAGE="http://mosek.com/"
-SRC_URI="https://download.mosek.com/stable/9.1.12/mosektoolslinux64x86.tar.bz2"
+SRC_URI="https://download.mosek.com/stable/${PV}/mosektoolslinux64x86.tar.bz2"
 
 LICENSE="MOSEK"
 SLOT="0"
@@ -31,7 +32,7 @@ DEPEND="${RDEPEND}
 	dev-python/setuptools[${PYTHON_USEDEP}]
 "
 
-QA_PREBUILT="opt/${MY_PN}/usr/lib/{libcilkrts.so.5,libmosek64.so,libmosekxx9_1.so} opt/${MY_PN}/usr/bin/mosek"
+QA_PREBUILT="opt/${MY_PN}/usr/lib/{libcilkrts.so.5,libmosek64.so,libmosekxx$MY_PV.so} opt/${MY_PN}/usr/bin/mosek"
 
 src_compile(){
 	if use python ; then
@@ -50,7 +51,7 @@ src_install (){
 
 	doins "libcilkrts.so.5"
 	doins "libmosek64.so.$(ver_cut 1-2)"
-	doins "libmosekxx9_1.so"
+	doins "libmosekxx${MY_PV}.so"
 	dosym "libmosek64.so.$(ver_cut 1-2)" "/opt/${MY_PN}/usr/lib/libmosek64.so"
 
 	# Install command line utilities.

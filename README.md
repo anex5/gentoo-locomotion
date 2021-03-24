@@ -47,7 +47,7 @@ eselect repository enable gentoo-locomotion
 
 #### Using `layman`:
 ```
-layman -fa gentoo-locomotion
+layman -o https://raw.githubusercontent.com/anex5/gentoo-locomotion/master/layman.xml -fa gentoo-locomotion
 ```
 
 > **Note:** To use the testing branch for particular packages, you must add the
@@ -56,9 +56,6 @@ It is also possible to create a directory (with the same name) and list the
 package in the files under that directory. Please see the
 [Gentoo Wiki](https://wiki.gentoo.org/wiki/Ebuild_repository) for an expanded
 overview of ebuilds and unofficial repositories for Gentoo.
-
-:contact: anex5.2008@gmail.com
-:language: English/Russian
 
 To contribute bug reports for this overlay, you can open up a GitHub issue or send
 me a pull request.
