@@ -38,7 +38,7 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}"
 DEPEND="
 	dev-libs/boost[${PYTHON_USEDEP}]
 	media-libs/opencv[python,${PYTHON_USEDEP}]
-	media-libs/opengv[python]
+	media-libs/opengv[python,${PYTHON_USEDEP}]
 	>=sci-libs/ceres-solver-2.0.0
 	sci-libs/suitesparse
 	sci-libs/metis
