@@ -16,11 +16,13 @@ HOMEPAGE="https://www.opensfm.org"
 if [[ ${PV} = *9999 ]]; then
 	inherit git-r3
 	EGIT_REPO_URI="https://github.com/mapillary/OpenSfM"
+	EGIT_SUBMODULES=()
 	EGIT_BRANCH="master"
 	KEYWORDS=""
 else
 	SRC_URI="https://github.com/mapillary/${MY_PN}/archive/v${PV}/${P}.tar.gz -> ${P}.tar.gz"
 	KEYWORDS="~amd64 ~x86"
+	S=${WORKDIR}/${MY_PN}-${PV}
 fi
 
 LICENSE="BSD-2"
@@ -43,6 +45,7 @@ DEPEND="
 	>=dev-python/cloudpickle-0.4.0[${PYTHON_USEDEP}]
 	>=dev-python/exifread-2.1.2[${PYTHON_USEDEP}]
 	>=dev-python/joblib-0.14.1[${PYTHON_USEDEP}]
+	>=dev-python/loky-1.0.0[${PYTHON_USEDEP}]
 	dev-python/matplotlib[${PYTHON_USEDEP}]
 	>=dev-python/networkx-1.11[${PYTHON_USEDEP}]
 	>=dev-python/pillow-8.1.1[${PYTHON_USEDEP}]
@@ -70,14 +73,19 @@ BDEPEND="
 
 RESTRICT="mirror"
 
-S=${WORKDIR}/${MY_PN}-${PV}
-
-#distutils_enable_sphinx docs
+PATCHES=(
+	"${FILESDIR}/fix-include-libs.patch"
+)
+#distutils_enable_sphinx doc --no-autodoc
 #distutils_enable_tests pytest
 src_prepare() {
 	default
+	use doc || sed -i -e "/from sphinx\.setup_command import BuildDoc/d" -e "/\"build_doc\": BuildDoc\,/d" setup.py || die
+	sed -i -e "/\"bin\/opensfm\"\,/a		\"bin\/opensfm_main\.py\"," setup.py || die
+
 	#Enable cxx14-std as CERES-2.0 req it and unbundle pybind11
 	sed -i -e "s|\(set(CMAKE_CXX_STANDARD \)11|\114|" \
 		-e "s|add_subdirectory(third_party\/pybind11)|find_package (pybind11 CONFIG REQUIRED)|" opensfm/src/CMakeLists.txt || die
-	sed -i -e "/^target_link_libraries(/,/)/s|pybind11|pybind11::headers|g" opensfm/src/{foundation,bundle,dense,features,geometry,robust,sfm}/CMakeLists.txt || die
+	sed -i -e "/^target_link_libraries(/,/)/s|pybind11|pybind11::headers|g" opensfm/src/{foundation,bundle,dense,features,geometry,robust,sfm,geo,map}/CMakeLists.txt || die
 }
+
