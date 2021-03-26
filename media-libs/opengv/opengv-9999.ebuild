@@ -3,15 +3,19 @@
 
 EAPI=7
 
-inherit git-r3 cmake
+PYTHON_COMPAT=( python3_{7..9} )
+
+inherit git-r3 cmake python-r1
 
 if [[ ${PV} == 9999 ]]; then
 	EGIT_REPO_URI="https://github.com/laurentkneip/opengv"
 	EGIT_BRANCH="master"
+	EGIT_SUBMODULES=()
+	KEYWORDS=""
 else
 	EGIT_REPO_URI="https://github.com/laurentkneip/opengv"
 	EGIT_BRANCH="master"
-	EGIT_COMMIT=""
+	EGIT_SUBMODULES=()
 	KEYWORDS="~amd64 ~x86"
 fi
 
@@ -24,19 +28,29 @@ SLOT="0"
 LICENSE="MPL-2"
 IUSE="python test"
 
+REQUIRED_USE="${PYTHON_REQUIRED_USE}"
+
 DEPEND="
-	>=dev-libs/boost-1.60.0
 	>=dev-cpp/eigen-3.3.4
+	${PYTHON_DEPS}
+	$(python_gen_cond_dep '
+		dev-libs/boost[${PYTHON_USEDEP}]
+	')
 "
 RDEPEND=""
+BDEPEND="
+	dev-python/pybind11[${PYTHON_USEDEP}]
+	>=dev-util/cmake-3.0.0
+"
 
 src_configure() {
+	CMAKE_BUILD_TYPE=Release
+	sed -i -e "s|\(set(CMAKE_CXX_STANDARD \)11|\114|" \
+		-e "s|add_subdirectory(pybind11)|find_package (pybind11 CONFIG REQUIRED)|" python/CMakeLists.txt || die
 	local mycmakeargs=(
-		-DCMAKE_BUILD_TYPE=Release
 		-DBUILD_PYTHON=$(usex python ON OFF)
 		-DBUILD_TESTS=$(usex test ON OFF)
 	)
-
 	cmake_src_configure
 }
 
