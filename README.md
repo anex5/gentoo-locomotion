@@ -42,7 +42,7 @@ installed on your system for this to work.
 
 #### Using `eselect-repository`:
 ```
-eselect repository enable gentoo-locomotion
+eselect repository add gentoo-locomotion git https://github.com/anex5/gentoo-locomotion.git
 ```
 
 #### Using `layman`:

@@ -299,7 +299,6 @@ src_prepare() {
 		# Extra patches taken from openSUSE and Arch
 		"${p}/force-mp3-files-to-have-a-start-time-of-zero.patch"
 		"${p}/chromium-glibc-2.33.patch"
-		"${p}/x11-ozone-fix-two-edge-cases.patch"
 		"${p}/chromium-system-libusb-r0.patch"
 		"${p}/chromium-libusb-interrupt-event-handler-r1.patch"
 		"${p}/chromium-skia-harmony.patch"
