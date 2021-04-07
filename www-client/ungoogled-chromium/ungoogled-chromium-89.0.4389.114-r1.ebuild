@@ -136,7 +136,7 @@ COMMON_DEPEND="
 	system-openh264? ( >=media-libs/openh264-1.6.0:= )
 	system-openjpeg? ( media-libs/openjpeg:2= )
 	system-re2? ( >=dev-libs/re2-0:= )
-	vaapi? ( x11-libs/libva:= )
+	vaapi? ( >=x11-libs/libva-2.10.0:= )
 
 	xkbcommon? (
 		x11-libs/libxkbcommon
@@ -297,6 +297,7 @@ src_prepare() {
 		"${p}/chromium-89-EnumTable-crash.patch"
 
 		# Extra patches taken from openSUSE and Arch
+		"${p}/chromium_hevc_non_chromeos.patch"
 		"${p}/force-mp3-files-to-have-a-start-time-of-zero.patch"
 		"${p}/chromium-glibc-2.33.patch"
 		"${p}/chromium-system-libusb-r0.patch"
@@ -305,7 +306,7 @@ src_prepare() {
 		"${p}/chromium-fix-cfi-failures-with-unbundled-libxml.patch"
 
 		# Personal patches
-		"${p}/chromium-optional-dbus-r11.patch"
+		"${p}/chromium-optional-dbus-r12.patch"
 		"${p}/chromium-optional-atk-r2.patch"
 		"${p}/chromium-optional-egl-r0.patch"
 	)
@@ -336,6 +337,7 @@ src_prepare() {
 	use system-openjpeg && eapply "${p}/chromium-system-openjpeg-r2.patch"
 
 	if use vaapi; then
+		has_version "=x11-libs/libva-2.11.0" && eapply "${p}/chromium-fix-libva-redef.patch"
 		eapply "${p}/chromium-86-fix-vaapi-on-intel.patch"
 		elog "Even though ${PN} is built with vaapi support, #ignore-gpu-blacklist"
 		elog "should be enabled via flags or commandline for it to work."
@@ -363,25 +365,18 @@ src_prepare() {
 
 	if use "elibc_musl"; then
 		p="${FILESDIR}/musl"
-		eapply "${p}/musl_no_mallinfo.patch"
-		eapply "${p}/musl_no_execinfo.patch"
-		eapply "${p}/musl_TEMP_FAILURE_RETRY.patch"
-		eapply "${p}/musl_fix-stack.patch"
-		eapply "${p}/musl_breakpad.patch"
-		eapply "${p}/musl_fontconfig.patch"
-		eapply "${p}/musl_libc_malloc.patch"
-		#eapply "${p}/musl_gnu_libc-version.patch"
-		eapply "${p}/musl_resolver.patch"
-		eapply "${p}/musl_off64_t.patch"
-		#eapply "${p}/musl_lss-match_syscalls.patch"
-		eapply "${p}/musl_crashpad.patch"
-		eapply "${p}/musl_replace_libc_fpstate.patch"
-		eapply "${p}/musl_fix_stack_trace.patch"
-		eapply "${p}/musl_portable_msghdr.patch"
-		eapply "${p}/musl_no__environ.patch"
-		eapply "${p}/musl_no_mallopt.patch"
-		eapply "${p}/musl_undef_mmap64.patch"
-		eapply "${p}/musl_no_sbrk.patch"
+		eapply "${p}/musl-crashpad.patch"
+		eapply "${p}/musl-default-pthread-stacksize.patch"
+		eapply "${p}/musl-fixes.patch"
+		eapply "${p}/musl-hacks.patch"
+		eapply "${p}/musl-libc++.patch"
+		eapply "${p}/musl-no-execinfo.patch"
+		eapply "${p}/musl-no-mallinfo.patch"
+		eapply "${p}/musl-resolver.patch"
+		eapply "${p}/musl-sandbox.patch"
+		eapply "${p}/musl-stacktrace.patch"
+		eapply "${p}/musl-sync.patch"
+		eapply "${p}/musl-v8-monotonic-pthread-cont_timedwait.patch"
 	fi
 
 	# Hack for libusb stuff (taken from openSUSE)
@@ -706,9 +701,10 @@ src_prepare() {
 	use wayland && keeplibs+=(
 		third_party/wayland
 		third_party/wayland-protocols
-		third_party/minigbm
 	)
+
 	keeplibs+=( # needed when use_aura=true
+		third_party/minigbm
 		third_party/speech-dispatcher
 	)
 
@@ -1288,7 +1284,7 @@ pkg_postrm() {
 
 pkg_postinst() {
 	use xdg && xdg_icon_cache_update
-	use sdg && xdg_desktop_database_update
+	use xdg && xdg_desktop_database_update
 	readme.gentoo_print_elog
 
 	if use vaapi; then
