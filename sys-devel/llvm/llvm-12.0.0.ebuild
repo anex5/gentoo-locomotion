@@ -1,21 +1,19 @@
-# Copyright 1999-2020 Gentoo Authors
+# Copyright 1999-2021 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=7
 
-PYTHON_COMPAT=( python3_{5..9} )
+PYTHON_COMPAT=( python3_{7..9} )
 inherit cmake llvm.org multilib-minimal pax-utils python-any-r1 \
 	toolchain-funcs
 
 DESCRIPTION="Low Level Virtual Machine"
 HOMEPAGE="https://llvm.org/"
-LLVM_COMPONENTS=( llvm )
-llvm.org_set_globals
 
 # Those are in lib/Targets, without explicit CMakeLists.txt mention
-ALL_LLVM_EXPERIMENTAL_TARGETS=( ARC AVR )
+ALL_LLVM_EXPERIMENTAL_TARGETS=( ARC CSKY VE )
 # Keep in sync with CMakeLists.txt
-ALL_LLVM_TARGETS=( AArch64 AMDGPU ARM BPF Hexagon Lanai Mips MSP430
+ALL_LLVM_TARGETS=( AArch64 AMDGPU ARM AVR BPF Hexagon Lanai Mips MSP430
 	NVPTX PowerPC RISCV Sparc SystemZ WebAssembly X86 XCore
 	"${ALL_LLVM_EXPERIMENTAL_TARGETS[@]}" )
 ALL_LLVM_TARGETS=( "${ALL_LLVM_TARGETS[@]/#/llvm_targets_}" )
@@ -28,8 +26,8 @@ ALL_LLVM_TARGETS=( "${ALL_LLVM_TARGETS[@]/#/llvm_targets_}" )
 
 LICENSE="Apache-2.0-with-LLVM-exceptions UoI-NCSA BSD public-domain rc"
 SLOT="$(ver_cut 1)"
-KEYWORDS=""
-IUSE="debug doc exegesis gold libedit +libffi man ncurses test xar xml z3
+KEYWORDS="~amd64 ~arm ~arm64 ~ppc64 ~riscv ~x86 ~amd64-linux ~ppc-macos ~x64-macos"
+IUSE="debug doc man exegesis gold libedit +libffi ncurses test xar xml z3
 	kernel_Darwin ${ALL_LLVM_TARGETS[*]}"
 REQUIRED_USE="|| ( ${ALL_LLVM_TARGETS[*]} )"
 RESTRICT="!test? ( test )"
@@ -37,12 +35,7 @@ RESTRICT="!test? ( test )"
 RDEPEND="
 	sys-libs/zlib:0=[${MULTILIB_USEDEP}]
 	exegesis? ( dev-libs/libpfm:= )
-	gold? (
-		|| (
-			>=sys-devel/binutils-2.31.1-r4:*[plugins]
-			<sys-devel/binutils-2.31.1-r4:*[cxx]
-		)
-	)
+	gold? ( >=sys-devel/binutils-2.31.1-r4:*[plugins] )
 	libedit? ( dev-libs/libedit:0=[${MULTILIB_USEDEP}] )
 	libffi? ( >=dev-libs/libffi-3.0.13-r1:0=[${MULTILIB_USEDEP}] )
 	ncurses? ( >=sys-libs/ncurses-5.9-r3:0=[${MULTILIB_USEDEP}] )
@@ -53,16 +46,18 @@ DEPEND="${RDEPEND}
 	gold? ( sys-libs/binutils-libs )"
 BDEPEND="
 	dev-lang/perl
+	>=dev-util/cmake-3.16
 	sys-devel/gnuconfig
 	kernel_Darwin? (
 		<sys-libs/libcxx-$(ver_cut 1-3).9999
 		>=sys-devel/binutils-apple-5.1
 	)
+	doc? ( $(python_gen_any_dep '
+		dev-python/recommonmark[${PYTHON_USEDEP}]
+		dev-python/sphinx[${PYTHON_USEDEP}]
+	') )
 	libffi? ( virtual/pkgconfig )
-	$(python_gen_any_dep '
-		man? ( dev-python/sphinx[${PYTHON_USEDEP}] )
-		doc? ( dev-python/recommonmark[${PYTHON_USEDEP}] )
-	')"
+	${PYTHON_DEPS}"
 # There are no file collisions between these versions but having :0
 # installed means llvm-config there will take precedence.
 RDEPEND="${RDEPEND}
@@ -70,19 +65,46 @@ RDEPEND="${RDEPEND}
 PDEPEND="sys-devel/llvm-common
 	gold? ( >=sys-devel/llvmgold-${SLOT} )"
 
-PATCHES=(
-	# Fix linking to dylib and .a libs simultaneously
-	"${FILESDIR}"/10.0.1/0001-llvm-Avoid-linking-llvm-cfi-verify-to-duplicate-libs.patch
-	"${FILESDIR}"/10.0.1/0002-llvm-Disable-linking-llvm-exegesis-to-dylib.patch
-)
+LLVM_COMPONENTS=( llvm )
+LLVM_MANPAGES=pregenerated
+llvm.org_set_globals
 
 python_check_deps() {
-	if use doc; then
-		has_version -b "dev-python/recommonmark[${PYTHON_USEDEP}]" ||
-			return 1
+	use doc || return 0
+
+	has_version -b "dev-python/recommonmark[${PYTHON_USEDEP}]" &&
+	has_version -b "dev-python/sphinx[${PYTHON_USEDEP}]"
+}
+
+check_live_ebuild() {
+	local prod_targets=(
+		$(sed -n -e '/set(LLVM_ALL_TARGETS/,/)/p' CMakeLists.txt \
+			| tail -n +2 | head -n -1)
+	)
+	local all_targets=(
+		lib/Target/*/
+	)
+	all_targets=( "${all_targets[@]#lib/Target/}" )
+	all_targets=( "${all_targets[@]%/}" )
+
+	local exp_targets=() i
+	for i in "${all_targets[@]}"; do
+		has "${i}" "${prod_targets[@]}" || exp_targets+=( "${i}" )
+	done
+	# reorder
+	all_targets=( "${prod_targets[@]}" "${exp_targets[@]}" )
+
+	if [[ ${exp_targets[*]} != ${ALL_LLVM_EXPERIMENTAL_TARGETS[*]} ]]; then
+		eqawarn "ALL_LLVM_EXPERIMENTAL_TARGETS is outdated!"
+		eqawarn "    Have: ${ALL_LLVM_EXPERIMENTAL_TARGETS[*]}"
+		eqawarn "Expected: ${exp_targets[*]}"
+		eqawarn
 	fi
-	if use man; then
-		has_version -b "dev-python/sphinx[${PYTHON_USEDEP}]"
+
+	if [[ ${all_targets[*]} != ${ALL_LLVM_TARGETS[*]#llvm_targets_} ]]; then
+		eqawarn "ALL_LLVM_TARGETS is outdated!"
+		eqawarn "    Have: ${ALL_LLVM_TARGETS[*]#llvm_targets_}"
+		eqawarn "Expected: ${all_targets[*]}"
 	fi
 }
 
@@ -113,7 +135,7 @@ check_distribution_components() {
 						;;
 					# used only w/ USE=doc
 					docs-llvm-html)
-						continue
+						use doc || continue
 						;;
 				esac
 
@@ -151,16 +173,18 @@ src_prepare() {
 	# https://bugs.gentoo.org/show_bug.cgi?id=565358
 	eapply "${FILESDIR}"/9999/0007-llvm-config-Clean-up-exported-values-update-for-shar.patch
 
+	# Disable LBR tests that are broken on non-Intel CPUs
+	# https://bugs.llvm.org/show_bug.cgi?id=48918
+	rm -r test/tools/llvm-exegesis/X86/lbr || die
+
 	# disable use of SDK on OSX, bug #568758
 	sed -i -e 's/xcrun/false/' utils/lit/lit/util.py || die
 
 	# Update config.guess to support more systems
 	cp "${BROOT}/usr/share/gnuconfig/config.guess" cmake/ || die
 
-	# manpages don't use markdown
-	if ! use doc; then
-		sed -i -e '/source_parsers/d' docs/conf.py || die
-	fi
+	# Verify that the live ebuild is up-to-date
+	check_live_ebuild
 
 	llvm.org_src_prepare
 }
@@ -219,6 +243,7 @@ get_distribution_components() {
 			llvm-ar
 			llvm-as
 			llvm-bcanalyzer
+			llvm-bitcode-strip
 			llvm-c-test
 			llvm-cat
 			llvm-cfi-verify
@@ -236,16 +261,20 @@ get_distribution_components() {
 			llvm-elfabi
 			llvm-exegesis
 			llvm-extract
+			llvm-gsymutil
 			llvm-ifs
 			llvm-install-name-tool
 			llvm-jitlink
+			llvm-jitlink-executor
 			llvm-lib
+			llvm-libtool-darwin
 			llvm-link
 			llvm-lipo
 			llvm-lto
 			llvm-lto2
 			llvm-mc
 			llvm-mca
+			llvm-ml
 			llvm-modextract
 			llvm-mt
 			llvm-nm
@@ -254,6 +283,7 @@ get_distribution_components() {
 			llvm-opt-report
 			llvm-pdbutil
 			llvm-profdata
+			llvm-profgen
 			llvm-ranlib
 			llvm-rc
 			llvm-readelf
@@ -272,18 +302,22 @@ get_distribution_components() {
 			opt
 			sancov
 			sanstats
+			split-file
 			verify-uselistorder
 			yaml2obj
 
 			# python modules
 			opt-viewer
 		)
-		# manpages
-		use man && out+=(
-			docs-dsymutil-man
-			docs-llvm-dwarfdump-man
-			docs-llvm-man
-		)
+
+		if [ use man && llvm_are_manpages_built ]; then
+			out+=(
+				# manpages
+				docs-dsymutil-man
+				docs-llvm-dwarfdump-man
+				docs-llvm-man
+			)
+		fi
 		use doc && out+=(
 			docs-llvm-html
 		)
@@ -339,6 +373,8 @@ multilib_src_configure() {
 		# used only for llvm-objdump tool
 		-DHAVE_LIBXAR=$(multilib_native_usex xar 1 0)
 
+		-DPython3_EXECUTABLE="${PYTHON}"
+
 		# disable OCaml bindings (now in dev-ml/llvm-ocaml)
 		-DOCAMLFIND=NO
 	)
@@ -349,6 +385,7 @@ multilib_src_configure() {
 		# libraries with libstdc++ clang, and the other way around.
 		mycmakeargs+=(
 			-DLLVM_VERSION_SUFFIX="libcxx"
+			-DLLVM_ENABLE_LIBCXX=ON
 		)
 	fi
 
@@ -365,15 +402,22 @@ multilib_src_configure() {
 	)
 
 	if multilib_is_native_abi; then
+		local build_docs=OFF
+		if [ use man && llvm_are_manpages_built ]; then
+			build_docs=ON
+			mycmakeargs+=(
+				-DCMAKE_INSTALL_MANDIR="${EPREFIX}/usr/lib/llvm/${SLOT}/share/man"
+				-DLLVM_INSTALL_SPHINX_HTML_DIR="${EPREFIX}/usr/share/doc/${PF}/html"
+				-DSPHINX_WARNINGS_AS_ERRORS=OFF
+			)
+		fi
+
 		mycmakeargs+=(
-			-DLLVM_BUILD_DOCS=$(usex doc ON OFF)
-			-DLLVM_ENABLE_OCAMLDOC=$(usex doc ON OFF)
-			-DLLVM_ENABLE_SPHINX=$(usex man ON OFF)
-			-DLLVM_ENABLE_DOXYGEN=$(usex doc ON OFF)
+			-DLLVM_BUILD_DOCS=${build_docs}
+			-DLLVM_ENABLE_OCAMLDOC=OFF
+			-DLLVM_ENABLE_SPHINX=${build_docs}
+			-DLLVM_ENABLE_DOXYGEN=OFF
 			-DLLVM_INSTALL_UTILS=ON
-			-DCMAKE_INSTALL_MANDIR="${EPREFIX}/usr/lib/llvm/${SLOT}/share/man"
-			-DLLVM_INSTALL_SPHINX_HTML_DIR="${EPREFIX}/usr/share/doc/${PF}/html"
-			-DSPHINX_WARNINGS_AS_ERRORS=OFF
 		)
 		use gold && mycmakeargs+=(
 			-DLLVM_BINUTILS_INCDIR="${EPREFIX}"/usr/include
@@ -412,7 +456,7 @@ multilib_src_configure() {
 }
 
 multilib_src_compile() {
-	cmake_src_compile
+	cmake_build distribution
 
 	pax-mark m "${BUILD_DIR}"/bin/llvm-rtdyld
 	pax-mark m "${BUILD_DIR}"/bin/lli
@@ -468,6 +512,7 @@ multilib_src_install_all() {
 	_EOF_
 
 	docompress "/usr/lib/llvm/${SLOT}/share/man"
+	use man && llvm_install_manpages
 }
 
 pkg_postinst() {
