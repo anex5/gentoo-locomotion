@@ -46,7 +46,7 @@ BDEPEND="
 
 PATCHES=(
 	"${FILESDIR}/${PN}-1.14.0-cmake-gentoo-release.patch"
-	"${FILESDIR}/${PN}-1.14.0-llvm-10.patch"
+	"${FILESDIR}/${PN}-1.15.0-llvm-12.patch"
 )
 
 DOCS=( README.md "${S}"/docs/{ReleaseNotes.txt,faq.rst,ispc.rst,perf.rst,perfguide.rst} )
@@ -60,11 +60,21 @@ src_prepare() {
 		sed -e 's|/usr/local/bin/dot|/usr/bin/dot|' -i "${S}"/doxygen.cfg || die
 	fi
 
+	if use amd64; then
+		# On amd64 systems, build system enables x86/i686 build too.
+		# This ebuild doesn't even have multilib support, nor need it.
+		# https://bugs.gentoo.org/730062
+		elog "Removing auto-x86 build on amd64"
+		sed -i -e 's:set(target_arch "i686"):return():' cmake/GenerateBuiltins.cmake || die
+	fi
+
 	cmake_src_prepare
 }
 
 src_configure() {
+	#CMAKE_BUILD_TYPE="Release"
 	local mycmakeargs=(
+		-DCMAKE_SKIP_RPATH=ON
 		-DARM_ENABLED=$(usex arm)
 		-DGENX_ENABLED=OFF
 		#-DNVPTX_ENABLED=OFF
@@ -108,6 +118,7 @@ src_install() {
 }
 
 src_test() {
-	eninja check-all
+	# Inject path to prevent using system ispc
+	PATH="${BUILD_DIR}/bin:${PATH}" ${EPYTHON} run_tests.py || die "Testing failed under ${EPYTHON}"
 }
 
