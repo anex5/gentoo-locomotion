@@ -191,14 +191,7 @@ src_prepare() {
 
 # Is LLVM being linked against libc++?
 is_libcxx_linked() {
-	local code='#include <ciso646>
-#if defined(_LIBCPP_VERSION)
-	HAVE_LIBCXX
-#endif
-'
-	local out=$($(tc-getCXX) ${CXXFLAGS} ${CPPFLAGS} -x c++ -E -P - <<<"${code}") || return 1
-
-	[[ ${out} == *HAVE_LIBCXX* ]]
+	has_version -b "sys-deve/clang:${SLOT}[default_libcxx]"
 }
 
 get_distribution_components() {
