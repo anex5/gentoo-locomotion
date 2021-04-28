@@ -1,0 +1,10 @@
+diff --git a/src/aliceVision/linearProgramming/CMakeLists.txt b/src/aliceVision/linearProgramming/CMakeLists.txt
+index 9496d9f..9f6eff9 100644
+--- a/src/aliceVision/linearProgramming/CMakeLists.txt
++++ b/src/aliceVision/linearProgramming/CMakeLists.txt
+@@ -38,3 +38,5 @@ alicevision_add_test(linearProgramming_test.cpp NAME "linearProgramming" LINKS a
+ 
+ # lInfinityCV library
+ add_subdirectory(lInfinityCV)
++
++set_target_properties(aliceVision_linearProgramming PROPERTIES LINKER_LANGUAGE CXX)

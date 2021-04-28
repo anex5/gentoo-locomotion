@@ -49,7 +49,6 @@ src_install (){
 	insinto "/opt/${MY_PN}/usr/lib"
 	cd "${S}/mosek/$(ver_cut 1-2)/tools/platform/linux64x86/bin"
 
-	doins "libcilkrts.so.5"
 	doins "libmosek64.so.$(ver_cut 1-2)"
 	doins "libmosekxx${MY_PV}.so"
 	dosym "libmosek64.so.$(ver_cut 1-2)" "/opt/${MY_PN}/usr/lib/libmosek64.so"
