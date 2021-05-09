@@ -56,10 +56,10 @@ DEPEND="
 	dev-python/numpy[${PYTHON_USEDEP}]
 	dev-python/scipy[${PYTHON_USEDEP}]
 	dev-python/repoze-lru[${PYTHON_USEDEP}]
+	>=dev-python/fpdf2-2.1.0[${PYTHON_USEDEP}]
 	doc? (
 		>=dev-python/sphinx-3.4.3[${PYTHON_USEDEP}]
 		dev-python/six[${PYTHON_USEDEP}]
-		>=dev-python/fpdf2-2.1.0[${PYTHON_USEDEP}]
 	)
 	>=dev-python/xmltodict-0.10.2[${PYTHON_USEDEP}]
 	dev-python/wheel[${PYTHON_USEDEP}]
