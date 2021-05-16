@@ -1,8 +1,8 @@
-From 9580499d1f8ee67842fee86ec564ab8b6de22a16 Mon Sep 17 00:00:00 2001
+From 2850a2ddaa202ffe1fbf421a2f007453773e6e29 Mon Sep 17 00:00:00 2001
 From: Mark Yao <mark.yao@rock-chips.com>
 Date: Wed, 8 Oct 2014 14:38:23 +0800
-Subject: [PATCH libdrm 3/7] CHROMIUM: libdrm: Add header for Rockchip DRM
- userspace interface
+Subject: [PATCH] CHROMIUM: libdrm: Add header for Rockchip DRM userspace
+ interface
 
 Add the header defining the interface exposed by Rockchip DRM.
 
@@ -20,12 +20,13 @@ Signed-off-by: Kristian H. Kristensen <hoegsberg@chromium.org>
 Change-Id: Ic3b128a2a22833e5af6b6188c20890fdd9cd564a
 ---
  Makefile.sources           |  1 +
- include/drm/rockchip_drm.h | 73 ++++++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 74 insertions(+)
+ include/drm/rockchip_drm.h | 73 ++++++++++++++++++++++++++++++++++++++
+ meson.build                |  2 +-
+ 3 files changed, 75 insertions(+), 1 deletion(-)
  create mode 100644 include/drm/rockchip_drm.h
 
 diff --git a/Makefile.sources b/Makefile.sources
-index 499fbd81..fcfa651c 100644
+index 55290fe9..9fa2e7db 100644
 --- a/Makefile.sources
 +++ b/Makefile.sources
 @@ -30,6 +30,7 @@ LIBDRM_INCLUDE_H_FILES := \
@@ -115,6 +116,19 @@ index 00000000..13977d59
 +		DRM_ROCKCHIP_GEM_MAP_OFFSET, struct drm_rockchip_gem_map_off)
 +
 +#endif
+diff --git a/meson.build b/meson.build
+index fc02f552..e5734b27 100644
+--- a/meson.build
++++ b/meson.build
+@@ -313,7 +313,7 @@ install_headers(
+   'include/drm/mach64_drm.h', 'include/drm/mga_drm.h',
+   'include/drm/msm_drm.h', 'include/drm/nouveau_drm.h',
+   'include/drm/qxl_drm.h', 'include/drm/r128_drm.h',
+-  'include/drm/radeon_drm.h', 'include/drm/amdgpu_drm.h',
++  'include/drm/radeon_drm.h', 'include/drm/rockchip_drm.h', 'include/drm/amdgpu_drm.h',
+   'include/drm/savage_drm.h', 'include/drm/sis_drm.h',
+   'include/drm/tegra_drm.h', 'include/drm/vc4_drm.h',
+   'include/drm/via_drm.h', 'include/drm/virtgpu_drm.h',
 -- 
-2.16.4
+2.30.0.365.g02bc693789-goog
 

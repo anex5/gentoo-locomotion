@@ -1,8 +1,7 @@
-From 82d90af9075b81eee524b3f04d4163f36f3062c9 Mon Sep 17 00:00:00 2001
+From 8a8d3afaacd56b8115c8c5d61d61566d4da51fb1 Mon Sep 17 00:00:00 2001
 From: Lukasz Spintzyk <lukasz.spintzyk@displaylink.com>
 Date: Wed, 10 Feb 2016 12:55:44 +0100
-Subject: [PATCH libdrm 5/7] CHROMIUM: drm/evdi: Add Evdi module userspace api
- file.
+Subject: [PATCH] CHROMIUM: drm/evdi: Add Evdi module userspace api file.
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -27,12 +26,13 @@ Signed-off-by: Kristian H. Kristensen <hoegsberg@chromium.org>
 Change-Id: I355eb33d9953b1157888e4699ceb749865d8bb19
 ---
  Makefile.sources       |  1 +
- include/drm/evdi_drm.h | 85 ++++++++++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 86 insertions(+)
+ include/drm/evdi_drm.h | 85 ++++++++++++++++++++++++++++++++++++++++++
+ meson.build            |  1 +
+ 3 files changed, 87 insertions(+)
  create mode 100644 include/drm/evdi_drm.h
 
 diff --git a/Makefile.sources b/Makefile.sources
-index 19b62619..bd00db46 100644
+index 55290fe9..1cb0fa35 100644
 --- a/Makefile.sources
 +++ b/Makefile.sources
 @@ -22,6 +22,7 @@ LIBDRM_INCLUDE_H_FILES := \
@@ -42,7 +42,7 @@ index 19b62619..bd00db46 100644
 +	include/drm/evdi_drm.h \
  	include/drm/i915_drm.h \
  	include/drm/mach64_drm.h \
- 	include/drm/mediatek_drm.h \
+ 	include/drm/mga_drm.h \
 diff --git a/include/drm/evdi_drm.h b/include/drm/evdi_drm.h
 new file mode 100644
 index 00000000..3a00c7fc
@@ -134,6 +134,18 @@ index 00000000..3a00c7fc
 +
 +#endif /* __EVDI_UAPI_DRM_H__ */
 +
+diff --git a/meson.build b/meson.build
+index fc02f552..b10fdad4 100644
+--- a/meson.build
++++ b/meson.build
+@@ -317,6 +317,7 @@ install_headers(
+   'include/drm/savage_drm.h', 'include/drm/sis_drm.h',
+   'include/drm/tegra_drm.h', 'include/drm/vc4_drm.h',
+   'include/drm/via_drm.h', 'include/drm/virtgpu_drm.h',
++  'include/drm/evdi_drm.h',
+   subdir : 'libdrm',
+ )
+ if with_vmwgfx
 -- 
-2.16.4
+2.30.0.365.g02bc693789-goog
 
