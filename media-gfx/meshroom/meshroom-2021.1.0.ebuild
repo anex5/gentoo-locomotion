@@ -21,7 +21,7 @@ KEYWORDS=~amd64
 RESTRICT="test mirror"
 
 RDEPEND=">=dev-python/psutil-5.6.3[${PYTHON_USEDEP}]
-	>=dev-python/pyside2-5.13.0[qml,quick,${PYTHON_USEDEP}]
+	>=dev-python/pyside2-5.13.0[qml,quick,charts,${PYTHON_USEDEP}]
 	>=dev-python/markdown-2.6.11[${PYTHON_USEDEP}]
 	>=dev-python/requests-2.22.0[${PYTHON_USEDEP}]
 	>=media-libs/alicevision-2.4.0[alembic?]

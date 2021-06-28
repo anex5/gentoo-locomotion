@@ -73,9 +73,9 @@ BDEPEND="
 
 RESTRICT="mirror"
 
-PATCHES=(
-	"${FILESDIR}/fix-include-libs.patch"
-)
+#PATCHES=(
+#	"${FILESDIR}/fix-include-libs.patch"
+#)
 #distutils_enable_sphinx doc --no-autodoc
 #distutils_enable_tests pytest
 src_prepare() {
