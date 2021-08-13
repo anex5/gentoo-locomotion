@@ -1,0 +1,298 @@
+diff -ru a/src/others/squashfs-2.0-nb4/nb4-mksquashfs/squashfs/mksquashfs.c b/src/others/squashfs-2.0-nb4/nb4-mksquashfs/squashfs/mksquashfs.c
+--- a/src/others/squashfs-2.0-nb4/nb4-mksquashfs/squashfs/mksquashfs.c	2020-12-24 15:18:56.000000000 +0000
++++ b/src/others/squashfs-2.0-nb4/nb4-mksquashfs/squashfs/mksquashfs.c	2020-12-24 13:37:25.000000000 +0000
+@@ -144,7 +144,8 @@
+ struct file_info *dupl[65536], *frag_dups[65536];
+ int dup_files = 0;
+ 
+-int swap, silent = TRUE;
++extern int swap;
++int silent = TRUE;
+ int file_count = 0, sym_count = 0, dev_count = 0, dir_count = 0, fifo_count = 0, sock_count = 0;
+ 
+ /* list of exclude dirs/files */
+diff -ru a/src/others/squashfs-3.0-e2100/mksquashfs.c b/src/others/squashfs-3.0-e2100/mksquashfs.c
+--- a/src/others/squashfs-3.0-e2100/mksquashfs.c	2020-12-24 15:18:56.000000000 +0000
++++ b/src/others/squashfs-3.0-e2100/mksquashfs.c	2020-12-24 13:19:31.000000000 +0000
+@@ -88,7 +88,8 @@
+ /* filesystem flags for building */
+ int duplicate_checking = 1, noF = 0, no_fragments = 0, always_use_fragments = 0;
+ int noI = 0, noD = 0, check_data = 0;
+-int swap, silent = TRUE;
++extern int swap;
++int silent = TRUE;
+ long long global_uid = -1, global_gid = -1;
+ 
+ /* superblock attributes */
+diff -ru a/src/others/squashfs-3.2-r2/mksquashfs.c b/src/others/squashfs-3.2-r2/mksquashfs.c
+--- a/src/others/squashfs-3.2-r2/mksquashfs.c	2020-12-24 15:18:56.000000000 +0000
++++ b/src/others/squashfs-3.2-r2/mksquashfs.c	2020-12-24 13:20:26.000000000 +0000
+@@ -96,7 +96,8 @@
+ /* filesystem flags for building */
+ int duplicate_checking = 1, noF = 0, no_fragments = 0, always_use_fragments = 0;
+ int noI = 0, noD = 0, check_data = 0;
+-int swap, silent = TRUE;
++extern int swap;
++int silent = TRUE;
+ long long global_uid = -1, global_gid = -1;
+ int exportable = TRUE;
+ int progress = TRUE;
+diff -ru a/src/others/squashfs-3.2-r2-hg612-lzma/squashfs3.2-r2/squashfs-tools/mksquashfs.c b/src/others/squashfs-3.2-r2-hg612-lzma/squashfs3.2-r2/squashfs-tools/mksquashfs.c
+--- a/src/others/squashfs-3.2-r2-hg612-lzma/squashfs3.2-r2/squashfs-tools/mksquashfs.c	2020-12-24 15:18:56.000000000 +0000
++++ b/src/others/squashfs-3.2-r2-hg612-lzma/squashfs3.2-r2/squashfs-tools/mksquashfs.c	2020-12-24 13:22:21.000000000 +0000
+@@ -98,7 +98,8 @@
+ /* filesystem flags for building */
+ int duplicate_checking = 1, noF = 0, no_fragments = 0, always_use_fragments = 0;
+ int noI = 0, noD = 0, check_data = 0;
+-int swap, silent = TRUE;
++extern int swap;
++int silent = TRUE;
+ long long global_uid = -1, global_gid = -1;
+ int exportable = TRUE;
+ int progress = TRUE;
+diff -ru a/src/others/squashfs-3.2-r2-lzma/squashfs3.2-r2/squashfs-tools/mksquashfs.c b/src/others/squashfs-3.2-r2-lzma/squashfs3.2-r2/squashfs-tools/mksquashfs.c
+--- a/src/others/squashfs-3.2-r2-lzma/squashfs3.2-r2/squashfs-tools/mksquashfs.c	2020-12-24 15:18:56.000000000 +0000
++++ b/src/others/squashfs-3.2-r2-lzma/squashfs3.2-r2/squashfs-tools/mksquashfs.c	2020-12-24 13:21:23.000000000 +0000
+@@ -98,7 +98,8 @@
+ /* filesystem flags for building */
+ int duplicate_checking = 1, noF = 0, no_fragments = 0, always_use_fragments = 0;
+ int noI = 0, noD = 0, check_data = 0;
+-int swap, silent = TRUE;
++extern int swap;
++int silent = TRUE;
+ long long global_uid = -1, global_gid = -1;
+ int exportable = TRUE;
+ int progress = TRUE;
+diff -ru a/src/others/squashfs-3.2-r2-rtn12/mksquashfs.c b/src/others/squashfs-3.2-r2-rtn12/mksquashfs.c
+--- a/src/others/squashfs-3.2-r2-rtn12/mksquashfs.c	2020-12-24 15:18:56.000000000 +0000
++++ b/src/others/squashfs-3.2-r2-rtn12/mksquashfs.c	2020-12-24 13:23:33.000000000 +0000
+@@ -100,7 +100,8 @@
+ /* filesystem flags for building */
+ int duplicate_checking = 1, noF = 0, no_fragments = 0, always_use_fragments = 0;
+ int noI = 0, noD = 0, check_data = 0;
+-int swap, silent = TRUE;
++extern int swap;
++int silent = TRUE;
+ long long global_uid = -1, global_gid = -1;
+ int exportable = TRUE;
+ int progress = TRUE;
+diff -ru a/src/others/squashfs-3.2-r2-wnr1000/mksquashfs.c b/src/others/squashfs-3.2-r2-wnr1000/mksquashfs.c
+--- a/src/others/squashfs-3.2-r2-wnr1000/mksquashfs.c	2020-12-24 15:18:56.000000000 +0000
++++ b/src/others/squashfs-3.2-r2-wnr1000/mksquashfs.c	2020-12-24 13:22:57.000000000 +0000
+@@ -99,7 +99,8 @@
+ /* filesystem flags for building */
+ int duplicate_checking = 1, noF = 0, no_fragments = 0, always_use_fragments = 0;
+ int noI = 0, noD = 0, check_data = 0;
+-int swap, silent = TRUE;
++extern int swap;
++int silent = TRUE;
+ long long global_uid = -1, global_gid = -1;
+ int exportable = TRUE;
+ int progress = TRUE;
+diff -ru a/src/others/squashfs-3.3/mksquashfs.c b/src/others/squashfs-3.3/mksquashfs.c
+--- a/src/others/squashfs-3.3/mksquashfs.c	2020-12-24 15:18:56.000000000 +0000
++++ b/src/others/squashfs-3.3/mksquashfs.c	2020-12-24 13:24:07.000000000 +0000
+@@ -99,7 +99,8 @@
+ /* filesystem flags for building */
+ int duplicate_checking = 1, noF = 0, no_fragments = 0, always_use_fragments = 0;
+ int noI = 0, noD = 0, check_data = 0;
+-int swap, silent = TRUE;
++extern int swap;
++int silent = TRUE;
+ long long global_uid = -1, global_gid = -1;
+ int exportable = TRUE;
+ int progress = TRUE;
+diff -ru a/src/others/squashfs-3.3-grml-lzma/squashfs3.3/squashfs-tools/mksquashfs.c b/src/others/squashfs-3.3-grml-lzma/squashfs3.3/squashfs-tools/mksquashfs.c
+--- a/src/others/squashfs-3.3-grml-lzma/squashfs3.3/squashfs-tools/mksquashfs.c	2020-12-24 15:18:56.000000000 +0000
++++ b/src/others/squashfs-3.3-grml-lzma/squashfs3.3/squashfs-tools/mksquashfs.c	2020-12-24 13:26:03.000000000 +0000
+@@ -100,7 +100,8 @@
+ /* filesystem flags for building */
+ int duplicate_checking = 1, noF = 0, no_fragments = 0, always_use_fragments = 0;
+ int noI = 0, noD = 0, check_data = 0;
+-int swap, silent = TRUE;
++extern int swap;
++int silent = TRUE;
+ long long global_uid = -1, global_gid = -1;
+ int exportable = TRUE;
+ int progress = TRUE;
+diff -ru a/src/others/squashfs-3.3-lzma/squashfs3.3/squashfs-tools/mksquashfs.c b/src/others/squashfs-3.3-lzma/squashfs3.3/squashfs-tools/mksquashfs.c
+--- a/src/others/squashfs-3.3-lzma/squashfs3.3/squashfs-tools/mksquashfs.c	2020-12-24 15:18:56.000000000 +0000
++++ b/src/others/squashfs-3.3-lzma/squashfs3.3/squashfs-tools/mksquashfs.c	2020-12-24 13:25:08.000000000 +0000
+@@ -100,7 +100,8 @@
+ /* filesystem flags for building */
+ int duplicate_checking = 1, noF = 0, no_fragments = 0, always_use_fragments = 0;
+ int noI = 0, noD = 0, check_data = 0;
+-int swap, silent = TRUE;
++extern int swap;
++int silent = TRUE;
+ long long global_uid = -1, global_gid = -1;
+ int exportable = TRUE;
+ int progress = TRUE;
+diff -ru a/src/others/squashfs-3.4-nb4/squashfs3.4/squashfs-tools/mksquashfs.c b/src/others/squashfs-3.4-nb4/squashfs3.4/squashfs-tools/mksquashfs.c
+--- a/src/others/squashfs-3.4-nb4/squashfs3.4/squashfs-tools/mksquashfs.c	2020-12-24 15:18:56.000000000 +0000
++++ b/src/others/squashfs-3.4-nb4/squashfs3.4/squashfs-tools/mksquashfs.c	2020-12-24 13:29:27.000000000 +0000
+@@ -115,7 +115,8 @@
+ /* filesystem flags for building */
+ int duplicate_checking = 1, noF = 0, no_fragments = 0, always_use_fragments = 0;
+ int noI = 0, noD = 0, check_data = 0;
+-int swap, silent = TRUE;
++extern int swap;
++int silent = TRUE;
+ long long global_uid = -1, global_gid = -1;
+ int exportable = TRUE;
+ int progress = TRUE;
+@@ -2704,7 +2705,7 @@
+ }
+ 
+ 
+-inline void add_dir_entry(char *name, char *pathname, struct dir_info *sub_dir, struct inode_info *inode_info, void *data, struct dir_info *dir)
++extern void add_dir_entry(char *name, char *pathname, struct dir_info *sub_dir, struct inode_info *inode_info, void *data, struct dir_info *dir)
+ {
+ 	if((dir->count % DIR_ENTRIES) == 0)
+ 		if((dir->list = realloc(dir->list, (dir->count + DIR_ENTRIES) * sizeof(struct dir_ent *))) == NULL)
+diff -ru a/src/others/squashfs-3.4-nb4/squashfs3.4/squashfs-tools/unsquashfs.c b/src/others/squashfs-3.4-nb4/squashfs3.4/squashfs-tools/unsquashfs.c
+--- a/src/others/squashfs-3.4-nb4/squashfs3.4/squashfs-tools/unsquashfs.c	2020-12-24 15:18:56.000000000 +0000
++++ b/src/others/squashfs-3.4-nb4/squashfs3.4/squashfs-tools/unsquashfs.c	2020-12-24 13:32:03.000000000 +0000
+@@ -48,7 +48,7 @@
+ #include <sys/ioctl.h>
+ #include <sys/time.h>
+ 
+-#include <sys/sysctl.h>
++/*#include <sys/sysctl.h> */
+ 
+ #ifndef linux
+ #define __BYTE_ORDER BYTE_ORDER
+diff -ru a/src/others/squashfs-4.0-lzma/mksquashfs.c b/src/others/squashfs-4.0-lzma/mksquashfs.c
+--- a/src/others/squashfs-4.0-lzma/mksquashfs.c	2020-12-24 15:18:56.000000000 +0000
++++ b/src/others/squashfs-4.0-lzma/mksquashfs.c	2020-12-24 13:33:51.000000000 +0000
+@@ -3129,7 +3129,7 @@
+ }
+ 
+ 
+-inline void add_dir_entry(char *name, char *pathname, struct dir_info *sub_dir,
++extern void add_dir_entry(char *name, char *pathname, struct dir_info *sub_dir,
+ 	struct inode_info *inode_info, void *data, struct dir_info *dir)
+ {
+ 	if((dir->count % DIR_ENTRIES) == 0) {
+diff -ru a/src/others/squashfs-4.0-realtek/mksquashfs.c b/src/others/squashfs-4.0-realtek/mksquashfs.c
+--- a/src/others/squashfs-4.0-realtek/mksquashfs.c	2020-12-24 15:18:56.000000000 +0000
++++ b/src/others/squashfs-4.0-realtek/mksquashfs.c	2020-12-24 13:34:55.000000000 +0000
+@@ -3177,7 +3177,7 @@
+ }
+ 
+ 
+-inline void add_dir_entry(char *name, char *pathname, struct dir_info *sub_dir,
++extern void add_dir_entry(char *name, char *pathname, struct dir_info *sub_dir,
+ 	struct inode_info *inode_info, struct dir_info *dir)
+ {
+ 	if((dir->count % DIR_ENTRIES) == 0) {
+diff -ru a/src/others/squashfs-4.2/squashfs-tools/mksquashfs.c b/src/others/squashfs-4.2/squashfs-tools/mksquashfs.c
+--- a/src/others/squashfs-4.2/squashfs-tools/mksquashfs.c	2020-12-24 15:18:56.000000000 +0000
++++ b/src/others/squashfs-4.2/squashfs-tools/mksquashfs.c	2020-12-24 13:40:53.000000000 +0000
+@@ -3355,7 +3355,7 @@
+ }
+ 
+ 
+-inline void add_dir_entry(char *name, char *pathname, struct dir_info *sub_dir,
++extern void add_dir_entry(char *name, char *pathname, struct dir_info *sub_dir,
+ 	struct inode_info *inode_info, struct dir_info *dir)
+ {
+ 	if((dir->count % DIR_ENTRIES) == 0) {
+diff -ru a/src/others/squashfs-4.2-official/mksquashfs.c b/src/others/squashfs-4.2-official/mksquashfs.c
+--- a/src/others/squashfs-4.2-official/mksquashfs.c	2020-12-24 15:18:56.000000000 +0000
++++ b/src/others/squashfs-4.2-official/mksquashfs.c	2020-12-24 13:41:44.000000000 +0000
+@@ -3340,7 +3340,7 @@
+ }
+ 
+ 
+-inline void add_dir_entry(char *name, char *pathname, struct dir_info *sub_dir,
++extern void add_dir_entry(char *name, char *pathname, struct dir_info *sub_dir,
+ 	struct inode_info *inode_info, struct dir_info *dir)
+ {
+ 	if((dir->count % DIR_ENTRIES) == 0) {
+diff -ru a/src/squashfs-2.1-r2/mksquashfs.c b/src/squashfs-2.1-r2/mksquashfs.c
+--- a/src/squashfs-2.1-r2/mksquashfs.c	2020-12-24 15:18:56.000000000 +0000
++++ b/src/squashfs-2.1-r2/mksquashfs.c	2020-12-24 13:16:32.000000000 +0000
+@@ -64,7 +64,8 @@
+ /* filesystem flags for building */
+ int duplicate_checking = 1, noF = 0, no_fragments = 0, always_use_fragments = 0;
+ int noI = 0, noD = 0, check_data = 0;
+-int swap, silent = TRUE;
++extern int swap;
++int silent = TRUE;
+ long long global_uid = -1, global_gid = -1;
+ int filesystem_minor_version = SQUASHFS_MINOR;
+ 
+diff -ru a/src/squashfs-3.0/mksquashfs.c b/src/squashfs-3.0/mksquashfs.c
+--- a/src/squashfs-3.0/mksquashfs.c	2020-12-24 15:18:56.000000000 +0000
++++ b/src/squashfs-3.0/mksquashfs.c	2020-12-24 13:17:14.000000000 +0000
+@@ -119,7 +119,8 @@
+ /* filesystem flags for building */
+ int duplicate_checking = 1, noF = 0, no_fragments = 0, always_use_fragments = 0;
+ int noI = 0, noD = 0, check_data = 0;
+-int swap, silent = TRUE;
++extern int swap;
++int silent = TRUE;
+ long long global_uid = -1, global_gid = -1;
+ 
+ /* superblock attributes */
+diff -ru a/src/squashfs-3.0-lzma-damn-small-variant/mksquashfs.c b/src/squashfs-3.0-lzma-damn-small-variant/mksquashfs.c
+--- a/src/squashfs-3.0-lzma-damn-small-variant/mksquashfs.c	2020-12-24 15:18:56.000000000 +0000
++++ b/src/squashfs-3.0-lzma-damn-small-variant/mksquashfs.c	2020-12-24 13:18:26.000000000 +0000
+@@ -105,7 +105,8 @@
+ /* filesystem flags for building */
+ int duplicate_checking = 1, noF = 0, no_fragments = 0, always_use_fragments = 0;
+ int noI = 0, noD = 0, check_data = 0;
+-int swap, silent = TRUE;
++extern int swap;
++int silent = TRUE;
+ long long global_uid = -1, global_gid = -1;
+ 
+ /* superblock attributes */
+diff -ru a/src/webcomp-tools/common.c b/src/webcomp-tools/common.c
+--- a/src/webcomp-tools/common.c	2020-12-24 10:46:32.000000000 +0000
++++ b/src/webcomp-tools/common.c	2020-12-30 18:07:11.000000000 +0000
+@@ -10,6 +10,8 @@
+ #include <elf.h>
+ #include "common.h"
+ 
++struct global globals;
++
+ /* Given the physical and virtual section loading addresses, convert a virtual address to a physical file offset */
+ uint32_t file_offset(uint32_t address, uint32_t virtual, uint32_t physical)
+ {
+diff -ru a/src/webcomp-tools/common.h b/src/webcomp-tools/common.h
+--- a/src/webcomp-tools/common.h	2020-12-24 15:18:56.000000000 +0000
++++ b/src/webcomp-tools/common.h	2020-12-24 13:44:11.000000000 +0000
+@@ -38,7 +38,7 @@
+ 	struct new_file_entry *new_entry;
+ };
+ 
+-struct global
++extern struct global
+ {
+ 	int endianess;
+ 	int use_new_format;
+diff -ru a/src/others/squashfs-3.4-cisco/squashfs-tools/mksquashfs.c b/src/others/squashfs-3.4-cisco/squashfs-tools/mksquashfs.c
+--- a/src/others/squashfs-3.4-cisco/squashfs-tools/mksquashfs.c	2020-12-24 15:19:26.000000000 +0000
++++ b/src/others/squashfs-3.4-cisco/squashfs-tools/mksquashfs.c	2020-12-24 12:58:42.000000000 +0000
+@@ -118,7 +118,8 @@
+ /* filesystem flags for building */
+ int duplicate_checking = 1, noF = 0, no_fragments = 0, always_use_fragments = 0;
+ int noI = 0, noD = 0, check_data = 0;
+-int swap, silent = TRUE;
++extern int swap;
++int silent = TRUE;
+ long long global_uid = -1, global_gid = -1;
+ int exportable = TRUE;
+ int progress = TRUE;
+@@ -2718,7 +2719,7 @@
+ }
+ 
+ 
+-inline void add_dir_entry(char *name, char *pathname, struct dir_info *sub_dir, struct inode_info *inode_info, void *data, struct dir_info *dir)
++extern void add_dir_entry(char *name, char *pathname, struct dir_info *sub_dir, struct inode_info *inode_info, void *data, struct dir_info *dir)
+ {
+ 	if((dir->count % DIR_ENTRIES) == 0)
+ 		if((dir->list = realloc(dir->list, (dir->count + DIR_ENTRIES) * sizeof(struct dir_ent *))) == NULL)
+

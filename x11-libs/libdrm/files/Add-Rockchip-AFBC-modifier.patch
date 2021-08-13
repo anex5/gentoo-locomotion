@@ -61,19 +61,6 @@ index 5c69090d..5b1444f0 100644
  #if defined(__cplusplus)
  }
  #endif
-diff --git a/tests/modetest/modetest.c b/tests/modetest/modetest.c
-index e66be660..4cdbcd21 100644
---- a/tests/modetest/modetest.c
-+++ b/tests/modetest/modetest.c
-@@ -298,6 +298,8 @@ static const char *modifier_to_string(uint64_t modifier)
- 		return "MOD_BROADCOM_VC4_T_TILED";
- 	case DRM_FORMAT_MOD_QCOM_COMPRESSED:
- 		return "QCOM_COMPRESSED";
-+	case DRM_FORMAT_MOD_CHROMEOS_ROCKCHIP_AFBC:
-+		return "MOD_CHROMEOS_ROCKCHIP_AFBC";
- 	default:
- 		return "(UNKNOWN MODIFIER)";
- 	}
 -- 
 2.22.0.510.g264f2c817a-goog
 

@@ -3,7 +3,7 @@
 
 EAPI=7
 
-PYTHON_COMPAT=( python3_{7..9} )
+PYTHON_COMPAT=( python3_{8..10} )
 inherit cmake llvm llvm.org multilib-minimal pax-utils \
 	prefix python-single-r1 toolchain-funcs
 
@@ -22,9 +22,9 @@ ALL_LLVM_TARGETS=( "${ALL_LLVM_TARGETS[@]/#/llvm_targets_}" )
 
 LICENSE="Apache-2.0-with-LLVM-exceptions UoI-NCSA MIT"
 SLOT="$(ver_cut 1)"
-KEYWORDS="~amd64 ~arm ~arm64 ~ppc64 ~riscv ~x86 ~amd64-linux ~x64-macos"
+KEYWORDS="~amd64 ~arm ~arm64 ~ppc ~ppc64 ~riscv ~sparc ~x86 ~amd64-linux ~x64-macos"
 IUSE="debug default-compiler-rt default-libcxx default-lld
-	doc man +static-analyzer test xml kernel_FreeBSD ${ALL_LLVM_TARGETS[*]}"
+	doc llvm-libunwind man +static-analyzer test xml kernel_FreeBSD ${ALL_LLVM_TARGETS[*]}"
 REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	|| ( ${ALL_LLVM_TARGETS[*]} )"
 RESTRICT="!test? ( test )"
@@ -52,7 +52,11 @@ RDEPEND="${RDEPEND}
 PDEPEND="
 	sys-devel/clang-common
 	~sys-devel/clang-runtime-${PV}
-	default-compiler-rt? ( =sys-libs/compiler-rt-${PV%_*}* )
+	default-compiler-rt? (
+		=sys-libs/compiler-rt-${PV%_*}*
+		llvm-libunwind? ( sys-libs/llvm-libunwind )
+		!llvm-libunwind? ( sys-libs/libunwind )
+	)
 	default-libcxx? ( >=sys-libs/libcxx-${PV} )
 	default-lld? ( sys-devel/lld )"
 
@@ -63,6 +67,7 @@ LLVM_TEST_COMPONENTS=(
 	llvm/utils/{lit,llvm-lit,unittest}
 	llvm/utils/{UpdateTestChecks,update_cc_test_checks.py}
 )
+LLVM_PATCHSET=12.0.1
 llvm.org_set_globals
 
 # Multilib notes:
@@ -75,11 +80,6 @@ llvm.org_set_globals
 #
 # Therefore: use sys-devel/clang[${MULTILIB_USEDEP}] only if you need
 # multilib clang* libraries (not runtime, not wrappers).
-
-PATCHES=(
-	"${FILESDIR}"/12.0.0/readd-reporter.patch
-	"${FILESDIR}"/9999/prefix-dirs.patch
-)
 
 pkg_setup() {
 	LLVM_MAX_SLOT=${SLOT} llvm_pkg_setup
@@ -233,12 +233,7 @@ get_distribution_components() {
 }
 
 multilib_src_configure() {
-	if use llvm_targets_NVPTX; then
-		addwrite /dev/nvidiactl
-		addwrite /dev/nvidia0
-		addwrite /dev/nvidia-uvm
-	fi
-
+	CMAKE_BUILD_TYPE=Release
 	local llvm_version=$(llvm-config --version) || die
 	local clang_version=$(ver_cut 1-3 "${llvm_version}")
 
@@ -260,15 +255,19 @@ multilib_src_configure() {
 		-DLLVM_ENABLE_EH=ON
 		-DLLVM_ENABLE_RTTI=ON
 
-		#-DCMAKE_DISABLE_FIND_PACKAGE_LibXml2=$(usex !xml)
+		-DCMAKE_DISABLE_FIND_PACKAGE_LibXml2=$(usex !xml)
 		# libgomp support fails to find headers without explicit -I
 		# furthermore, it provides only syntax checking
 		-DCLANG_DEFAULT_OPENMP_RUNTIME=libomp
+
+		# disable using CUDA to autodetect GPU, just build for all
+		-DCMAKE_DISABLE_FIND_PACKAGE_CUDA=ON
 
 		# override default stdlib and rtlib
 		-DCLANG_DEFAULT_CXX_STDLIB=$(usex default-libcxx libc++ "")
 		-DCLANG_DEFAULT_RTLIB=$(usex default-compiler-rt compiler-rt "")
 		-DCLANG_DEFAULT_LINKER=$(usex default-lld lld "")
+		-DCLANG_DEFAULT_UNWINDLIB=$(usex default-compiler-rt libunwind "")
 
 		-DCLANG_ENABLE_ARCMT=$(usex static-analyzer)
 		-DCLANG_ENABLE_STATIC_ANALYZER=$(usex static-analyzer)
