@@ -1,0 +1,56 @@
+diff --git a/chrome/browser/about_flags.cc b/chrome/browser/about_flags.cc
+index cb59b01..e994f19 100644
+--- a/chrome/browser/about_flags.cc
++++ b/chrome/browser/about_flags.cc
+@@ -1476,6 +1476,16 @@ const FeatureEntry::FeatureVariation
+             nullptr,
+         }};
+ 
++// The "Enabled" state for this feature is "0" and representing setting A.
++const FeatureEntry::FeatureParam kTabHoverCardsSettingB[] = {
++    {features::kTabHoverCardsFeatureParameterName, "1"}};
++const FeatureEntry::FeatureParam kTabHoverCardsSettingC[] = {
++    {features::kTabHoverCardsFeatureParameterName, "2"}};
++
++const FeatureEntry::FeatureVariation kTabHoverCardsFeatureVariations[] = {
++    {"B", kTabHoverCardsSettingB, base::size(kTabHoverCardsSettingB), nullptr},
++    {"C", kTabHoverCardsSettingC, base::size(kTabHoverCardsSettingC), nullptr}};
++
+ const FeatureEntry::FeatureParam kMinimumTabWidthSettingPinned[] = {
+     {features::kMinimumTabWidthFeatureParameterName, "54"}};
+ const FeatureEntry::FeatureParam kMinimumTabWidthSettingMedium[] = {
+@@ -4849,6 +4859,12 @@ const FeatureEntry kFeatureEntries[] = {
+      FEATURE_VALUE_TYPE(features::kChromeTipsInMainMenuNewBadge)},
+ #endif
+ 
++    {"tab-hover-cards", flag_descriptions::kTabHoverCardsName,
++     flag_descriptions::kTabHoverCardsDescription, kOsDesktop,
++     FEATURE_WITH_PARAMS_VALUE_TYPE(features::kTabHoverCards,
++                                    kTabHoverCardsFeatureVariations,
++                                    "TabHoverCards")},
++
+     {"tab-hover-card-images", flag_descriptions::kTabHoverCardImagesName,
+      flag_descriptions::kTabHoverCardImagesDescription, kOsDesktop,
+      FEATURE_WITH_PARAMS_VALUE_TYPE(features::kTabHoverCardImages,
+diff --git a/chrome/browser/ui/views/tabs/tab_strip.cc b/chrome/browser/ui/views/tabs/tab_strip.cc
+index 3df1266..78730bb 100644
+--- a/chrome/browser/ui/views/tabs/tab_strip.cc
++++ b/chrome/browser/ui/views/tabs/tab_strip.cc
+@@ -2128,6 +2128,8 @@ void TabStrip::OnMouseEventInTab(views::View* source,
+ }
+ 
+ void TabStrip::UpdateHoverCard(Tab* tab, HoverCardUpdateType update_type) {
++  if (!base::FeatureList::IsEnabled(features::kTabHoverCards))
++    return;
+   // We don't want to show a hover card while the tabstrip is animating.
+   if (bounds_animator_.IsAnimating()) {
+     // Once we're animating the hover card should already be hidden.
+@@ -2151,6 +2153,8 @@ bool TabStrip::ShowDomainInHoverCards() const {
+ }
+ 
+ bool TabStrip::HoverCardIsShowingForTab(Tab* tab) {
++  if (!base::FeatureList::IsEnabled(features::kTabHoverCards))
++    return false; 
+   return hover_card_controller_ &&
+          hover_card_controller_->IsHoverCardShowingForTab(tab);
+ }
