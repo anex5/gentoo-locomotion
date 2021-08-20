@@ -1,0 +1,44 @@
+From 2eedf25298dd72e9aec408696251597bbe75c7b9 Mon Sep 17 00:00:00 2001
+From: henryhsu <henryhsu@chromium.org>
+Date: Thu, 20 Aug 2015 17:57:58 +0800
+Subject: [PATCH] CHROMIUM: v4l: Add pixelformat change event
+
+This event indicates that the video device has encountered a
+pixelformat change during runtime. This event can be detected by a
+decoder or a capture device.
+
+Take decoder for example, input pixelformat change may affect
+output format change.
+This needs to be notified to the userspace and the application must
+be expected to get format and reallocate buffers before proceeding.
+If multiple events occurred before application could dequeue them,
+then the changes will have the ORed value of all the events generated.
+
+BUG=chromium:426383
+TEST=build kernel and pass
+
+Change-Id: Idb3f74adb662a4f897fb4323ab72e162d063f76a
+Signed-off-by: Henry-Ruey Hsu <henryhsu@chromium.org>
+Reviewed-on: https://chromium-review.googlesource.com/294147
+Commit-Ready: Heng-ruey Hsu <henryhsu@chromium.org>
+Tested-by: Heng-ruey Hsu <henryhsu@chromium.org>
+Reviewed-by: Tomasz Figa <tfiga@chromium.org>
+---
+ include/uapi/linux/videodev2.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/include/uapi/linux/videodev2.h b/include/uapi/linux/videodev2.h
+index 1f5ab20cf458..f4976248d4f8 100644
+--- a/include/uapi/linux/videodev2.h
++++ b/include/uapi/linux/videodev2.h
+@@ -2208,6 +2208,7 @@ struct v4l2_event_frame_sync {
+ };
+ 
+ #define V4L2_EVENT_SRC_CH_RESOLUTION		(1 << 0)
++#define V4L2_EVENT_SRC_CH_PIXELFORMAT		(1 << 1)
+ 
+ struct v4l2_event_src_change {
+ 	__u32 changes;
+-- 
+2.22.0.657.g960e92d24f-goog
+
