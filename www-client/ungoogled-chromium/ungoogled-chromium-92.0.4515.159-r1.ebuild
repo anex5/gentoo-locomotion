@@ -3,7 +3,7 @@
 
 EAPI=7
 
-PYTHON_COMPAT=( python3_{8..10} )
+PYTHON_COMPAT=( python2_7 python3_{8..10} )
 
 PYTHON_REQ_USE="xml"
 
@@ -307,7 +307,7 @@ src_prepare() {
 		"${p}/chromium-92-EnumTable-crash.patch"
 		"${p}/chromium-92-crashpad-consent.patch"
 		"${p}/chromium-freetype-2.11.patch"
-		"${p}/chromium-system-fix-shim-headers-r0.patch"
+		"${p}/chromium-fix-shim-headers-r0.patch"
 		"${p}/chromium-shim_headers.patch"
 		"${p}/chromium-91-sql-make-VirtualCursor-standard-layout-type.patch"
 
@@ -321,6 +321,7 @@ src_prepare() {
 		"${p}/chromium-91-extend-enable-accelerated-video-decode-flag.patch"
 
 		# Personal patches
+		"${p}/chromium-fix-tint-cstddef-include.patch"
 		"${p}/chromium-tab-hover-cards-feature-r0.patch"
 		"${p}/chromium-optional-dbus-r13.patch"
 		"${p}/chromium-optional-atk-r2.patch"
