@@ -292,3 +292,70 @@ index 039c0d7..8b01908 100644
  
  
  /* Stateless FWHT control, used by the vicodec driver */
+diff --git a/include/uapi/linux/v4l2-controls.h b/include/uapi/linux/v4l2-controls.h
+index 2689939..b17bea1 100644
+--- a/include/uapi/linux/v4l2-controls.h
++++ b/include/uapi/linux/v4l2-controls.h
+@@ -1365,43 +1365,8 @@ enum v4l2_detect_md_mode {
+ #define V4L2_CID_CODEC_STATELESS_CLASS         (V4L2_CTRL_CLASS_CODEC_STATELESS | 1)
+ 
+ #define V4L2_CID_STATELESS_H264_DECODE_MODE	(V4L2_CID_CODEC_STATELESS_BASE + 0)
+-/**
+- * enum v4l2_stateless_h264_decode_mode - Decoding mode
+- *
+- * @V4L2_STATELESS_H264_DECODE_MODE_SLICE_BASED: indicates that decoding
+- * is performed one slice at a time. In this mode,
+- * V4L2_CID_STATELESS_H264_SLICE_PARAMS must contain the parsed slice
+- * parameters and the OUTPUT buffer must contain a single slice.
+- * V4L2_BUF_CAP_SUPPORTS_M2M_HOLD_CAPTURE_BUF feature is used
+- * in order to support multislice frames.
+- * @V4L2_STATELESS_H264_DECODE_MODE_FRAME_BASED: indicates that
+- * decoding is performed per frame. The OUTPUT buffer must contain
+- * all slices and also both fields. This mode is typically supported
+- * by device drivers that are able to parse the slice(s) header(s)
+- * in hardware. When this mode is selected,
+- * V4L2_CID_STATELESS_H264_SLICE_PARAMS is not used.
+- */
+-enum v4l2_stateless_h264_decode_mode {
+-	V4L2_STATELESS_H264_DECODE_MODE_SLICE_BASED,
+-	V4L2_STATELESS_H264_DECODE_MODE_FRAME_BASED,
+-};
+ 
+ #define V4L2_CID_STATELESS_H264_START_CODE	(V4L2_CID_CODEC_STATELESS_BASE + 1)
+-/**
+- * enum v4l2_stateless_h264_start_code - Start code
+- *
+- * @V4L2_STATELESS_H264_START_CODE_NONE: slices are passed
+- * to the driver without any start code.
+- * @V4L2_STATELESS_H264_START_CODE_ANNEX_B: slices are passed
+- * to the driver with an Annex B start code prefix
+- * (legal start codes can be 3-bytes 0x000001 or 4-bytes 0x00000001).
+- * This mode is typically supported by device drivers that parse
+- * the start code in hardware.
+- */
+-enum v4l2_stateless_h264_start_code {
+-	V4L2_STATELESS_H264_START_CODE_NONE,
+-	V4L2_STATELESS_H264_START_CODE_ANNEX_B,
+-};
+ 
+ #define V4L2_H264_SPS_CONSTRAINT_SET0_FLAG			0x01
+ #define V4L2_H264_SPS_CONSTRAINT_SET1_FLAG			0x02
+@@ -1464,18 +1429,6 @@ enum v4l2_stateless_h264_start_code {
+ #define V4L2_H264_BOTTOM_FIELD_REF			0x2
+ #define V4L2_H264_FRAME_REF				0x3
+ 
+-/**
+- * struct v4l2_h264_reference - H264 picture reference
+- *
+- * @fields: indicates how the picture is referenced.
+- * Valid values are V4L2_H264_{}_REF.
+- * @index: index into v4l2_ctrl_h264_decode_params.dpb[].
+- */
+-struct v4l2_h264_reference {
+-	__u8 fields;
+-	__u8 index;
+-};
+-
+ /*
+  * Maximum DPB size, as specified by section 'A.3.1 Level limits
+  * common to the Baseline, Main, and Extended profiles'.
