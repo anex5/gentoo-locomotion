@@ -3,7 +3,7 @@
 
 EAPI=7
 
-PYTHON_COMPAT=( python2_7 python3_{8..10} )
+PYTHON_COMPAT=( python3_{8..10} )
 
 PYTHON_REQ_USE="xml"
 
@@ -333,6 +333,10 @@ src_prepare() {
 	mkdir -p third_party/node/linux/node-linux-x64/bin || die
 	ln -s "${EPREFIX}"/usr/bin/node third_party/node/linux/node-linux-x64/bin/node || die
 
+	# adjust python interpreter versions
+	sed -i -e "s|\(^script_executable = \).*|\1\"${EPYTHON}\"|g" .gn || die
+	sed -i -e "s|python2|python2\.7|g" buildtools/linux64/clang-format || die
+
 	use convert-dict && eapply "${p}/chromium-ucf-dict-utility.patch"
 
 	if use system-icu; then
@@ -368,6 +372,8 @@ src_prepare() {
 		eapply "${p}/wayland-egl.patch"
 		eapply "${p}/chromium-76-v4l-fix-linking.patch"
 	fi
+
+	use v4l2 && eapply "${p}/chromium-v4l2-remove-legacy-kernel-headers.patch"
 
 	#Igalia patches
 	p="${FILESDIR}/chromium-$(ver_cut 1-1)/igalia"
@@ -1278,7 +1284,7 @@ src_install() {
 	doins out/Release/*.pak
 	(
 		shopt -s nullglob
-		local files=(out/Release/*.so*)
+		local files=(out/Release/*.so out/Release/*.so.[0-9])
 		[[ ${#files[@]} -gt 0 ]] && doins "${files[@]}"
 	)
 
