@@ -294,6 +294,8 @@ pkg_setup() {
 }
 
 src_prepare() {
+	python_setup
+
 	if ! use custom-cflags; then #See #25 #92
 		sed -i '/default_stack_frames/Q' "${WORKDIR}/patches/chromium-91-compiler.patch" || die
 	fi
@@ -772,7 +774,6 @@ src_prepare() {
 
 	ebegin "Removing unneeded bundled libraries"
 
-	python_setup
 
 	# Remove most bundled libraries. Some are still needed.
 	build/linux/unbundle/remove_bundled_libraries.py "${keeplibs[@]}" --do-remove

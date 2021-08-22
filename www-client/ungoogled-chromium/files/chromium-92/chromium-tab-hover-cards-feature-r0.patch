@@ -54,3 +54,33 @@ index 3df1266..78730bb 100644
    return hover_card_controller_ &&
           hover_card_controller_->IsHoverCardShowingForTab(tab);
  }
+diff --git a/chrome/browser/flag_descriptions.cc b/chrome/browser/flag_descriptions.cc
+index 202c238..68c5872 100644
+--- a/chrome/browser/flag_descriptions.cc
++++ b/chrome/browser/flag_descriptions.cc
+@@ -2464,6 +2464,11 @@ const char kTabGroupsNewBadgePromoDescription[] =
+     "Causes a 'New' badge to appear on the entry point for creating a tab "
+     "group in the tab context menu.";
+ 
++const char kTabHoverCardsName[] = "Tab Hover Cards";
++const char kTabHoverCardsDescription[] =
++    "Enables a popup containing tab information to be visible when hovering "
++    "over a tab. This will replace tooltips for tabs.";
++
+ const char kTabHoverCardImagesName[] = "Tab Hover Card Images";
+ const char kTabHoverCardImagesDescription[] =
+     "Shows a preview image in tab hover cards, if tab hover cards are enabled.";
+diff --git a/chrome/browser/flag_descriptions.h b/chrome/browser/flag_descriptions.h
+index 9f0abae..def534a 100644
+--- a/chrome/browser/flag_descriptions.h
++++ b/chrome/browser/flag_descriptions.h
+@@ -1427,6 +1427,9 @@ extern const char kTabGroupsFeedbackDescription[];
+ extern const char kTabGroupsNewBadgePromoName[];
+ extern const char kTabGroupsNewBadgePromoDescription[];
+ 
++extern const char kTabHoverCardsName[];
++extern const char kTabHoverCardsDescription[];
++
+ extern const char kTabHoverCardImagesName[];
+ extern const char kTabHoverCardImagesDescription[];
+ 
