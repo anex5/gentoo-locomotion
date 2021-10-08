@@ -37,7 +37,7 @@ DEPEND="
 	sci-libs/flann
 	sci-libs/lemon[coin]
 	magma? ( sci-libs/magma )
-	>=media-libs/openexr-2.2
+	media-libs/openexr:0
 	sci-libs/ceres-solver[sparse,lapack]
 	sys-libs/zlib
 	x11-libs/libXxf86vm
