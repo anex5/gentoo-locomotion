@@ -1,0 +1,101 @@
+--- a/llvm/include/llvm/ExecutionEngine/Orc/Shared/ExecutorAddress.h	2021-09-24 19:18:10.000000000 +0300
++++ b/llvm/include/llvm/ExecutionEngine/Orc/Shared/ExecutorAddress.h	2021-10-09 21:38:05.644553297 +0300
+@@ -101,7 +101,7 @@ public:
+     return *this;
+   }
+   ExecutorAddress operator++(int) { return ExecutorAddress(Addr++); }
+-  ExecutorAddress operator--(int) { return ExecutorAddress(Addr++); }
++  ExecutorAddress operator--(int) { return ExecutorAddress(Addr--); }
+ 
+   ExecutorAddress &operator+=(const ExecutorAddrDiff Delta) {
+     Addr += Delta.getValue();
+--- a/llvm/lib/Transforms/Scalar/RewriteStatepointsForGC.cpp	2021-09-24 19:18:10.000000000 +0300
++++ b/llvm/lib/Transforms/Scalar/RewriteStatepointsForGC.cpp	2021-10-09 21:46:25.720987878 +0300
+@@ -755,7 +755,7 @@ public:
+   }
+ 
+   bool operator==(const BDVState &Other) const {
+-    return OriginalValue == OriginalValue && BaseValue == Other.BaseValue &&
++    return OriginalValue == Other.OriginalValue && BaseValue == Other.BaseValue &&
+       Status == Other.Status;
+   }
+ 
+--- a/llvm/utils/TableGen/CodeGenDAGPatterns.cpp	2021-09-24 19:18:10.000000000 +0300
++++ b/llvm/utils/TableGen/CodeGenDAGPatterns.cpp	2021-10-09 21:51:30.985836295 +0300
+@@ -476,7 +476,7 @@ bool TypeInfer::EnforceSmallerThan(TypeS
+     TypeSetByHwMode::SetType &S = Small.get(M);
+     TypeSetByHwMode::SetType &B = Big.get(M);
+ 
+-    if (any_of(S, isIntegerOrPtr) && any_of(S, isIntegerOrPtr)) {
++    if (any_of(S, isIntegerOrPtr) && any_of(B, isIntegerOrPtr)) {
+       auto NotInt = [](MVT VT) { return !isIntegerOrPtr(VT); };
+       Changed |= berase_if(S, NotInt);
+       Changed |= berase_if(B, NotInt);
+--- a/llvm/lib/CodeGen/GlobalISel/LegalizerHelper.cpp	2021-09-24 19:18:10.000000000 +0300
++++ b/llvm/lib/CodeGen/GlobalISel/LegalizerHelper.cpp	2021-10-09 21:55:25.641789591 +0300
+@@ -5951,7 +5951,7 @@ LegalizerHelper::LegalizeResult Legalize
+   Register Src = MI.getOperand(1).getReg();
+   Register Amt = MI.getOperand(2).getReg();
+   LLT DstTy = MRI.getType(Dst);
+-  LLT SrcTy = MRI.getType(Dst);
++  LLT SrcTy = MRI.getType(Src);
+   LLT AmtTy = MRI.getType(Amt);
+ 
+   unsigned EltSizeInBits = DstTy.getScalarSizeInBits();
+--- a/llvm/lib/XRay/InstrumentationMap.cpp	2021-09-24 19:18:10.000000000 +0300
++++ b/llvm/lib/XRay/InstrumentationMap.cpp	2021-10-09 22:05:50.787261829 +0300
+@@ -190,7 +190,7 @@ loadObj(StringRef Filename, object::Owni
+         SledEntry::FunctionKinds::TAIL,
+         SledEntry::FunctionKinds::LOG_ARGS_ENTER,
+         SledEntry::FunctionKinds::CUSTOM_EVENT};
+-    if (Kind >= sizeof(Kinds))
++    if (Kind >= sizeof(Kinds) / sizeof(Kinds[0]))
+       return errorCodeToError(
+           std::make_error_code(std::errc::executable_format_error));
+     Entry.Kind = Kinds[Kind];
+--- a/llvm/lib/CodeGen/TargetLoweringBase.cpp	2021-09-24 19:18:10.000000000 +0300
++++ b/llvm/lib/CodeGen/TargetLoweringBase.cpp	2021-10-09 22:07:47.523697196 +0300
+@@ -659,7 +659,7 @@ RTLIB::Libcall RTLIB::getMEMSET_ELEMENT_
+ 
+ /// InitCmpLibcallCCs - Set default comparison libcall CC.
+ static void InitCmpLibcallCCs(ISD::CondCode *CCs) {
+-  memset(CCs, ISD::SETCC_INVALID, sizeof(ISD::CondCode)*RTLIB::UNKNOWN_LIBCALL);
++  std::fill(CCs, CCs + RTLIB::UNKNOWN_LIBCALL, ISD::SETCC_INVALID);
+   CCs[RTLIB::OEQ_F32] = ISD::SETEQ;
+   CCs[RTLIB::OEQ_F64] = ISD::SETEQ;
+   CCs[RTLIB::OEQ_F128] = ISD::SETEQ;
+--- a/llvm/lib/ExecutionEngine/JITLink/EHFrameSupport.cpp	2021-09-24 19:18:10.000000000 +0300
++++ b/llvm/lib/ExecutionEngine/JITLink/EHFrameSupport.cpp	2021-10-09 22:10:17.680974959 +0300
+@@ -665,7 +665,7 @@ EHFrameEdgeFixer::readEncodedPointer(uin
+     EffectiveType = (PointerSize == 8) ? DW_EH_PE_udata8 : DW_EH_PE_udata4;
+ 
+   JITTargetAddress Addr;
+-  Edge::Kind PointerEdgeKind;
++  Edge::Kind PointerEdgeKind = Edge::Invalid;
+   switch (EffectiveType) {
+   case DW_EH_PE_udata4: {
+     uint32_t Val;
+--- a/llvm/tools/llvm-rtdyld/llvm-rtdyld.cpp	2021-09-24 19:18:10.000000000 +0300
++++ b/llvm/tools/llvm-rtdyld/llvm-rtdyld.cpp	2021-10-09 22:13:37.756004555 +0300
+@@ -974,7 +974,7 @@ int main(int argc, char **argv) {
+ 
+   Timers = ShowTimes ? std::make_unique<RTDyldTimers>() : nullptr;
+ 
+-  int Result;
++  int Result = 0;
+   switch (Action) {
+   case AC_Execute:
+     Result = executeInput();
+--- a/llvm/lib/Target/AMDGPU/AMDILCFGStructurizer.cpp	2021-09-24 19:18:10.000000000 +0300
++++ b/llvm/lib/Target/AMDGPU/AMDILCFGStructurizer.cpp	2021-10-09 22:17:03.158243228 +0300
+@@ -1285,9 +1285,9 @@ int AMDGPUCFGStructurizer::improveSimple
+     report_fatal_error("Extra register needed to handle CFG");
+     Register CmpResReg =
+         HeadMBB->getParent()->getRegInfo().createVirtualRegister(I32RC);
+-    report_fatal_error("Extra compare instruction needed to handle CFG");
+     insertCondBranchBefore(LandBlk, I, R600::IF_PREDICATE_SET,
+         CmpResReg, DebugLoc());
++    report_fatal_error("Extra compare instruction needed to handle CFG");
+   }
+ 
+   // XXX: We are running this after RA, so creating virtual registers will

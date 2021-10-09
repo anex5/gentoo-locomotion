@@ -62,6 +62,10 @@ LLVM_PATCHSET=${PV/_/-}
 LLVM_USE_TARGETS=provide
 llvm.org_set_globals
 
+PATCHES=(
+	"${FILESDIR}"/13.0.0/0001-llvm-fix-typos-found-by-PVS.patch
+)
+
 python_check_deps() {
 	use doc || return 0
 
