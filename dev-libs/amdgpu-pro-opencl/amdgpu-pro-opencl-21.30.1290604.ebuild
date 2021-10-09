@@ -33,7 +33,7 @@ S="${WORKDIR}/${SUPER_PN}-${MY_PV}-ubuntu-20.04"
 
 pkg_nofetch() {
 	local pkgver=$(ver_cut 1-2)
-	einfo "Please download Radeon Software for Linux version ${pkgver} for Ubuntu 20.04.333rom"
+	einfo "Please download Radeon Software for Linux version ${pkgver} for Ubuntu 20.04.3 from"
 	einfo "    ${HOMEPAGE}"
 	einfo "The archive should then be placed into your distfiles directory."
 }
