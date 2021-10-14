@@ -1,0 +1,115 @@
+diff --git a/chrome/browser/about_flags.cc b/chrome/browser/about_flags.cc
+index cb59b01..e994f19 100644
+--- a/chrome/browser/about_flags.cc
++++ b/chrome/browser/about_flags.cc
+@@ -1476,6 +1476,16 @@ const FeatureEntry::FeatureVariation
+             nullptr,
+         }};
+ 
++// The "Enabled" state for this feature is "0" and representing setting A.
++const FeatureEntry::FeatureParam kTabHoverCardsSettingB[] = {
++    {features::kTabHoverCardsFeatureParameterName, "1"}};
++const FeatureEntry::FeatureParam kTabHoverCardsSettingC[] = {
++    {features::kTabHoverCardsFeatureParameterName, "2"}};
++
++const FeatureEntry::FeatureVariation kTabHoverCardsFeatureVariations[] = {
++    {"B", kTabHoverCardsSettingB, base::size(kTabHoverCardsSettingB), nullptr},
++    {"C", kTabHoverCardsSettingC, base::size(kTabHoverCardsSettingC), nullptr}};
++
+ const FeatureEntry::FeatureParam kMinimumTabWidthSettingPinned[] = {
+     {features::kMinimumTabWidthFeatureParameterName, "54"}};
+ const FeatureEntry::FeatureParam kMinimumTabWidthSettingMedium[] = {
+@@ -4849,6 +4859,12 @@ const FeatureEntry kFeatureEntries[] = {
+      FEATURE_VALUE_TYPE(features::kChromeTipsInMainMenuNewBadge)},
+ #endif
+ 
++    {"tab-hover-cards", flag_descriptions::kTabHoverCardsName,
++     flag_descriptions::kTabHoverCardsDescription, kOsDesktop,
++     FEATURE_WITH_PARAMS_VALUE_TYPE(features::kTabHoverCards,
++                                    kTabHoverCardsFeatureVariations,
++                                    "TabHoverCards")},
++
+     {"tab-hover-card-images", flag_descriptions::kTabHoverCardImagesName,
+      flag_descriptions::kTabHoverCardImagesDescription, kOsDesktop,
+      FEATURE_WITH_PARAMS_VALUE_TYPE(features::kTabHoverCardImages,
+diff --git a/chrome/browser/ui/views/tabs/tab_strip.cc b/chrome/browser/ui/views/tabs/tab_strip.cc
+index 3df1266..78730bb 100644
+--- a/chrome/browser/ui/views/tabs/tab_strip.cc
++++ b/chrome/browser/ui/views/tabs/tab_strip.cc
+@@ -2164,6 +2164,9 @@ void TabStrip::UpdateHoverCard(Tab* tab, HoverCardUpdateType update_type) {
+     hover_card_controller_ = std::make_unique<TabHoverCardController>(this);
+   }
+
++  if (!base::FeatureList::IsEnabled(features::kTabHoverCards))
++    return;
++
+   hover_card_controller_->UpdateHoverCard(tab, update_type);
+ }
+
+@@ -2151,6 +2153,8 @@ bool TabStrip::ShowDomainInHoverCards() const {
+ }
+ 
+ bool TabStrip::HoverCardIsShowingForTab(Tab* tab) {
++  if (!base::FeatureList::IsEnabled(features::kTabHoverCards))
++    return false; 
+   return hover_card_controller_ &&
+          hover_card_controller_->IsHoverCardShowingForTab(tab);
+ }
+diff --git a/chrome/browser/flag_descriptions.cc b/chrome/browser/flag_descriptions.cc
+index 202c238..68c5872 100644
+--- a/chrome/browser/flag_descriptions.cc
++++ b/chrome/browser/flag_descriptions.cc
+@@ -2464,6 +2464,11 @@ const char kTabGroupsNewBadgePromoDescription[] =
+     "Causes a 'New' badge to appear on the entry point for creating a tab "
+     "group in the tab context menu.";
+ 
++const char kTabHoverCardsName[] = "Tab Hover Cards";
++const char kTabHoverCardsDescription[] =
++    "Enables a popup containing tab information to be visible when hovering "
++    "over a tab. This will replace tooltips for tabs.";
++
+ const char kTabHoverCardImagesName[] = "Tab Hover Card Images";
+ const char kTabHoverCardImagesDescription[] =
+     "Shows a preview image in tab hover cards, if tab hover cards are enabled.";
+diff --git a/chrome/browser/flag_descriptions.h b/chrome/browser/flag_descriptions.h
+index 9f0abae..def534a 100644
+--- a/chrome/browser/flag_descriptions.h
++++ b/chrome/browser/flag_descriptions.h
+@@ -1427,6 +1427,9 @@ extern const char kTabGroupsFeedbackDescription[];
+ extern const char kTabGroupsNewBadgePromoName[];
+ extern const char kTabGroupsNewBadgePromoDescription[];
+ 
++extern const char kTabHoverCardsName[];
++extern const char kTabHoverCardsDescription[];
++
+ extern const char kTabHoverCardImagesName[];
+ extern const char kTabHoverCardImagesDescription[];
+ 
+--- a/chrome/browser/ui/ui_features.h	2021-10-08 06:25:41.000000000 -0000
++++ b/chrome/browser/ui/ui_features.h	2021-10-14 02:00:53.715260244 -0000
+@@ -83,6 +83,8 @@ extern const base::Feature kTabGroupsNew
+ 
+ extern const base::Feature kTabGroupsSave;
+ 
++extern const base::Feature kTabHoverCards;
++extern const char kTabHoverCardsFeatureParameterName[];
+ extern const base::Feature kTabHoverCardImages;
+ extern const char kTabHoverCardImagesNotReadyDelayParameterName[];
+ extern const char kTabHoverCardImagesLoadingDelayParameterName[];
+--- a/chrome/browser/ui/ui_features.cc	2021-10-08 06:25:41.000000000 -0000
++++ b/chrome/browser/ui/ui_features.cc	2021-10-14 02:07:28.184964268 -0000
+@@ -127,6 +127,14 @@ const base::Feature kTabGroupsNewBadgePr
+ const base::Feature kTabGroupsSave{"TabGroupsSave",
+                                    base::FEATURE_DISABLED_BY_DEFAULT};
+ 
++// Enables popup cards containing tab information when hovering over a tab.
++// https://crbug.com/910739
++const base::Feature kTabHoverCards{"TabHoverCards",
++                                   base::FEATURE_ENABLED_BY_DEFAULT};
++
++// Parameter name used for tab hover cards user study.
++// TODO(corising): Removed this after tab hover cards user study.
++const char kTabHoverCardsFeatureParameterName[] = "setting";
+ // Enables preview images in tab-hover cards.
+ // https://crbug.com/928954
+ const base::Feature kTabHoverCardImages{"TabHoverCardImages",
