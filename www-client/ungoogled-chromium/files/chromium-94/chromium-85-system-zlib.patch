@@ -1,0 +1,12 @@
+--- chromium-90.0.4430.19/third_party/angle/src/libANGLE/BlobCache.cpp.gcc10	2021-03-09 19:42:36.000000000 +0100
++++ chromium-90.0.4430.19/third_party/angle/src/libANGLE/BlobCache.cpp	2021-03-15 18:24:24.308818048 +0100
+@@ -14,7 +14,9 @@
+ #include "libANGLE/histogram_macros.h"
+ #include "platform/PlatformMethods.h"
+ 
++#ifndef USE_SYSTEM_ZLIB
+ #define USE_SYSTEM_ZLIB
++#endif
+ #include "compression_utils_portable.h"
+ 
+ namespace egl

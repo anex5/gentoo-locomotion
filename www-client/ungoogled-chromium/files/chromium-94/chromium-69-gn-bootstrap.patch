@@ -1,0 +1,10 @@
+--- chromium-79.0.3945.79/tools/gn/bootstrap/bootstrap.py.no-static-libstdc++	2019-12-11 11:53:17.058272551 +0100
++++ chromium-79.0.3945.79/tools/gn/bootstrap/bootstrap.py	2019-12-11 11:53:56.932576910 +0100
+@@ -111,6 +111,7 @@ def main(argv):
+       sys.executable,
+       os.path.join(GN_ROOT, 'build', 'gen.py'),
+       '--no-last-commit-position',
++      '--no-static-libstdc++',
+       '--out-path=' + gn_build_dir,
+   ]
+   if options.debug:

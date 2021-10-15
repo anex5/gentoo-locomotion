@@ -1,0 +1,36 @@
+--- chromium-87.0.4280.40/third_party/angle/src/libANGLE/renderer/vulkan/vk_internal_shaders_autogen.cpp.system-zlib	2020-10-29 23:31:51.000000000 +0100
++++ chromium-87.0.4280.40/third_party/angle/src/libANGLE/renderer/vulkan/vk_internal_shaders_autogen.cpp	2020-10-31 12:45:44.809814951 +0100
+@@ -10,7 +10,9 @@
+ 
+ #include "libANGLE/renderer/vulkan/vk_internal_shaders_autogen.h"
+ 
++#ifndef USE_SYSTEM_ZLIB
+ #define USE_SYSTEM_ZLIB
++#endif
+ #include "compression_utils_portable.h"
+ 
+ namespace rx
+--- chromium-87.0.4280.40/third_party/angle/src/libANGLE/renderer/vulkan/gen_vk_internal_shaders.py.system-zlib	2020-10-29 23:31:51.000000000 +0100
++++ chromium-87.0.4280.40/third_party/angle/src/libANGLE/renderer/vulkan/gen_vk_internal_shaders.py	2020-10-31 12:41:12.681773748 +0100
+@@ -40,7 +40,9 @@ template_shader_library_cpp = u"""// GEN
+ 
+ #include "libANGLE/renderer/vulkan/vk_internal_shaders_autogen.h"
+ 
++#ifndef USE_SYSTEM_ZLIB
+ #define USE_SYSTEM_ZLIB
++#endif
+ #include "compression_utils_portable.h"
+ 
+ namespace rx
+--- chromium-94.0.4606.20/third_party/angle/src/libANGLE/MemoryProgramCache.cpp.system-zlib	2021-08-25 21:15:34.000000000 +0200
++++ chromium-94.0.4606.20/third_party/angle/src/libANGLE/MemoryProgramCache.cpp	2021-09-02 21:10:35.808262303 +0200
+@@ -8,7 +8,9 @@
+ //   layer to warm up the cache from disk.
+ 
+ // Include zlib first, otherwise FAR gets defined elsewhere.
++#ifndef USE_SYSTEM_ZLIB
+ #define USE_SYSTEM_ZLIB
++#endif
+ #include "compression_utils_portable.h"
+ 
+ #include "libANGLE/MemoryProgramCache.h"

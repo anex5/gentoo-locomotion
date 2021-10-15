@@ -1,0 +1,79 @@
+--- chromium-67.0.3396.10/third_party/crashpad/crashpad/client/crashpad_info.h.gcc7	2018-04-18 21:05:43.000000000 +0200
++++ chromium-67.0.3396.10/third_party/crashpad/crashpad/client/crashpad_info.h	2018-04-22 14:48:58.402613864 +0200
+@@ -220,7 +220,7 @@
+                                  size_t size);
+ 
+   enum : uint32_t {
+-    kSignature = 'CPad',
++    kSignature = 0x43506164, // 'CPad'
+   };
+ 
+  private:
+--- chromium-67.0.3396.10/third_party/crashpad/crashpad/client/settings.cc.gcc7	2018-04-18 21:05:43.000000000 +0200
++++ chromium-67.0.3396.10/third_party/crashpad/crashpad/client/settings.cc	2018-04-22 14:56:49.200391358 +0200
+@@ -85,7 +85,7 @@ void ScopedLockedFileHandleTraits::Free(
+ #endif  // OS_FUCHSIA
+ 
+ struct Settings::Data {
+-  static constexpr uint32_t kSettingsMagic = 'CPds';
++  static constexpr uint32_t kSettingsMagic = 0x43506473; //'CPds';
+   static constexpr uint32_t kSettingsVersion = 1;
+ 
+   enum Options : uint32_t {
+--- chromium-67.0.3396.10/third_party/crashpad/crashpad/util/misc/pdb_structures.h.gcc7	2018-04-18 21:05:43.000000000 +0200
++++ chromium-67.0.3396.10/third_party/crashpad/crashpad/util/misc/pdb_structures.h	2018-04-22 15:25:05.626833340 +0200
+@@ -41,7 +41,7 @@
+   //!
+   //! In a hex dump, this will appear as “NB10” when produced by a little-endian
+   //! machine.
+-  static const uint32_t kSignature = '01BN';
++  static const uint32_t kSignature = 0x3031424e; // '01BN'
+ 
+   //! \brief The magic number identifying this structure version, the value of
+   //!     #kSignature.
+@@ -102,7 +102,7 @@
+   //!
+   //! In a hex dump, this will appear as “RSDS” when produced by a little-endian
+   //! machine.
+-  static const uint32_t kSignature = 'SDSR';
++  static const uint32_t kSignature = 0x53445352; // 'SDSR'
+ 
+   //! \brief The magic number identifying this structure version, the value of
+   //!     #kSignature.
+--- chromium-69.0.3472.3/third_party/crashpad/crashpad/compat/non_win/dbghelp.h.gcc7	2018-06-26 06:33:19.000000000 +0200
++++ chromium-69.0.3472.3/third_party/crashpad/crashpad/compat/non_win/dbghelp.h	2018-07-07 12:30:05.410672630 +0200
+@@ -29,7 +29,7 @@
+ //!
+ //! A hex dump of a little-endian minidump file will begin with the string
+ //! “MDMP”.
+-#define MINIDUMP_SIGNATURE ('PMDM')  // 0x4d444d50
++#define MINIDUMP_SIGNATURE (0x4d444d50)  // 'PMDM'
+ 
+ //! \brief The version of a minidump file, stored in MINIDUMP_HEADER::Version.
+ #define MINIDUMP_VERSION (42899)
+--- chromium-76.0.3809.46/third_party/crashpad/crashpad/util/misc/pdb_structures.h.gcc8	2019-07-01 00:48:12.411760753 +0200
++++ chromium-76.0.3809.46/third_party/crashpad/crashpad/util/misc/pdb_structures.h	2019-07-01 21:41:07.470903154 +0200
+@@ -131,7 +131,7 @@ struct CodeViewRecordBuildID {
+   //!
+   //! In a hex dump, this will appear as “LEpB” when produced by a little-endian
+   //! machine.
+-  static const uint32_t kSignature = 'BpEL';
++  static const uint32_t kSignature = 0x4270454c; // 'BpEL'
+ 
+   //! \brief The magic number identifying this structure version, the value of
+   //!     #kSignature.
+--- chromium-79.0.3945.16/third_party/crashpad/crashpad/minidump/minidump_system_info_writer.cc.gcc8	2019-10-29 23:02:20.000000000 +0100
++++ chromium-79.0.3945.16/third_party/crashpad/crashpad/minidump/minidump_system_info_writer.cc	2019-11-03 19:57:44.058873594 +0100
+@@ -257,9 +257,9 @@ void MinidumpSystemInfoWriter::SetCPUX86
+   DCHECK(system_info_.ProcessorArchitecture == kMinidumpCPUArchitectureX86 ||
+          system_info_.ProcessorArchitecture ==
+              kMinidumpCPUArchitectureX86Win64);
+-  DCHECK(system_info_.Cpu.X86CpuInfo.VendorId[0] == 'htuA' &&
+-         system_info_.Cpu.X86CpuInfo.VendorId[1] == 'itne' &&
+-         system_info_.Cpu.X86CpuInfo.VendorId[2] == 'DMAc');
++  DCHECK(system_info_.Cpu.X86CpuInfo.VendorId[0] == 0x68747541 && // 'htuA'
++         system_info_.Cpu.X86CpuInfo.VendorId[1] == 0x69746e65 && // 'itne'
++         system_info_.Cpu.X86CpuInfo.VendorId[2] == 0x444d4163);  // 'DMAc'
+ 
+   system_info_.Cpu.X86CpuInfo.AMDExtendedCpuFeatures = extended_features;
+ }

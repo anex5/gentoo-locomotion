@@ -1,0 +1,11 @@
+--- chromium-58.0.3029.81/build/config/linux/BUILD.gn.glib	2017-04-19 21:06:28.000000000 +0200
++++ chromium-58.0.3029.81/build/config/linux/BUILD.gn	2017-04-23 23:12:26.097911010 +0200
+@@ -94,7 +94,7 @@ if (use_glib) {
+       "gthread-2.0",
+     ]
+     defines = [
+-      "GLIB_VERSION_MAX_ALLOWED=GLIB_VERSION_2_40",
++      "GLIB_VERSION_MAX_ALLOWED=GLIB_VERSION_2_68",
+       "GLIB_VERSION_MIN_REQUIRED=GLIB_VERSION_2_40",
+     ]
+   }

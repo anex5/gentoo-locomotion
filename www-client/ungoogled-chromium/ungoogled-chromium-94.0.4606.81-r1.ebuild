@@ -29,40 +29,34 @@ fi
 
 DESCRIPTION="Modifications to Chromium for removing Google integration and enhancing privacy"
 HOMEPAGE="https://github.com/Eloston/ungoogled-chromium"
-PATCHSET="3"
-PATCHSET_NAME="chromium-$(ver_cut 1)-patchset-${PATCHSET}"
 SRC_URI="https://commondatastorage.googleapis.com/chromium-browser-official/chromium-${PV/_*}.tar.xz
-	https://github.com/stha09/chromium-patches/releases/download/${PATCHSET_NAME}/${PATCHSET_NAME}.tar.xz
 	${UGC_URL}"
 
 LICENSE="BSD"
 SLOT="0"
 KEYWORDS="~amd64 ~arm64 ~x86"
-IUSE="atk alsa cfi clang convert-dict cups custom-cflags chromedriver debug gold gtk \
+IUSE="atk alsa cfi clang convert-dict cups custom-cflags chromedriver dav1d debug gold gtk \
 hangouts headless js-type-check libcxx kerberos man optimize-thinlto optimize-webui +partition +pdf pgo +proprietary-codecs pulseaudio selinux +suid \
-+system-re2 +system-ffmpeg +system-harfbuzz +system-icu +system-jsoncpp +system-libevent +system-libdrm +system-libvpx +system-openh264 +system-openjpeg \
-libvpx +lld swiftshader screencast tcmalloc thinlto udev v4l2 v4lplugin vaapi vdpau vulkan wayland widevine X xkbcommon xdg"
++system-ffmpeg +system-harfbuzz +system-libdrm +system-libvpx \
++lld swiftshader screencast tcmalloc thinlto udev v4l v4lplugin vpx vaapi vdpau vulkan wayland widevine X xkbcommon xdg"
 RESTRICT="
-	!system-ffmpeg? ( proprietary-codecs? ( bindist ) )
-	!system-openh264? ( bindist )
 "
 REQUIRED_USE="
 	|| ( X wayland headless )
 	^^ ( gold lld )
 	^^ ( partition tcmalloc )
-	v4l2? ( wayland )
-	v4lplugin? ( v4l2 )
+	v4l? ( wayland )
+	v4lplugin? ( v4l )
 	cfi? ( thinlto libcxx )
 	libcxx? ( clang )
 	pgo? ( clang )
 	optimize-thinlto? ( thinlto )
-	system-openjpeg? ( pdf )
 	thinlto? ( clang )
 	gtk? ( || ( X wayland ) )
 	atk? ( gtk )
 	screencast? ( wayland )
 	system-libdrm? ( wayland )
-	system-libvpx? ( libvpx )
+	system-libvpx? ( vpx )
 	x86? ( !thinlto !widevine )
 "
 
@@ -103,26 +97,25 @@ COMMON_DEPEND="
 	)
 	screencast? ( media-video/pipewire:0 )
 	system-ffmpeg? (
-		>=media-video/ffmpeg-4.3:=
+		>=media-video/ffmpeg-4.4:=
 		|| (
-			media-video/ffmpeg[-samba]
+			media-video/ffmpeg[alsa?,-samba,opus,openh264,x265,dav1d,vdpau?,vaapi?,vpx?,v4l?,vulkan?]
 			>=net-fs/samba-4.5.10-r1[-debug(-)]
 		)
-		>=media-libs/opus-1.3.1:=
 	)
 	system-harfbuzz? (
 		media-libs/freetype:=
 		>=media-libs/harfbuzz-3.0.0:0=[icu(-)]
 	)
-	system-icu? ( >=dev-libs/icu-69.1:= )
-	system-jsoncpp? ( dev-libs/jsoncpp )
-	system-libevent? ( dev-libs/libevent )
+	>=dev-libs/icu-69.1:=
+	dev-libs/jsoncpp
+	dev-libs/libevent
 	system-libvpx? ( >=media-libs/libvpx-1.9.0:=[postproc,svc] )
-	system-openh264? ( >=media-libs/openh264-1.6.0:= )
-	system-openjpeg? ( media-libs/openjpeg:2= )
-	system-re2? ( >=dev-libs/re2-0:= )
+	>=media-libs/openh264-1.6.0:=
+	media-libs/openjpeg:2=
+	>=dev-libs/re2-0:=
 	v4lplugin? ( media-tv/v4l-utils )
-	vaapi? ( >=x11-libs/libva-2.10.0:= )
+	vaapi? ( >=x11-libs/libva-2.7:=[X,drm] )
 	xkbcommon? (
 		x11-libs/libxkbcommon
 		x11-misc/xkeyboard-config
@@ -151,7 +144,7 @@ COMMON_DEPEND="
 	)
 "
 RDEPEND="${COMMON_DEPEND}
-	x11-misc/xdg-utils
+	xdg? ( x11-misc/xdg-utils )
 	virtual/opengl
 	virtual/ttf-fonts
 	selinux? ( sec-policy/selinux-chromium )
@@ -266,7 +259,7 @@ pkg_pretend() {
 		ewarn "Consider disabling system-libvpx USE flag if using vaapi"
 		ewarn "A patch to make vaapi compatible with system libvpx-1.9 is welcome"
 		ewarn
-		die "The build will fail!"
+		#die "The build will fail!"
 	fi
 }
 
@@ -285,14 +278,10 @@ pkg_setup() {
 src_prepare() {
 	python_setup
 
-	if ! use custom-cflags; then #See #25 #92
-		sed -i '/default_stack_frames/Q' "${WORKDIR}/patches/chromium-94-compiler.patch" || die
-	fi
-
 	local p="${FILESDIR}/chromium-$(ver_cut 1-1)"
 
 	local PATCHES=(
-		"${WORKDIR}/patches"
+		"${p}/chromium-94-compiler.patch"
 		"${p}/chromium-93-EnumTable-crash.patch"
 		"${p}/chromium-93-InkDropHost-crash.patch"
 		"${p}/chromium-use-oauth2-client-switches-as-default.patch"
@@ -300,6 +289,8 @@ src_prepare() {
 		"${p}/chromium-shim_headers.patch"
 		"${p}/chromium-91-sql-make-VirtualCursor-standard-layout-type.patch"
 		"${p}/chromium-py3-fixes.patch"
+		"${p}/chromium-system-openjpeg-r2.patch"
+		# "${p}/chromium-system-icu.patch"
 
 		# Extra patches taken from openSUSE and Arch
 		"${p}/chromium-glibc-malloc.patch"
@@ -310,22 +301,58 @@ src_prepare() {
 
 		# Extra patches taken from openMandriva
 		"${p}/chromium-64-system-curl.patch"
-		"${p}/chromium-69-no-static-libstdc++.patch"
 		"${p}/chromium-71-widevine-r3.patch"
 		"${p}/chromium-75-SIOCGSTAMP.patch"
 		"${p}/chromium-79-fix-find_if.patch"
 		"${p}/chromium-80-QuicStreamSendBuffer-deleted-move-constructor.patch"
 		"${p}/chromium-81-enable-gpu-features.patch"
-		"${p}/chromium-81-extra-media.patch"
-		"${p}/chromium-69-wmvflvmpg.patch"
 		"${p}/chromium-system-zlib.patch"
 		"${p}/chromium-81-unbundle-zlib.patch"
 		"${p}/chromium-83-disable-fontconfig-cache-magic.patch"
 		"${p}/chromium-94-less-blacklist-nonsense.patch"
 
+		# Extra patches taken from Mageia
+		"${p}/chromium-compiler-r4.patch"
+		"${p}/chromium-55-extra-media.patch"
+		"${p}/chromium-40-wmvflvmpg.patch"
+		"${p}/chromium-40-sorenson-spark.patch"
+		"${p}/chromium-extra-media-video-profiles.patch"
+		"${p}/chromium-50-codec-warnings.patch"
+		"${p}/chromium-54-proprietary-codecs-assert.patch"
+		"${p}/chromium-53-bignum-werror-fix.patch"
+		"${p}/chromium-53-gn-system-icu-jsoncpp.patch"
+		"${p}/chromium-53-link-libgio-libpci-libudev-libbrlapi.patch"
+		"${p}/chromium-52-pdfium-system-libtiff-libpng.patch"
+		"${p}/chromium-58-glib.patch"
+		"${p}/chromium-58-system-nodejs.patch"
+		"${p}/chromium-72-system-closure-compiler.patch"
+		"${p}/chromium-77-system-icu.patch"
+		"${p}/chromium-gcc-macro-redefined.patch"
+		"${p}/chromium-gcc-includes.patch"
+		"${p}/chromium-gcc-parentheses.patch"
+		"${p}/chromium-gcc-type-errors.patch"
+		"${p}/chromium-gcc-character-literals.patch"
+		"${p}/chromium-gcc-constexpr.patch"
+		"${p}/chromium-gcc-anonymous-namespace.patch"
+		"${p}/chromium-gcc-noexcept.patch"
+		"${p}/chromium-gcc-double-assignment.patch"
+		"${p}/chromium-gcc-optional.patch"
+		"${p}/chromium-gcc-unsorted.patch"
+		"${p}/chromium-gcc-disabled-warnings.patch"
+		"${p}/chromium-gcc-va_args.patch"
+		"${p}/chromium-gcc-braces.patch"
+		"${p}/chromium-68-gcc8.patch"
+		"${p}/chromium-69-gn-bootstrap.patch"
+		"${p}/chromium-72-gn-bootstrap.patch"
+		"${p}/chromium-72-i586.patch"
+		"${p}/chromium-85-system-zlib.patch"
+		"${p}/chromium-87-system-zlib.patch"
+		"${p}/chromium-94-GetNeverPromptSitesBetween-crash.patch"
+		"${p}/chromium-94.0.4606.71-fix-no-matching-function-for-call-to-max-int-long-int.patch"
+
 		# Personal patches
 		"${p}/chromium-fix-tint-cstddef-include.patch"
-		"${p}/chromium-94-include-cstring-h265_nalu_parser.patch"
+		#"${p}/chromium-94-include-cstring-h265_nalu_parser.patch"
 		"${p}/chromium-94-fix-building-without-safebrowsing.patch"
 		"${p}/chromium-tab-hover-cards-feature-r1.patch"
 		#"${p}/chromium-optional-dbus-r14.patch"
@@ -334,36 +361,34 @@ src_prepare() {
 
 	default
 
-	mkdir -p third_party/node/linux/node-linux-x64/bin || die
-	ln -s "${EPREFIX}"/usr/bin/node third_party/node/linux/node-linux-x64/bin/node || die
-
 	# adjust python interpreter versions
 	sed -i -e "s|\(^script_executable = \).*|\1\"${EPYTHON}\"|g" .gn || die
 
 	use convert-dict && eapply "${p}/chromium-ucf-dict-utility.patch"
 
 	if use system-ffmpeg; then
-		eapply "${p}/chromium-93-ffmpeg-4.4.patch"
-		eapply -R "${p}/chromium-94-ffmpeg-roll.patch"
+		eapply "${p}/chromium-53-gn-system-opus.patch"
+		eapply "${p}/chromium-79-system-dav1d.patch"
+		eapply "${p}/chromium-94-system-ffmpeg.patch"
+		eapply "${p}/chromium-53-ffmpeg-no-deprecation-errors.patch"
+		#eapply "${p}/chromium-93-ffmpeg-4.4.patch"
+		#eapply -R "${p}/chromium-94-ffmpeg-roll.patch"
 	fi
 
-	if use system-icu; then
-		eapply "${p}/chromium-system-icu.patch"
-	fi
+	use system-harfbuzz && eapply "${p}/chromium-94-system-freetype.patch"
 
-	if use system-jsoncpp; then
-		eapply "${p}/chromium-system-jsoncpp-r2.patch"
-		sed -i '/^#include "third_party\/jsoncpp.*$/{s//#include <json\/value\.h>/;h};${x;/./{x;q0};x;q1}' components/mirroring/service/receiver_response.h || die
-		sed -i '/^.*json\/reader.h"$/{s//#include <json\/reader\.h>/;h};${x;/./{x;q0};x;q1}' components/mirroring/service/receiver_response.cc || die
-		sed -i '/^.*json\/writer.h"$/{s//#include <json\/writer\.h>/;h};${x;/./{x;q0};x;q1}' components/mirroring/service/receiver_response.cc || die
-	fi
+	eapply "${p}/chromium-system-jsoncpp-r2.patch"
+	sed -i '/^#include "third_party\/jsoncpp.*$/{s//#include <json\/value\.h>/;h};${x;/./{x;q0};x;q1}' components/mirroring/service/receiver_response.h || die
+	sed -i '/^.*json\/reader.h"$/{s//#include <json\/reader\.h>/;h};${x;/./{x;q0};x;q1}' components/mirroring/service/receiver_response.cc || die
+	sed -i '/^.*json\/writer.h"$/{s//#include <json\/writer\.h>/;h};${x;/./{x;q0};x;q1}' components/mirroring/service/receiver_response.cc || die
 
 	if use system-libvpx; then
-		eapply "${p}/chromium-system-vpx-r2.patch"
+		#eapply "${p}/chromium-system-vpx-r2.patch"
+		eapply "${p}/chromium-88-system-libvpx.patch"
 		#has_version "=media-libs/libvpx-1.9*" && eapply "${p}/chromium-vpx-1.9-compatibility-r4.patch"
 	fi
 
-	use system-openjpeg && eapply "${p}/chromium-system-openjpeg-r2.patch"
+	eapply "${p}/chromium-74-pdfium-system-libopenjpeg2.patch"
 
 	if use vaapi; then
 		#has_version "=x11-libs/libva-2.11.0" && eapply "${p}/chromium-fix-libva-redef.patch"
@@ -379,12 +404,11 @@ src_prepare() {
 
 	if use wayland; then
 		eapply "${p}/wayland-egl.patch"
-		eapply "${p}/chromium-76-v4l-fix-linking.patch"
+		use v4l && eapply "${p}/chromium-76-v4l-fix-linking.patch"
+		use v4l && eapply "${p}/chromium-v4l2-remove-legacy-kernel-headers.patch"
 		use vaapi && eapply "${p}/igalia/0001-ozone-add-va-api-support-to-wayland.patch"
 		use X || eapply "${p}/0014-ozone-wayland-don-t-build-xcb-for-pure-wayland-build.patch"
 	fi
-
-	use v4l2 && eapply "${p}/chromium-v4l2-remove-legacy-kernel-headers.patch"
 
 	#Igalia patches
 	p="${FILESDIR}/chromium-$(ver_cut 1-1)/igalia"
@@ -392,9 +416,6 @@ src_prepare() {
 	eapply "${p}/0001-limit-number-of-LTO-jobs.patch"
 	eapply "${p}/0008-avoid-link-latomic-failure-on-CentOS-8-host.patch"
 	eapply "${p}/0009-nomerge-attribute-on-declaration-is-only-available-s.patch"
-	#eapply "${p}/0010-fix-ruy-numeric-limits-error.patch"
-	eapply "${p}/0011-exception_handler.cc-Match-the-types-for-SIGSTKSZ.patch"
-	#eapply "${p}/0013-Revert-Use-ffile-compilation-dir-instead-of-fdebug-c.patch"
 
 	if use "elibc_musl"; then
 		p="${FILESDIR}/chromium-$(ver_cut 1-1)/musl"
@@ -519,16 +540,15 @@ src_prepare() {
 		third_party/cld_3
 	)
 	#use js-type-check &&
-	keeplibs+=(
-		third_party/closure_compiler
-	)
+	#keeplibs+=(
+	#	third_party/closure_compiler
+	#)
 	keeplibs+=(
 		third_party/crashpad
 		third_party/crashpad/crashpad/third_party/lss
 		third_party/crashpad/crashpad/third_party/zlib
 		third_party/crc32c
 		third_party/cros_system_api
-		third_party/dav1d
 		third_party/dawn
 		third_party/dawn/third_party/khronos
 		third_party/dawn/third_party/tint
@@ -558,11 +578,11 @@ src_prepare() {
 		third_party/fft2d
 		third_party/flatbuffers
 	)
-	use system-ffmpeg || keeplibs+=( third_party/ffmpeg third_party/opus )
-	use system-harfbuzz || keeplibs+=(
-		third_party/freetype
-		third_party/harfbuzz-ng
-		third_party/harfbuzz-ng/utils
+	use system-ffmpeg || keeplibs+=(
+		third_party/ffmpeg
+		third_party/opus
+		third_party/dav1d
+		third_party/openh264
 	)
 	if use system-harfbuzz; then
 		keeplibs+=( third_party/harfbuzz-ng/utils )
@@ -584,11 +604,6 @@ src_prepare() {
 		third_party/iccjpeg
 		third_party/inspector_protocol
 		third_party/jinja2
-	)
-	use system-jsoncpp || keeplibs+=(
-		third_party/jsoncpp
-	)
-	keeplibs+=(
 		third_party/jstemplate
 		third_party/khronos
 		third_party/leveldatabase
@@ -643,7 +658,6 @@ src_prepare() {
 		third_party/node
 		third_party/node/node_modules/polymer-bundler/lib/third_party/UglifyJS2
 	)
-	use system-openh264 || keeplibs+=( third_party/openh264 )
 	keeplibs+=(
 		third_party/one_euro_filter
 		third_party/opencv
@@ -659,13 +673,6 @@ src_prepare() {
 		third_party/pdfium/third_party/bigint
 		third_party/pdfium/third_party/freetype
 		third_party/pdfium/third_party/lcms
-	)
-	use system-openjpeg || keeplibs+=(
-		third_party/pdfium/third_party/libopenjpeg20
-	)
-	keeplibs+=(
-		third_party/pdfium/third_party/libpng16
-		third_party/pdfium/third_party/libtiff
 		third_party/pdfium/third_party/skia_shared
 	)
 	#use perfetto &&
@@ -683,11 +690,6 @@ src_prepare() {
 		third_party/protobuf/third_party/six
 		third_party/pyjson5
 		third_party/qcms
-	)
-	use system-re2 || keeplibs+=(
-		third_party/re2
-	)
-	keeplibs+=(
 		third_party/rnnoise
 		third_party/s2cellid
 		third_party/securemessage
@@ -757,11 +759,9 @@ src_prepare() {
 		v8/src/third_party/utf8-decoder
 		v8/third_party/inspector_protocol
 		v8/third_party/v8
-	)
-	use system-libevent || keeplibs+=(
 		base/third_party/libevent
 	)
-	use v4l2 && keeplibs+=(
+	use v4l && keeplibs+=(
 		third_party/v4l-utils
 	)
 	use libcxx || keeplibs+=( buildtools/third_party/libc++ buildtools/third_party/libc++abi )
@@ -854,38 +854,27 @@ src_configure() {
 	local gn_system_libraries=(
 		flac
 		fontconfig
-		freetype
+		icu
+		jsoncpp
 		libdrm
+		libevent
 		libjpeg
 		libpng
 		libwebp
 		libxml
 		libxslt
-	)
-	use system-openh264 && gn_system_libraries+=(
-		openh264
-	)
-	use system-re2 && gn_system_libraries+=(
 		re2
-	)
-	gn_system_libraries+=(
 		snappy
 		zlib
 	)
 	if use system-ffmpeg; then
-		gn_system_libraries+=( ffmpeg opus )
-	fi
-	if use system-icu; then
-		gn_system_libraries+=( icu )
+		gn_system_libraries+=( ffmpeg opus openh264 )
 	fi
 	if use system-libvpx; then
 		gn_system_libraries+=( libvpx )
 	fi
 	if use system-harfbuzz; then
 		gn_system_libraries+=( freetype harfbuzz-ng )
-	fi
-	if use system-libevent; then
-		gn_system_libraries+=( libevent )
 	fi
 	build/linux/unbundle/replace_gn_files.py --system-libraries "${gn_system_libraries[@]}" || die
 
@@ -919,7 +908,6 @@ src_configure() {
 		"angle_shared_libvulkan=$(usetf vulkan)"
 		"use_gtk=$(usetf gtk)"
 		#"rtc_use_gtk=$(usetf gtk)"
-		#"toolkit_uses_gtk=$(usetf gtk)" # Deprecated
 		"rtc_use_x11=$(usetf X)"
 		"use_x11=$(usetf X)"
 		"angle_link_glx=$(usetf X)"
@@ -927,20 +915,19 @@ src_configure() {
 		#"rtc_pipewire_version=\"0.3\""
 		"use_thin_lto=$(usetf thinlto)"
 		"chrome_pgo_phase=$(usex pgo 2 0)"
-		#"pgo_build=$(usetf pgo)"
 		"thin_lto_enable_optimizations=$(usetf optimize-thinlto)"
 		"optimize_webui=$(usetf optimize-webui)"
-		"use_v4l2_codec=$(usetf v4l2)"
+		"use_v4l2_codec=$(usetf v4l)"
 		"use_v4lplugin=$(usetf v4lplugin)"
-		"rtc_build_libvpx=$(usetf libvpx)"
-		"media_use_libvpx=$(usetf libvpx)"
-		"rtc_libvpx_build_vp9=$(usetf libvpx)"
-		"media_use_openh264=$(usex system-openh264 false true)" #Encoding
+		"rtc_build_libvpx=$(usetf vpx)"
+		"media_use_libvpx=$(usetf vpx)"
+		"rtc_libvpx_build_vp9=$(usetf vpx)"
+		"media_use_openh264=true" #Encoding
 		"rtc_use_h264=$(usetf proprietary-codecs)" #Decoding
 		"enable_hls_sample_aes=true"
 		"enable_mse_mpeg2ts_stream_parser=true"
 		"enable_av1_decoder=true"
-		"enable_dav1d_decoder=true"
+		"enable_dav1d_decoder=$(usetf dav1d)"
 		"enable_platform_hevc=$(usetf proprietary-codecs)"
 		"enable_platform_dolby_vision=$(usetf proprietary-codecs)"
 		"enable_platform_ac3_eac3_audio=$(usetf proprietary-codecs)"
@@ -948,9 +935,9 @@ src_configure() {
 		"media_use_ffmpeg=true"
 		"enable_ffmpeg_video_decoders=true"
 		"proprietary_codecs=$(usetf proprietary-codecs)"
-		"ffmpeg_branding=\"$(usex proprietary-codecs Chrome Chromium)\""
+		"ffmpeg_branding=\"Chromium\""
 		"use_system_freetype=$(usetf system-harfbuzz)"
-		"use_system_libopenjpeg2=$(usetf system-openjpeg)"
+		"use_system_libopenjpeg2=true"
 		"use_vaapi=$(usetf vaapi)"
 		"enable_pdf=$(usetf pdf)"
 		"use_system_lcms2=true"
@@ -1052,7 +1039,7 @@ src_configure() {
 			#"system_wayland_scanner_path=/usr/bin/wayland-scanner" #chromeos
 			"use_system_minigbm=false" # minigbm conflicts with mesa gbm
 			"use_system_libdrm=$(usetf system-libdrm)"
-			#"use_linux_v4l2_only=$(usetf v4l2)"
+			#"use_linux_v4l2_only=$(usetf v4l)"
             #"toolkit_views=true"
 		)
 	else
@@ -1077,7 +1064,7 @@ src_configure() {
 		fi
 
 		# Prevent libvpx build failures. Bug 530248, 544702, 546984.
-		if use libvpx && [[ ${myarch} == amd64 || ${myarch} == x86 ]]; then
+		if use vpx && [[ ${myarch} == amd64 || ${myarch} == x86 ]]; then
 			filter-flags -mno-mmx -mno-sse2 -mno-ssse3 -mno-sse4.1 -mno-avx -mno-avx2 -mno-fma -mno-fma4
 		fi
 	fi
@@ -1251,7 +1238,7 @@ src_compile() {
 		s|@@PACKAGE@@|chromium-browser|g;
 		s|\(^Exec=\)/usr/bin/|\1|g;' \
 		chrome/installer/linux/common/desktop.template > \
-		out/Release/chromium-browser-chromium.desktop || die
+		out/Release/chromium.desktop || die
 	fi
 }
 
@@ -1333,7 +1320,7 @@ src_install() {
 
 	if use xdg; then
 		# Install desktop entry
-		domenu out/Release/chromium-browser-chromium.desktop
+		domenu out/Release/chromium.desktop
 		# Install GNOME default application entry (bug #303100).
 		insinto /usr/share/gnome-control-center/default-apps
 		newins "${FILESDIR}"/chromium-browser.xml chromium-browser.xml

@@ -1,0 +1,368 @@
+diff -up chromium-94.0.4606.41/gpu/config/gpu_info.h.video_profiles chromium-94.0.4606.41/gpu/config/gpu_info.h
+--- chromium-94.0.4606.41/gpu/config/gpu_info.h.video_profiles	2021-09-09 02:18:16.000000000 +0200
++++ chromium-94.0.4606.41/gpu/config/gpu_info.h	2021-09-14 17:51:43.241706427 +0200
+@@ -109,7 +109,20 @@ enum VideoCodecProfile {
+   AV1PROFILE_PROFILE_PRO,
+   DOLBYVISION_PROFILE8,
+   DOLBYVISION_PROFILE9,
+-  VIDEO_CODEC_PROFILE_MAX = DOLBYVISION_PROFILE9,
++  MPEG4SPPROFILE_ANY,
++  MPEG4ASPPROFILE_ANY,
++  MSMPEG4V1PROFILE_ANY,
++  MSMPEG4V2PROFILE_ANY,
++  MSMPEG4V3PROFILE_ANY,
++  WMV7PROFILE_ANY,
++  WMV8PROFILE_ANY,
++  WMV9PROFILE_ANY,
++  VC1PROFILE_ANY,
++  VP6PROFILE_ANY,
++  MPEG1PROFILE_ANY,
++  MPEG2PROFILE_ANY,
++  FLV1PROFILE_ANY,
++  VIDEO_CODEC_PROFILE_MAX = FLV1PROFILE_ANY,
+ };
+ 
+ // Specification of a decoding profile supported by a hardware decoder.
+diff -up chromium-94.0.4606.41/gpu/ipc/common/gpu_info.mojom.video_profiles chromium-94.0.4606.41/gpu/ipc/common/gpu_info.mojom
+--- chromium-94.0.4606.41/gpu/ipc/common/gpu_info.mojom.video_profiles	2021-09-09 02:18:16.000000000 +0200
++++ chromium-94.0.4606.41/gpu/ipc/common/gpu_info.mojom	2021-09-14 23:53:54.525243093 +0200
+@@ -64,6 +64,19 @@ enum VideoCodecProfile {
+   AV1PROFILE_PROFILE_PRO,
+   DOLBYVISION_PROFILE8,
+   DOLBYVISION_PROFILE9,
++  MPEG4SPPROFILE_ANY,
++  MPEG4ASPPROFILE_ANY,
++  MSMPEG4V1PROFILE_ANY,
++  MSMPEG4V2PROFILE_ANY,
++  MSMPEG4V3PROFILE_ANY,
++  WMV7PROFILE_ANY,
++  WMV8PROFILE_ANY,
++  WMV9PROFILE_ANY,
++  VC1PROFILE_ANY,
++  VP6PROFILE_ANY,
++  MPEG1PROFILE_ANY,
++  MPEG2PROFILE_ANY,
++  FLV1PROFILE_ANY,
+ };
+ 
+ // gpu::VideoDecodeAcceleratorSupportedProfile
+diff -up chromium-94.0.4606.41/gpu/ipc/common/gpu_info_mojom_traits.cc.video_profiles chromium-94.0.4606.41/gpu/ipc/common/gpu_info_mojom_traits.cc
+--- chromium-94.0.4606.41/gpu/ipc/common/gpu_info_mojom_traits.cc.video_profiles	2021-09-09 02:18:16.000000000 +0200
++++ chromium-94.0.4606.41/gpu/ipc/common/gpu_info_mojom_traits.cc	2021-09-14 23:56:58.667658708 +0200
+@@ -103,6 +103,32 @@ EnumTraits<gpu::mojom::VideoCodecProfile
+       return gpu::mojom::VideoCodecProfile::AV1PROFILE_PROFILE_HIGH;
+     case gpu::VideoCodecProfile::AV1PROFILE_PROFILE_PRO:
+       return gpu::mojom::VideoCodecProfile::AV1PROFILE_PROFILE_PRO;
++    case gpu::VideoCodecProfile::MPEG4SPPROFILE_ANY:
++      return gpu::mojom::VideoCodecProfile::MPEG4SPPROFILE_ANY;
++    case gpu::VideoCodecProfile::MPEG4ASPPROFILE_ANY:
++      return gpu::mojom::VideoCodecProfile::MPEG4ASPPROFILE_ANY;
++    case gpu::VideoCodecProfile::MSMPEG4V1PROFILE_ANY:
++      return gpu::mojom::VideoCodecProfile::MSMPEG4V1PROFILE_ANY;
++    case gpu::VideoCodecProfile::MSMPEG4V2PROFILE_ANY:
++      return gpu::mojom::VideoCodecProfile::MSMPEG4V2PROFILE_ANY;
++    case gpu::VideoCodecProfile::MSMPEG4V3PROFILE_ANY:
++      return gpu::mojom::VideoCodecProfile::MSMPEG4V3PROFILE_ANY;
++    case gpu::VideoCodecProfile::WMV7PROFILE_ANY:
++      return gpu::mojom::VideoCodecProfile::WMV7PROFILE_ANY;
++    case gpu::VideoCodecProfile::WMV8PROFILE_ANY:
++      return gpu::mojom::VideoCodecProfile::WMV8PROFILE_ANY;
++    case gpu::VideoCodecProfile::WMV9PROFILE_ANY:
++      return gpu::mojom::VideoCodecProfile::WMV9PROFILE_ANY;
++    case gpu::VideoCodecProfile::VC1PROFILE_ANY:
++      return gpu::mojom::VideoCodecProfile::VC1PROFILE_ANY;
++    case gpu::VideoCodecProfile::VP6PROFILE_ANY:
++      return gpu::mojom::VideoCodecProfile::VP6PROFILE_ANY;
++    case gpu::VideoCodecProfile::MPEG1PROFILE_ANY:
++      return gpu::mojom::VideoCodecProfile::MPEG1PROFILE_ANY;
++    case gpu::VideoCodecProfile::MPEG2PROFILE_ANY:
++      return gpu::mojom::VideoCodecProfile::MPEG2PROFILE_ANY;
++    case gpu::VideoCodecProfile::FLV1PROFILE_ANY:
++      return gpu::mojom::VideoCodecProfile::FLV1PROFILE_ANY;
+   }
+   NOTREACHED() << "Invalid VideoCodecProfile:" << video_codec_profile;
+   return gpu::mojom::VideoCodecProfile::VIDEO_CODEC_PROFILE_UNKNOWN;
+@@ -203,6 +225,45 @@ bool EnumTraits<gpu::mojom::VideoCodecPr
+     case gpu::mojom::VideoCodecProfile::AV1PROFILE_PROFILE_PRO:
+       *out = gpu::VideoCodecProfile::AV1PROFILE_PROFILE_PRO;
+       return true;
++    case gpu::mojom::VideoCodecProfile::MPEG4SPPROFILE_ANY:
++      *out = gpu::VideoCodecProfile::MPEG4SPPROFILE_ANY;
++      return true;
++    case gpu::mojom::VideoCodecProfile::MPEG4ASPPROFILE_ANY:
++      *out = gpu::VideoCodecProfile::MPEG4ASPPROFILE_ANY;
++      return true;
++    case gpu::mojom::VideoCodecProfile::MSMPEG4V1PROFILE_ANY:
++      *out = gpu::VideoCodecProfile::MSMPEG4V1PROFILE_ANY;
++      return true;
++    case gpu::mojom::VideoCodecProfile::MSMPEG4V2PROFILE_ANY:
++      *out = gpu::VideoCodecProfile::MSMPEG4V2PROFILE_ANY;
++      return true;
++    case gpu::mojom::VideoCodecProfile::MSMPEG4V3PROFILE_ANY:
++      *out = gpu::VideoCodecProfile::MSMPEG4V3PROFILE_ANY;
++      return true;
++    case gpu::mojom::VideoCodecProfile::WMV7PROFILE_ANY:
++      *out = gpu::VideoCodecProfile::WMV7PROFILE_ANY;
++      return true;
++    case gpu::mojom::VideoCodecProfile::WMV8PROFILE_ANY:
++      *out = gpu::VideoCodecProfile::WMV8PROFILE_ANY;
++      return true;
++    case gpu::mojom::VideoCodecProfile::WMV9PROFILE_ANY:
++      *out = gpu::VideoCodecProfile::WMV9PROFILE_ANY;
++      return true;
++    case gpu::mojom::VideoCodecProfile::VC1PROFILE_ANY:
++      *out = gpu::VideoCodecProfile::VC1PROFILE_ANY;
++      return true;
++    case gpu::mojom::VideoCodecProfile::VP6PROFILE_ANY:
++      *out = gpu::VideoCodecProfile::VP6PROFILE_ANY;
++      return true;
++    case gpu::mojom::VideoCodecProfile::MPEG1PROFILE_ANY:
++      *out = gpu::VideoCodecProfile::MPEG1PROFILE_ANY;
++      return true;
++    case gpu::mojom::VideoCodecProfile::MPEG2PROFILE_ANY:
++      *out = gpu::VideoCodecProfile::MPEG2PROFILE_ANY;
++      return true;
++    case gpu::mojom::VideoCodecProfile::FLV1PROFILE_ANY:
++      *out = gpu::VideoCodecProfile::FLV1PROFILE_ANY;
++      return true;
+   }
+   NOTREACHED() << "Invalid VideoCodecProfile: " << input;
+   return false;
+diff -up chromium-94.0.4606.41/media/base/mime_util_internal.cc.video_profiles chromium-94.0.4606.41/media/base/mime_util_internal.cc
+--- chromium-94.0.4606.41/media/base/mime_util_internal.cc.video_profiles	2021-09-09 10:00:38.217814743 +0200
++++ chromium-94.0.4606.41/media/base/mime_util_internal.cc	2021-09-14 17:43:13.381645112 +0200
+@@ -875,6 +875,45 @@ bool MimeUtil::ParseCodecHelper(const st
+         case Codec::THEORA:
+           out_result->video_profile = THEORAPROFILE_ANY;
+           break;
++        case Codec::MPEG4_SP:
++          out_result->video_profile = MPEG4SPPROFILE_ANY;
++          break;
++        case Codec::MPEG4_ASP:
++          out_result->video_profile = MPEG4ASPPROFILE_ANY;
++          break;
++        case Codec::MSMPEG4v1:
++          out_result->video_profile = MSMPEG4V1PROFILE_ANY;
++          break;
++        case Codec::MSMPEG4v2:
++          out_result->video_profile = MSMPEG4V2PROFILE_ANY;
++          break;
++        case Codec::MSMPEG4v3:
++          out_result->video_profile = MSMPEG4V3PROFILE_ANY;
++          break;
++        case Codec::WMV7:
++          out_result->video_profile = WMV7PROFILE_ANY;
++          break;
++        case Codec::WMV8:
++          out_result->video_profile = WMV8PROFILE_ANY;
++          break;
++        case Codec::WMV9:
++          out_result->video_profile = WMV9PROFILE_ANY;
++          break;
++        case Codec::VC1:
++          out_result->video_profile = VC1PROFILE_ANY;
++          break;
++        case Codec::VP6:
++          out_result->video_profile = VP6PROFILE_ANY;
++          break;
++        case Codec::MPEG1:
++          out_result->video_profile = MPEG1PROFILE_ANY;
++          break;
++        case Codec::MPEG2:
++          out_result->video_profile = MPEG2PROFILE_ANY;
++          break;
++        case Codec::FLV1:
++          out_result->video_profile = FLV1PROFILE_ANY;
++          break;
+         default:
+           NOTREACHED();
+       }
+diff -up chromium-94.0.4606.41/media/base/video_codecs.h.video_profiles chromium-94.0.4606.41/media/base/video_codecs.h
+--- chromium-94.0.4606.41/media/base/video_codecs.h.video_profiles	2021-09-09 10:00:31.443948045 +0200
++++ chromium-94.0.4606.41/media/base/video_codecs.h	2021-09-14 17:50:14.860428732 +0200
+@@ -102,7 +102,46 @@ enum VideoCodecProfile {
+   AV1PROFILE_MAX = AV1PROFILE_PROFILE_PRO,
+   DOLBYVISION_PROFILE8 = 27,
+   DOLBYVISION_PROFILE9 = 28,
+-  VIDEO_CODEC_PROFILE_MAX = DOLBYVISION_PROFILE9,
++  MPEG4SPPROFILE_MIN = 29,
++  MPEG4SPPROFILE_ANY = MPEG4SPPROFILE_MIN,
++  MPEG4SPPROFILE_MAX = MPEG4SPPROFILE_ANY,
++  MPEG4ASPPROFILE_MIN = 30,
++  MPEG4ASPPROFILE_ANY = MPEG4ASPPROFILE_MIN,
++  MPEG4ASPPROFILE_MAX = MPEG4ASPPROFILE_ANY,
++  MSMPEG4V1PROFILE_MIN = 31,
++  MSMPEG4V1PROFILE_ANY = MSMPEG4V1PROFILE_MIN,
++  MSMPEG4V1PROFILE_MAX = MSMPEG4V1PROFILE_ANY,
++  MSMPEG4V2PROFILE_MIN = 32,
++  MSMPEG4V2PROFILE_ANY = MSMPEG4V2PROFILE_MIN,
++  MSMPEG4V2PROFILE_MAX = MSMPEG4V2PROFILE_ANY,
++  MSMPEG4V3PROFILE_MIN = 33,
++  MSMPEG4V3PROFILE_ANY = MSMPEG4V3PROFILE_MIN,
++  MSMPEG4V3PROFILE_MAX = MSMPEG4V3PROFILE_ANY,
++  WMV7PROFILE_MIN = 34,
++  WMV7PROFILE_ANY = WMV7PROFILE_MIN,
++  WMV7PROFILE_MAX = WMV7PROFILE_ANY,
++  WMV8PROFILE_MIN = 35,
++  WMV8PROFILE_ANY = WMV8PROFILE_MIN,
++  WMV8PROFILE_MAX = WMV8PROFILE_ANY,
++  WMV9PROFILE_MIN = 36,
++  WMV9PROFILE_ANY = WMV9PROFILE_MIN,
++  WMV9PROFILE_MAX = WMV9PROFILE_ANY,
++  VC1PROFILE_MIN = 37,
++  VC1PROFILE_ANY = VC1PROFILE_MIN,
++  VC1PROFILE_MAX = VC1PROFILE_ANY,
++  VP6PROFILE_MIN = 38,
++  VP6PROFILE_ANY = VP6PROFILE_MIN,
++  VP6PROFILE_MAX = VP6PROFILE_ANY,
++  MPEG1PROFILE_MIN = 39,
++  MPEG1PROFILE_ANY = MPEG1PROFILE_MIN,
++  MPEG1PROFILE_MAX = MPEG1PROFILE_ANY,
++  MPEG2PROFILE_MIN = 40,
++  MPEG2PROFILE_ANY = MPEG2PROFILE_MIN,
++  MPEG2PROFILE_MAX = MPEG2PROFILE_ANY,
++  FLV1PROFILE_MIN = 41,
++  FLV1PROFILE_ANY = FLV1PROFILE_MIN,
++  FLV1PROFILE_MAX = FLV1PROFILE_ANY,
++  VIDEO_CODEC_PROFILE_MAX = FLV1PROFILE_MAX,
+ };
+ 
+ using VideoCodecLevel = uint32_t;
+--- chromium-94.0.4606.41/content/browser/gpu/gpu_internals_ui.cc.video_profiles	2021-09-09 02:18:14.000000000 +0200
++++ chromium-94.0.4606.41/content/browser/gpu/gpu_internals_ui.cc	2021-09-15 20:14:53.676575661 +0200
+@@ -597,6 +597,32 @@ const char* GetProfileName(gpu::VideoCod
+       return "av1 profile high";
+     case gpu::AV1PROFILE_PROFILE_PRO:
+       return "av1 profile pro";
++    case gpu::MPEG4SPPROFILE_ANY:
++      return "mpeg4 sp";
++    case gpu::MPEG4ASPPROFILE_ANY:
++      return "mpeg4 asp";
++    case gpu::MSMPEG4V1PROFILE_ANY:
++      return "msmpeg4v1";
++    case gpu::MSMPEG4V2PROFILE_ANY:
++      return "msmpeg4v2";
++    case gpu::MSMPEG4V3PROFILE_ANY:
++      return "msmpeg4v3";
++    case gpu::WMV7PROFILE_ANY:
++      return "wmv7";
++    case gpu::WMV8PROFILE_ANY:
++      return "wmv8";
++    case gpu::WMV9PROFILE_ANY:
++      return "wmv9";
++    case gpu::VC1PROFILE_ANY:
++      return "vc-1";
++    case gpu::VP6PROFILE_ANY:
++      return "vp6";
++    case gpu::MPEG1PROFILE_ANY:
++      return "mpeg1";
++    case gpu::MPEG2PROFILE_ANY:
++      return "mpeg2";
++    case gpu::FLV1PROFILE_ANY:
++      return "flv1";
+   }
+   NOTREACHED();
+   return "";
+--- chromium-94.0.4606.41/content/browser/gpu/gpu_data_manager_impl_private.cc.video_profiles	2021-09-09 02:18:14.000000000 +0200
++++ chromium-94.0.4606.41/content/browser/gpu/gpu_data_manager_impl_private.cc	2021-09-15 20:24:22.371555636 +0200
+@@ -480,6 +480,32 @@ gpu::VideoCodecProfile ToGpuVideoCodecPr
+       return gpu::DOLBYVISION_PROFILE8;
+     case media::DOLBYVISION_PROFILE9:
+       return gpu::DOLBYVISION_PROFILE9;
++    case media::MPEG4SPPROFILE_ANY:
++      return gpu::MPEG4SPPROFILE_ANY;
++    case media::MPEG4ASPPROFILE_ANY:
++      return gpu::MPEG4ASPPROFILE_ANY;
++    case media::MSMPEG4V1PROFILE_ANY:
++      return gpu::MSMPEG4V1PROFILE_ANY;
++    case media::MSMPEG4V2PROFILE_ANY:
++      return gpu::MSMPEG4V2PROFILE_ANY;
++    case media::MSMPEG4V3PROFILE_ANY:
++      return gpu::MSMPEG4V3PROFILE_ANY;
++    case media::WMV7PROFILE_ANY:
++      return gpu::WMV7PROFILE_ANY;
++    case media::WMV8PROFILE_ANY:
++      return gpu::WMV8PROFILE_ANY;
++    case media::WMV9PROFILE_ANY:
++      return gpu::WMV9PROFILE_ANY;
++    case media::VC1PROFILE_ANY:
++      return gpu::VC1PROFILE_ANY;
++    case media::VP6PROFILE_ANY:
++      return gpu::VP6PROFILE_ANY;
++    case media::MPEG1PROFILE_ANY:
++      return gpu::MPEG1PROFILE_ANY;
++    case media::MPEG2PROFILE_ANY:
++      return gpu::MPEG2PROFILE_ANY;
++    case media::FLV1PROFILE_ANY:
++      return gpu::FLV1PROFILE_ANY;
+   }
+   NOTREACHED();
+   return gpu::VIDEO_CODEC_PROFILE_UNKNOWN;
+--- chromium-94.0.4606.41/media/base/video_codecs.cc.video_profiles	2021-09-15 14:47:43.383050003 +0200
++++ chromium-94.0.4606.41/media/base/video_codecs.cc	2021-09-15 23:08:04.298555319 +0200
+@@ -124,6 +124,32 @@ std::string GetProfileName(VideoCodecPro
+       return "av1 profile high";
+     case AV1PROFILE_PROFILE_PRO:
+       return "av1 profile pro";
++    case MPEG4SPPROFILE_ANY:
++      return "mpeg4 sp";
++    case MPEG4ASPPROFILE_ANY:
++      return "mpeg4 asp";
++    case MSMPEG4V1PROFILE_ANY:
++      return "msmpegv1";
++    case MSMPEG4V2PROFILE_ANY:
++      return "msmpegv2";
++    case MSMPEG4V3PROFILE_ANY:
++      return "msmpegv3";
++    case WMV7PROFILE_ANY:
++      return "wmv7";
++    case WMV8PROFILE_ANY:
++      return "wmv8";
++    case WMV9PROFILE_ANY:
++      return "wmv9";
++    case VC1PROFILE_ANY:
++      return "vc-1";
++    case VP6PROFILE_ANY:
++      return "vp6";
++    case MPEG1PROFILE_ANY:
++      return "mpeg1";
++    case MPEG2PROFILE_ANY:
++      return "mpeg2";
++    case FLV1PROFILE_ANY:
++      return "flv1";
+   }
+   NOTREACHED();
+   return "";
+@@ -1036,6 +1058,32 @@ VideoCodec VideoCodecProfileToVideoCodec
+     case AV1PROFILE_PROFILE_HIGH:
+     case AV1PROFILE_PROFILE_PRO:
+       return kCodecAV1;
++    case MPEG4SPPROFILE_ANY:
++      return kCodecMPEG4;
++    case MPEG4ASPPROFILE_ANY:
++      return kCodecMPEG4;
++    case MSMPEG4V1PROFILE_ANY:
++      return kCodecMSMPEG4V1;
++    case MSMPEG4V2PROFILE_ANY:
++      return kCodecMSMPEG4V2;
++    case MSMPEG4V3PROFILE_ANY:
++      return kCodecMSMPEG4V2;
++    case WMV7PROFILE_ANY:
++      return kCodecWMV7;
++    case WMV8PROFILE_ANY:
++      return kCodecWMV8;
++    case WMV9PROFILE_ANY:
++      return kCodecWMV9;
++    case VC1PROFILE_ANY:
++      return kCodecVC1;
++    case VP6PROFILE_ANY:
++      return kCodecVP6;
++    case MPEG1PROFILE_ANY:
++      return kCodecMPEG1;
++    case MPEG2PROFILE_ANY:
++      return kCodecMPEG2;
++    case FLV1PROFILE_ANY:
++      return kCodecSorensonSpark;
+   }
+ }
+ }  // namespace media

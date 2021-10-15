@@ -1,0 +1,83 @@
+--- chromium-68.0.3440.106/mojo/core/data_pipe_consumer_dispatcher.cc.gcc8	2018-08-14 03:11:50.492927855 +0200
++++ chromium-68.0.3440.106/mojo/core/data_pipe_consumer_dispatcher.cc	2018-08-14 03:12:32.254163933 +0200
+@@ -40,7 +40,7 @@
+   uint64_t buffer_guid_high;
+   uint64_t buffer_guid_low;
+   char padding[7];
+-};
++} __attribute__ ((aligned(8)));
+ 
+ static_assert(sizeof(SerializedState) % 8 == 0,
+               "Invalid SerializedState size.");
+--- chromium-68.0.3440.106/mojo/core/data_pipe_producer_dispatcher.cc.gcc8	2018-08-14 03:11:52.923883382 +0200
++++ chromium-68.0.3440.106/mojo/core/data_pipe_producer_dispatcher.cc	2018-08-14 03:12:35.341107472 +0200
+@@ -39,7 +39,7 @@
+   uint64_t buffer_guid_high;
+   uint64_t buffer_guid_low;
+   char padding[7];
+-};
++} __attribute__ ((aligned(8)));
+ 
+ static_assert(sizeof(SerializedState) % 8 == 0,
+               "Invalid SerializedState size.");
+--- chromium-68.0.3440.106/mojo/public/tools/bindings/generators/cpp_templates/struct_declaration.tmpl.gcc8	2018-08-14 21:12:13.141558150 +0200
++++ chromium-68.0.3440.106/mojo/public/tools/bindings/generators/cpp_templates/struct_declaration.tmpl	2018-08-14 21:13:14.068493440 +0200
+@@ -1,6 +1,6 @@
+ {%- set class_name = struct.name ~ "_Data" -%}
+ 
+-class {{export_attribute}} {{class_name}} {
++class {{export_attribute}} __attribute__ ((aligned(8))) {{class_name}} {
+  public:
+   static bool Validate(const void* data,
+                        mojo::internal::ValidationContext* validation_context);
+--- chromium-68.0.3440.106/mojo/public/tools/bindings/generators/cpp_templates/union_declaration.tmpl.gcc8	2018-08-14 21:12:15.324520008 +0200
++++ chromium-68.0.3440.106/mojo/public/tools/bindings/generators/cpp_templates/union_declaration.tmpl	2018-08-14 21:13:16.724447019 +0200
+@@ -2,7 +2,7 @@
+ {%- set enum_name = union.name ~ "_Tag" -%}
+ {%- import "struct_macros.tmpl" as struct_macros %}
+ 
+-class {{export_attribute}} {{class_name}} {
++class {{export_attribute}}  __attribute__ ((aligned(8))) {{class_name}} {
+  public:
+   // Used to identify Mojom Union Data Classes.
+   typedef void MojomUnionDataType;
+--- chromium-68.0.3440.106/mojo/public/c/system/message_pipe.h.gcc8	2018-08-08 21:11:05.000000000 +0200
++++ chromium-68.0.3440.106/mojo/public/c/system/message_pipe.h	2018-08-18 15:08:11.059119547 +0200
+@@ -35,7 +35,6 @@
+   // See |MojoCreateMessagePipeFlags|.
+   MojoCreateMessagePipeFlags flags;
+ };
+-MOJO_STATIC_ASSERT(MOJO_ALIGNOF(int64_t) <= 8, "int64_t has weird alignment");
+ MOJO_STATIC_ASSERT(sizeof(struct MojoCreateMessagePipeOptions) == 8,
+                    "MojoCreateMessagePipeOptions has wrong size");
+ 
+--- chromium-68.0.3440.106/mojo/public/c/system/data_pipe.h.gcc8	2018-08-08 21:11:05.000000000 +0200
++++ chromium-68.0.3440.106/mojo/public/c/system/data_pipe.h	2018-08-18 15:13:42.028075568 +0200
+@@ -40,7 +40,6 @@
+   // system-dependent capacity of at least one element in size.
+   uint32_t capacity_num_bytes;
+ };
+-MOJO_STATIC_ASSERT(MOJO_ALIGNOF(int64_t) <= 8, "int64_t has weird alignment");
+ MOJO_STATIC_ASSERT(sizeof(struct MojoCreateDataPipeOptions) == 16,
+                    "MojoCreateDataPipeOptions has wrong size");
+ 
+--- chromium-68.0.3440.106/mojo/public/c/system/buffer.h.gcc8	2018-08-08 21:11:05.000000000 +0200
++++ chromium-68.0.3440.106/mojo/public/c/system/buffer.h	2018-08-18 15:15:18.766308780 +0200
+@@ -30,7 +30,6 @@
+   // See |MojoCreateSharedBufferFlags|.
+   MojoCreateSharedBufferFlags flags;
+ };
+-MOJO_STATIC_ASSERT(MOJO_ALIGNOF(int64_t) <= 8, "int64_t has weird alignment");
+ MOJO_STATIC_ASSERT(sizeof(struct MojoCreateSharedBufferOptions) == 8,
+                    "MojoCreateSharedBufferOptions has wrong size");
+ 
+--- chromium-68.0.3440.106/mojo/core/options_validation_unittest.cc.gcc8	2018-08-08 21:11:05.000000000 +0200
++++ chromium-68.0.3440.106/mojo/core/options_validation_unittest.cc	2018-08-18 15:16:30.947990424 +0200
+@@ -18,7 +18,6 @@
+ 
+ using TestOptionsFlags = uint32_t;
+ 
+-static_assert(MOJO_ALIGNOF(int64_t) <= 8, "int64_t has weird alignment");
+ struct MOJO_ALIGNAS(8) TestOptions {
+   uint32_t struct_size;
+   TestOptionsFlags flags;

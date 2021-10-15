@@ -1,0 +1,94 @@
+--- chromium-72.0.3626.81/third_party/closure_compiler/compiler.py.system-closure-compiler	2019-02-02 15:20:50.585588933 +0100
++++ chromium-72.0.3626.81/third_party/closure_compiler/compiler.py	2019-02-02 15:21:12.782207970 +0100
+@@ -33,7 +33,6 @@ class Compiler(object):
+     Args:
+       verbose: Whether this class should output diagnostic messages.
+     """
+-    self._compiler_jar = os.path.join(_CURRENT_DIR, "compiler", "compiler.jar")
+     self._verbose = verbose
+ 
+   def _log_debug(self, msg, error=False):
+@@ -45,19 +44,19 @@ class Compiler(object):
+     if self._verbose:
+       print("(INFO) %s" % msg)
+ 
+-  def run_jar(self, jar, args):
+-    """Runs a .jar from the command line with arguments.
++  def run_compiler(self, args):
++    """Runs the closure compiler from the command line with arguments.
+ 
+     Args:
+       jar: A file path to a .jar file
+-      args: A list of command line arguments to be passed when running the .jar.
++      args: A list of command line arguments to be passed when running the compiler.
+ 
+     Return:
+       (exit_code, stderr) The exit code of the command (e.g. 0 for success) and
+-          the stderr collected while running |jar| (as a string).
++          the stderr collected while running (as a string).
+     """
+-    shell_command = " ".join(self._JAR_COMMAND + [jar] + args)
+-    self._log_debug("Running jar: %s" % shell_command)
++    shell_command = " ".join(["/usr/bin/closure-compiler"] + args)
++    self._log_debug("Running: %s" % shell_command)
+ 
+     devnull = open(os.devnull, "w")
+     process = subprocess.Popen(shell_command, universal_newlines=True,
+--- chromium-72.0.3626.81/third_party/closure_compiler/js_binary.py.system-closure-compiler	2019-01-30 02:18:46.000000000 +0100
++++ chromium-72.0.3626.81/third_party/closure_compiler/js_binary.py	2019-02-02 15:51:01.962623818 +0100
+@@ -83,8 +83,6 @@ def CrawlRootDepsTree(deps, target_sourc
+ 
+ def main():
+   parser = argparse.ArgumentParser()
+-  parser.add_argument('-c', '--compiler', required=True,
+-                      help='Path to compiler')
+   parser.add_argument('-s', '--sources', nargs='*', default=[],
+                       help='List of js source files')
+   parser.add_argument('-o', '--output', required=True,
+@@ -123,9 +121,9 @@ def main():
+     compiler_args += ['--checks-only']
+     open(args.output, 'w').close()
+ 
+-  returncode, errors = compiler.Compiler().run_jar(args.compiler, compiler_args)
++  returncode, errors = compiler.Compiler().run_compiler(compiler_args)
+   if returncode != 0:
+-    print(args.compiler, ' '.join(compiler_args))
++    print(' '.join(compiler_args))
+     print(errors)
+ 
+   return returncode
+--- chromium-73.0.3683.75/third_party/closure_compiler/compile_js.gni.system-closure-compiler	2019-03-11 23:01:15.000000000 +0100
++++ chromium-73.0.3683.75/third_party/closure_compiler/compile_js.gni	2019-03-16 21:33:28.185253841 +0100
+@@ -14,7 +14,6 @@ declare_args() {
+ }
+ 
+ script_path = "//third_party/closure_compiler"
+-compiler_path = "$script_path/compiler/compiler.jar"
+ externs_path = "$script_path/externs"
+ interfaces_path = "$script_path/interfaces"
+ chrome_externs = "$externs_path/chrome.js"
+@@ -174,15 +173,10 @@ template("js_binary") {
+                              "testonly",
+                              "uses_legacy_modules",
+                            ])
+-    args = [
+-      "--compiler",
+-      rebase_path(compiler_path, root_build_dir),
+-    ]
+-
+     if (!defined(outputs)) {
+       outputs = [ "$target_gen_dir/$target_name.js" ]
+     }
+-    args += [ "--output" ] + rebase_path(outputs, root_build_dir)
++    args = [ "--output" ] + rebase_path(outputs, root_build_dir)
+ 
+     if (!defined(sources)) {
+       sources = [ "$target_name.js" ]
+@@ -244,7 +238,6 @@ template("js_binary") {
+     inputs = [
+       "$script_path/closure_args.gni",
+       chrome_externs,
+-      compiler_path,
+     ]
+ 
+     # |polymer_externs| should only be added for Polymer versions 1 and 2. For
