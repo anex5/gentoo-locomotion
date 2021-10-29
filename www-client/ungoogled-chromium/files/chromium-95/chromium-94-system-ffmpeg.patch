@@ -1,0 +1,50 @@
+--- chromium-94.0.4606.20/media/filters/ffmpeg_demuxer.cc.system-ffmpeg	2021-08-25 21:12:23.000000000 +0200
++++ chromium-94.0.4606.20/media/filters/ffmpeg_demuxer.cc	2021-09-03 01:46:01.184281058 +0200
+@@ -104,6 +104,7 @@ static base::TimeDelta ExtractStartTime(
+   if (stream->start_time != kNoFFmpegTimestamp)
+     start_time = ConvertFromTimeBase(stream->time_base, stream->start_time);
+ 
++#if 0
+   // Next try to use the first DTS value, for codecs where we know PTS == DTS
+   // (excludes all H26x codecs). The start time must be returned in PTS.
+   if (av_stream_get_first_dts(stream) != kNoFFmpegTimestamp &&
+@@ -115,6 +116,7 @@ static base::TimeDelta ExtractStartTime(
+     if (first_pts < start_time)
+       start_time = first_pts;
+   }
++#endif
+ 
+   return start_time;
+ }
+@@ -405,11 +407,11 @@ void FFmpegDemuxerStream::EnqueuePacket(
+   scoped_refptr<DecoderBuffer> buffer;
+ 
+   if (type() == DemuxerStream::TEXT) {
+-    size_t id_size = 0;
++    int id_size = 0;
+     uint8_t* id_data = av_packet_get_side_data(
+         packet.get(), AV_PKT_DATA_WEBVTT_IDENTIFIER, &id_size);
+ 
+-    size_t settings_size = 0;
++    int settings_size = 0;
+     uint8_t* settings_data = av_packet_get_side_data(
+         packet.get(), AV_PKT_DATA_WEBVTT_SETTINGS, &settings_size);
+ 
+@@ -421,7 +423,7 @@ void FFmpegDemuxerStream::EnqueuePacket(
+     buffer = DecoderBuffer::CopyFrom(packet->data, packet->size,
+                                      side_data.data(), side_data.size());
+   } else {
+-    size_t side_data_size = 0;
++    int side_data_size = 0;
+     uint8_t* side_data = av_packet_get_side_data(
+         packet.get(), AV_PKT_DATA_MATROSKA_BLOCKADDITIONAL, &side_data_size);
+ 
+@@ -482,7 +484,7 @@ void FFmpegDemuxerStream::EnqueuePacket(
+                                        packet->size - data_offset);
+     }
+ 
+-    size_t skip_samples_size = 0;
++    int skip_samples_size = 0;
+     const uint32_t* skip_samples_ptr =
+         reinterpret_cast<const uint32_t*>(av_packet_get_side_data(
+             packet.get(), AV_PKT_DATA_SKIP_SAMPLES, &skip_samples_size));

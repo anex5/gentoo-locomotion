@@ -1,0 +1,46 @@
+--- chromium-70.0.3528.4/v8/src/codegen/interface-descriptors.h.gcc8	2018-08-24 20:21:09.588641771 +0200
++++ chromium-70.0.3528.4/v8/src/codegen/interface-descriptors.h	2018-08-24 20:24:49.422023115 +0200
+@@ -538,8 +538,8 @@ constexpr EmptyRegisterArray RegisterArr
+ #define DEFINE_RESULT_AND_PARAMETERS(return_count, ...)   \
+   static constexpr int kReturnCount = return_count;       \
+   enum ParameterIndices {                                 \
+-    __dummy = -1, /* to be able to pass zero arguments */ \
+-    ##__VA_ARGS__,                                        \
++    __dummy = -1 __VA_OPT__(,) /* to be able to pass zero arguments */ \
++    __VA_ARGS__,                                          \
+                                                           \
+     kParameterCount,                                      \
+     kContext = kParameterCount /* implicit parameter */   \
+@@ -554,8 +554,8 @@ constexpr EmptyRegisterArray RegisterArr
+       StackArgumentOrder::kDefault;                         \
+   static constexpr int kReturnCount = 1;                    \
+   enum ParameterIndices {                                   \
+-    __dummy = -1, /* to be able to pass zero arguments */   \
+-    ##__VA_ARGS__,                                          \
++    __dummy = -1 __VA_OPT__(,) /* to be able to pass zero arguments */ \
++    __VA_ARGS__,                                            \
+                                                             \
+     kParameterCount                                         \
+   };
+@@ -605,8 +605,8 @@ constexpr EmptyRegisterArray RegisterArr
+   enum ParameterIndices {                                   \
+     kTarget,                                                \
+     kNewTarget,                                             \
+-    kActualArgumentsCount,                                  \
+-    ##__VA_ARGS__,                                          \
++    kActualArgumentsCount __VA_OPT__(,)                     \
++    __VA_ARGS__,                                            \
+     kParameterCount,                                        \
+     kContext = kParameterCount /* implicit parameter */     \
+   };
+@@ -620,8 +620,8 @@ constexpr EmptyRegisterArray RegisterArr
+   enum ParameterIndices {                                   \
+     kTarget,                                                \
+     kNewTarget,                                             \
+-    kActualArgumentsCount,                                  \
+-    ##__VA_ARGS__,                                          \
++    kActualArgumentsCount __VA_OPT__(,)                     \
++    __VA_ARGS__,                                            \
+     kParameterCount,                                        \
+   };
+ 

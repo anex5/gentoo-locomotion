@@ -1,0 +1,1185 @@
+--- chromium-75.0.3770.90/media/filters/vp9_bool_decoder.cc.gcc8	2019-06-13 09:12:26.000000000 +0200
++++ chromium-75.0.3770.90/media/filters/vp9_bool_decoder.cc	2019-06-16 15:35:35.239060185 +0200
+@@ -79,7 +79,7 @@ bool Vp9BoolDecoder::Fill() {
+   int max_bits_to_read = kBigBoolBitSize - kBoolSize + count_to_fill_;
+   int bits_to_read = std::min(max_bits_to_read, bits_left);
+ 
+-  BigBool data;
++  BigBool data = 0;
+   reader_->ReadBits(bits_to_read, &data);
+   bool_value_ |= data << (max_bits_to_read - bits_to_read);
+   count_to_fill_ -= bits_to_read;
+@@ -150,7 +150,7 @@ bool Vp9BoolDecoder::ConsumePaddingBits(
+     return false;
+   }
+   while (reader_->bits_available() > 0) {
+-    int data;
++    int data = 0;
+     int size_to_read =
+         std::min(reader_->bits_available(), static_cast<int>(sizeof(data) * 8));
+     reader_->ReadBits(size_to_read, &data);
+--- chromium-75.0.3770.90/media/renderers/video_resource_updater.cc.gcc8	2019-06-13 09:12:27.000000000 +0200
++++ chromium-75.0.3770.90/media/renderers/video_resource_updater.cc	2019-06-16 15:42:53.233110818 +0200
+@@ -951,7 +951,7 @@ VideoFrameExternalResources VideoResourc
+   DCHECK(IsYuvPlanar(input_frame_format) ||
+          input_frame_format == PIXEL_FORMAT_Y16 || is_rgb);
+ 
+-  viz::ResourceFormat output_resource_format;
++  viz::ResourceFormat output_resource_format = viz::ResourceFormat::RGBA_8888;
+   gfx::ColorSpace output_color_space = video_frame->ColorSpace();
+   if (input_frame_format == PIXEL_FORMAT_XBGR) {
+     output_resource_format = viz::RGBX_8888;
+--- chromium-75.0.3770.90/v8/src/torque/implementation-visitor.cc.gcc8	2019-06-13 09:15:07.000000000 +0200
++++ chromium-75.0.3770.90/v8/src/torque/implementation-visitor.cc	2019-06-16 15:53:54.533116265 +0200
+@@ -263,7 +263,7 @@ VisitResult ImplementationVisitor::Inlin
+                        LocalLabel{label_blocks[i], label_info.types});
+   }
+ 
+-  Block* macro_end;
++  Block* macro_end = nullptr;
+   base::Optional<Binding<LocalLabel>> macro_end_binding;
+   if (can_return) {
+     Stack<const Type*> stack = assembler().CurrentStack();
+--- chromium-75.0.3770.90/cc/trees/layer_tree_host_impl.cc.gcc8	2019-06-13 09:11:52.000000000 +0200
++++ chromium-75.0.3770.90/cc/trees/layer_tree_host_impl.cc	2019-06-16 16:10:24.490189008 +0200
+@@ -5291,7 +5291,7 @@ void LayerTreeHostImpl::CreateUIResource
+     return;
+   }
+ 
+-  viz::ResourceFormat format;
++  viz::ResourceFormat format = viz::ResourceFormat::RGBA_8888;
+   switch (bitmap.GetFormat()) {
+     case UIResourceBitmap::RGBA8:
+       if (layer_tree_frame_sink_->context_provider()) {
+--- chromium-75.0.3770.90/components/cloud_devices/common/printer_description.h.gcc8	2019-06-13 09:12:10.000000000 +0200
++++ chromium-75.0.3770.90/components/cloud_devices/common/printer_description.h	2019-06-16 16:22:00.671592942 +0200
+@@ -134,7 +134,7 @@ class TypedValueVendorCapability {
+   void SaveTo(base::Value* dict) const;
+ 
+  private:
+-  ValueType value_type_;
++  ValueType value_type_ = ValueType::INTEGER;
+   std::string default_value_;
+ 
+   DISALLOW_COPY_AND_ASSIGN(TypedValueVendorCapability);
+--- chromium-75.0.3770.90/ui/views/animation/slide_out_controller.cc.gcc8	2019-06-13 09:13:13.000000000 +0200
++++ chromium-75.0.3770.90/ui/views/animation/slide_out_controller.cc	2019-06-16 17:17:58.711892051 +0200
+@@ -89,8 +89,8 @@ void SlideOutController::OnGestureEvent(
+     // The scroll-update events include the incremental scroll amount.
+     gesture_amount_ += event->details().scroll_x();
+ 
+-    float scroll_amount;
+-    float opacity;
++    float scroll_amount = 0.f;
++    float opacity = 0.f;
+     switch (mode_) {
+       case SlideMode::kFull:
+         scroll_amount = gesture_amount_;
+--- chromium-75.0.3770.90/chrome/browser/metrics/process_memory_metrics_emitter.h.gcc8	2019-06-13 09:12:01.000000000 +0200
++++ chromium-75.0.3770.90/chrome/browser/metrics/process_memory_metrics_emitter.h	2019-06-16 18:13:30.901509769 +0200
+@@ -126,7 +126,7 @@ struct ProcessMemoryMetricsEmitter::Proc
+   ~ProcessInfo();
+   ProcessInfo& operator=(const ProcessInfo& other);
+ 
+-  base::ProcessId pid;
++  base::ProcessId pid = 0;
+   std::vector<PageInfo> page_infos;
+   base::Time launch_time;
+ };
+--- chromium-75.0.3770.90/chrome/browser/ui/views/autofill/payments/local_card_migration_dialog_view.cc.gcc8	2019-06-16 12:47:16.838335901 +0200
++++ chromium-75.0.3770.90/chrome/browser/ui/views/autofill/payments/local_card_migration_dialog_view.cc	2019-06-16 19:28:49.059952837 +0200
+@@ -60,7 +60,7 @@ std::unique_ptr<views::Label> CreateTitl
+     LocalCardMigrationDialogState view_state,
+     LocalCardMigrationDialogView* dialog_view,
+     int card_list_size) {
+-  int message_id;
++  int message_id = 0;
+   switch (view_state) {
+     case LocalCardMigrationDialogState::kOffered:
+       message_id = IDS_AUTOFILL_LOCAL_CARD_MIGRATION_DIALOG_TITLE_OFFER;
+--- chromium-75.0.3770.90/chrome/browser/ui/views/overlay/overlay_window_views.cc.gcc8	2019-06-13 09:12:05.000000000 +0200
++++ chromium-75.0.3770.90/chrome/browser/ui/views/overlay/overlay_window_views.cc	2019-06-16 19:37:58.158771355 +0200
+@@ -291,7 +291,7 @@ gfx::Rect OverlayWindowViews::CalculateA
+ 
+     WindowQuadrant quadrant =
+         GetCurrentWindowQuadrant(GetBounds(), controller_);
+-    gfx::ResizeEdge resize_edge;
++    gfx::ResizeEdge resize_edge = gfx::ResizeEdge::kTopLeft;
+     switch (quadrant) {
+       case OverlayWindowViews::WindowQuadrant::kBottomRight:
+         resize_edge = gfx::ResizeEdge::kTopLeft;
+--- chromium-75.0.3770.90/components/ntp_snippets/remote/remote_suggestion.cc.gcc8	2019-06-13 09:12:11.000000000 +0200
++++ chromium-75.0.3770.90/components/ntp_snippets/remote/remote_suggestion.cc	2019-06-16 19:59:18.226815035 +0200
+@@ -111,6 +111,8 @@ RemoteSuggestion::CreateFromContentSugge
+     } else if (image_dominant_color_value->is_double()) {
+       image_dominant_color =
+           static_cast<uint32_t>(image_dominant_color_value->GetDouble());
++    } else {
++      image_dominant_color = 0;
+     }
+     snippet->image_dominant_color_ = image_dominant_color;
+   }
+--- chromium-76.0.3809.46/v8/src/compiler/bytecode-graph-builder.cc.gcc8	2019-06-28 00:04:31.000000000 +0200
++++ chromium-76.0.3809.46/v8/src/compiler/bytecode-graph-builder.cc	2019-07-02 00:02:52.377557951 +0200
+@@ -2973,7 +2973,7 @@ void BytecodeGraphBuilder::VisitTestType
+   Node* object = environment()->LookupAccumulator();
+   auto literal_flag = interpreter::TestTypeOfFlags::Decode(
+       bytecode_iterator().GetFlagOperand(0));
+-  Node* result;
++  Node* result = nullptr;
+   switch (literal_flag) {
+     case interpreter::TestTypeOfFlags::LiteralFlag::kNumber:
+       result = NewNode(simplified()->ObjectIsNumber(), object);
+--- chromium-76.0.3809.46/v8/src/compiler/code-assembler.cc.gcc8	2019-06-28 00:04:31.000000000 +0200
++++ chromium-76.0.3809.46/v8/src/compiler/code-assembler.cc	2019-07-02 00:07:49.856153279 +0200
+@@ -731,7 +731,7 @@ void CodeAssembler::StoreToObject(Machin
+                                   TNode<Object> object, TNode<IntPtrT> offset,
+                                   Node* value,
+                                   StoreToObjectWriteBarrier write_barrier) {
+-  WriteBarrierKind write_barrier_kind;
++  WriteBarrierKind write_barrier_kind = WriteBarrierKind::kNoWriteBarrier;
+   switch (write_barrier) {
+     case StoreToObjectWriteBarrier::kFull:
+       write_barrier_kind = WriteBarrierKind::kFullWriteBarrier;
+--- chromium-76.0.3809.46/v8/src/compiler/linkage.cc.gcc8	2019-06-28 00:04:31.000000000 +0200
++++ chromium-76.0.3809.46/v8/src/compiler/linkage.cc	2019-07-02 00:16:03.265292900 +0200
+@@ -412,7 +412,7 @@ CallDescriptor* Linkage::GetStubCallDesc
+   }
+ 
+   // The target for stub calls depends on the requested mode.
+-  CallDescriptor::Kind kind;
++  CallDescriptor::Kind kind = CallDescriptor::kCallCodeObject;
+   MachineType target_type;
+   switch (stub_mode) {
+     case StubCallMode::kCallCodeObject:
+--- chromium-76.0.3809.46/v8/src/heap/scavenger.cc.gcc8	2019-06-28 00:04:31.000000000 +0200
++++ chromium-76.0.3809.46/v8/src/heap/scavenger.cc	2019-07-02 00:43:11.188390273 +0200
+@@ -460,7 +460,7 @@ void Scavenger::Process(OneshotBarrier*
+       }
+     }
+ 
+-    struct PromotionListEntry entry;
++    struct PromotionListEntry entry = { .size = 0 };
+     while (promotion_list_.Pop(&entry)) {
+       HeapObject target = entry.heap_object;
+       IterateAndScavengePromotedObject(target, entry.map, entry.size);
+--- chromium-76.0.3809.46/v8/src/objects/js-date-time-format.cc.gcc8	2019-06-28 00:04:31.000000000 +0200
++++ chromium-76.0.3809.46/v8/src/objects/js-date-time-format.cc	2019-07-02 00:53:00.457549682 +0200
+@@ -1138,7 +1138,7 @@ icu::DateFormat::EStyle DateTimeStyleToE
+ icu::UnicodeString ReplaceSkeleton(const icu::UnicodeString input,
+                                    JSDateTimeFormat::HourCycle hc) {
+   icu::UnicodeString result;
+-  char16_t to;
++  char16_t to = 0;
+   switch (hc) {
+     case JSDateTimeFormat::HourCycle::kH11:
+       to = 'K';
+--- chromium-76.0.3809.46/v8/src/objects/literal-objects.cc.gcc8	2019-06-28 00:04:31.000000000 +0200
++++ chromium-76.0.3809.46/v8/src/objects/literal-objects.cc	2019-07-02 00:58:24.387664620 +0200
+@@ -479,7 +479,7 @@ Handle<ClassBoilerplate> ClassBoilerplat
+ 
+   for (int i = 0; i < expr->public_members()->length(); i++) {
+     ClassLiteral::Property* property = expr->public_members()->at(i);
+-    ClassBoilerplate::ValueKind value_kind;
++    ClassBoilerplate::ValueKind value_kind = ClassBoilerplate::kData;
+     switch (property->kind()) {
+       case ClassLiteral::Property::METHOD:
+         value_kind = ClassBoilerplate::kData;
+--- chromium-77.0.3865.10/base/task/thread_pool/thread_group_impl.cc.gcc9	2019-08-06 13:56:01.000000000 +0200
++++ chromium-77.0.3865.10/base/task/thread_pool/thread_group_impl.cc	2019-08-17 20:52:20.020273990 +0200
+@@ -599,7 +599,7 @@ RegisteredTaskSource ThreadGroupImpl::Wo
+   }
+ 
+   RegisteredTaskSource task_source;
+-  TaskPriority priority;
++  TaskPriority priority = TaskPriority::LOWEST;
+   while (!task_source && !outer_->priority_queue_.IsEmpty()) {
+     // Enforce the CanRunPolicy and that no more than |max_best_effort_tasks_|
+     // BEST_EFFORT tasks run concurrently.
+--- chromium-77.0.3865.35/services/tracing/public/cpp/stack_sampling/tracing_sampler_profiler.cc.gcc9	2019-08-15 00:02:11.000000000 +0200
++++ chromium-77.0.3865.35/services/tracing/public/cpp/stack_sampling/tracing_sampler_profiler.cc	2019-08-18 02:23:56.260372777 +0200
+@@ -541,6 +541,7 @@ TracingSamplerProfiler::TracingProfileBu
+       }
+ 
+       InterningIndexEntry interned_module;
++      interned_module.id = 0;
+       if (frame_details.has_valid_module()) {
+         interned_module =
+             interned_modules_.LookupOrAdd(frame_details.module_base_address);
+--- chromium-77.0.3865.35/ui/platform_window/x11/x11_window.cc.gcc9	2019-08-15 00:02:32.000000000 +0200
++++ chromium-77.0.3865.35/ui/platform_window/x11/x11_window.cc	2019-08-18 05:06:10.213823207 +0200
+@@ -1568,7 +1568,7 @@ void X11Window::CreateXWindow(const Plat
+ 
+   override_redirect_ = req.override_redirect.has_value();
+ 
+-  bool enable_transparent_visuals;
++  bool enable_transparent_visuals = false;
+   switch (properties.opacity) {
+     case PlatformWindowOpacity::kOpaqueWindow:
+       enable_transparent_visuals = false;
+--- chromium-77.0.3865.35/device/fido/virtual_fido_device.cc.gcc9	2019-08-15 00:02:07.000000000 +0200
++++ chromium-77.0.3865.35/device/fido/virtual_fido_device.cc	2019-08-18 20:13:48.948077739 +0200
+@@ -156,7 +156,7 @@ VirtualFidoDevice::GenerateAttestationCe
+   // https://fidoalliance.org/specs/fido-u2f-v1.2-ps-20170411/fido-u2f-authenticator-transports-extension-v1.2-ps-20170411.html#fido-u2f-certificate-transports-extension
+   static constexpr uint8_t kTransportTypesOID[] = {
+       0x2b, 0x06, 0x01, 0x04, 0x01, 0x82, 0xe5, 0x1c, 0x02, 0x01, 0x01};
+-  uint8_t transport_bit;
++  uint8_t transport_bit = 0;
+   switch (DeviceTransport()) {
+     case FidoTransportProtocol::kBluetoothLowEnergy:
+     case FidoTransportProtocol::kCloudAssistedBluetoothLowEnergy:
+--- chromium-77.0.3865.35/chrome/browser/web_applications/components/web_app_install_utils.cc.gcc9	2019-08-15 00:02:01.000000000 +0200
++++ chromium-77.0.3865.35/chrome/browser/web_applications/components/web_app_install_utils.cc	2019-08-19 15:41:12.719018780 +0200
+@@ -451,7 +451,7 @@ void RecordAppBanner(content::WebContent
+ 
+ webapps::WebappInstallSource ConvertExternalInstallSourceToInstallSource(
+     ExternalInstallSource external_install_source) {
+-  webapps::WebappInstallSource install_source;
++  webapps::WebappInstallSource install_source = webapps::WebappInstallSource::INTERNAL_DEFAULT;
+   switch (external_install_source) {
+     case ExternalInstallSource::kInternalDefault:
+       install_source = webapps::WebappInstallSource::INTERNAL_DEFAULT;
+@@ -475,7 +475,7 @@ webapps::WebappInstallSource ConvertExte
+ 
+ webapps::WebappUninstallSource ConvertExternalInstallSourceToUninstallSource(
+     ExternalInstallSource external_install_source) {
+-  webapps::WebappUninstallSource uninstall_source;
++  webapps::WebappUninstallSource uninstall_source = webapps::WebappUninstallSource::kInternalPreinstalled;
+   switch (external_install_source) {
+     case ExternalInstallSource::kInternalDefault:
+       uninstall_source = webapps::WebappUninstallSource::kInternalPreinstalled;
+--- chromium-77.0.3865.35/third_party/blink/renderer/modules/mediastream/user_media_processor.cc.gcc9	2019-08-15 00:02:06.000000000 +0200
++++ chromium-77.0.3865.35/third_party/blink/renderer/modules/mediastream/user_media_processor.cc	2019-08-19 22:59:54.702482209 +0200
+@@ -241,7 +241,7 @@ void SurfaceAudioProcessingSettings(Medi
+           blink::ProcessedLocalAudioSource::From(source_impl)) {
+     blink::AudioProcessingProperties properties =
+         processed_source->audio_processing_properties();
+-    MediaStreamSource::EchoCancellationMode echo_cancellation_mode;
++    MediaStreamSource::EchoCancellationMode echo_cancellation_mode = MediaStreamSource::EchoCancellationMode::kDisabled;
+ 
+     switch (properties.echo_cancellation_type) {
+       case EchoCancellationType::kEchoCancellationDisabled:
+--- chromium-77.0.3865.35/third_party/blink/renderer/core/html/forms/html_form_control_element_with_state.cc.gcc9	2019-08-15 00:02:12.000000000 +0200
++++ chromium-77.0.3865.35/third_party/blink/renderer/core/html/forms/html_form_control_element_with_state.cc	2019-08-20 04:56:32.497721973 +0200
+@@ -156,7 +156,7 @@ String HTMLFormControlElementWithState::
+   // third column of that same row.
+   AtomicString token = tokens[index];
+   AutoCompleteCategory category = GetAutoCompleteCategory(token);
+-  wtf_size_t max_tokens;
++  wtf_size_t max_tokens = 0;
+   switch (category) {
+     case AutoCompleteCategory::kNone:
+       max_tokens = 0;
+--- chromium-77.0.3865.35/third_party/blink/renderer/core/layout/ng/geometry/ng_static_position.h.gcc9	2019-08-15 00:02:12.000000000 +0200
++++ chromium-77.0.3865.35/third_party/blink/renderer/core/layout/ng/geometry/ng_static_position.h	2019-08-20 14:02:55.589276634 +0200
+@@ -49,8 +49,8 @@ struct CORE_EXPORT NGPhysicalStaticPosit
+     using InlineEdge = NGLogicalStaticPosition::InlineEdge;
+     using BlockEdge = NGLogicalStaticPosition::BlockEdge;
+ 
+-    InlineEdge inline_edge;
+-    BlockEdge block_edge;
++    InlineEdge inline_edge = NGLogicalStaticPosition::InlineEdge::kInlineStart;
++    BlockEdge block_edge = NGLogicalStaticPosition::BlockEdge::kBlockStart;
+ 
+     switch (converter.GetWritingMode()) {
+       case WritingMode::kHorizontalTb:
+@@ -119,8 +119,8 @@ inline NGPhysicalStaticPosition NGLogica
+   using HorizontalEdge = NGPhysicalStaticPosition::HorizontalEdge;
+   using VerticalEdge = NGPhysicalStaticPosition::VerticalEdge;
+ 
+-  HorizontalEdge horizontal_edge;
+-  VerticalEdge vertical_edge;
++  HorizontalEdge horizontal_edge = NGPhysicalStaticPosition::HorizontalEdge::kLeft;
++  VerticalEdge vertical_edge = NGPhysicalStaticPosition::VerticalEdge::kTop;
+ 
+   switch (converter.GetWritingMode()) {
+     case WritingMode::kHorizontalTb:
+--- chromium-77.0.3865.35/third_party/blink/renderer/core/editing/finder/find_buffer.cc.gcc9	2019-08-20 14:32:45.121677737 +0200
++++ chromium-77.0.3865.35/third_party/blink/renderer/core/editing/finder/find_buffer.cc	2019-08-20 14:33:17.787118840 +0200
+@@ -111,7 +111,7 @@ FindBuffer::BufferMatchResult FindBuffer
+ }
+ 
+ FindBuffer::BufferMatchResult FindBuffer::Results::back() const {
+-  Iterator last_result;
++  Iterator last_result = end();
+   for (Iterator it = begin(); it != end(); ++it) {
+     last_result = it;
+   }
+--- chromium-77.0.3865.35/v8/src/heap/mark-compact.cc.gcc9	2019-08-15 00:03:55.000000000 +0200
++++ chromium-77.0.3865.35/v8/src/heap/mark-compact.cc	2019-08-21 02:34:37.754917529 +0200
+@@ -650,7 +650,7 @@ void MarkCompactCollector::CollectEvacua
+   // used otherwise.
+   size_t max_evacuated_bytes;
+   int target_fragmentation_percent;
+-  size_t free_bytes_threshold;
++  size_t free_bytes_threshold = 0;
+   if (in_standard_path) {
+     // We use two conditions to decide whether a page qualifies as an evacuation
+     // candidate, or not:
+--- chromium-77.0.3865.35/v8/src/builtins/builtins-collections-gen.cc.gcc9	2019-08-15 00:03:54.000000000 +0200
++++ chromium-77.0.3865.35/v8/src/builtins/builtins-collections-gen.cc	2019-08-21 02:45:38.581435691 +0200
+@@ -440,7 +440,7 @@ TNode<Object> BaseCollectionsAssembler::
+ 
+ TNode<JSFunction> BaseCollectionsAssembler::GetConstructor(
+     Variant variant, TNode<Context> native_context) {
+-  int index;
++  int index = 0;
+   switch (variant) {
+     case kMap:
+       index = Context::JS_MAP_FUN_INDEX;
+@@ -460,7 +460,7 @@ TNode<JSFunction> BaseCollectionsAssembl
+ 
+ TNode<JSFunction> BaseCollectionsAssembler::GetInitialAddFunction(
+     Variant variant, TNode<Context> native_context) {
+-  int index;
++  int index = 0;
+   switch (variant) {
+     case kMap:
+       index = Context::MAP_SET_INDEX;
+@@ -508,7 +509,7 @@ void BaseCollectionsAssembler::GotoIfNot
+ 
+ TNode<Map> BaseCollectionsAssembler::GetInitialCollectionPrototype(
+     Variant variant, TNode<Context> native_context) {
+-  int initial_prototype_index;
++  int initial_prototype_index = 0;
+   switch (variant) {
+     case kMap:
+       initial_prototype_index = Context::INITIAL_MAP_PROTOTYPE_MAP_INDEX;
+--- chromium-78.0.3904.9/net/third_party/quiche/src/quic/core/quic_framer.cc.gcc9	2019-09-13 06:18:56.248902492 +0200
++++ chromium-78.0.3904.9/net/third_party/quiche/src/quic/core/quic_framer.cc	2019-09-13 08:34:40.042086705 +0200
+@@ -4252,7 +4252,7 @@ bool QuicFramer::ApplyHeaderProtection(E
+   if (!buffer_reader.ReadUInt8(&type_byte)) {
+     return false;
+   }
+-  QuicLongHeaderType header_type;
++  QuicLongHeaderType header_type = INITIAL;
+   if (IsLongHeader(type_byte)) {
+     bitmask = 0x0f;
+     if (!GetLongHeaderType(type_byte, &header_type)) {
+--- chromium-78.0.3904.9/services/media_session/public/cpp/media_session_mojom_traits.cc.gcc9	2019-09-12 05:03:03.000000000 +0200
++++ chromium-78.0.3904.9/services/media_session/public/cpp/media_session_mojom_traits.cc	2019-09-13 10:04:08.453409134 +0200
+@@ -78,7 +78,7 @@ bool StructTraits<media_session::mojom::
+ 
+   // Convert the mojo color type into the Skia equivalient. This will tell us
+   // what format the image is in.
+-  SkColorType color_type;
++  SkColorType color_type = kUnknown_SkColorType;
+   switch (data.color_type()) {
+     case (media_session::mojom::MediaImageBitmapColorType::kRGBA_8888):
+       color_type = kRGBA_8888_SkColorType;
+--- chromium-78.0.3904.9/chrome/browser/sharing/sharing_fcm_sender.cc.gcc9	2019-09-12 05:02:52.000000000 +0200
++++ chromium-78.0.3904.9/chrome/browser/sharing/sharing_fcm_sender.cc	2019-09-14 23:11:42.407491637 +0200
+@@ -202,7 +202,7 @@ void SharingFCMSender::OnMessageSentToVa
+   TRACE_EVENT1("sharing", "SharingFCMSender::OnMessageSentToVapidTarget",
+                "result", result);
+ 
+-  SharingSendMessageResult send_message_result;
++  SharingSendMessageResult send_message_result = SharingSendMessageResult::kInternalError;
+   switch (result) {
+     case SendWebPushMessageResult::kSuccessful:
+       send_message_result = SharingSendMessageResult::kSuccessful;
+@@ -294,7 +294,7 @@ void SharingFCMSender::OnMessageSentViaS
+   TRACE_EVENT1("sharing", "SharingFCMSender::OnMessageSentViaSync", "error",
+                error.error_code());
+ 
+-  SharingSendMessageResult send_message_result;
++  SharingSendMessageResult send_message_result = SharingSendMessageResult::kInternalError;
+   switch (error.error_code()) {
+     case sync_pb::SharingMessageCommitError::NONE:
+       send_message_result = SharingSendMessageResult::kSuccessful;
+--- chromium-78.0.3904.9/chrome/browser/renderer_context_menu/render_view_context_menu.cc.gcc9	2019-09-12 05:02:52.000000000 +0200
++++ chromium-78.0.3904.9/chrome/browser/renderer_context_menu/render_view_context_menu.cc	2019-09-14 23:46:10.685218857 +0200
+@@ -1928,7 +1928,7 @@ void RenderViewContextMenu::AppendSharin
+ }
+ 
+ void RenderViewContextMenu::AppendClickToCallItem() {
+-  SharingClickToCallEntryPoint entry_point;
++  SharingClickToCallEntryPoint entry_point = SharingClickToCallEntryPoint::kLeftClickLink;
+   absl::optional<std::string> phone_number;
+   std::string selection_text;
+   if (ShouldOfferClickToCallForURL(browser_context_, params_.link_url)) {
+--- chromium-78.0.3904.9/chrome/browser/ui/webui/settings/settings_security_key_handler.cc.gcc9	2019-09-12 05:02:53.000000000 +0200
++++ chromium-78.0.3904.9/chrome/browser/ui/webui/settings/settings_security_key_handler.cc	2019-09-15 00:47:54.298505301 +0200
+@@ -513,7 +513,7 @@ void SecurityKeysCredentialHandler::OnFi
+     device::CredentialManagementStatus status) {
+   DCHECK_CURRENTLY_ON(BrowserThread::UI);
+ 
+-  int error;
++  int error = 0;
+   bool requires_pin_change = false;
+   switch (status) {
+     case device::CredentialManagementStatus::kSoftPINBlock:
+@@ -642,7 +642,7 @@ void SecurityKeysBioEnrollmentHandler::O
+   DCHECK_CURRENTLY_ON(BrowserThread::UI);
+   state_ = State::kNone;
+ 
+-  int error_message;
++  int error_message = 0;
+   bool requires_pin_change = false;
+   using Error = device::BioEnrollmentHandler::Error;
+   switch (error) {
+--- chromium-78.0.3904.9/third_party/blink/renderer/core/css/css_math_expression_node.cc.gcc9	2019-09-12 05:03:04.000000000 +0200
++++ chromium-78.0.3904.9/third_party/blink/renderer/core/css/css_math_expression_node.cc	2019-09-15 10:20:53.990694348 +0200
+@@ -731,8 +731,8 @@ CSSMathExpressionVariadicOperation* CSSM
+   DCHECK(op == CSSMathOperator::kMin || op == CSSMathOperator::kMax);
+   DCHECK(operands.size());
+   bool is_first = true;
+-  CalculationCategory category;
+-  bool is_integer;
++  CalculationCategory category = kCalcNumber;
++  bool is_integer = false;
+   for (const auto& operand : operands) {
+     if (is_first) {
+       category = operand->Category();
+--- chromium-78.0.3904.9/third_party/blink/renderer/platform/geometry/calculation_expression_node.cc.gcc9	2019-09-12 05:03:06.000000000 +0200
++++ chromium-78.0.3904.9/third_party/blink/renderer/platform/geometry/calculation_expression_node.cc	2019-09-15 13:47:21.671379840 +0200
+@@ -118,7 +118,7 @@ CalculationExpressionComparisonNode::Cre
+     Vector<scoped_refptr<const CalculationExpressionNode>>&& operands,
+     Type type) {
+   DCHECK(operands.size());
+-  float simplified_px;
++  float simplified_px = .0f;
+   bool can_simplify = true;
+   for (wtf_size_t i = 0; i < operands.size(); ++i) {
+     const auto* leaf = DynamicTo<CalculationExpressionLeafNode>(*operands[i]);
+--- chromium-79.0.3945.16/chrome/browser/ui/views/webauthn/authenticator_qr_sheet_view.cc.gcc9	2019-10-29 23:01:56.000000000 +0100
++++ chromium-79.0.3945.16/chrome/browser/ui/views/webauthn/authenticator_qr_sheet_view.cc	2019-11-05 01:09:32.829289542 +0100
+@@ -107,7 +107,7 @@ class QRView : public views::View {
+ 
+     // kV is the intensity of the colors in the QR code.
+     constexpr uint8_t kV = 0x70;
+-    SkColor on;
++    SkColor on = off;
+     switch (state_) {
+       case 0:
+         on = SkColorSetARGB(0xff, kV, 0, 0);
+--- chromium-80.0.3987.78/net/url_request/url_request_http_job.cc.gcc9	2020-01-29 22:39:39.000000000 +0100
++++ chromium-80.0.3987.78/net/url_request/url_request_http_job.cc	2020-02-02 02:34:18.198103874 +0100
+@@ -616,7 +616,7 @@ void URLRequestHttpJob::SetCookieHeaderA
+     for (const auto& c : cookies_with_access_result_list) {
+       bool request_is_secure = request_->url().SchemeIsCryptographic();
+       net::CookieSourceScheme cookie_scheme = c.cookie.SourceScheme();
+-      CookieRequestScheme cookie_request_schemes;
++      CookieRequestScheme cookie_request_schemes = CookieRequestScheme::kUnsetCookieScheme;
+ 
+       switch (cookie_scheme) {
+         case net::CookieSourceScheme::kSecure:
+--- chromium-80.0.3987.78/net/http/structured_headers.h.gcc9	2020-01-29 22:39:40.000000000 +0100
++++ chromium-80.0.3987.78/net/http/structured_headers.h	2020-02-02 12:57:10.517947032 +0100
+@@ -111,8 +111,8 @@ class NET_EXPORT Item {
+   // values here with a union or std::variant (when available).
+   int64_t integer_value_ = 0;
+   std::string string_value_;
+-  double decimal_value_;
+-  bool boolean_value_;
++  double decimal_value_ = 0.0;
++  bool boolean_value_ = false;
+ };
+ 
+ // Holds a ParameterizedIdentifier (draft 9 only). The contained Item must be a
+--- chromium-80.0.3987.78/third_party/blink/renderer/core/html/canvas/image_data.cc.gcc9	2020-01-29 22:39:40.000000000 +0100
++++ chromium-80.0.3987.78/third_party/blink/renderer/core/html/canvas/image_data.cc	2020-02-03 06:52:35.243040626 +0100
+@@ -192,7 +192,7 @@ NotShared<DOMArrayBufferView> ImageData:
+       NOTREACHED();
+   }
+ 
+-  size_t expected_size;
++  size_t expected_size = 0;
+   if (!data_array || (!base::CheckMul(length, data_array->TypeSize())
+                            .AssignIfValid(&expected_size) &&
+                       expected_size != data_array->byteLength())) {
+--- chromium-80.0.3987.78/third_party/blink/renderer/core/timing/performance_resource_timing.cc.gcc9	2020-01-29 22:39:41.000000000 +0100
++++ chromium-80.0.3987.78/third_party/blink/renderer/core/timing/performance_resource_timing.cc	2020-02-03 22:21:59.905126652 +0100
+@@ -464,7 +464,7 @@ void PerformanceResourceTiming::AddPerfo
+           serialized_detail, exception_state));
+       break;
+     case mojom::blink::PerformanceMarkOrMeasure::EntryType::kMeasure:
+-      ScriptState* script_state;
++      ScriptState* script_state = nullptr;
+       worker_timing_.emplace_back(MakeGarbageCollected<PerformanceMeasure>(
+           script_state, name, mojo_performance_mark_or_measure->start_time,
+           mojo_performance_mark_or_measure->start_time +
+--- chromium-80.0.3987.78/third_party/blink/renderer/modules/xr/xr_session.cc.gcc9	2020-02-02 04:34:28.887677372 +0100
++++ chromium-80.0.3987.78/third_party/blink/renderer/modules/xr/xr_session.cc	2020-02-04 20:01:56.677856362 +0100
+@@ -1092,7 +1092,7 @@ ScriptPromise XRSession::end(ScriptState
+ }
+ 
+ void XRSession::ForceEnd(ShutdownPolicy shutdown_policy) {
+-  bool wait_for_response;
++  bool wait_for_response = false;
+   switch (shutdown_policy) {
+     case ShutdownPolicy::kWaitForResponse:
+       wait_for_response = true;
+--- chromium-81.0.4044.43/v8/src/torque/implementation-visitor.cc.gcc9	2020-03-09 18:39:40.374301436 +0100
++++ chromium-81.0.4044.43/v8/src/torque/implementation-visitor.cc	2020-03-09 18:59:03.297832839 +0100
+@@ -1019,7 +1019,7 @@ const Type* ImplementationVisitor::Visit
+ #if defined(DEBUG)
+   do_check = true;
+ #endif
+-  Block* resume_block;
++  Block* resume_block = nullptr;
+ 
+   if (!do_check) {
+     Block* unreachable_block = assembler().NewBlock(assembler().CurrentStack());
+--- chromium-81.0.4044.43/ui/views/layout/animating_layout_manager.cc.gcc9	2020-03-04 22:53:03.000000000 +0100
++++ chromium-81.0.4044.43/ui/views/layout/animating_layout_manager.cc	2020-03-11 02:13:30.341336085 +0100
+@@ -935,7 +935,7 @@ ChildLayout AnimatingLayoutManager::Calc
+   NormalizedRect new_bounds = fade_info.reference_bounds;
+ 
+   // Determine which layout the sliding view will be completely faded in.
+-  const ProposedLayout* fully_faded_layout;
++  const ProposedLayout* fully_faded_layout = nullptr;
+   switch (fade_info.fade_type) {
+     case LayoutFadeType::kFadingIn:
+       fully_faded_layout = &starting_layout_;
+--- chromium-81.0.4044.43/chrome/browser/sharing/sharing_message_bridge_impl.cc.gcc9	2020-03-04 22:52:09.000000000 +0100
++++ chromium-81.0.4044.43/chrome/browser/sharing/sharing_message_bridge_impl.cc	2020-03-11 21:33:46.787551939 +0100
+@@ -160,7 +160,7 @@ void SharingMessageBridgeImpl::OnCommitA
+     syncer::SyncCommitError commit_error) {
+   // Full commit failed means we need to drop all entities and report an error
+   // using callback.
+-  sync_pb::SharingMessageCommitError::ErrorCode sharing_message_error_code;
++  sync_pb::SharingMessageCommitError::ErrorCode sharing_message_error_code = sync_pb::SharingMessageCommitError::NONE;
+   switch (commit_error) {
+     case syncer::SyncCommitError::kNetworkError:
+       sharing_message_error_code =
+--- chromium-81.0.4044.43/chrome/browser/extensions/api/identity/gaia_remote_consent_flow.cc.gcc9	2020-03-04 22:52:56.000000000 +0100
++++ chromium-81.0.4044.43/chrome/browser/extensions/api/identity/gaia_remote_consent_flow.cc	2020-03-11 22:30:48.161481809 +0100
+@@ -111,7 +111,7 @@ void GaiaRemoteConsentFlow::OnConsentRes
+ }
+ 
+ void GaiaRemoteConsentFlow::OnAuthFlowFailure(WebAuthFlow::Failure failure) {
+-  GaiaRemoteConsentFlow::Failure gaia_failure;
++  GaiaRemoteConsentFlow::Failure gaia_failure = GaiaRemoteConsentFlow::LOAD_FAILED;
+ 
+   switch (failure) {
+     case WebAuthFlow::WINDOW_CLOSED:
+--- chromium-83.0.4103.14/chrome/browser/ui/views/toolbar/toolbar_view.cc.gcc9	2020-04-14 23:56:27.000000000 +0200
++++ chromium-83.0.4103.14/chrome/browser/ui/views/toolbar/toolbar_view.cc	2020-04-19 15:54:26.331866885 +0200
+@@ -769,7 +769,7 @@ void ToolbarView::UpdateTypeAndSeverity(
+ 
+ SkColor ToolbarView::GetDefaultColorForSeverity(
+     AppMenuIconController::Severity severity) const {
+-  ui::NativeTheme::ColorId color_id;
++  ui::NativeTheme::ColorId color_id = ui::NativeTheme::ColorId(0);
+   switch (severity) {
+     case AppMenuIconController::Severity::NONE:
+       return GetThemeProvider()->GetColor(
+--- chromium-83.0.4103.14/content/browser/devtools/protocol/browser_handler.cc.gcc9	2020-04-14 23:56:27.000000000 +0200
++++ chromium-83.0.4103.14/content/browser/devtools/protocol/browser_handler.cc	2020-04-19 17:20:26.939436942 +0200
+@@ -338,7 +338,7 @@ Response BrowserHandler::SetPermission(
+   if (!response.IsSuccess())
+     return response;
+ 
+-  PermissionType type;
++  PermissionType type = PermissionType(0);
+   Response parse_response =
+       PermissionDescriptorToPermissionType(std::move(permission), &type);
+   if (!parse_response.IsSuccess())
+--- chromium-83.0.4103.14/third_party/blink/renderer/platform/fonts/shaping/stretchy_operator_shaper.cc.gcc9	2020-04-14 23:56:28.000000000 +0200
++++ chromium-83.0.4103.14/third_party/blink/renderer/platform/fonts/shaping/stretchy_operator_shaper.cc	2020-04-20 20:45:44.081412539 +0200
+@@ -139,8 +139,8 @@ scoped_refptr<ShapeResult> StretchyOpera
+   if (metrics)
+     *metrics = Metrics();
+ 
+-  Glyph glyph_variant;
+-  float glyph_variant_stretch_size;
++  Glyph glyph_variant = 0;
++  float glyph_variant_stretch_size = .0f;
+   TextDirection direction = TextDirection::kLtr;
+ 
+   // Try different glyph variants.
+--- chromium-83.0.4103.56/mojo/public/cpp/platform/named_platform_channel_posix.cc.gcc10	2020-05-13 20:39:45.000000000 +0200
++++ chromium-83.0.4103.56/mojo/public/cpp/platform/named_platform_channel_posix.cc	2020-05-13 22:58:37.222946889 +0200
+@@ -99,7 +99,7 @@ PlatformChannelServerEndpoint NamedPlatf
+   }
+ 
+   struct sockaddr_un unix_addr;
+-  size_t unix_addr_len;
++  size_t unix_addr_len = 0;
+   if (!MakeUnixAddr(name, &unix_addr, &unix_addr_len))
+     return PlatformChannelServerEndpoint();
+ 
+@@ -131,7 +131,7 @@ PlatformChannelEndpoint NamedPlatformCha
+   DCHECK(!server_name.empty());
+ 
+   struct sockaddr_un unix_addr;
+-  size_t unix_addr_len;
++  size_t unix_addr_len = 0;
+   if (!MakeUnixAddr(server_name, &unix_addr, &unix_addr_len))
+     return PlatformChannelEndpoint();
+ 
+--- chromium-83.0.4103.56/third_party/abseil-cpp/absl/container/internal/inlined_vector.h.gcc10	2020-05-13 20:39:47.000000000 +0200
++++ chromium-83.0.4103.56/third_party/abseil-cpp/absl/container/internal/inlined_vector.h	2020-05-14 01:07:40.506399563 +0200
+@@ -321,10 +321,10 @@ class Storage {
+   // Storage Constructors and Destructor
+   // ---------------------------------------------------------------------------
+ 
+-  Storage() : metadata_(allocator_type(), /* size and is_allocated */ 0) {}
++  Storage() : metadata_(allocator_type(), /* size and is_allocated */ 0), data_({}) {}
+ 
+   explicit Storage(const allocator_type& alloc)
+-      : metadata_(alloc, /* size and is_allocated */ 0) {}
++      : metadata_(alloc, /* size and is_allocated */ 0), data_({}) {}
+ 
+   ~Storage() {
+     if (GetSizeAndIsAllocated() == 0) {
+--- chromium-84.0.4147.89/chrome/browser/ui/webui/new_tab_page/new_tab_page_handler.cc.gcc10	2020-07-13 20:41:23.000000000 +0200
++++ chromium-84.0.4147.89/chrome/browser/ui/webui/new_tab_page/new_tab_page_handler.cc	2020-07-24 13:21:29.840181636 +0200
+@@ -750,7 +750,7 @@ void NewTabPageHandler::OnMostVisitedTil
+ 
+ void NewTabPageHandler::OnCustomizeDialogAction(
+     new_tab_page::mojom::CustomizeDialogAction action) {
+-  NTPLoggingEventType event;
++  NTPLoggingEventType event = NTP_ALL_TILES_LOADED;
+   switch (action) {
+     case new_tab_page::mojom::CustomizeDialogAction::kCancelClicked:
+       event = NTP_CUSTOMIZATION_MENU_CANCEL;
+@@ -804,7 +804,7 @@ void NewTabPageHandler::OnCustomizeDialo
+ void NewTabPageHandler::OnDoodleImageClicked(
+     new_tab_page::mojom::DoodleImageType type,
+     const absl::optional<::GURL>& log_url) {
+-  NTPLoggingEventType event;
++  NTPLoggingEventType event = NTP_ALL_TILES_LOADED;
+   switch (type) {
+     case new_tab_page::mojom::DoodleImageType::kAnimation:
+       event = NTP_ANIMATED_LOGO_CLICKED;
+@@ -849,7 +849,7 @@ void NewTabPageHandler::OnDoodleShared(
+     new_tab_page::mojom::DoodleShareChannel channel,
+     const std::string& doodle_id,
+     const absl::optional<std::string>& share_id) {
+-  int channel_id;
++  int channel_id = 0;
+   switch (channel) {
+     case new_tab_page::mojom::DoodleShareChannel::kFacebook:
+       channel_id = 2;
+--- chromium-84.0.4147.89/third_party/blink/renderer/core/accessibility/blink_ax_event_intent.cc.gcc10	2020-07-13 20:41:27.000000000 +0200
++++ chromium-84.0.4147.89/third_party/blink/renderer/core/accessibility/blink_ax_event_intent.cc	2020-07-24 22:40:03.360726704 +0200
+@@ -26,7 +26,7 @@ BlinkAXEventIntent BlinkAXEventIntent::F
+     const SetSelectionBy set_selection_by,
+     const TextDirection direction_of_selection,
+     const PlatformWordBehavior platform_word_behavior) {
+-  ax::mojom::blink::Command command;
++  ax::mojom::blink::Command command = ax::mojom::blink::Command::kClearSelection;
+   switch (alter) {
+     case SelectionModifyAlteration::kExtend:
+       // Includes the case when the existing selection has been shrunk.
+@@ -39,7 +39,7 @@ BlinkAXEventIntent BlinkAXEventIntent::F
+       break;
+   }
+ 
+-  ax::mojom::blink::MoveDirection move_direction;
++  ax::mojom::blink::MoveDirection move_direction = ax::mojom::blink::MoveDirection::kForward;
+   switch (direction) {
+     case SelectionModifyDirection::kBackward:
+       move_direction = ax::mojom::blink::MoveDirection::kBackward;
+@@ -59,7 +59,7 @@ BlinkAXEventIntent BlinkAXEventIntent::F
+       break;
+   }
+ 
+-  ax::mojom::blink::TextBoundary text_boundary;
++  ax::mojom::blink::TextBoundary text_boundary = ax::mojom::blink::TextBoundary::kWebPage;
+   switch (granularity) {
+     case TextGranularity::kCharacter:
+       text_boundary = ax::mojom::blink::TextBoundary::kCharacter;
+@@ -153,7 +153,7 @@ BlinkAXEventIntent BlinkAXEventIntent::F
+   // not always known, or is hard to compute. For example, if a new selection
+   // has been made using the mouse, it would be expensive to compute any
+   // meaningful granularity information.
+-  ax::mojom::blink::TextBoundary text_boundary;
++  ax::mojom::blink::TextBoundary text_boundary = ax::mojom::blink::TextBoundary::kWebPage;
+   switch (granularity) {
+     case TextGranularity::kCharacter:
+       text_boundary = ax::mojom::blink::TextBoundary::kCharacter;
+--- chromium-84.0.4147.89/third_party/blink/renderer/modules/wake_lock/wake_lock.cc.gcc10	2020-07-13 20:41:28.000000000 +0200
++++ chromium-84.0.4147.89/third_party/blink/renderer/modules/wake_lock/wake_lock.cc	2020-07-25 18:50:30.069575390 +0200
+@@ -236,7 +236,7 @@ void WakeLock::ObtainPermission(
+   // Right now, we can do that because there is no way for Chromium's
+   // permission system to get to the "prompt" state given how
+   // WakeLockPermissionContext is currently implemented.
+-  mojom::blink::PermissionName permission_name;
++  mojom::blink::PermissionName permission_name = mojom::blink::PermissionName::SCREEN_WAKE_LOCK;
+   switch (type) {
+     case WakeLockType::kScreen:
+       permission_name = mojom::blink::PermissionName::SCREEN_WAKE_LOCK;
+--- chromium-85.0.4183.83/third_party/webrtc/video/rtp_video_stream_receiver2.cc.gcc10	2020-08-24 23:43:50.000000000 +0200
++++ chromium-85.0.4183.83/third_party/webrtc/video/rtp_video_stream_receiver2.cc	2020-08-31 03:17:41.203503616 +0200
+@@ -718,9 +718,9 @@ void RtpVideoStreamReceiver2::OnInserted
+     video_coding::PacketBuffer::InsertResult result) {
+   RTC_DCHECK_RUN_ON(&worker_task_checker_);
+   video_coding::PacketBuffer::Packet* first_packet = nullptr;
+-  int max_nack_count;
+-  int64_t min_recv_time;
+-  int64_t max_recv_time;
++  int max_nack_count = 0;
++  int64_t min_recv_time = 0;
++  int64_t max_recv_time = 0;
+   std::vector<rtc::ArrayView<const uint8_t>> payloads;
+   RtpPacketInfos::vector_type packet_infos;
+ 
+--- chromium-85.0.4183.83/device/bluetooth/bluez/bluetooth_remote_gatt_characteristic_bluez.cc.gcc10	2020-08-24 23:40:36.000000000 +0200
++++ chromium-85.0.4183.83/device/bluetooth/bluez/bluetooth_remote_gatt_characteristic_bluez.cc	2020-09-01 15:18:22.402422161 +0200
+@@ -183,7 +183,7 @@ void BluetoothRemoteGattCharacteristicBl
+            << ((write_type == WriteType::kWithoutResponse) ? "no" : "yes")
+            << ".";
+ 
+-  const char* type_option;
++  const char* type_option = nullptr;
+   switch (write_type) {
+     case WriteType::kWithResponse:
+       type_option = bluetooth_gatt_characteristic::kTypeRequest;
+--- chromium-85.0.4183.83/services/network/url_loader.cc.gcc10	2020-08-24 23:40:41.000000000 +0200
++++ chromium-85.0.4183.83/services/network/url_loader.cc	2020-09-02 11:51:52.262037113 +0200
+@@ -424,7 +424,7 @@ void ReportFetchUploadStreamingUMA(const
+     kHTTP2 = 1,
+     kQUIC = 2,
+     kMaxValue = kQUIC
+-  } protocol;
++  } protocol = HttpProtocolScheme::kHTTP1_1;
+   const auto connection_info = request->response_info().connection_info;
+   switch (net::HttpResponseInfo::ConnectionInfoToCoarse(connection_info)) {
+     case net::HttpResponseInfo::CONNECTION_INFO_COARSE_HTTP1:
+--- chromium-85.0.4183.83/chrome/browser/ui/passwords/manage_passwords_ui_controller.cc.gcc10	2020-08-24 23:40:29.000000000 +0200
++++ chromium-85.0.4183.83/chrome/browser/ui/passwords/manage_passwords_ui_controller.cc	2020-09-02 17:50:16.062357992 +0200
+@@ -871,7 +871,7 @@ void ManagePasswordsUIController::OnTrig
+   if (passwords_data_.state() != password_manager::ui::MANAGE_STATE ||
+       bubble_status_ != BubbleStatus::NOT_SHOWN)
+     return;
+-  password_manager::ui::State state;
++  password_manager::ui::State state = password_manager::ui::INACTIVE_STATE;
+   switch (type) {
+     case PostSaveCompromisedHelper::BubbleType::kNoBubble:
+       post_save_compromised_helper_.reset();
+--- chromium-85.0.4183.83/chrome/browser/ui/autofill/payments/save_card_bubble_controller_impl.cc.gcc10	2020-08-30 21:27:11.380499180 +0200
++++ chromium-85.0.4183.83/chrome/browser/ui/autofill/payments/save_card_bubble_controller_impl.cc	2020-09-03 02:37:41.161734956 +0200
+@@ -341,7 +341,7 @@ void SaveCardBubbleControllerImpl::OnBub
+   // Log save card prompt result according to the closed reason.
+   if ((current_bubble_type_ == BubbleType::LOCAL_SAVE ||
+        current_bubble_type_ == BubbleType::UPLOAD_SAVE)) {
+-    AutofillMetrics::SaveCardPromptResultMetric metric;
++    AutofillMetrics::SaveCardPromptResultMetric metric = AutofillMetrics::NUM_SAVE_CARD_PROMPT_RESULT_METRICS;
+     switch (closed_reason) {
+       case PaymentsBubbleClosedReason::kAccepted:
+         metric = AutofillMetrics::SAVE_CARD_PROMPT_ACCEPTED;
+--- chromium-85.0.4183.83/chrome/browser/performance_hints/performance_hints_observer.cc.gcc10	2020-08-24 23:40:27.000000000 +0200
++++ chromium-85.0.4183.83/chrome/browser/performance_hints/performance_hints_observer.cc	2020-09-03 02:52:55.568425478 +0200
+@@ -155,7 +156,7 @@ PerformanceClass PerformanceHintsObserve
+                               result.status);
+   }
+ 
+-  PerformanceClass performance_class;
++  PerformanceClass performance_class = PerformanceClass::PERFORMANCE_UNKNOWN;
+   switch (result.status) {
+     case HintForURLStatus::kHintFound:
+       performance_class = result.hint ? result.hint->performance_class()
+--- chromium-87.0.4280.40/third_party/openscreen/src/cast/streaming/answer_messages.cc.gcc10	2020-10-29 23:31:57.000000000 +0100
++++ chromium-87.0.4280.40/third_party/openscreen/src/cast/streaming/answer_messages.cc	2020-10-31 13:40:30.739372764 +0100
+@@ -333,7 +333,7 @@ bool DisplayDescription::ParseAndValidat
+     return false;
+   }
+ 
+-  AspectRatioConstraint constraint;
++  AspectRatioConstraint constraint = AspectRatioConstraint::kVariable;
+   if (AspectRatioConstraintParseAndValidate(root[kScaling], &constraint)) {
+     out->aspect_ratio_constraint =
+         absl::optional<AspectRatioConstraint>(std::move(constraint));
+--- chromium-87.0.4280.40/services/device/serial/serial_io_handler_posix.cc.gcc10	2020-10-29 23:25:41.000000000 +0100
++++ chromium-87.0.4280.40/services/device/serial/serial_io_handler_posix.cc	2020-11-01 02:55:41.642755499 +0100
+@@ -445,7 +445,7 @@ void SerialIoHandlerPosix::StopWatchingF
+ }
+ 
+ void SerialIoHandlerPosix::Flush(mojom::SerialPortFlushMode mode) const {
+-  int queue_selector;
++  int queue_selector = 0;
+   switch (mode) {
+     case mojom::SerialPortFlushMode::kReceiveAndTransmit:
+       queue_selector = TCIOFLUSH;
+--- chromium-87.0.4280.40/device/fido/virtual_ctap2_device.cc.gcc10	2020-10-31 11:39:32.510883401 +0100
++++ chromium-87.0.4280.40/device/fido/virtual_ctap2_device.cc	2020-11-01 02:56:34.651842007 +0100
+@@ -1387,7 +1387,7 @@ base::Optional<CtapDeviceResponseCode> V
+         std::move(authenticator_data),
+         fido_parsing_utils::Materialize(signature));
+ 
+-    bool include_credential;
++    bool include_credential = false;
+     switch (config_.include_credential_in_assertion_response) {
+       case VirtualCtap2Device::Config::IncludeCredential::ONLY_IF_NEEDED:
+         include_credential = request.allow_list.size() != 1;
+--- chromium-87.0.4280.40/cc/input/threaded_input_handler.cc.gcc10	2020-10-29 23:25:25.000000000 +0100
++++ chromium-87.0.4280.40/cc/input/threaded_input_handler.cc	2020-11-01 03:01:23.265918125 +0100
+@@ -503,7 +503,7 @@ void ThreadedInputHandler::RecordScrollB
+   // Otherwise, the compositor-thread is the 'scrolling thread'.
+   // TODO(crbug.com/1060712): We should also count 'main thread' as the
+   // 'scrolling thread' if the layer being scrolled has scroll-event handlers.
+-  FrameSequenceMetrics::ThreadType scrolling_thread;
++  FrameSequenceMetrics::ThreadType scrolling_thread = FrameSequenceMetrics::ThreadType::kMain;
+   switch (scroll_start_state) {
+     case ScrollBeginThreadState::kScrollingOnCompositor:
+       scrolling_thread = FrameSequenceMetrics::ThreadType::kCompositor;
+--- chromium-87.0.4280.40/ui/gfx/mojom/delegated_ink_metadata_mojom_traits.cc.gcc10	2020-10-29 23:25:42.000000000 +0100
++++ chromium-87.0.4280.40/ui/gfx/mojom/delegated_ink_metadata_mojom_traits.cc	2020-11-01 03:23:28.857266717 +0100
+@@ -19,7 +19,7 @@ bool StructTraits<viz::mojom::DelegatedI
+   gfx::PointF point;
+   base::TimeTicks timestamp;
+   gfx::RectF presentation_area;
+-  SkColor color;
++  SkColor color(0);
+   base::TimeTicks frame_time;
+   if (!data.ReadPoint(&point) || !data.ReadTimestamp(&timestamp) ||
+       !data.ReadPresentationArea(&presentation_area) ||
+--- chromium-87.0.4280.40/chrome/browser/ui/autofill/payments/local_card_migration_bubble_controller_impl.cc.gcc10	2020-10-29 23:25:30.000000000 +0100
++++ chromium-87.0.4280.40/chrome/browser/ui/autofill/payments/local_card_migration_bubble_controller_impl.cc	2020-11-01 12:53:00.511873424 +0100
+@@ -92,7 +92,7 @@ void LocalCardMigrationBubbleControllerI
+   }
+ 
+   // Log local card migration bubble result according to the closed reason.
+-  AutofillMetrics::LocalCardMigrationBubbleResultMetric metric;
++  AutofillMetrics::LocalCardMigrationBubbleResultMetric metric = AutofillMetrics::LOCAL_CARD_MIGRATION_BUBBLE_RESULT_UNKNOWN;
+   switch (closed_reason) {
+     case PaymentsBubbleClosedReason::kAccepted:
+       metric = AutofillMetrics::LOCAL_CARD_MIGRATION_BUBBLE_ACCEPTED;
+--- chromium-87.0.4280.40/chrome/browser/ui/passwords/bubble_controllers/post_save_compromised_bubble_controller.cc.gcc10	2020-10-29 23:25:30.000000000 +0100
++++ chromium-87.0.4280.40/chrome/browser/ui/passwords/bubble_controllers/post_save_compromised_bubble_controller.cc	2020-11-01 13:05:49.003582638 +0100
+@@ -95,7 +95,7 @@ int PostSaveCompromisedBubbleController:
+ void PostSaveCompromisedBubbleController::OnAccepted() {
+   using password_manager::PasswordCheckReferrer;
+   checked_clicked_ = true;
+-  PasswordCheckReferrer referrer;
++  PasswordCheckReferrer referrer = PasswordCheckReferrer::kSafetyCheck;
+   switch (type_) {
+     case BubbleType::kPasswordUpdatedSafeState:
+       NOTREACHED();
+--- chromium-87.0.4280.40/third_party/blink/renderer/core/layout/ng/table/ng_table_layout_algorithm_helpers.cc.gcc10	2020-10-31 11:39:36.713807339 +0100
++++ chromium-87.0.4280.40/third_party/blink/renderer/core/layout/ng/table/ng_table_layout_algorithm_helpers.cc	2020-11-02 12:58:40.506593947 +0100
+@@ -757,7 +757,7 @@ void DistributeExcessBlockSizeToRows(
+         1.0f);
+     LayoutUnit remaining_deficit =
+         LayoutUnit(ratio * percentage_block_size_deficit);
+-    NGTableTypes::Row* last_row;
++    NGTableTypes::Row* last_row = nullptr;
+     LayoutUnit distributed_block_size;
+     for (NGTableTypes::Row* row = start_row; row != end_row; ++row) {
+       if (!row->percent)
+@@ -780,7 +780,7 @@ void DistributeExcessBlockSizeToRows(
+   // Step 2: Distribute to rows that have an originating rowspan.
+   if (rows_with_originating_rowspan > 0) {
+     LayoutUnit remaining_deficit = distributable_block_size;
+-    NGTableTypes::Row* last_row;
++    NGTableTypes::Row* last_row = nullptr;
+     for (NGTableTypes::Row* row = start_row; row != end_row; ++row) {
+       if (!IsRowWithOriginatingRowspan(row))
+         continue;
+@@ -797,7 +797,7 @@ void DistributeExcessBlockSizeToRows(
+   // block size.
+   if (unconstrained_non_empty_row_count > 0) {
+     LayoutUnit remaining_deficit = distributable_block_size;
+-    NGTableTypes::Row* last_row;
++    NGTableTypes::Row* last_row = nullptr;
+     for (NGTableTypes::Row* row = start_row; row != end_row; ++row) {
+       if (!IsUnconstrainedNonEmptyRow(row))
+         continue;
+--- chromium-87.0.4280.40/third_party/blink/renderer/core/script/detect_javascript_frameworks.cc.gcc10	2020-10-29 23:25:44.000000000 +0100
++++ chromium-87.0.4280.40/third_party/blink/renderer/core/script/detect_javascript_frameworks.cc	2020-11-02 14:11:56.705209333 +0100
+@@ -21,7 +21,7 @@ bool IsFrameworkVariableUsed(v8::Local<v
+   v8::Local<v8::Object> global = context->Global();
+   v8::TryCatch try_catch(isolate);
+ 
+-  bool has_property;
++  bool has_property = false;
+   bool succeeded =
+       global
+           ->HasRealNamedProperty(
+--- chromium-88.0.4324.41/third_party/webrtc/pc/sdp_offer_answer.cc.gcc10	2020-12-10 13:06:02.000000000 +0100
++++ chromium-88.0.4324.41/third_party/webrtc/pc/sdp_offer_answer.cc	2020-12-13 00:08:32.891453511 +0100
+@@ -4388,7 +4388,7 @@ void SdpOfferAnswerHandler::RemoveUnused
+ 
+ void SdpOfferAnswerHandler::ReportNegotiatedSdpSemantics(
+     const SessionDescriptionInterface& answer) {
+-  SdpSemanticNegotiated semantics_negotiated;
++  SdpSemanticNegotiated semantics_negotiated = kSdpSemanticNegotiatedNone;
+   switch (answer.description()->msid_signaling()) {
+     case 0:
+       semantics_negotiated = kSdpSemanticNegotiatedNone;
+--- chromium-88.0.4324.41/chrome/browser/performance_manager/observers/page_load_metrics_observer.cc.gcc10	2020-12-10 13:02:46.000000000 +0100
++++ chromium-88.0.4324.41/chrome/browser/performance_manager/observers/page_load_metrics_observer.cc	2020-12-13 13:35:30.495534916 +0100
+@@ -253,7 +253,7 @@ void PageLoadMetricsWebContentsObserver:
+     return;
+ 
+   const WebContentsType web_contents_type = GetWebContentsType();
+-  LoadType load_type;
++  LoadType load_type = LoadType::kUnknown;
+ 
+   switch (web_contents_type) {
+     case WebContentsType::kTab: {
+--- chromium-88.0.4324.41/third_party/blink/renderer/modules/xr/xr_webgl_binding.cc.gcc10	2020-12-10 13:03:04.000000000 +0100
++++ chromium-88.0.4324.41/third_party/blink/renderer/modules/xr/xr_webgl_binding.cc	2020-12-14 17:48:12.214554911 +0100
+@@ -61,7 +61,7 @@ XRWebGLBinding::XRWebGLBinding(XRSession
+ WebGLTexture* XRWebGLBinding::getReflectionCubeMap(
+     XRLightProbe* light_probe,
+     ExceptionState& exception_state) {
+-  GLenum internal_format, format, type;
++  GLenum internal_format = 0, format = 0, type = 0;
+ 
+   if (webgl_context_->isContextLost()) {
+     exception_state.ThrowDOMException(
+--- chromium-89.0.4389.47/components/performance_manager/execution_context_priority/frame_visibility_voter.cc.gcc10	2021-02-11 00:03:58.000000000 +0100
++++ chromium-89.0.4389.47/components/performance_manager/execution_context_priority/frame_visibility_voter.cc	2021-02-15 18:03:37.488759675 +0100
+@@ -24,7 +24,7 @@ const execution_context::ExecutionContex
+ // Returns a vote with the appropriate priority depending on the frame's
+ // |visibility|.
+ Vote GetVote(FrameNode::Visibility visibility) {
+-  base::TaskPriority priority;
++  base::TaskPriority priority = base::TaskPriority::USER_VISIBLE;
+   switch (visibility) {
+     case FrameNode::Visibility::kUnknown:
+       priority = base::TaskPriority::USER_VISIBLE;
+--- chromium-89.0.4389.47/chrome/browser/enterprise/connectors/analysis/content_analysis_dialog.cc.gcc10	2021-02-11 00:03:52.000000000 +0100
++++ chromium-89.0.4389.47/chrome/browser/enterprise/connectors/analysis/content_analysis_dialog.cc	2021-02-15 18:26:08.265445345 +0100
+@@ -561,7 +561,7 @@ std::u16string ContentAnalysisDialog::Ge
+ }
+ 
+ std::u16string ContentAnalysisDialog::GetCancelButtonText() const {
+-  int text_id;
++  int text_id = IDS_DEEP_SCANNING_DIALOG_CANCEL_UPLOAD_BUTTON;
+   switch (dialog_status_) {
+     case DeepScanningDialogStatus::SUCCESS:
+       NOTREACHED();
+--- chromium-89.0.4389.47/chrome/browser/ui/chrome_pages.cc.gcc10	2021-02-11 00:03:54.000000000 +0100
++++ chromium-89.0.4389.47/chrome/browser/ui/chrome_pages.cc	2021-02-15 22:16:44.289623582 +0100
+@@ -504,7 +504,7 @@ void ShowBrowserSignin(Browser* browser,
+       std::make_unique<ScopedTabbedBrowserDisplayer>(original_profile);
+   browser = displayer->browser();
+ 
+-  profiles::BubbleViewMode bubble_view_mode;
++  profiles::BubbleViewMode bubble_view_mode = profiles::BUBBLE_VIEW_MODE_INCOGNITO;
+   if (IdentityManagerFactory::GetForProfile(original_profile)
+           ->HasPrimaryAccount(signin::ConsentLevel::kSync)) {
+     bubble_view_mode = profiles::BUBBLE_VIEW_MODE_GAIA_REAUTH;
+--- chromium-89.0.4389.47/chrome/browser/ui/views/profiles/dice_web_signin_interception_bubble_view.cc.gcc10	2021-02-11 00:03:54.000000000 +0100
++++ chromium-89.0.4389.47/chrome/browser/ui/views/profiles/dice_web_signin_interception_bubble_view.cc	2021-02-15 23:06:58.933490898 +0100
+@@ -191,7 +191,7 @@ DiceWebSigninInterceptionBubbleView::Get
+ 
+ void DiceWebSigninInterceptionBubbleView::OnWebUIUserChoice(
+     SigninInterceptionUserChoice user_choice) {
+-  SigninInterceptionResult result;
++  SigninInterceptionResult result = SigninInterceptionResult::kDeclined;
+   switch (user_choice) {
+     case SigninInterceptionUserChoice::kAccept:
+       result = SigninInterceptionResult::kAccepted;
+--- chromium-89.0.4389.47/chrome/browser/ui/startup/startup_browser_creator.cc.gcc10	2021-02-11 00:03:54.000000000 +0100
++++ chromium-89.0.4389.47/chrome/browser/ui/startup/startup_browser_creator.cc	2021-02-15 23:43:53.620344467 +0100
+@@ -372,7 +372,7 @@ void FinalizeWebAppLaunch(
+   if (!browser)
+     return;
+ 
+-  LaunchMode mode;
++  LaunchMode mode = LaunchMode::kUnknownWebApp;
+   switch (container) {
+     case apps::mojom::LaunchContainer::kLaunchContainerWindow:
+       DCHECK(browser->is_type_app());
+--- chromium-89.0.4389.47/third_party/blink/renderer/core/layout/ng/table/ng_table_borders.h.gcc10	2021-02-11 00:04:07.000000000 +0100
++++ chromium-89.0.4389.47/third_party/blink/renderer/core/layout/ng/table/ng_table_borders.h	2021-02-17 21:16:21.633962164 +0100
+@@ -109,7 +109,7 @@ class NGTableBorders : public RefCounted
+                                   EdgeSide edge_side) {
+     if (!style)
+       return EBorderStyle::kNone;
+-    EBorderStyle border_style;
++    EBorderStyle border_style = EBorderStyle::kNone;
+     switch (edge_side) {
+       case EdgeSide::kLeft:
+         border_style = style->BorderLeftStyle();
+--- chromium-89.0.4389.47/third_party/blink/renderer/modules/webgl/webgl_rendering_context_base.cc.gcc10	2021-02-14 17:51:01.450478861 +0100
++++ chromium-89.0.4389.47/third_party/blink/renderer/modules/webgl/webgl_rendering_context_base.cc	2021-02-18 15:24:09.887224304 +0100
+@@ -5471,6 +5471,7 @@ void WebGLRenderingContextBase::TexImage
+       data_format = WebGLImageConversion::DataFormat::kDataFormatRGBA32F;
+       break;
+     default:
++      data_format = WebGLImageConversion::DataFormat::kDataFormatRGBA8;
+       NOTREACHED();
+   }
+ 
+--- chromium-89.0.4389.58/third_party/webrtc/video/video_quality_observer2.cc.gcc10	2021-02-17 21:39:43.000000000 +0100
++++ chromium-89.0.4389.58/third_party/webrtc/video/video_quality_observer2.cc	2021-02-18 22:56:26.782393408 +0100
+@@ -166,9 +166,11 @@ void VideoQualityObserver::OnRenderedFra
+         const absl::optional<int64_t> avg_interframe_delay =
+             render_interframe_delays_.GetAverageRoundedDown();
+         RTC_DCHECK(avg_interframe_delay);
+-        was_freeze = interframe_delay_ms >=
+-                     std::max(3 * *avg_interframe_delay,
+-                              *avg_interframe_delay + kMinIncreaseForFreezeMs);
++	if (avg_interframe_delay) {
++          was_freeze = interframe_delay_ms >=
++                       std::max(3 * *avg_interframe_delay,
++                                *avg_interframe_delay + kMinIncreaseForFreezeMs);
++        }
+       }
+ 
+       if (was_freeze) {
+--- chromium-90.0.4430.19/ui/accessibility/ax_position.h.gcc10	2021-03-09 19:40:27.000000000 +0100
++++ chromium-90.0.4430.19/ui/accessibility/ax_position.h	2021-03-16 01:54:24.647855240 +0100
+@@ -3420,8 +3420,8 @@ class AXPosition {
+     // or child indices.
+     if (GetAnchor() == other.GetAnchor()) {
+       absl::optional<int> optional_result;
+-      ax::mojom::TextAffinity this_affinity;
+-      ax::mojom::TextAffinity other_affinity;
++      ax::mojom::TextAffinity this_affinity = ax::mojom::TextAffinity::kNone;
++      ax::mojom::TextAffinity other_affinity = ax::mojom::TextAffinity::kNone;
+ 
+       if (IsTextPosition()) {
+         AXPositionInstance other_text_position = other.AsTextPosition();
+@@ -3488,8 +3488,8 @@ class AXPosition {
+     // the text offset is anything other than 0 or `MaxTextOffset()`.
+     if (IsTextPosition() || other.IsTextPosition()) {
+       absl::optional<int> optional_result;
+-      ax::mojom::TextAffinity this_affinity;
+-      ax::mojom::TextAffinity other_affinity;
++      ax::mojom::TextAffinity this_affinity = ax::mojom::TextAffinity::kNone;
++      ax::mojom::TextAffinity other_affinity = ax::mojom::TextAffinity::kNone;
+ 
+       // The following two "if" blocks deal with comparisons between a text
+       // position and a tree position that are ancestors of one another. The
+--- chromium-91.0.4472.69/third_party/libjxl/src/lib/jxl/dec_ans.h.gcc-uninitialized	2021-05-20 04:19:59.000000000 +0200
++++ chromium-91.0.4472.69/third_party/libjxl/src/lib/jxl/dec_ans.h	2021-05-23 04:03:00.629470742 +0200
+@@ -165,7 +165,7 @@ class ANSSymbolReader {
+             reinterpret_cast<AliasTable::Entry*>(code->alias_tables.get())),
+         huffman_data_(code->huffman_data.data()),
+         use_prefix_code_(code->use_prefix_code),
+-        configs(code->uint_config.data()) {
++        configs(code->uint_config.data()), special_distances_{0}, num_special_distances_(0) {
+     if (!use_prefix_code_) {
+       state_ = static_cast<uint32_t>(br->ReadFixedBits<32>());
+       log_alpha_size_ = code->log_alpha_size;
+@@ -173,6 +173,9 @@ class ANSSymbolReader {
+       entry_size_minus_1_ = (1 << log_entry_size_) - 1;
+     } else {
+       state_ = (ANS_SIGNATURE << 16u);
++      log_alpha_size_ = 0;
++      log_entry_size_ = 0;
++      entry_size_minus_1_ = 0;
+     }
+     if (!code->lz77.enabled) return;
+     // a std::vector incurs unacceptable decoding speed loss because of
+--- chromium-91.0.4472.69/third_party/openscreen/src/cast/sender/channel/cast_auth_util.cc.gcc-uninitialized	2021-05-23 04:42:54.080605010 +0200
++++ chromium-91.0.4472.69/third_party/openscreen/src/cast/sender/channel/cast_auth_util.cc	2021-05-23 04:43:10.071311947 +0200
+@@ -363,7 +363,7 @@ ErrorOr<CastDeviceCertPolicy> VerifyCred
+   }
+ 
+   // The certificate is verified at this point.
+-  DigestAlgorithm digest_algorithm;
++  DigestAlgorithm digest_algorithm = DigestAlgorithm::kSha1;
+   Error digest_result = VerifyAndMapDigestAlgorithm(
+       response.hash_algorithm(), &digest_algorithm, enforce_sha256_checking);
+   if (!digest_result.ok()) {
+--- chromium-91.0.4472.69/cc/metrics/compositor_frame_reporter.cc.gcc11	2021-05-20 04:16:54.000000000 +0200
++++ chromium-91.0.4472.69/cc/metrics/compositor_frame_reporter.cc	2021-05-23 22:19:20.190077624 +0200
+@@ -1083,7 +1083,7 @@ void CompositorFrameReporter::ReportComp
+                  state == ChromeFrameReporter::STATE_PRESENTED_PARTIAL);
+           reporter->set_affects_smoothness(true);
+         }
+-        ChromeFrameReporter::ScrollState scroll_state;
++        ChromeFrameReporter::ScrollState scroll_state = ChromeFrameReporter::SCROLL_NONE;
+         switch (scrolling_thread_) {
+           case FrameSequenceMetrics::ThreadType::kMain:
+             scroll_state = ChromeFrameReporter::SCROLL_MAIN_THREAD;
+--- chromium-91.0.4472.69/chrome/browser/ui/views/global_media_controls/media_notification_container_impl_view.cc.gcc11	2021-05-20 04:17:00.000000000 +0200
++++ chromium-91.0.4472.69/chrome/browser/ui/views/global_media_controls/media_notification_container_impl_view.cc	2021-05-24 06:19:15.447610319 +0200
+@@ -550,7 +550,7 @@ void MediaNotificationContainerImplView:
+       cast_item->profile())
+       ->TerminateRoute(cast_item->route_id());
+ 
+-  GlobalMediaControlsCastActionAndEntryPoint action;
++  GlobalMediaControlsCastActionAndEntryPoint action = GlobalMediaControlsCastActionAndEntryPoint::kStartViaToolbarIcon;
+   switch (entry_point_) {
+     case GlobalMediaControlsEntryPoint::kToolbarIcon:
+       action = GlobalMediaControlsCastActionAndEntryPoint::kStopViaToolbarIcon;
+--- chromium-91.0.4472.69/chrome/browser/ui/views/global_media_controls/media_notification_device_selector_view.cc.gcc11	2021-05-23 23:35:34.548121631 +0200
++++ chromium-91.0.4472.69/chrome/browser/ui/views/global_media_controls/media_notification_device_selector_view.cc	2021-05-24 06:21:05.901623280 +0200
+@@ -405,7 +405,7 @@ void MediaNotificationDeviceSelectorView
+ }
+ 
+ void MediaNotificationDeviceSelectorView::RecordStartCastingMetrics() {
+-  GlobalMediaControlsCastActionAndEntryPoint action;
++  GlobalMediaControlsCastActionAndEntryPoint action = GlobalMediaControlsCastActionAndEntryPoint::kStartViaToolbarIcon;
+   switch (entry_point_) {
+     case GlobalMediaControlsEntryPoint::kToolbarIcon:
+       action = GlobalMediaControlsCastActionAndEntryPoint::kStartViaToolbarIcon;
+--- chromium-91.0.4472.69/third_party/blink/renderer/core/layout/ng/grid/ng_grid_layout_algorithm.cc.gcc11	2021-05-20 04:17:13.000000000 +0200
++++ chromium-91.0.4472.69/third_party/blink/renderer/core/layout/ng/grid/ng_grid_layout_algorithm.cc	2021-05-24 16:13:28.510039030 +0200
+@@ -3023,8 +3023,8 @@ void NGGridLayoutAlgorithm::PlaceOutOfFl
+           column_track_collection, row_track_collection, grid_geometry,
+           out_of_flow_item, block_size);
+     }
+-    NGLogicalStaticPosition::InlineEdge inline_edge;
+-    NGLogicalStaticPosition::BlockEdge block_edge;
++    NGLogicalStaticPosition::InlineEdge inline_edge = NGLogicalStaticPosition::InlineEdge::kInlineStart;
++    NGLogicalStaticPosition::BlockEdge block_edge = NGLogicalStaticPosition::BlockEdge::kBlockStart;
+     LogicalOffset child_offset = containing_block_rect
+                                      ? containing_block_rect->offset
+                                      : BorderScrollbarPadding().StartOffset();
+--- chromium-91.0.4472.69/third_party/blink/renderer/modules/native_io/native_io_file_utils.cc.gcc11	2021-05-20 04:17:14.000000000 +0200
++++ chromium-91.0.4472.69/third_party/blink/renderer/modules/native_io/native_io_file_utils.cc	2021-05-24 16:16:59.911118228 +0200
+@@ -30,7 +30,7 @@ DOMArrayBufferView* TransferToNewArrayBu
+   DOMArrayBuffer* target_buffer =
+       DOMArrayBuffer::Create(std::move(target_contents));
+ 
+-  DOMArrayBufferView* target;
++  DOMArrayBufferView* target = nullptr;
+   switch (source->GetType()) {
+     case DOMArrayBufferView::kTypeInt8:
+       target = DOMInt8Array::Create(target_buffer, offset, length);
+--- chromium-92.0.4515.51/base/allocator/partition_allocator/partition_address_space.h.gcc10	2021-06-11 00:11:48.000000000 +0200
++++ chromium-92.0.4515.51/base/allocator/partition_allocator/partition_address_space.h	2021-06-12 17:11:58.004974992 +0200
+@@ -39,7 +39,7 @@ GigaCageProperties CalculateGigaCageProp
+     const std::array<size_t, N>& pool_sizes) {
+   size_t size_sum = 0;
+   size_t alignment = 0;
+-  size_t alignment_offset;
++  size_t alignment_offset = 0;
+   // The goal is to find properties such that each pool's start address is
+   // aligned to its own size. To achieve that, the largest pool will serve
+   // as an anchor (the first one, if there are more) and it'll be used to
+--- chromium-92.0.4515.51/chrome/browser/web_applications/web_app_database.cc.gcc11	2021-06-11 00:11:53.000000000 +0200
++++ chromium-92.0.4515.51/chrome/browser/web_applications/web_app_database.cc	2021-06-13 15:44:41.590827431 +0200
+@@ -316,7 +316,7 @@ std::unique_ptr<WebAppProto> WebAppDatab
+     for (IconPurpose purpose : purposes) {
+       for (const WebApplicationShortcutsMenuItemInfo::Icon& icon_info :
+            shortcut_info.GetShortcutIconInfosForPurpose(purpose)) {
+-        sync_pb::WebAppIconInfo* shortcut_icon_info_proto;
++        sync_pb::WebAppIconInfo* shortcut_icon_info_proto = nullptr;
+         switch (purpose) {
+           case IconPurpose::ANY:
+             shortcut_icon_info_proto =
+--- chromium-92.0.4515.51/components/sync/trusted_vault/standalone_trusted_vault_backend.h.gcc11	2021-06-11 00:11:58.000000000 +0200
++++ chromium-92.0.4515.51/components/sync/trusted_vault/standalone_trusted_vault_backend.h	2021-06-13 21:34:36.640091350 +0200
+@@ -177,7 +177,7 @@ class StandaloneTrustedVaultBackend
+ 
+     std::string gaia_id;
+     std::vector<uint8_t> public_key;
+-    int method_type_hint;
++    int method_type_hint = 0;
+     base::OnceClosure completion_callback;
+   };
+   absl::optional<PendingTrustedRecoveryMethod> pending_trusted_recovery_method_;
+--- chromium-92.0.4515.51/third_party/blink/renderer/modules/beacon/navigator_beacon.cc.gcc11	2021-06-11 00:12:05.000000000 +0200
++++ chromium-92.0.4515.51/third_party/blink/renderer/modules/beacon/navigator_beacon.cc	2021-06-14 18:48:23.619493363 +0200
+@@ -103,7 +103,7 @@ bool NavigatorBeacon::SendBeaconImpl(
+   VLOG(1) << "Send a beacon to " << url.ElidedString()
+           << ", initiator = " << execution_context->Url();
+ 
+-  bool allowed;
++  bool allowed = false;
+   LocalFrame* frame = GetSupplementable()->DomWindow()->GetFrame();
+   if (data) {
+     switch (data->GetContentType()) {
+--- chromium-92.0.4515.107/components/segmentation_platform/internal/execution/model_execution_manager_impl.cc.gcc11	2021-07-21 12:08:53.321233909 +0200
++++ chromium-92.0.4515.107/components/segmentation_platform/internal/execution/model_execution_manager_impl.cc	2021-07-21 12:09:18.388641029 +0200
+@@ -211,7 +211,7 @@ void ModelExecutionManagerImpl::ProcessF
+   auto signal_type = feature_state->signal_type;
+   auto end_time = state->end_time;
+   signal_database_->GetSamples(
+-      signal_type, *name_hash, start_time, end_time,
++      signal_type, name_hash ? *name_hash : 0, start_time, end_time,
+       base::BindOnce(&ModelExecutionManagerImpl::OnGetSamplesForFeature,
+                      weak_ptr_factory_.GetWeakPtr(), std::move(state),
+                      std::move(feature_state)));

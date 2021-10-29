@@ -1,0 +1,212 @@
+diff -up chromium-53.0.2785.92/third_party/libbrlapi/BUILD.gn.link_libgio chromium-53.0.2785.92/third_party/libbrlapi/BUILD.gn
+--- chromium-53.0.2785.92/third_party/libbrlapi/BUILD.gn.link_libgio	2016-09-02 21:02:02.000000000 +0200
++++ chromium-53.0.2785.92/third_party/libbrlapi/BUILD.gn	2016-09-09 14:26:52.224691284 +0200
+@@ -2,6 +2,10 @@
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
++declare_args() {
++  linux_link_libbrlapi = false
++}
++
+ import("//tools/generate_library_loader/generate_library_loader.gni")
+ 
+ generate_library_loader("libbrlapi") {
+@@ -9,6 +13,7 @@
+   output_cc = "libbrlapi_loader.cc"
+   header = "<brlapi.h>"
+   bundled_header = "\"third_party/libbrlapi/brlapi.h\""
++  link_directly = linux_link_libbrlapi
+ 
+   functions = [
+     "brlapi_getHandleSize",
+diff -up chromium-53.0.2785.92/build/linux/libpci/BUILD.gn.link_libgio chromium-53.0.2785.92/build/linux/libpci/BUILD.gn
+--- chromium-53.0.2785.92/build/linux/libpci/BUILD.gn.link_libgio	2016-09-02 21:02:02.000000000 +0200
++++ chromium-53.0.2785.92/build/linux/libpci/BUILD.gn	2016-09-09 14:24:25.124540583 +0200
+@@ -2,14 +2,24 @@
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
++declare_args() {
++  linux_link_libpci = false
++}
++
++config("libpci_config") {
++  libs = [ "pci" ]
++}
++
+ import("//tools/generate_library_loader/generate_library_loader.gni")
+ 
+-# This generates a target named "libpci".
+-generate_library_loader("libpci") {
++# This generates a target named "libpci_loader".
++generate_library_loader("libpci_loader") {
+   name = "LibPciLoader"
+   output_h = "libpci.h"
+   output_cc = "libpci_loader.cc"
+   header = "<pci/pci.h>"
++  link_directly = linux_link_libpci
++  use_extern_c = true
+ 
+   functions = [
+     "pci_alloc",
+@@ -20,3 +30,10 @@
+     "pci_lookup_name",
+   ]
+ }
++
++source_set("libpci") {
++  public_deps = [ ":libpci_loader" ]
++  if (linux_link_libpci) {
++    public_configs = [ ":libpci_config" ]
++  }
++}
+diff -up chromium-53.0.2785.92/build/linux/libudev/BUILD.gn.link_libgio chromium-53.0.2785.92/build/linux/libudev/BUILD.gn
+--- chromium-53.0.2785.92/build/linux/libudev/BUILD.gn.link_libgio	2016-09-02 21:02:02.000000000 +0200
++++ chromium-53.0.2785.92/build/linux/libudev/BUILD.gn	2016-09-09 14:25:52.512441968 +0200
+@@ -2,6 +2,14 @@
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
++declare_args() {
++  linux_link_libudev = false
++}
++
++config("libudev_config") {
++  libs = [ "udev" ]
++}
++
+ import("//tools/generate_library_loader/generate_library_loader.gni")
+ 
+ libudev_functions = [
+@@ -43,6 +51,7 @@
+   output_h = "libudev0.h"
+   output_cc = "libudev0_loader.cc"
+   header = "\"third_party/libudev/libudev0.h\""
++  link_directly = linux_link_libudev
+ 
+   functions = libudev_functions
+ }
+@@ -53,6 +62,7 @@
+   output_h = "libudev1.h"
+   output_cc = "libudev1_loader.cc"
+   header = "\"third_party/libudev/libudev1.h\""
++  link_directly = linux_link_libudev
+ 
+   functions = libudev_functions
+ }
+@@ -62,4 +72,5 @@
+     ":udev0_loader",
+     ":udev1_loader",
+   ]
++  public_configs = [ ":libudev_config" ]
+ }
+diff -up chromium-53.0.2785.92/tools/generate_library_loader/generate_library_loader.gni.link_libgio chromium-53.0.2785.92/tools/generate_library_loader/generate_library_loader.gni
+--- chromium-53.0.2785.92/tools/generate_library_loader/generate_library_loader.gni.link_libgio	2016-09-02 21:02:26.000000000 +0200
++++ chromium-53.0.2785.92/tools/generate_library_loader/generate_library_loader.gni	2016-09-09 14:22:50.905725074 +0200
+@@ -35,20 +35,21 @@
+       rebase_path(output_cc, root_build_dir),
+       "--header",
+       invoker.header,
+-
+-      # Note GYP build exposes a per-target variable to control this, which, if
+-      # manually set to true, will disable dlopen(). Its not clear this is
+-      # needed, so here we just leave off. If this can be done globally, we can
+-      # expose one switch for this value, otherwise we need to add a template
+-      # param for this.
+-      "--link-directly=0",
+     ]
++    if (invoker.link_directly) {
++      args += [ "--link-directly=1", ]
++    } else {
++      args += [ "--link-directly=0", ]
++    }
+     if (defined(invoker.bundled_header)) {
+       args += [
+         "--bundled-header",
+         invoker.bundled_header,
+       ]
+     }
++    if (defined(invoker.use_extern_c) && invoker.use_extern_c) {
++      args += [ "--use-extern-c", ]
++    }
+     args += invoker.functions
+   }
+ 
+--- chromium-53.0.2785.92/third_party/speech-dispatcher/BUILD.gn.link_libgio	2016-09-02 21:02:25.000000000 +0200
++++ chromium-53.0.2785.92/third_party/speech-dispatcher/BUILD.gn	2016-09-09 14:48:08.131650961 +0200
+@@ -2,14 +2,23 @@
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
++declare_args() {
++  linux_link_libspeechd = false
++}
++
++config("speech_dispatcher_config") {
++  libs = [ "speechd" ]
++}
++
+ import("//tools/generate_library_loader/generate_library_loader.gni")
+ 
+-generate_library_loader("speech-dispatcher") {
++generate_library_loader("speech-dispatcher-loader") {
+   name = "LibSpeechdLoader"
+   output_h = "libspeechd.h"
+   output_cc = "libspeechd.cc"
+-  header = "<libspeechd.h>"
++  header = "<speech-dispatcher/libspeechd.h>"
+   bundled_header = "\"third_party/speech-dispatcher/libspeechd.h\""
++  link_directly = linux_link_libspeechd
+ 
+   functions = [
+     "spd_open",
+@@ -28,3 +37,10 @@
+     "spd_set_language",
+   ]
+ }
++
++source_set("speech-dispatcher") {
++  public_deps = [ ":speech-dispatcher-loader" ]
++  if (linux_link_libspeechd) {
++    public_configs = [ ":speech_dispatcher_config" ]
++  }
++}
+--- chromium-88.0.4324.41/ui/gfx/x/BUILD.gn.link-directly	2020-12-10 13:03:49.000000000 +0100
++++ chromium-88.0.4324.41/ui/gfx/x/BUILD.gn	2020-12-12 18:15:04.119295217 +0100
+@@ -2,6 +2,10 @@
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
++declare_args() {
++  linux_link_xlib = false
++}
++
+ import("//build/config/ozone.gni")
+ import("//build/config/ui.gni")
+ import("//tools/generate_library_loader/generate_library_loader.gni")
+@@ -32,6 +36,7 @@ generate_library_loader("xlib_loader") {
+   output_h = "xlib_loader.h"
+   output_cc = "xlib_loader.cc"
+   header = "\"ui/gfx/x/xlib.h\""
++  link_directly = linux_link_xlib
+ 
+   functions = [
+     "XInitThreads",
+@@ -50,6 +55,7 @@ generate_library_loader("xlib_xcb_loader
+   output_h = "xlib_xcb_loader.h"
+   output_cc = "xlib_xcb_loader.cc"
+   header = "\"ui/gfx/x/xlib_xcb.h\""
++  link_directly = linux_link_xlib
+ 
+   functions = [ "XGetXCBConnection" ]
+ }
+@@ -186,7 +192,7 @@ source_set("xproto") {
+     "//ui/gfx/x/keysyms",
+   ]
+   configs += [ ":x11_private_config" ]
+-  libs = [ "xcb" ]
++  libs = [ "xcb", "X11-xcb" ]
+ }
+ 
+ component("x") {

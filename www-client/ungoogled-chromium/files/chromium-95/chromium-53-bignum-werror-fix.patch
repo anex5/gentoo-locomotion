@@ -1,0 +1,13 @@
+--- chromium-60.0.3112.40/third_party/blink/renderer/platform/wtf/BUILD.gn.bignum-werror-fix	2017-06-22 00:03:16.000000000 +0200
++++ chromium-60.0.3112.40/third_party/blink/renderer/platform/wtf/BUILD.gn	2017-06-25 13:21:32.311720897 +0200
+@@ -233,6 +233,10 @@ component("wtf") {
+     libs = [ "log" ]
+   }
+ 
++  if (is_linux) {
++    cflags = [ "-Wno-error=strict-overflow" ]
++  }
++
+   if (is_mac) {
+     frameworks = [
+       "CoreFoundation.framework",

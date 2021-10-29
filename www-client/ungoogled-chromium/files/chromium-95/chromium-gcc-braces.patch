@@ -1,0 +1,1433 @@
+--- chromium-62.0.3192.0/extensions/common/permissions/settings_override_permission.cc.gcc7	2017-08-22 21:04:44.000000000 +0200
++++ chromium-62.0.3192.0/extensions/common/permissions/settings_override_permission.cc	2017-09-09 00:43:40.708568094 +0200
+@@ -43,7 +43,9 @@
+ 
+ bool SettingsOverrideAPIPermission::Equal(const APIPermission* rhs) const {
+   if (this != rhs)
++  {
+     CHECK_EQ(info(), rhs->info());
++  }
+   return true;
+ }
+ 
+--- chromium-62.0.3192.0/extensions/common/permissions/api_permission.cc.gcc7	2017-08-22 21:04:44.000000000 +0200
++++ chromium-62.0.3192.0/extensions/common/permissions/api_permission.cc	2017-09-09 01:26:10.983202025 +0200
+@@ -36,7 +36,9 @@
+ 
+   bool Equal(const APIPermission* rhs) const override {
+     if (this != rhs)
++    {
+       CHECK_EQ(info(), rhs->info());
++    }
+     return true;
+   }
+ 
+--- chromium-62.0.3192.0/content/browser/renderer_host/navigation_controller_impl.cc.gcc7	2017-08-22 21:04:43.000000000 +0200
++++ chromium-62.0.3192.0/content/browser/renderer_host/navigation_controller_impl.cc	2017-09-09 01:53:03.860647419 +0200
+@@ -1198,8 +1198,9 @@ bool NavigationControllerImpl::RendererD
+   // The active entry's SiteInstance should match our SiteInstance.
+   // TODO(creis): This check won't pass for subframes until we create entries
+   // for subframe navigations.
+-  if (!rfh->GetParent())
++  if (!rfh->GetParent()) {
+     CHECK_EQ(active_entry->site_instance(), rfh->GetSiteInstance());
++  }
+ 
+   // Now prep the rest of the details for the notification and broadcast.
+   details->entry = active_entry;
+--- chromium-62.0.3192.0/content/browser/renderer_host/navigator.cc.gcc7	2017-08-22 21:04:43.000000000 +0200
++++ chromium-62.0.3192.0/content/browser/renderer_host/navigator.cc	2017-09-09 02:05:15.758922091 +0200
+@@ -562,8 +562,9 @@ void Navigator::Navigate(std::unique_ptr
+   }
+ 
+   // Make sure no code called via RFH::Navigate clears the pending entry.
+-  if (is_pending_entry)
++  if (is_pending_entry) {
+     CHECK_EQ(nav_entry_id, controller_.GetPendingEntry()->GetUniqueID());
++  }
+ }
+ 
+ void Navigator::RequestOpenURL(
+--- chromium-62.0.3192.0/content/browser/renderer_host/render_frame_host_manager.cc.gcc7	2017-08-22 21:04:43.000000000 +0200
++++ chromium-62.0.3192.0/content/browser/renderer_host/render_frame_host_manager.cc	2017-09-09 02:07:40.371353881 +0200
+@@ -1515,7 +1515,9 @@ RenderFrameHostManager::GetSiteInstanceF
+   // SiteInstance and the same frame, breaking lookup of RenderFrameHosts by
+   // SiteInstance.
+   if (should_swap)
++  {
+     CHECK_NE(new_instance, current_instance);
++  }
+ 
+   if (new_instance == current_instance) {
+     // If we're navigating to the same site instance, we won't need to use the
+--- chromium-62.0.3192.0/media/cast/test/receiver/video_decoder.cc.gcc7	2017-08-22 21:04:45.000000000 +0200
++++ chromium-62.0.3192.0/media/cast/test/receiver/video_decoder.cc	2017-09-09 05:02:17.907818439 +0200
+@@ -133,7 +133,9 @@
+  private:
+   ~Vp8Impl() final {
+     if (ImplBase::operational_status_ == STATUS_INITIALIZED)
++    {
+       CHECK_EQ(VPX_CODEC_OK, vpx_codec_destroy(&context_));
++    }
+   }
+ 
+   scoped_refptr<VideoFrame> Decode(uint8_t* data, int len) final {
+--- chromium-64.0.3282.71/extensions/renderer/runtime_custom_bindings.cc.gcc7	2018-01-04 00:06:04.000000000 +0100
++++ chromium-64.0.3282.71/extensions/renderer/runtime_custom_bindings.cc	2018-01-08 01:59:41.213107482 +0100
+@@ -48,11 +48,15 @@ void RuntimeCustomBindings::GetExtension
+   mojom::ViewType view_type = mojom::ViewType::kInvalid;
+   bool parsed_view_type = GetViewTypeFromString(view_type_string, &view_type);
+   if (!parsed_view_type)
++  {
+     CHECK_EQ("ALL", view_type_string);
++  }
+ 
+   const std::string& extension_id = context()->GetExtensionID();
+   if (extension_id.empty())
++  {
+     return;
++  }
+ 
+   // We ignore iframes here. (Returning subframes can cause broken behavior by
+   // treating an app window's iframe as its main frame, and maybe other
+--- chromium-67.0.3396.10/third_party/blink/renderer/core/frame/local_frame_view.cc.gcc7	2018-04-18 21:05:39.000000000 +0200
++++ chromium-67.0.3396.10/third_party/blink/renderer/core/frame/local_frame_view.cc	2018-04-22 21:37:37.030626382 +0200
+@@ -3396,7 +3396,9 @@
+ void LocalFrameView::AttachToLayout() {
+   CHECK(!IsAttached());
+   if (frame_->GetDocument())
++  {
+     CHECK_NE(Lifecycle().GetState(), DocumentLifecycle::kStopping);
++  }
+   SetAttached(true);
+   LocalFrameView* parent_view = ParentFrameView();
+   CHECK(parent_view);
+--- chromium-86.0.4240.53/components/performance_manager/decorators/site_data_recorder.cc.gcc7	2020-09-24 07:33:21.000000000 +0200
++++ chromium-86.0.4240.53/components/performance_manager/decorators/site_data_recorder.cc	2020-10-27 02:37:19.575803148 +0100
+@@ -243,7 +243,9 @@ void SiteDataNodeData::MaybeNotifyBackgr
+   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+ 
+   if (ShouldIgnoreFeatureUsageEvent(feature_type))
++  {
+     return;
++  }
+ 
+   (writer_.get()->*method)();
+ }
+--- chromium-76.0.3809.46/components/prefs/scoped_user_pref_update.cc.gcc8	2019-06-27 23:59:19.000000000 +0200
++++ chromium-76.0.3809.46/components/prefs/scoped_user_pref_update.cc	2019-07-01 01:26:56.050011380 +0200
+@@ -30,7 +30,9 @@ base::Value* ScopedUserPrefUpdateBase::G
+   // side-stepping CHECKs built into base::Value. Thus we need to be certain
+   // that the type matches.
+   if (value_)
++  {
+     CHECK_EQ(value_->type(), type);
++  }
+   return value_;
+ }
+ 
+--- chromium-77.0.3865.10/ui/gfx/geometry/cubic_bezier.cc.gcc9	2019-08-06 13:57:24.000000000 +0200
++++ chromium-77.0.3865.10/ui/gfx/geometry/cubic_bezier.cc	2019-08-17 22:59:59.207421178 +0200
+@@ -191,6 +191,9 @@ double CubicBezier::SolveCurveX(double x
+       break;
+     }
+   }
++  if (i == CUBIC_BEZIER_SPLINE_SAMPLES) {
++    return t2;
++  }
+ 
+   // Perform a few iterations of Newton's method -- normally very fast.
+   // See https://en.wikipedia.org/wiki/Newton%27s_method.
+--- chromium-80.0.3987.78/content/browser/renderer_host/render_frame_host_impl.cc.gcc9	2020-01-29 22:39:38.000000000 +0100
++++ chromium-80.0.3987.78/content/browser/renderer_host/render_frame_host_impl.cc	2020-02-02 17:56:58.531106249 +0100
+@@ -3592,8 +3592,9 @@ void RenderFrameHostImpl::AllowBindings(
+ 
+   // The bindings being granted here should not differ from the bindings that
+   // the associated WebUI requires.
+-  if (web_ui_)
++  if (web_ui_) {
+     CHECK_EQ(web_ui_->GetBindings(), webui_bindings);
++  }
+ 
+   // Ensure we aren't granting WebUI bindings to a process that has already
+   // been used for non-privileged views.
+--- chromium-88.0.4324.41/content/browser/renderer_host/render_frame_host_manager.cc.gcc10	2020-12-13 06:30:18.410387873 +0100
++++ chromium-88.0.4324.41/content/browser/renderer_host/render_frame_host_manager.cc	2020-12-13 22:16:44.589698544 +0100
+@@ -2463,8 +2463,9 @@ void RenderFrameHostManager::CreateRende
+     // TODO(fergal): We cannot put a CHECK in the else of this if because we do
+     // not have enough information about who is calling this. If we knew it was
+     // navigating then we could CHECK_EQ and CHECK_NE otherwise.
+-    if (!render_frame_host_->must_be_replaced())
++    if (!render_frame_host_->must_be_replaced()) {
+       CHECK_NE(instance, render_frame_host_->GetSiteInstance());
++    }
+   } else {
+     // If policy allows early commit, a RenderFrameProxyHost should never be
+     // created in the same SiteInstance as the current RFH.
+--- chromium-94.0.4606.20/base/containers/intrusive_heap.h.gcc11	2021-08-25 21:12:06.000000000 +0200
++++ chromium-94.0.4606.20/base/containers/intrusive_heap.h	2021-09-02 19:03:48.170518931 +0200
+@@ -699,8 +699,9 @@ bool IsInvalid(const HandleType& handle)
+ }
+ 
+ BASE_EXPORT inline void CheckInvalidOrEqualTo(HeapHandle handle, size_t index) {
+-  if (handle.IsValid())
++  if (handle.IsValid()) {
+     DCHECK_EQ(index, handle.index());
++  }
+ }
+ 
+ }  // namespace intrusive_heap
+--- chromium-94.0.4606.20/base/feature_list.cc.gcc11	2021-08-25 21:12:06.000000000 +0200
++++ chromium-94.0.4606.20/base/feature_list.cc	2021-09-02 19:28:26.042979387 +0200
+@@ -661,8 +661,9 @@ void FeatureList::GetFeatureOverridesImp
+   // active one. If not, it likely indicates that this FeatureList has override
+   // entries from a freed FieldTrial, which may be caused by an incorrect test
+   // set up.
+-  if (field_trial_list_)
++  if (field_trial_list_) {
+     DCHECK_EQ(field_trial_list_, FieldTrialList::GetInstance());
++  }
+ 
+   enable_overrides->clear();
+   disable_overrides->clear();
+--- chromium-94.0.4606.20/base/files/memory_mapped_file.cc.gcc11	2021-08-25 21:12:06.000000000 +0200
++++ chromium-94.0.4606.20/base/files/memory_mapped_file.cc	2021-09-02 19:34:12.721225669 +0200
+@@ -110,8 +110,9 @@ bool MemoryMappedFile::Initialize(File f
+   if (IsValid())
+     return false;
+ 
+-  if (region != Region::kWholeFile)
++  if (region != Region::kWholeFile) {
+     DCHECK_GE(region.offset, 0);
++  }
+ 
+   file_ = std::move(file);
+ 
+--- chromium-94.0.4606.20/base/posix/unix_domain_socket.cc.gcc11	2021-08-25 21:12:06.000000000 +0200
++++ chromium-94.0.4606.20/base/posix/unix_domain_socket.cc	2021-09-02 20:29:03.808775533 +0200
+@@ -215,8 +215,9 @@ ssize_t UnixDomainSocket::RecvMsgWithFla
+     // actually received a message.  Unfortunately, Linux allows sending zero
+     // length messages, which are indistinguishable from EOF, so this check
+     // has false negatives.
+-    if (r > 0 || msg.msg_controllen > 0)
++    if (r > 0 || msg.msg_controllen > 0) {
+       DCHECK_GE(pid, 0);
++    }
+ #endif
+ 
+     *out_pid = pid;
+--- chromium-94.0.4606.20/components/gwp_asan/client/guarded_page_allocator.cc.gcc11	2021-08-25 21:12:17.000000000 +0200
++++ chromium-94.0.4606.20/components/gwp_asan/client/guarded_page_allocator.cc	2021-09-02 20:29:58.345710548 +0200
+@@ -235,11 +235,13 @@ void* GuardedPageAllocator::MapRegionHin
+ void* GuardedPageAllocator::Allocate(size_t size,
+                                      size_t align,
+                                      const char* type) {
+-  if (!is_partition_alloc_)
++  if (!is_partition_alloc_) {
+     DCHECK_EQ(type, nullptr);
++  }
+ 
+-  if (!size || size > state_.page_size || align > state_.page_size)
++  if (!size || size > state_.page_size || align > state_.page_size) {
+     return nullptr;
++  }
+ 
+   // Default alignment is size's next smallest power-of-two, up to
+   // kGpaAllocAlignment.
+--- chromium-94.0.4606.20/sql/database.cc.gcc11	2021-08-25 21:12:26.000000000 +0200
++++ chromium-94.0.4606.20/sql/database.cc	2021-09-02 20:31:31.411893246 +0200
+@@ -106,8 +106,9 @@ int BackupDatabase(sqlite3* src, sqlite3
+   // If successful, exactly one page should have been backed up.  If
+   // this breaks, check this function to make sure assumptions aren't
+   // being broken.
+-  if (rc == SQLITE_DONE)
++  if (rc == SQLITE_DONE) {
+     DCHECK_EQ(pages, 1);
++  }
+ 
+   return rc;
+ }
+--- chromium-94.0.4606.20/components/update_client/component.cc.gcc11	2021-08-25 21:12:19.000000000 +0200
++++ chromium-94.0.4606.20/components/update_client/component.cc	2021-09-02 20:32:33.011690438 +0200
+@@ -770,8 +770,9 @@ void Component::StateDownloadingDiff::Do
+ void Component::StateDownloadingDiff::DownloadProgress(int64_t downloaded_bytes,
+                                                        int64_t total_bytes) {
+   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+-  if (downloaded_bytes != -1 && total_bytes != -1)
++  if (downloaded_bytes != -1 && total_bytes != -1) {
+     DCHECK_LE(downloaded_bytes, total_bytes);
++  }
+ 
+   auto& component = Component::State::component();
+   component.downloaded_bytes_ = downloaded_bytes;
+@@ -839,8 +840,9 @@ void Component::StateDownloading::DoHand
+ void Component::StateDownloading::DownloadProgress(int64_t downloaded_bytes,
+                                                    int64_t total_bytes) {
+   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+-  if (downloaded_bytes != -1 && total_bytes != -1)
++  if (downloaded_bytes != -1 && total_bytes != -1) {
+     DCHECK_LE(downloaded_bytes, total_bytes);
++  }
+ 
+   auto& component = Component::State::component();
+   component.downloaded_bytes_ = downloaded_bytes;
+--- chromium-94.0.4606.20/components/variations/variations_associated_data.cc.gcc11	2021-08-25 21:12:19.000000000 +0200
++++ chromium-94.0.4606.20/components/variations/variations_associated_data.cc	2021-09-02 20:33:27.907618563 +0200
+@@ -54,8 +54,9 @@ class GroupMapAccessor {
+ 
+       // The ID should not be registered under a different non-GOOGLE_APP
+       // IDCollectionKey.
+-      if (other_key != GOOGLE_APP)
++      if (other_key != GOOGLE_APP) {
+         DCHECK_EQ(EMPTY_ID, other_id);
++      }
+     }
+ #endif  // DCHECK_IS_ON()
+   }
+--- chromium-94.0.4606.20/ui/gfx/x/xproto_types.h.gcc11	2021-08-25 21:13:17.000000000 +0200
++++ chromium-94.0.4606.20/ui/gfx/x/xproto_types.h	2021-09-02 20:34:25.787488459 +0200
+@@ -27,8 +27,9 @@ template <typename T>
+ void VerifyAlignment(T* t, size_t offset) {
+   // On the wire, X11 types are always aligned to their size.  This is a sanity
+   // check to ensure padding etc are working properly.
+-  if (sizeof(T) == 2 || sizeof(T) == 4 || sizeof(T) == 8)
++  if (sizeof(T) == 2 || sizeof(T) == 4 || sizeof(T) == 8) {
+     DCHECK_EQ(offset % sizeof(*t), 0UL);
++  }
+ }
+ 
+ }  // namespace detail
+--- chromium-94.0.4606.20/ui/gfx/color_space.cc.gcc11	2021-08-25 21:13:17.000000000 +0200
++++ chromium-94.0.4606.20/ui/gfx/color_space.cc	2021-09-02 23:08:18.032241278 +0200
+@@ -199,8 +199,9 @@ ColorSpace ColorSpace::CreatePiecewiseHD
+   // If |sdr_joint| is 1, then this is just sRGB (and so |hdr_level| must be 1).
+   // An |sdr_joint| higher than 1 breaks.
+   DCHECK_LE(sdr_joint, 1.f);
+-  if (sdr_joint == 1.f)
++  if (sdr_joint == 1.f) {
+     DCHECK_EQ(hdr_level, 1.f);
++  }
+   // An |hdr_level| of 1 has no HDR. An |hdr_level| less than 1 breaks.
+   DCHECK_GE(hdr_level, 1.f);
+   ColorSpace result(primaries, TransferID::PIECEWISE_HDR, MatrixID::RGB,
+--- chromium-94.0.4606.20/net/http/http_cache_transaction.cc.gcc11	2021-08-25 21:12:25.000000000 +0200
++++ chromium-94.0.4606.20/net/http/http_cache_transaction.cc	2021-09-02 23:09:47.737548342 +0200
+@@ -3130,8 +3130,9 @@ int HttpCache::Transaction::WriteRespons
+     return OK;
+   }
+ 
+-  if (truncated)
++  if (truncated) {
+     DCHECK_EQ(200, response.headers->response_code());
++  }
+ 
+   // When writing headers, we normally only write the non-transient headers.
+   bool skip_transient_headers = true;
+--- chromium-94.0.4606.20/net/http/http_stream_factory_job.cc.gcc11	2021-08-25 21:12:25.000000000 +0200
++++ chromium-94.0.4606.20/net/http/http_stream_factory_job.cc	2021-09-02 23:10:48.920393450 +0200
+@@ -186,8 +186,9 @@ HttpStreamFactory::Job::Job(Delegate* de
+         session->context().quic_context->params()->supported_versions[0];
+   }
+ 
+-  if (using_quic_)
++  if (using_quic_) {
+     DCHECK_NE(quic_version_, quic::ParsedQuicVersion::Unsupported());
++  }
+ 
+   DCHECK(session);
+   if (alternative_protocol != kProtoUnknown) {
+--- chromium-94.0.4606.20/net/socket/socket_bio_adapter.cc.gcc11	2021-08-25 21:12:25.000000000 +0200
++++ chromium-94.0.4606.20/net/socket/socket_bio_adapter.cc	2021-09-02 23:12:16.852733302 +0200
+@@ -344,8 +344,9 @@ void SocketBIOAdapter::CallOnReadReady()
+ SocketBIOAdapter* SocketBIOAdapter::GetAdapter(BIO* bio) {
+   DCHECK_EQ(&kBIOMethod, bio->method);
+   SocketBIOAdapter* adapter = reinterpret_cast<SocketBIOAdapter*>(bio->ptr);
+-  if (adapter)
++  if (adapter) {
+     DCHECK_EQ(bio, adapter->bio());
++  }
+   return adapter;
+ }
+ 
+--- chromium-94.0.4606.20/net/socket/transport_client_socket_pool.cc.gcc11	2021-08-25 21:12:25.000000000 +0200
++++ chromium-94.0.4606.20/net/socket/transport_client_socket_pool.cc	2021-09-02 23:13:15.148632474 +0200
+@@ -95,8 +95,9 @@ TransportClientSocketPool::Request::Requ
+       net_log_(net_log),
+       socket_tag_(socket_tag),
+       job_(nullptr) {
+-  if (respect_limits_ == ClientSocketPool::RespectLimits::DISABLED)
++  if (respect_limits_ == ClientSocketPool::RespectLimits::DISABLED) {
+     DCHECK_EQ(priority_, MAXIMUM_PRIORITY);
++  }
+ }
+ 
+ TransportClientSocketPool::Request::~Request() {}
+--- chromium-94.0.4606.20/net/cookies/cookie_deletion_info.cc.gcc11	2021-08-25 21:12:25.000000000 +0200
++++ chromium-94.0.4606.20/net/cookies/cookie_deletion_info.cc	2021-09-02 23:14:16.723469548 +0200
+@@ -43,8 +43,9 @@ CookieDeletionInfo::TimeRange::TimeRange
+ 
+ CookieDeletionInfo::TimeRange::TimeRange(base::Time start, base::Time end)
+     : start_(start), end_(end) {
+-  if (!start.is_null() && !end.is_null())
++  if (!start.is_null() && !end.is_null()) {
+     DCHECK_GE(end, start);
++  }
+ }
+ 
+ CookieDeletionInfo::TimeRange& CookieDeletionInfo::TimeRange::operator=(
+--- chromium-94.0.4606.20/net/spdy/spdy_write_queue.cc.gcc11	2021-08-25 21:12:25.000000000 +0200
++++ chromium-94.0.4606.20/net/spdy/spdy_write_queue.cc	2021-09-02 23:15:09.284476717 +0200
+@@ -68,8 +68,9 @@ void SpdyWriteQueue::Enqueue(
+   CHECK(!removing_writes_);
+   CHECK_GE(priority, MINIMUM_PRIORITY);
+   CHECK_LE(priority, MAXIMUM_PRIORITY);
+-  if (stream.get())
++  if (stream.get()) {
+     DCHECK_EQ(stream->priority(), priority);
++  }
+   queue_[priority].push_back(
+       {frame_type, std::move(frame_producer), stream,
+        MutableNetworkTrafficAnnotationTag(traffic_annotation)});
+--- chromium-94.0.4606.20/net/spdy/spdy_session.cc.gcc11	2021-08-25 21:12:25.000000000 +0200
++++ chromium-94.0.4606.20/net/spdy/spdy_session.cc	2021-09-02 23:16:06.932387648 +0200
+@@ -3789,8 +3789,9 @@ void SpdySession::ResumeSendStalledStrea
+     }
+ 
+     // The size should decrease unless we got send-stalled again.
+-    if (!IsSendStalled())
++    if (!IsSendStalled()) {
+       DCHECK_LT(GetTotalSize(stream_send_unstall_queue_), old_size);
++    }
+   }
+   while (!streams_to_requeue.empty()) {
+     SpdyStream* stream = streams_to_requeue.front();
+--- chromium-94.0.4606.20/net/dns/dns_transaction.cc.gcc11	2021-08-25 21:12:25.000000000 +0200
++++ chromium-94.0.4606.20/net/dns/dns_transaction.cc	2021-09-02 23:29:51.447795132 +0200
+@@ -253,8 +253,9 @@ class DnsUDPAttempt : public DnsAttempt
+       }
+     } while (rv != ERR_IO_PENDING && next_state_ != STATE_NONE);
+ 
+-    if (rv != ERR_IO_PENDING)
++    if (rv != ERR_IO_PENDING) {
+       DCHECK_EQ(STATE_NONE, next_state_);
++    }
+ 
+     return rv;
+   }
+@@ -681,8 +682,9 @@ class DnsTCPAttempt : public DnsAttempt
+       }
+     } while (rv != ERR_IO_PENDING && next_state_ != STATE_NONE);
+ 
+-    if (rv != ERR_IO_PENDING)
++    if (rv != ERR_IO_PENDING) {
+       DCHECK_EQ(STATE_NONE, next_state_);
++    }
+ 
+     return rv;
+   }
+--- chromium-94.0.4606.20/net/dns/host_resolver_manager.cc.gcc11	2021-08-25 21:12:25.000000000 +0200
++++ chromium-94.0.4606.20/net/dns/host_resolver_manager.cc	2021-09-02 23:30:36.569941022 +0200
+@@ -447,8 +447,9 @@ class PriorityTracker {
+     highest_priority_ = static_cast<RequestPriority>(i);
+ 
+     // In absence of requests, default to MINIMUM_PRIORITY.
+-    if (total_count_ == 0)
++    if (total_count_ == 0) {
+       DCHECK_EQ(MINIMUM_PRIORITY, highest_priority_);
++    }
+   }
+ 
+  private:
+--- chromium-94.0.4606.20/net/dns/context_host_resolver.cc.gcc11	2021-08-25 21:12:25.000000000 +0200
++++ chromium-94.0.4606.20/net/dns/context_host_resolver.cc	2021-09-02 23:31:19.259132893 +0200
+@@ -268,8 +268,9 @@ ContextHostResolver::ContextHostResolver
+ }
+ 
+ ContextHostResolver::~ContextHostResolver() {
+-  if (owned_manager_)
++  if (owned_manager_) {
+     DCHECK_EQ(owned_manager_.get(), manager_);
++  }
+ 
+   // No |resolve_context_| to deregister if OnShutdown() was already called.
+   if (resolve_context_)
+--- chromium-94.0.4606.20/components/signin/internal/identity_manager/primary_account_manager.cc.gcc11	2021-08-25 21:12:18.000000000 +0200
++++ chromium-94.0.4606.20/components/signin/internal/identity_manager/primary_account_manager.cc	2021-09-03 01:14:11.261487076 +0200
+@@ -310,8 +310,9 @@ void PrimaryAccountManager::OnSignoutDec
+     bool assert_signout_allowed,
+     SigninClient::SignoutDecision signout_decision) {
+   DCHECK(IsInitialized());
+-  if (assert_signout_allowed)
++  if (assert_signout_allowed) {
+     DCHECK_EQ(SigninClient::SignoutDecision::ALLOW_SIGNOUT, signout_decision);
++  }
+ 
+   VLOG(1) << "OnSignoutDecisionReached: "
+           << (signout_decision == SigninClient::SignoutDecision::ALLOW_SIGNOUT);
+--- chromium-94.0.4606.20/ui/base/x/x11_util.cc.gcc11	2021-08-25 21:13:16.000000000 +0200
++++ chromium-94.0.4606.20/ui/base/x/x11_util.cc	2021-09-03 01:16:27.082834430 +0200
+@@ -976,8 +976,9 @@ bool DoesVisualHaveAlphaForTest() {
+   ui::XVisualManager::GetInstance()->ChooseVisualForWindow(
+       true, nullptr, &depth, nullptr, &visual_has_alpha);
+ 
+-  if (visual_has_alpha)
++  if (visual_has_alpha) {
+     DCHECK_EQ(32, depth);
++  }
+ 
+   return visual_has_alpha;
+ }
+--- chromium-94.0.4606.20/cc/trees/debug_rect_history.h.gcc11	2021-08-25 21:12:06.000000000 +0200
++++ chromium-94.0.4606.20/cc/trees/debug_rect_history.h	2021-09-03 01:17:46.895276178 +0200
+@@ -60,10 +60,12 @@ struct DebugRect {
+         rect(new_rect),
+         touch_action(new_touch_action),
+         main_thread_scrolling_reasons(main_thread_scrolling_reasons) {
+-    if (type != TOUCH_EVENT_HANDLER_RECT_TYPE)
++    if (type != TOUCH_EVENT_HANDLER_RECT_TYPE) {
+       DCHECK_EQ(touch_action, TouchAction::kNone);
+-    if (type != MAIN_THREAD_SCROLLING_REASON_RECT_TYPE)
++    }
++    if (type != MAIN_THREAD_SCROLLING_REASON_RECT_TYPE) {
+       DCHECK(!main_thread_scrolling_reasons);
++    }
+   }
+   DebugRectType type;
+   gfx::Rect rect;
+--- chromium-94.0.4606.20/media/capture/video/video_capture_buffer_tracker.cc.gcc11	2021-08-25 21:12:23.000000000 +0200
++++ chromium-94.0.4606.20/media/capture/video/video_capture_buffer_tracker.cc	2021-09-03 01:31:20.900403750 +0200
+@@ -9,8 +9,9 @@ namespace media {
+ void VideoCaptureBufferTracker::SetHeldByProducer(bool new_held_by_producer) {
+   DCHECK_NE(held_by_producer_, new_held_by_producer);
+   // The producer can't take hold while a consumer still has hold.
+-  if (new_held_by_producer)
++  if (new_held_by_producer) {
+     DCHECK_EQ(consumer_hold_count_, 0);
++  }
+   held_by_producer_ = new_held_by_producer;
+ }
+ 
+--- chromium-94.0.4606.20/ui/ozone/platform/wayland/host/wayland_event_source.cc.gcc11	2021-08-25 21:13:17.000000000 +0200
++++ chromium-94.0.4606.20/ui/ozone/platform/wayland/host/wayland_event_source.cc	2021-09-03 01:33:55.134400112 +0200
+@@ -108,8 +108,9 @@ void WaylandEventSource::OnKeyboardFocus
+                                                 bool focused) {
+   DCHECK(window);
+ #if DCHECK_IS_ON()
+-  if (!focused)
++  if (!focused) {
+     DCHECK_EQ(window, window_manager_->GetCurrentKeyboardFocusedWindow());
++  }
+ #endif
+   window_manager_->SetKeyboardFocusedWindow(focused ? window : nullptr);
+ }
+--- chromium-94.0.4606.20/device/bluetooth/bluetooth_device.cc.gcc11	2021-08-25 21:12:21.000000000 +0200
++++ chromium-94.0.4606.20/device/bluetooth/bluetooth_device.cc	2021-09-03 01:35:32.520504131 +0200
+@@ -469,11 +469,13 @@ BluetoothDevice::GetPrimaryServicesByUUI
+ #if defined(OS_CHROMEOS) || defined(OS_LINUX)
+ void BluetoothDevice::SetBatteryPercentage(
+     absl::optional<uint8_t> battery_percentage) {
+-  if (battery_percentage)
++  if (battery_percentage) {
+     DCHECK_LE(battery_percentage.value(), 100);
++  }
+ 
+-  if (battery_percentage_ == battery_percentage)
++  if (battery_percentage_ == battery_percentage) {
+     return;
++  }
+ 
+   battery_percentage_ = battery_percentage;
+   GetAdapter()->NotifyDeviceBatteryChanged(this);
+--- chromium-94.0.4606.20/gpu/command_buffer/service/abstract_texture_impl.cc.gcc11	2021-08-25 21:12:22.000000000 +0200
++++ chromium-94.0.4606.20/gpu/command_buffer/service/abstract_texture_impl.cc	2021-09-03 01:39:09.897273623 +0200
+@@ -50,8 +50,9 @@ AbstractTextureImpl::AbstractTextureImpl
+ AbstractTextureImpl::~AbstractTextureImpl() {
+   // If context is not lost, then the texture should be destroyed on same
+   // context it was create on.
+-  if (have_context_)
++  if (have_context_) {
+     DCHECK_EQ(api_, gl::g_current_gl_context);
++  }
+ 
+   texture_->RemoveLightweightRef(have_context_);
+ }
+@@ -126,8 +127,9 @@ AbstractTextureImplPassthrough::Abstract
+ AbstractTextureImplPassthrough::~AbstractTextureImplPassthrough() {
+   // If context is not lost, then the texture should be destroyed on the same
+   // context it was create on.
+-  if (have_context_)
++  if (have_context_) {
+     DCHECK_EQ(api_, gl::g_current_gl_context);
++  }
+ }
+ 
+ TextureBase* AbstractTextureImplPassthrough::GetTextureBase() const {
+--- chromium-94.0.4606.20/third_party/blink/common/input/web_coalesced_input_event.cc.gcc11	2021-08-25 21:12:27.000000000 +0200
++++ chromium-94.0.4606.20/third_party/blink/common/input/web_coalesced_input_event.cc	2021-09-03 02:39:43.977886124 +0200
+@@ -104,8 +104,9 @@ void WebCoalescedInputEvent::CoalesceWit
+                latency_.trace_id(), "coalescedTraceId",
+                newer_event.latency_.trace_id());
+   // |newer_event| should be a newer event than |this|.
+-  if (newer_event.latency_.trace_id() >= 0 && latency_.trace_id() >= 0)
++  if (newer_event.latency_.trace_id() >= 0 && latency_.trace_id() >= 0) {
+     DCHECK_GT(newer_event.latency_.trace_id(), latency_.trace_id());
++  }
+ 
+   // New events get coalesced into older events, and the newer timestamp
+   // should always be preserved.
+--- chromium-94.0.4606.20/third_party/blink/common/media/watch_time_reporter.cc.gcc11	2021-08-25 21:12:27.000000000 +0200
++++ chromium-94.0.4606.20/third_party/blink/common/media/watch_time_reporter.cc	2021-09-03 02:40:42.400758947 +0200
+@@ -92,8 +92,9 @@ WatchTimeReporter::WatchTimeReporter(
+ 
+   // The muted reporter receives play/pause events instead of volume changes, so
+   // its volume must always be audible to function correctly.
+-  if (is_muted_)
++  if (is_muted_) {
+     DCHECK_EQ(volume_, 1.0);
++  }
+ 
+   base::PowerMonitor::AddPowerStateObserver(this);
+ 
+@@ -249,8 +250,9 @@ void WatchTimeReporter::OnUnderflow() {
+   if (!reporting_timer_.IsRunning())
+     return;
+ 
+-  if (!pending_underflow_events_.empty())
++  if (!pending_underflow_events_.empty()) {
+     DCHECK_NE(pending_underflow_events_.back().duration, media::kNoTimestamp);
++  }
+ 
+   // In the event of a pending finalize, we don't want to count underflow events
+   // that occurred after the finalize time. Yet if the finalize is canceled we
+--- chromium-94.0.4606.20/ui/aura/client/drag_drop_client.cc.gcc11	2021-08-25 21:13:16.000000000 +0200
++++ chromium-94.0.4606.20/ui/aura/client/drag_drop_client.cc	2021-09-03 02:43:06.852971867 +0200
+@@ -22,8 +22,9 @@ void SetDragDropClient(Window* root_wind
+ }
+ 
+ DragDropClient* GetDragDropClient(Window* root_window) {
+-  if (root_window)
++  if (root_window) {
+     DCHECK_EQ(root_window->GetRootWindow(), root_window);
++  }
+   return root_window ?
+       root_window->GetProperty(kRootWindowDragDropClientKey) : NULL;
+ }
+--- chromium-94.0.4606.20/ui/aura/client/event_client.cc.gcc11	2021-08-25 21:13:16.000000000 +0200
++++ chromium-94.0.4606.20/ui/aura/client/event_client.cc	2021-09-03 02:43:51.006119941 +0200
+@@ -21,8 +21,9 @@ void SetEventClient(Window* root_window,
+ }
+ 
+ EventClient* GetEventClient(const Window* root_window) {
+-  if (root_window)
++  if (root_window) {
+     DCHECK_EQ(root_window->GetRootWindow(), root_window);
++  }
+   return root_window ?
+       root_window->GetProperty(kRootWindowEventClientKey) : NULL;
+ }
+--- chromium-94.0.4606.20/ui/aura/client/screen_position_client.cc.gcc11	2021-08-25 21:13:16.000000000 +0200
++++ chromium-94.0.4606.20/ui/aura/client/screen_position_client.cc	2021-09-03 02:44:45.479068879 +0200
+@@ -59,8 +59,9 @@ void SetScreenPositionClient(Window* roo
+ }
+ 
+ ScreenPositionClient* GetScreenPositionClient(const Window* root_window) {
+-  if (root_window)
++  if (root_window) {
+     DCHECK_EQ(root_window->GetRootWindow(), root_window);
++  }
+   return root_window ?
+       root_window->GetProperty(kScreenPositionClientKey) : NULL;
+ }
+--- chromium-94.0.4606.20/ui/wm/core/focus_controller.cc.gcc11	2021-08-25 21:13:17.000000000 +0200
++++ chromium-94.0.4606.20/ui/wm/core/focus_controller.cc	2021-09-03 02:45:47.862865151 +0200
+@@ -258,8 +258,9 @@ void FocusController::SetFocusedWindow(a
+   if (updating_focus_ || window == focused_window_)
+     return;
+   DCHECK(rules_->CanFocusWindow(window, nullptr));
+-  if (window)
++  if (window) {
+     DCHECK_EQ(window, rules_->GetFocusableWindow(window));
++  }
+ 
+   base::AutoReset<bool> updating_focus(&updating_focus_, true);
+   aura::Window* lost_focus = focused_window_;
+@@ -326,8 +327,9 @@ bool FocusController::SetActiveWindow(
+   }
+ 
+   DCHECK(rules_->CanActivateWindow(window));
+-  if (window)
++  if (window) {
+     DCHECK_EQ(window, rules_->GetActivatableWindow(window));
++  }
+ 
+   base::AutoReset<absl::optional<aura::Window*>> updating_activation(
+       &pending_activation_, absl::make_optional(window));
+--- chromium-94.0.4606.20/ui/wm/public/tooltip_client.cc.gcc11	2021-08-25 21:13:17.000000000 +0200
++++ chromium-94.0.4606.20/ui/wm/public/tooltip_client.cc	2021-09-03 02:46:35.807940008 +0200
+@@ -22,8 +22,9 @@ void SetTooltipClient(aura::Window* root
+ }
+ 
+ TooltipClient* GetTooltipClient(aura::Window* root_window) {
+-  if (root_window)
++  if (root_window) {
+     DCHECK_EQ(root_window->GetRootWindow(), root_window);
++  }
+   return root_window ?
+       root_window->GetProperty(kRootWindowTooltipClientKey) : NULL;
+ }
+--- chromium-94.0.4606.20/components/page_load_metrics/browser/page_load_tracker.cc.gcc11	2021-08-25 21:12:17.000000000 +0200
++++ chromium-94.0.4606.20/components/page_load_metrics/browser/page_load_tracker.cc	2021-09-03 19:10:24.727657460 +0200
+@@ -373,8 +373,9 @@ void PageLoadTracker::PageHidden() {
+     // foregrounded.
+     base::TimeTicks background_time;
+ 
+-    if (!first_background_time_.has_value())
++    if (!first_background_time_.has_value()) {
+       DCHECK_EQ(started_in_foreground_, !first_foreground_time_.has_value());
++    }
+ 
+     background_time = base::TimeTicks::Now();
+     ClampBrowserTimestampIfInterProcessTimeTickSkew(&background_time);
+--- chromium-94.0.4606.20/components/dom_distiller/content/browser/uma_helper.cc.gcc11	2021-08-25 21:12:17.000000000 +0200
++++ chromium-94.0.4606.20/components/dom_distiller/content/browser/uma_helper.cc	2021-09-03 19:28:00.378280356 +0200
+@@ -13,8 +13,9 @@
+ namespace dom_distiller {
+ 
+ void UMAHelper::DistillabilityDriverTimer::Start(bool is_distilled_page) {
+-  if (HasStarted())
++  if (HasStarted()) {
+     DCHECK_EQ(is_distilled_page_, is_distilled_page);
++  }
+   is_distilled_page_ = is_distilled_page;
+   if (active_time_start_ != base::Time())
+     return;
+--- chromium-94.0.4606.20/components/performance_manager/graph/node_attached_data_impl.h.gcc11	2021-08-25 21:12:18.000000000 +0200
++++ chromium-94.0.4606.20/components/performance_manager/graph/node_attached_data_impl.h	2021-09-03 19:36:44.952149477 +0200
+@@ -316,8 +316,9 @@ NodeAttachedDataImpl<DataType>::NodeAtta
+     const NodeType* node) {
+   std::unique_ptr<NodeAttachedData>* storage =
+       DataType::GetUniquePtrStorage(const_cast<NodeType*>(node));
+-  if (storage->get())
++  if (storage->get()) {
+     DCHECK_EQ(DataType::UserDataKey(), storage->get()->GetKey());
++  }
+   return static_cast<DataType*>(storage->get());
+ }
+ 
+@@ -359,8 +360,9 @@ DataType* NodeAttachedDataImpl<DataType>
+     NodeType>::Get(const NodeType* node) {
+   InternalNodeAttachedDataStorage<sizeof(DataType)>* storage =
+       DataType::GetInternalStorage(const_cast<NodeType*>(node));
+-  if (storage->Get())
++  if (storage->Get()) {
+     DCHECK_EQ(DataType::UserDataKey(), storage->Get()->GetKey());
++  }
+   return static_cast<DataType*>(storage->Get());
+ }
+ 
+--- chromium-94.0.4606.20/content/common/input/event_with_latency_info.h.gcc11	2021-08-25 21:12:20.000000000 +0200
++++ chromium-94.0.4606.20/content/common/input/event_with_latency_info.h	2021-09-03 19:38:58.021578409 +0200
+@@ -46,8 +46,9 @@ class EventWithLatencyInfo {
+ 
+   void CoalesceWith(const EventWithLatencyInfo& other) {
+     // |other| should be a newer event than |this|.
+-    if (other.latency.trace_id() >= 0 && latency.trace_id() >= 0)
++    if (other.latency.trace_id() >= 0 && latency.trace_id() >= 0) {
+       DCHECK_GT(other.latency.trace_id(), latency.trace_id());
++    }
+ 
+     // New events get coalesced into older events, and the newer timestamp
+     // should always be preserved.
+--- chromium-94.0.4606.20/content/browser/child_process_security_policy_impl.cc.gcc11	2021-08-25 21:12:20.000000000 +0200
++++ chromium-94.0.4606.20/content/browser/child_process_security_policy_impl.cc	2021-09-03 20:07:02.400040122 +0200
+@@ -1989,8 +1989,9 @@ void ChildProcessSecurityPolicyImpl::Add
+         // BrowsingInstances, the threshold ID must necessarily be greater than
+         // the old ID, since NextBrowsingInstanceId() returns monotonically
+         // increasing IDs.
+-        if (applies_to_future_browsing_instances)
++        if (applies_to_future_browsing_instances) {
+           DCHECK_LE(entry.browsing_instance_id(), browsing_instance_id);
++        }
+         should_add = false;
+         break;
+       } else if (!entry.applies_to_future_browsing_instances() &&
+--- chromium-94.0.4606.20/content/browser/cache_storage/cache_storage_index.cc.gcc11	2021-08-25 21:12:20.000000000 +0200
++++ chromium-94.0.4606.20/content/browser/cache_storage/cache_storage_index.cc	2021-09-03 20:28:50.071561594 +0200
+@@ -50,8 +50,9 @@ void CacheStorageIndex::Delete(const std
+ 
+ bool CacheStorageIndex::SetCacheSize(const std::string& cache_name,
+                                      int64_t size) {
+-  if (has_doomed_cache_)
++  if (has_doomed_cache_) {
+     DCHECK_NE(cache_name, doomed_cache_metadata_.name);
++  }
+   auto it = cache_metadata_map_.find(cache_name);
+   DCHECK(it != cache_metadata_map_.end());
+   if (it->second->size == size)
+--- chromium-94.0.4606.20/content/browser/browser_context.cc.gcc11	2021-08-25 21:12:20.000000000 +0200
++++ chromium-94.0.4606.20/content/browser/browser_context.cc	2021-09-03 20:29:54.054314956 +0200
+@@ -123,8 +123,9 @@ PermissionController* BrowserContext::Ge
+ StoragePartition* BrowserContext::GetStoragePartition(
+     SiteInstance* site_instance,
+     bool can_create) {
+-  if (site_instance)
++  if (site_instance) {
+     DCHECK_EQ(this, site_instance->GetBrowserContext());
++  }
+ 
+   auto* site_instance_impl = static_cast<SiteInstanceImpl*>(site_instance);
+   auto partition_config =
+--- chromium-94.0.4606.20/content/browser/bluetooth/web_bluetooth_service_impl.cc.gcc11	2021-08-25 21:12:20.000000000 +0200
++++ chromium-94.0.4606.20/content/browser/bluetooth/web_bluetooth_service_impl.cc	2021-09-03 20:31:11.955797290 +0200
+@@ -1844,8 +1844,9 @@ void WebBluetoothServiceImpl::RemoteServ
+     auto insert_result = service_id_to_device_address_.insert(
+         make_pair(service_instance_id, device_address));
+     // If value is already in map, DCHECK it's valid.
+-    if (!insert_result.second)
++    if (!insert_result.second) {
+       DCHECK_EQ(insert_result.first->second, device_address);
++    }
+ 
+     blink::mojom::WebBluetoothRemoteGATTServicePtr service_ptr =
+         blink::mojom::WebBluetoothRemoteGATTService::New();
+--- chromium-94.0.4606.20/content/browser/service_worker/service_worker_cache_writer.cc.gcc11	2021-08-25 21:12:20.000000000 +0200
++++ chromium-94.0.4606.20/content/browser/service_worker/service_worker_cache_writer.cc	2021-09-03 21:28:55.925484503 +0200
+@@ -250,8 +250,9 @@ net::Error ServiceWorkerCacheWriter::May
+   int result = DoLoop(net::OK);
+ 
+   // Synchronous errors and successes always go to STATE_DONE.
+-  if (result != net::ERR_IO_PENDING)
++  if (result != net::ERR_IO_PENDING) {
+     DCHECK_EQ(STATE_DONE, state_);
++  }
+ 
+   // ERR_IO_PENDING has to have one of the STATE_*_DONE states as the next state
+   // (not STATE_DONE itself).
+@@ -288,8 +289,9 @@ net::Error ServiceWorkerCacheWriter::May
+   int result = DoLoop(net::OK);
+ 
+   // Synchronous completions are always STATE_DONE.
+-  if (result != net::ERR_IO_PENDING)
++  if (result != net::ERR_IO_PENDING) {
+     DCHECK_EQ(STATE_DONE, state_);
++  }
+ 
+   // Asynchronous completion means the state machine must be waiting in one of
+   // the Done states for an IO operation to complete:
+@@ -326,8 +328,9 @@ net::Error ServiceWorkerCacheWriter::Res
+   int result = DoLoop(net::OK);
+ 
+   // Synchronous completions are always STATE_DONE.
+-  if (result != net::ERR_IO_PENDING)
++  if (result != net::ERR_IO_PENDING) {
+     DCHECK_EQ(STATE_DONE, state_);
++  }
+ 
+   // Asynchronous completion means the state machine must be waiting in one of
+   // the Done states for an IO operation to complete:
+@@ -358,8 +361,9 @@ net::Error ServiceWorkerCacheWriter::Sta
+   int result = DoLoop(net::OK);
+ 
+   // Synchronous completions are always STATE_DONE.
+-  if (result != net::ERR_IO_PENDING)
++  if (result != net::ERR_IO_PENDING) {
+     DCHECK_EQ(STATE_DONE, state_);
++  }
+ 
+   // Asynchronous completion means the state machine must be waiting in one of
+   // the Done states for an IO operation to complete:
+--- chromium-94.0.4606.20/chrome/browser/ui/omnibox/alternate_nav_infobar_delegate.cc.gcc11	2021-08-25 21:12:13.000000000 +0200
++++ chromium-94.0.4606.20/chrome/browser/ui/omnibox/alternate_nav_infobar_delegate.cc	2021-09-03 23:09:26.688819430 +0200
+@@ -104,8 +104,9 @@ AlternateNavInfoBarDelegate::AlternateNa
+       match_(std::move(match)),
+       destination_url_(destination_url),
+       original_url_(original_url) {
+-  if (match_)
++  if (match_) {
+     DCHECK_EQ(destination_url_, match_->destination_url);
++  }
+ 
+   DCHECK(destination_url_.is_valid());
+   DCHECK(original_url_.is_valid());
+--- chromium-94.0.4606.20/chrome/browser/ui/views/bookmarks/bookmark_editor_view.cc.gcc11	2021-08-25 21:12:13.000000000 +0200
++++ chromium-94.0.4606.20/chrome/browser/ui/views/bookmarks/bookmark_editor_view.cc	2021-09-03 23:32:27.254455557 +0200
+@@ -441,8 +441,9 @@ BookmarkEditorView::CreateRootNode() {
+   DCHECK_LE(root_node->children().size(), 4u);
+   DCHECK_EQ(BookmarkNode::BOOKMARK_BAR, bb_root_node->children()[0]->type());
+   DCHECK_EQ(BookmarkNode::OTHER_NODE, bb_root_node->children()[1]->type());
+-  if (root_node->children().size() >= 3)
++  if (root_node->children().size() >= 3) {
+     DCHECK_EQ(BookmarkNode::MOBILE, bb_root_node->children()[2]->type());
++  }
+   return root_node;
+ }
+ 
+--- chromium-94.0.4606.20/chrome/browser/ui/views/extensions/extensions_menu_view.cc.gcc11	2021-08-25 21:12:13.000000000 +0200
++++ chromium-94.0.4606.20/chrome/browser/ui/views/extensions/extensions_menu_view.cc	2021-09-03 23:33:17.271499520 +0200
+@@ -114,8 +114,9 @@ ExtensionsMenuView::ExtensionsMenuView(
+ }
+ 
+ ExtensionsMenuView::~ExtensionsMenuView() {
+-  if (!g_allow_testing_dialogs)
++  if (!g_allow_testing_dialogs) {
+     DCHECK_EQ(g_extensions_dialog, this);
++  }
+   g_extensions_dialog = nullptr;
+   extensions_menu_items_.clear();
+ 
+--- chromium-94.0.4606.20/chrome/browser/ui/views/layout/interpolating_layout_manager.cc.gcc11	2021-08-25 21:12:13.000000000 +0200
++++ chromium-94.0.4606.20/chrome/browser/ui/views/layout/interpolating_layout_manager.cc	2021-09-03 23:46:34.183278993 +0200
+@@ -38,8 +38,9 @@ void InterpolatingLayoutManager::AddLayo
+   // only interpolate between two layouts currently).
+   auto next = result.first;
+   ++next;
+-  if (next != embedded_layouts_.end())
++  if (next != embedded_layouts_.end()) {
+     DCHECK_GE(next->first.start(), interpolation_range.end());
++  }
+   if (result.first != embedded_layouts_.begin()) {
+     auto prev = result.first;
+     --prev;
+--- chromium-94.0.4606.20/ui/views/animation/ink_drop_util.cc.gcc11	2021-08-25 21:13:17.000000000 +0200
++++ chromium-94.0.4606.20/ui/views/animation/ink_drop_util.cc	2021-09-04 00:15:54.183527981 +0200
+@@ -45,10 +45,12 @@ gfx::Transform GetTransformSubpixelCorre
+   transform_corrected.TransformPoint(&offset);
+   offset.Scale(device_scale_factor);
+ 
+-  if (!std::isnan(offset.x()))
++  if (!std::isnan(offset.x())) {
+     DCHECK_LT(std::abs(std::round(offset.x()) - offset.x()), kEpsilon);
+-  if (!std::isnan(offset.y()))
++  }
++  if (!std::isnan(offset.y())) {
+     DCHECK_LT(std::abs(std::round(offset.y()) - offset.y()), kEpsilon);
++  }
+ #endif
+   return subpixel_correction;
+ }
+--- chromium-94.0.4606.20/ui/views/bubble/bubble_dialog_model_host.cc.gcc11	2021-08-25 21:13:17.000000000 +0200
++++ chromium-94.0.4606.20/ui/views/bubble/bubble_dialog_model_host.cc	2021-09-04 00:16:56.278335823 +0200
+@@ -580,8 +580,9 @@ void BubbleDialogModelHost::AddDialogMod
+   for (const auto& info : fields_) {
+     DCHECK_NE(info.field_view, field_view_info.field_view);
+     DCHECK_NE(info.dialog_model_field, field_view_info.dialog_model_field);
+-    if (info.focusable_view)
++    if (info.focusable_view) {
+       DCHECK_NE(info.focusable_view, field_view_info.focusable_view);
++    }
+   }
+ #endif  // DCHECK_IS_ON()
+   fields_.push_back(field_view_info);
+--- chromium-94.0.4606.20/ui/views/layout/box_layout.cc.gcc11	2021-08-25 21:13:17.000000000 +0200
++++ chromium-94.0.4606.20/ui/views/layout/box_layout.cc	2021-09-04 00:17:50.047303538 +0200
+@@ -308,8 +308,9 @@ void BoxLayout::Layout(View* host) {
+   }
+ 
+   // Flex views should have grown/shrunk to consume all free space.
+-  if (flex_sum)
++  if (flex_sum) {
+     DCHECK_EQ(total_padding, main_free_space);
++  }
+ }
+ 
+ gfx::Size BoxLayout::GetPreferredSize(const View* host) const {
+--- chromium-94.0.4606.20/third_party/blink/renderer/core/paint/ng/ng_box_fragment_painter.h.gcc11	2021-08-25 21:12:28.000000000 +0200
++++ chromium-94.0.4606.20/third_party/blink/renderer/core/paint/ng/ng_box_fragment_painter.h	2021-09-04 00:26:43.917055250 +0200
+@@ -326,10 +326,12 @@ inline NGBoxFragmentPainter::NGBoxFragme
+   DCHECK(box.IsBox() || box.IsRenderedLegend());
+   DCHECK_EQ(box.PostLayout(), &box);
+ #if DCHECK_IS_ON()
+-  if (inline_box_cursor_)
++  if (inline_box_cursor_) {
+     DCHECK_EQ(inline_box_cursor_->Current().Item(), box_item_);
+-  if (box_item_)
++  }
++  if (box_item_) {
+     DCHECK_EQ(box_item_->BoxFragment(), &box);
++  }
+ #endif
+ }
+ 
+--- chromium-94.0.4606.20/third_party/blink/renderer/core/dom/collection_index_cache.h.gcc11	2021-08-25 21:12:28.000000000 +0200
++++ chromium-94.0.4606.20/third_party/blink/renderer/core/dom/collection_index_cache.h	2021-09-04 00:27:39.420989905 +0200
+@@ -217,8 +217,9 @@ CollectionIndexCache<Collection, NodeTyp
+       collection.TraverseForwardToOffset(index, *CachedNode(), current_index);
+   if (!current_node) {
+     // Did not find the node. On plus side, we now know the length.
+-    if (IsCachedNodeCountValid())
++    if (IsCachedNodeCountValid()) {
+       DCHECK_EQ(current_index + 1, CachedNodeCount());
++    }
+     SetCachedNodeCount(current_index + 1);
+     return nullptr;
+   }
+--- chromium-94.0.4606.20/content/renderer/render_frame_impl.cc.gcc11	2021-08-25 21:12:20.000000000 +0200
++++ chromium-94.0.4606.20/content/renderer/render_frame_impl.cc	2021-09-04 00:37:21.818769576 +0200
+@@ -1689,8 +1689,9 @@ void RenderFrameImpl::CreateFrame(
+   // Child frames require there to be a |parent_routing_id| present, for the
+   // remote parent frame. Though it is only used if the |previous_routing_id|
+   // is not given, which happens in some corner cases.
+-  if (!is_main_frame)
++  if (!is_main_frame) {
+     DCHECK_NE(parent_routing_id, MSG_ROUTING_NONE);
++  }
+ 
+   // We now have a WebLocalFrame for the new frame. The next step is to make
+   // a RenderWidget (aka WebWidgetClient) for it, if it is a local root.
+--- chromium-94.0.4606.20/extensions/renderer/bindings/argument_spec.cc.gcc11	2021-08-25 21:12:21.000000000 +0200
++++ chromium-94.0.4606.20/extensions/renderer/bindings/argument_spec.cc	2021-09-04 00:51:30.274407673 +0200
+@@ -737,8 +737,9 @@ bool ArgumentSpec::ParseArgumentToAny(v8
+       *error = api_errors::UnserializableValue();
+       return false;
+     }
+-    if (type_ == ArgumentType::BINARY)
++    if (type_ == ArgumentType::BINARY) {
+       DCHECK_EQ(base::Value::Type::BINARY, converted->type());
++    }
+     *out_value = std::move(converted);
+   }
+   if (v8_out_value)
+--- chromium-94.0.4606.20/pdf/pdfium/pdfium_api_string_buffer_adapter.cc.gcc11	2021-08-25 21:12:25.000000000 +0200
++++ chromium-94.0.4606.20/pdf/pdfium/pdfium_api_string_buffer_adapter.cc	2021-09-04 00:52:35.873141544 +0200
+@@ -40,8 +40,9 @@ void PDFiumAPIStringBufferAdapter<String
+   DCHECK(!is_closed_);
+   is_closed_ = true;
+ 
+-  if (check_expected_size_)
++  if (check_expected_size_) {
+     DCHECK_EQ(expected_size_, actual_size);
++  }
+ 
+   if (actual_size > 0) {
+     DCHECK((*str_)[actual_size - 1] == 0);
+--- chromium-94.0.4606.20/third_party/blink/renderer/platform/graphics/compositing/paint_chunks_to_cc_layer.cc.gcc11	2021-08-25 21:12:29.000000000 +0200
++++ chromium-94.0.4606.20/third_party/blink/renderer/platform/graphics/compositing/paint_chunks_to_cc_layer.cc	2021-09-04 12:26:53.453972166 +0200
+@@ -611,8 +612,9 @@ void ConversionContext::EndEffect() {
+ #if DCHECK_IS_ON()
+   const auto& previous_state = state_stack_.back();
+   DCHECK_EQ(previous_state.type, StateEntry::kEffect);
+-  if (!previous_state.has_pre_cap_effect_hierarchy_issue)
++  if (!previous_state.has_pre_cap_effect_hierarchy_issue) {
+     DCHECK_EQ(current_effect_->UnaliasedParent(), previous_state.effect);
++  }
+   DCHECK_EQ(current_clip_, previous_state.clip);
+ #endif
+ 
+--- chromium-94.0.4606.20/third_party/blink/renderer/platform/fonts/shaping/shape_result.cc.gcc11	2021-08-25 21:12:29.000000000 +0200
++++ chromium-94.0.4606.20/third_party/blink/renderer/platform/fonts/shaping/shape_result.cc	2021-09-04 12:32:43.812232817 +0200
+@@ -1273,8 +1273,9 @@ void ShapeResult::CopyRanges(const Shape
+       const ShapeRange& range = ranges[last_range - i];
+ #if DCHECK_IS_ON()
+       DCHECK_GE(range.end, range.start);
+-      if (i != last_range)
++      if (i != last_range) {
+         DCHECK_GE(range.start, ranges[last_range - (i + 1)].end);
++      }
+ #endif
+       run_index =
+           CopyRangeInternal(run_index, range.start, range.end, range.target);
+@@ -1287,8 +1288,9 @@ void ShapeResult::CopyRanges(const Shape
+     const ShapeRange& range = ranges[i];
+ #if DCHECK_IS_ON()
+     DCHECK_GE(range.end, range.start);
+-    if (i)
++    if (i) {
+       DCHECK_GE(range.start, ranges[i - 1].end);
++    }
+ #endif
+     run_index =
+         CopyRangeInternal(run_index, range.start, range.end, range.target);
+--- chromium-94.0.4606.20/third_party/blink/renderer/modules/webcodecs/image_track.cc.gcc11	2021-08-25 21:12:29.000000000 +0200
++++ chromium-94.0.4606.20/third_party/blink/renderer/modules/webcodecs/image_track.cc	2021-09-04 12:33:37.476200193 +0200
+@@ -67,8 +67,9 @@ void ImageTrack::UpdateTrack(uint32_t fr
+ 
+   // Changes from still to animated are not allowed since they can cause sites
+   // to think there are no further frames to decode in the streaming case.
+-  if (!was_animated)
++  if (!was_animated) {
+     DCHECK_EQ(was_animated, animated());
++  }
+ }
+ 
+ void ImageTrack::Trace(Visitor* visitor) const {
+--- chromium-94.0.4606.20/third_party/blink/renderer/modules/image_downloader/multi_resolution_image_resource_fetcher.cc.gcc11	2021-08-25 21:12:29.000000000 +0200
++++ chromium-94.0.4606.20/third_party/blink/renderer/modules/image_downloader/multi_resolution_image_resource_fetcher.cc	2021-09-04 12:34:28.405220109 +0200
+@@ -200,8 +200,9 @@ void MultiResolutionImageResourceFetcher
+   DCHECK(!loader_);
+   DCHECK(!client_);
+   DCHECK(!request_.IsNull());
+-  if (!request_.HttpBody().IsNull())
++  if (!request_.HttpBody().IsNull()) {
+     DCHECK_NE("GET", request_.HttpMethod().Utf8()) << "GETs can't have bodies.";
++  }
+ 
+   mojom::blink::RequestContextType request_context =
+       is_favicon ? mojom::blink::RequestContextType::FAVICON
+--- chromium-94.0.4606.20/third_party/blink/renderer/core/execution_context/agent.cc.gcc11	2021-08-25 21:12:28.000000000 +0200
++++ chromium-94.0.4606.20/third_party/blink/renderer/core/execution_context/agent.cc	2021-09-04 12:35:30.301028867 +0200
+@@ -47,8 +47,9 @@ bool Agent::IsCrossOriginIsolated() {
+ // static
+ void Agent::SetIsCrossOriginIsolated(bool value) {
+ #if DCHECK_IS_ON()
+-  if (is_cross_origin_isolated_set)
++  if (is_cross_origin_isolated_set) {
+     DCHECK_EQ(is_cross_origin_isolated, value);
++  }
+   is_cross_origin_isolated_set = true;
+ #endif
+   is_cross_origin_isolated = value;
+@@ -62,8 +63,9 @@ bool Agent::IsDirectSocketEnabled() {
+ // static
+ void Agent::SetIsDirectSocketEnabled(bool value) {
+ #if DCHECK_IS_ON()
+-  if (is_direct_socket_potentially_available_set)
++  if (is_direct_socket_potentially_available_set) {
+     DCHECK_EQ(is_direct_socket_potentially_available, value);
++  }
+   is_direct_socket_potentially_available_set = true;
+ #endif
+   is_direct_socket_potentially_available = value;
+--- chromium-94.0.4606.20/third_party/blink/renderer/core/scroll/scrollable_area.cc.gcc11	2021-08-25 21:12:28.000000000 +0200
++++ chromium-94.0.4606.20/third_party/blink/renderer/core/scroll/scrollable_area.cc	2021-09-04 12:36:18.286105266 +0200
+@@ -811,8 +811,9 @@ Node* ScrollableArea::EventTargetNode()
+   Node* node = box->GetNode();
+   if (!node && box->Parent() && box->Parent()->IsLayoutNGFieldset())
+     node = box->Parent()->GetNode();
+-  if (node && IsA<Element>(node))
++  if (node && IsA<Element>(node)) {
+     DCHECK_EQ(box, To<Element>(node)->GetLayoutBoxForScrolling());
++  }
+   return node;
+ }
+ 
+--- chromium-94.0.4606.20/third_party/blink/renderer/core/paint/find_paint_offset_needing_update.h.gcc11	2021-08-25 21:12:28.000000000 +0200
++++ chromium-94.0.4606.20/third_party/blink/renderer/core/paint/find_paint_offset_needing_update.h	2021-09-04 12:37:44.193451571 +0200
+@@ -57,8 +57,9 @@ class FindPaintOffsetNeedingUpdateScope
+     }
+     DCHECK_EQ(!!old_translation_, !!new_translation) << object_;
+     DCHECK_EQ(old_parent_, new_parent) << object_.DebugName();
+-    if (old_translation_ && new_translation)
++    if (old_translation_ && new_translation) {
+       DCHECK_EQ(*old_translation_, *new_translation) << object_;
++    }
+   }
+ 
+  private:
+--- chromium-94.0.4606.20/third_party/blink/renderer/core/paint/ng/ng_inline_box_fragment_painter.h.gcc11	2021-08-25 21:12:28.000000000 +0200
++++ chromium-94.0.4606.20/third_party/blink/renderer/core/paint/ng/ng_inline_box_fragment_painter.h	2021-09-04 12:49:51.683438969 +0200
+@@ -44,12 +44,14 @@ class NGInlineBoxFragmentPainterBase : p
+         inline_box_item_(inline_box_item),
+         inline_box_cursor_(inline_box_cursor) {
+ #if DCHECK_IS_ON()
+-    if (inline_box_cursor)
++    if (inline_box_cursor) {
+       DCHECK_EQ(inline_box_cursor->Current().Item(), &inline_box_item);
+-    if (inline_box_item.BoxFragment())
++    }
++    if (inline_box_item.BoxFragment()) {
+       DCHECK_EQ(inline_box_item.BoxFragment(), &inline_box_fragment);
+-    else
++    } else {
+       DCHECK_EQ(inline_box_item.LineBoxFragment(), &inline_box_fragment);
++    }
+ #endif
+   }
+ 
+--- chromium-94.0.4606.20/third_party/blink/renderer/core/page/drag_controller.cc.gcc11	2021-08-25 21:12:28.000000000 +0200
++++ chromium-94.0.4606.20/third_party/blink/renderer/core/page/drag_controller.cc	2021-09-04 12:54:09.590512785 +0200
+@@ -568,8 +568,9 @@ bool DragController::ConcludeEditDrag(Dr
+   if (drag_data->ContainsFiles() && file_input) {
+     // fileInput should be the element we hit tested for, unless it was made
+     // display:none in a drop event handler.
+-    if (file_input->GetLayoutObject())
++    if (file_input->GetLayoutObject()) {
+       DCHECK_EQ(file_input, element);
++    }
+     if (file_input->IsDisabledFormControl())
+       return false;
+ 
+--- chromium-94.0.4606.20/third_party/blink/renderer/core/loader/document_loader.cc.gcc11	2021-08-25 21:12:28.000000000 +0200
++++ chromium-94.0.4606.20/third_party/blink/renderer/core/loader/document_loader.cc	2021-09-04 12:54:54.960648170 +0200
+@@ -1054,8 +1054,9 @@ void DocumentLoader::FinishedLoading(bas
+   // has to be validated before committing the navigation. The validation
+   // process loads the entire body of the archive, which will move the state to
+   // FinishedLoading.
+-  if (!loading_main_document_from_mhtml_archive_)
++  if (!loading_main_document_from_mhtml_archive_) {
+     DCHECK_GE(state_, kCommitted);
++  }
+ 
+   base::TimeTicks response_end_time = finish_time;
+   if (response_end_time.is_null())
+--- chromium-94.0.4606.20/third_party/blink/renderer/core/css/counter_style_map.cc.gcc11	2021-08-25 21:12:28.000000000 +0200
++++ chromium-94.0.4606.20/third_party/blink/renderer/core/css/counter_style_map.cc	2021-09-04 12:55:42.881734829 +0200
+@@ -43,8 +43,9 @@ CounterStyleMap* CounterStyleMap::Create
+ CounterStyleMap::CounterStyleMap(Document* document, TreeScope* tree_scope)
+     : owner_document_(document), tree_scope_(tree_scope) {
+ #if DCHECK_IS_ON()
+-  if (tree_scope)
++  if (tree_scope) {
+     DCHECK_EQ(document, &tree_scope->GetDocument());
++  }
+ #endif
+ }
+ 
+--- chromium-94.0.4606.20/third_party/blink/renderer/core/editing/visible_units_paragraph.cc.gcc11	2021-08-25 21:12:28.000000000 +0200
++++ chromium-94.0.4606.20/third_party/blink/renderer/core/editing/visible_units_paragraph.cc	2021-09-04 12:56:47.928494902 +0200
+@@ -165,8 +165,9 @@ VisiblePositionTemplate<Strategy> StartO
+   const PositionTemplate<Strategy>& start = StartOfParagraphAlgorithm(
+       visible_position.DeepEquivalent(), boundary_crossing_rule);
+ #if DCHECK_IS_ON()
+-  if (start.IsNotNull() && visible_position.IsNotNull())
++  if (start.IsNotNull() && visible_position.IsNotNull()) {
+     DCHECK_LE(start, visible_position.DeepEquivalent());
++  }
+ #endif
+   return CreateVisiblePosition(start);
+ }
+@@ -280,8 +281,9 @@ VisiblePositionTemplate<Strategy> EndOfP
+   const PositionTemplate<Strategy>& end = EndOfParagraphAlgorithm(
+       visible_position.DeepEquivalent(), boundary_crossing_rule);
+ #if DCHECK_IS_ON()
+-  if (visible_position.IsNotNull() && end.IsNotNull())
++  if (visible_position.IsNotNull() && end.IsNotNull()) {
+     DCHECK_LE(visible_position.DeepEquivalent(), end);
++  }
+ #endif
+   return CreateVisiblePosition(end);
+ }
+--- chromium-94.0.4606.20/third_party/blink/renderer/core/editing/markers/sorted_document_marker_list_editor.cc.gcc11	2021-08-25 21:12:28.000000000 +0200
++++ chromium-94.0.4606.20/third_party/blink/renderer/core/editing/markers/sorted_document_marker_list_editor.cc	2021-09-04 12:57:40.800486898 +0200
+@@ -25,11 +25,13 @@ void SortedDocumentMarkerListEditor::Add
+ 
+   // DCHECK that we're not trying to add a marker that overlaps an existing one
+   // (this method only works for lists which don't allow overlapping markers)
+-  if (pos != list->end())
++  if (pos != list->end()) {
+     DCHECK_LE(marker->EndOffset(), (*pos)->StartOffset());
++  }
+ 
+-  if (pos != list->begin())
++  if (pos != list->begin()) {
+     DCHECK_GE(marker->StartOffset(), (*std::prev(pos))->EndOffset());
++  }
+ 
+   list->insert(SafeCast<wtf_size_t>(pos - list->begin()), marker);
+ }
+--- chromium-94.0.4606.20/third_party/blink/renderer/core/editing/editing_style.cc.gcc11	2021-08-25 21:12:28.000000000 +0200
++++ chromium-94.0.4606.20/third_party/blink/renderer/core/editing/editing_style.cc	2021-09-04 12:59:39.296227287 +0200
+@@ -1173,8 +1173,9 @@ bool EditingStyle::ExtractConflictingImp
+   DCHECK(element);
+   // HTMLAttributeEquivalent::addToStyle doesn't support unicode-bidi and
+   // direction properties
+-  if (extracted_style)
++  if (extracted_style) {
+     DCHECK_EQ(should_preserve_writing_direction, kPreserveWritingDirection);
++  }
+   if (!mutable_style_)
+     return false;
+ 
+--- chromium-94.0.4606.20/third_party/blink/renderer/core/editing/commands/undo_stack.cc.gcc11	2021-08-25 21:12:28.000000000 +0200
++++ chromium-94.0.4606.20/third_party/blink/renderer/core/editing/commands/undo_stack.cc	2021-09-04 13:00:42.888014373 +0200
+@@ -41,8 +41,9 @@ static const size_t kMaximumUndoStackDep
+ UndoStack::UndoStack() = default;
+ 
+ void UndoStack::RegisterUndoStep(UndoStep* step) {
+-  if (!undo_stack_.IsEmpty())
++  if (!undo_stack_.IsEmpty()) {
+     DCHECK_GE(step->SequenceNumber(), undo_stack_.back()->SequenceNumber());
++  }
+   if (undo_stack_.size() == kMaximumUndoStackDepth) {
+     // Drop the oldest item off the far end.
+     undo_stack_.erase(undo_stack_.begin());
+--- chromium-94.0.4606.20/third_party/blink/renderer/core/layout/ng/table/ng_table_layout_algorithm_types.cc.gcc11	2021-08-25 21:12:28.000000000 +0200
++++ chromium-94.0.4606.20/third_party/blink/renderer/core/layout/ng/table/ng_table_layout_algorithm_types.cc	2021-09-04 13:03:04.147319404 +0200
+@@ -73,8 +73,9 @@ inline void InlineSizesFromStyle(
+     *percentage_inline_size =
+         std::min(**percentage_inline_size, max_length.Percent());
+   }
+-  if (*min_inline_size && *max_inline_size)
++  if (*min_inline_size && *max_inline_size) {
+     DCHECK_GE(**max_inline_size, **min_inline_size);
++  }
+ }
+ 
+ }  // namespace
+--- chromium-94.0.4606.20/third_party/blink/renderer/core/layout/ng/ng_simplified_layout_algorithm.cc.gcc11	2021-08-25 21:12:28.000000000 +0200
++++ chromium-94.0.4606.20/third_party/blink/renderer/core/layout/ng/ng_simplified_layout_algorithm.cc	2021-09-04 13:04:13.074004083 +0200
+@@ -181,8 +181,9 @@ NGSimplifiedLayoutAlgorithm::NGSimplifie
+       // Tables, sections, rows don't respect the typical block-sizing rules.
+       if (!physical_fragment.IsTableNG() &&
+           !physical_fragment.IsTableNGSection() &&
+-          !physical_fragment.IsTableNGRow())
++          !physical_fragment.IsTableNGRow()) {
+         DCHECK_EQ(old_block_size, new_block_size);
++      }
+ #endif
+       container_builder_.SetFragmentBlockSize(old_block_size);
+     }
+--- chromium-94.0.4606.20/third_party/blink/renderer/core/layout/ng/ng_physical_box_fragment.cc.gcc11	2021-08-25 21:12:28.000000000 +0200
++++ chromium-94.0.4606.20/third_party/blink/renderer/core/layout/ng/ng_physical_box_fragment.cc	2021-09-04 13:05:25.639619094 +0200
+@@ -1596,8 +1596,9 @@ void NGPhysicalBoxFragment::CheckSameFor
+   LogicalSize other_size =
+       other.size_.ConvertToLogical(Style().GetWritingMode());
+   DCHECK_EQ(size.inline_size, other_size.inline_size);
+-  if (check_same_block_size)
++  if (check_same_block_size) {
+     DCHECK_EQ(size.block_size, other_size.block_size);
++  }
+ 
+   // "simplified" layout doesn't work within a fragmentation context.
+   DCHECK(!break_token_ && !other.break_token_);
+@@ -1668,8 +1669,9 @@ void NGPhysicalBoxFragment::CheckSameFor
+     }
+   }
+ 
+-  if (IsTableNGCell())
++  if (IsTableNGCell()) {
+     DCHECK_EQ(TableCellColumnIndex(), other.TableCellColumnIndex());
++  }
+ 
+   DCHECK(Borders() == other.Borders());
+   DCHECK(Padding() == other.Padding());
+--- chromium-94.0.4606.20/third_party/blink/renderer/core/layout/ng/ng_length_utils.cc.gcc11	2021-09-03 02:51:41.104075186 +0200
++++ chromium-94.0.4606.20/third_party/blink/renderer/core/layout/ng/ng_length_utils.cc	2021-09-04 13:06:53.163948299 +0200
+@@ -216,8 +216,9 @@ LayoutUnit ResolveBlockLengthInternal(
+       // block-fragmented, though, because then the block-start border/padding
+       // may be in a different fragmentainer than the block-end border/padding.
+       if (intrinsic_size != kIndefiniteSize &&
+-          !constraint_space.HasBlockFragmentation())
++          !constraint_space.HasBlockFragmentation()) {
+         DCHECK_GE(intrinsic_size, border_padding.BlockSum());
++      }
+ #endif  // DCHECK_IS_ON()
+       return intrinsic_size;
+     case Length::kDeviceWidth:
+--- chromium-94.0.4606.20/third_party/blink/renderer/core/layout/ng/ng_block_layout_algorithm.cc.gcc11	2021-08-25 21:12:28.000000000 +0200
++++ chromium-94.0.4606.20/third_party/blink/renderer/core/layout/ng/ng_block_layout_algorithm.cc	2021-09-04 13:08:45.451807195 +0200
+@@ -572,8 +572,9 @@ inline scoped_refptr<const NGLayoutResul
+   // here. If we're resuming from a break token (for a block that doesn't
+   // establish a new formatting context), that may not be the case,
+   // though. There may e.g. be clearance involved, or inline-start margins.
+-  if (ConstraintSpace().IsNewFormattingContext())
++  if (ConstraintSpace().IsNewFormattingContext()) {
+     DCHECK_EQ(*container_builder_.BfcBlockOffset(), LayoutUnit());
++  }
+   // If this is a new formatting context, or if we're resuming from a break
+   // token, no margin strut must be lingering around at this point.
+   if (ConstraintSpace().IsNewFormattingContext() || is_resuming_)
+@@ -2110,8 +2111,9 @@ NGPreviousInflowPosition NGBlockLayoutAl
+                              NextBorderEdge(previous_inflow_position);
+       logical_block_offset += clearance;
+     }
+-    if (!container_builder_.BfcBlockOffset())
++    if (!container_builder_.BfcBlockOffset()) {
+       DCHECK_EQ(logical_block_offset, LayoutUnit());
++    }
+   } else {
+     // We add AnnotationOverflow unconditionally here.  Then, we cancel it if
+     //  - The next line box has block-start annotation space, or
+--- chromium-94.0.4606.20/third_party/blink/renderer/core/layout/ng/inline/ng_offset_mapping.cc.gcc11	2021-08-25 21:12:28.000000000 +0200
++++ chromium-94.0.4606.20/third_party/blink/renderer/core/layout/ng/inline/ng_offset_mapping.cc	2021-09-04 13:09:36.211840948 +0200
+@@ -32,8 +32,9 @@ Position CreatePositionForOffsetMapping(
+     // TODO(crbug.com/750990): Support 'text-transform' to remove this hack.
+ #if DCHECK_IS_ON()
+     // Ensures that the clamping hack kicks in only with text-transform.
+-    if (node.ComputedStyleRef().TextTransform() == ETextTransform::kNone)
++    if (node.ComputedStyleRef().TextTransform() == ETextTransform::kNone) {
+       DCHECK_LE(dom_offset, text_node->length());
++    }
+ #endif
+     const unsigned clamped_offset = std::min(dom_offset, text_node->length());
+     return Position(&node, clamped_offset);
+--- chromium-94.0.4606.20/third_party/blink/renderer/core/layout/ng/inline/ng_fragment_items.cc.gcc11	2021-08-25 21:12:28.000000000 +0200
++++ chromium-94.0.4606.20/third_party/blink/renderer/core/layout/ng/inline/ng_fragment_items.cc	2021-09-04 13:10:25.260907135 +0200
+@@ -141,8 +141,9 @@ void NGFragmentItems::FinalizeAfterLayou
+       if (is_first) {
+         item.SetFragmentId(0);
+ #if DCHECK_IS_ON()
+-        if (!RuntimeEnabledFeatures::LayoutNGBlockFragmentationEnabled())
++        if (!RuntimeEnabledFeatures::LayoutNGBlockFragmentationEnabled()) {
+           DCHECK_EQ(layout_object->FirstInlineFragmentItemIndex(), 0u);
++        }
+ #endif
+         layout_object->SetFirstInlineFragmentItemIndex(item_index);
+         continue;
+--- chromium-94.0.4606.20/third_party/blink/renderer/core/layout/ng/grid/ng_grid_layout_algorithm.cc.gcc11	2021-08-25 21:12:28.000000000 +0200
++++ chromium-94.0.4606.20/third_party/blink/renderer/core/layout/ng/grid/ng_grid_layout_algorithm.cc	2021-09-04 13:11:59.240117565 +0200
+@@ -2227,8 +2227,9 @@ void DistributeExtraSpaceToSets(LayoutUn
+ 
+   DCHECK_GT(extra_space, 0);
+ #if DCHECK_IS_ON()
+-  if (IsDistributionForGrowthLimits(contribution_type))
++  if (IsDistributionForGrowthLimits(contribution_type)) {
+     DCHECK_EQ(sets_to_grow, sets_to_grow_beyond_limit);
++  }
+ #endif
+ 
+   wtf_size_t growable_track_count = 0;
+--- chromium-94.0.4606.20/third_party/blink/renderer/core/layout/ng/exclusions/ng_exclusion_space.cc.gcc11	2021-08-25 21:12:28.000000000 +0200
++++ chromium-94.0.4606.20/third_party/blink/renderer/core/layout/ng/exclusions/ng_exclusion_space.cc	2021-09-04 13:13:08.413800047 +0200
+@@ -679,8 +679,9 @@ NGExclusionSpaceInternal::GetDerivedGeom
+       block_offset_limit = LayoutUnit::Min();
+     } else {
+ #if DCHECK_IS_ON()
+-      if (it != end)
++      if (it != end) {
+         DCHECK_GE((*it)->rect.BlockStartOffset(), block_offset_limit);
++      }
+ #endif
+ 
+       // Find the "highest" exclusion possible which itself is past other
+--- chromium-94.0.4606.20/third_party/blink/renderer/core/layout/layout_text_fragment.cc.gcc11	2021-08-25 21:12:28.000000000 +0200
++++ chromium-94.0.4606.20/third_party/blink/renderer/core/layout/layout_text_fragment.cc	2021-09-04 13:17:18.587033069 +0200
+@@ -225,8 +225,9 @@ Position LayoutTextFragment::PositionFor
+   // TODO(layout-dev): Make the following DCHECK always enabled after we
+   // properly support 'text-transform' changing text length.
+ #if DCHECK_IS_ON()
+-  if (StyleRef().TextTransform() == ETextTransform::kNone)
++  if (StyleRef().TextTransform() == ETextTransform::kNone) {
+     DCHECK_LE(offset, FragmentLength());
++  }
+ #endif
+   const Text* node = AssociatedTextNode();
+   if (!node)
+--- chromium-94.0.4606.20/third_party/blink/renderer/core/layout/layout_text.cc.gcc11	2021-08-25 21:12:28.000000000 +0200
++++ chromium-94.0.4606.20/third_party/blink/renderer/core/layout/layout_text.cc	2021-09-04 13:18:25.601755595 +0200
+@@ -2494,8 +2494,9 @@ Position LayoutText::PositionForCaretOff
+   // TODO(layout-dev): Support offset change due to text-transform.
+ #if DCHECK_IS_ON()
+   // Ensures that the clamping hack kicks in only with text-transform.
+-  if (StyleRef().TextTransform() == ETextTransform::kNone)
++  if (StyleRef().TextTransform() == ETextTransform::kNone) {
+     DCHECK_LE(offset, text_node->length());
++  }
+ #endif
+   const unsigned clamped_offset = std::min(offset, text_node->length());
+   return Position(node, clamped_offset);
+--- chromium-94.0.4606.20/third_party/blink/renderer/core/layout/layout_multi_column_flow_thread.cc.gcc11	2021-08-25 21:12:28.000000000 +0200
++++ chromium-94.0.4606.20/third_party/blink/renderer/core/layout/layout_multi_column_flow_thread.cc	2021-09-04 13:19:15.354807033 +0200
+@@ -1413,8 +1413,9 @@ void LayoutMultiColumnFlowThread::FlowTh
+   // Make sure that we were preceded by a call to
+   // flowThreadDescendantStyleWillChange() with the same descendant as we have
+   // now.
+-  if (style_changed_box)
++  if (style_changed_box) {
+     DCHECK_EQ(style_changed_box, descendant);
++  }
+ #endif
+ 
+   ToggleSpannersInSubtree(descendant);
+--- chromium-94.0.4606.20/third_party/blink/renderer/core/layout/layout_block_flow.cc.gcc11	2021-08-25 21:12:28.000000000 +0200
++++ chromium-94.0.4606.20/third_party/blink/renderer/core/layout/layout_block_flow.cc	2021-09-04 13:20:59.526820572 +0200
+@@ -352,8 +352,9 @@ bool LayoutBlockFlow::IsSelfCollapsingBl
+     DCHECK(CreatesNewFormattingContext());
+     return false;
+   }
+-  if (!IsLayoutNGObject())
++  if (!IsLayoutNGObject()) {
+     DCHECK_EQ(!is_self_collapsing_, !CheckIfIsSelfCollapsingBlock());
++  }
+   return is_self_collapsing_;
+ }
+ 

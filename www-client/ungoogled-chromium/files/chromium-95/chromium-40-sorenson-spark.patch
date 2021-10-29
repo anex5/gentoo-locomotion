@@ -1,0 +1,381 @@
+diff -up chromium-62.0.3192.0/media/base/mime_util_internal.h.wmvflvmpg chromium-62.0.3192.0/media/base/mime_util_internal.h
+--- chromium-62.0.3192.0/media/base/mime_util_internal.h.wmvflvmpg	2017-08-30 15:52:00.602204610 +0200
++++ chromium-62.0.3192.0/media/base/mime_util_internal.h	2017-08-30 15:52:00.616204356 +0200
+@@ -48,7 +48,20 @@ class MEDIA_EXPORT MimeUtil {
+     MP2,
+     MPEG4_SP,
+     MPEG4_ASP,
+-    LAST_CODEC = MPEG4_ASP
++    MSMPEG4v1,
++    MSMPEG4v2,
++    MSMPEG4v3,
++    WMV7,
++    WMV8,
++    WMV9,
++    VC1,
++    WMA1,
++    WMA2,
++    VP6,
++    MPEG1,
++    MPEG2,
++    FLV1,
++    LAST_CODEC = FLV1
+   };
+ 
+   // Platform configuration structure.  Controls which codecs are supported at
+diff -up chromium-51.0.2687.0/media/ffmpeg/ffmpeg_common.cc.flv1 chromium-51.0.2687.0/media/ffmpeg/ffmpeg_common.cc
+--- chromium-51.0.2687.0/media/ffmpeg/ffmpeg_common.cc.flv1	2016-03-23 18:22:20.227596097 +0100
++++ chromium-51.0.2687.0/media/ffmpeg/ffmpeg_common.cc	2016-03-23 18:22:20.245595771 +0100
+@@ -120,6 +120,10 @@ AudioCodec CodecIDToAudioCodec(AVCodecID
+       return AudioCodec::kMP2;
+     case AV_CODEC_ID_DTS:
+       return AudioCodec::kDTS;
++    case AV_CODEC_ID_WMAV1:
++      return AudioCodec::kWMA1;
++    case AV_CODEC_ID_WMAV2:
++      return AudioCodec::kWMA2;
+     default:
+       DVLOG(1) << "Unknown audio CodecID: " << codec_id;
+   }
+@@ -179,6 +183,10 @@ AVCodecID AudioCodecToCodecID(AudioCodec
+       return AV_CODEC_ID_MP2;
+     case AudioCodec::kDTS:
+       return AV_CODEC_ID_DTS;
++    case AudioCodec::kWMA1:
++      return AV_CODEC_ID_WMAV1;
++    case AudioCodec::kWMA2:
++      return AV_CODEC_ID_WMAV2;
+     default:
+       DVLOG(1) << "Unknown AudioCodec: " << audio_codec;
+   }
+@@ -197,6 +197,28 @@
+       return VideoCodec::kVP9;
+     case AV_CODEC_ID_AV1:
+       return VideoCodec::kAV1;
++    case AV_CODEC_ID_MSMPEG4V1:
++      return VideoCodec::kMSMPEG4V1;
++    case AV_CODEC_ID_MSMPEG4V2:
++      return VideoCodec::kMSMPEG4V2;
++    case AV_CODEC_ID_MSMPEG4V3:
++      return VideoCodec::kMSMPEG4V3;
++    case AV_CODEC_ID_WMV1:
++      return VideoCodec::kWMV7;
++    case AV_CODEC_ID_WMV2:
++      return VideoCodec::kWMV8;
++    case AV_CODEC_ID_WMV3:
++      return VideoCodec::kWMV9;
++    case AV_CODEC_ID_VC1:
++      return VideoCodec::kVC1;
++    case AV_CODEC_ID_VP6:
++      return VideoCodec::kVP6;
++    case AV_CODEC_ID_MPEG1VIDEO:
++      return VideoCodec::kMPEG1;
++    case AV_CODEC_ID_MPEG2VIDEO:
++      return VideoCodec::kMPEG2;
++    case AV_CODEC_ID_FLV1:
++      return VideoCodec::kSorensonSpark;
+     default:
+       DVLOG(1) << "Unknown video CodecID: " << codec_id;
+   }
+--- chromium-56.0.2924.10/media/remoting/proto_enum_utils.cc.bak.2	2016-12-01 23:42:15.717317808 +0100
++++ chromium-56.0.2924.10/media/remoting/proto_enum_utils.cc	2016-12-01 23:44:59.695754038 +0100
+@@ -40,6 +40,8 @@ absl::optional<AudioCodec> ToMediaAudioC
+     CASE_RETURN_ORIGIN_TO_OTHER(kCodecMpegHAudio, kMpegHAudio);
+     CASE_RETURN_ORIGIN_TO_OTHER(kCodecMP2, kMP2);
+     CASE_RETURN_ORIGIN_TO_OTHER(kCodecDTS, kDTS);
++    CASE_RETURN_ORIGIN_TO_OTHER(kCodecWMA1, kWMA1);
++    CASE_RETURN_ORIGIN_TO_OTHER(kCodecWMA2, kWMA2);
+     default:
+       return absl::nullopt;
+   }
+@@ -70,6 +72,8 @@ ToProtoAudioDecoderConfigCodec(AudioCode
+     CASE_RETURN_ORIGIN_TO_OTHER(kMpegHAudio, kCodecMpegHAudio);
+     CASE_RETURN_ORIGIN_TO_OTHER(kMP2, kCodecMP2);
+     CASE_RETURN_ORIGIN_TO_OTHER(kDTS, kCodecDTS);
++    CASE_RETURN_ORIGIN_TO_OTHER(kWMA1, kCodecWMA1);
++    CASE_RETURN_ORIGIN_TO_OTHER(kWMA2, kCodecWMA2);
+     default:
+       return absl::nullopt;
+   }
+@@ -223,6 +227,15 @@ absl::optional<VideoCodec> ToMediaVideoC
+     CASE_RETURN_ORIGIN_TO_OTHER(kCodecHEVC, kHEVC);
+     CASE_RETURN_ORIGIN_TO_OTHER(kCodecDolbyVision, kDolbyVision);
+     CASE_RETURN_ORIGIN_TO_OTHER(kCodecAV1, kAV1);
++    CASE_RETURN_ORIGIN_TO_OTHER(kCodecMSMPEG4V1, kMSMPEG4V1);
++	CASE_RETURN_ORIGIN_TO_OTHER(kCodecMSMPEG4V2, kMSMPEG4V2);
++	CASE_RETURN_ORIGIN_TO_OTHER(kCodecMSMPEG4V3, kMSMPEG4V3);
++	CASE_RETURN_ORIGIN_TO_OTHER(kCodecWMV7, kWMV7);
++	CASE_RETURN_ORIGIN_TO_OTHER(kCodecWMV8, kWMV8);
++	CASE_RETURN_ORIGIN_TO_OTHER(kCodecWMV9, kWMV9);
++	CASE_RETURN_ORIGIN_TO_OTHER(kCodecVP6, kVP6);
++	CASE_RETURN_ORIGIN_TO_OTHER(kCodecMPEG1, kMPEG1);
++	CASE_RETURN_ORIGIN_TO_OTHER(kCodecSorensonSpark, kSorensonSpark);
+     default:
+       return absl::nullopt;
+   }
+@@ -244,6 +257,15 @@ ToProtoVideoDecoderConfigCodec(VideoCode
+     CASE_RETURN_ORIGIN_TO_OTHER(kHEVC, kCodecHEVC);
+     CASE_RETURN_ORIGIN_TO_OTHER(kDolbyVision, kCodecDolbyVision);
+     CASE_RETURN_ORIGIN_TO_OTHER(kAV1, kCodecAV1);
++	CASE_RETURN_ORIGIN_TO_OTHER(kMSMPEG4V1, kCodecMSMPEG4V1);
++	CASE_RETURN_ORIGIN_TO_OTHER(kMSMPEG4V2, kCodecMSMPEG4V2);
++	CASE_RETURN_ORIGIN_TO_OTHER(kMSMPEG4V3, kCodecMSMPEG4V3);
++	CASE_RETURN_ORIGIN_TO_OTHER(kWMV7, kCodecWMV7);
++	CASE_RETURN_ORIGIN_TO_OTHER(kWMV8, kCodecWMV8);
++	CASE_RETURN_ORIGIN_TO_OTHER(kWMV9, kCodecWMV9);
++	CASE_RETURN_ORIGIN_TO_OTHER(kVP6, kCodecVP6);
++	CASE_RETURN_ORIGIN_TO_OTHER(kMPEG1, kCodecMPEG1);
++	CASE_RETURN_ORIGIN_TO_OTHER(kSorensonSpark, kCodecSorensonSpark);
+     default:
+       return absl::nullopt;
+   }
+--- chromium-56.0.2924.10/media/base/video_codecs.h.bak	2016-12-05 00:29:39.341097040 +0100
++++ chromium-56.0.2924.10/media/base/video_codecs.h	2016-12-05 00:30:04.352645151 +0100
+@@ -31,12 +31,21 @@
+   kHEVC,
+   kDolbyVision,
+   kAV1,
++  kMSMPEG4V1,
++  kMSMPEG4V2,
++  kMSMPEG4V3,
++  kWMV7,
++  kWMV8,
++  kWMV9,
++  kVP6,
++  kMPEG1,
++  kSorensonSpark,
+   // DO NOT ADD RANDOM VIDEO CODECS!
+   //
+   // The only acceptable time to add a new codec is if there is production code
+   // that uses said codec in the same CL.
+ 
+-  kMaxValue = kAV1,  // Must equal the last "real" codec above.
++  kMaxValue = kSorensonSpark,  // Must equal the last "real" codec above.
+ };
+ 
+ // Video codec profiles. Keep in sync with mojo::VideoCodecProfile (see
+--- chromium-56.0.2924.10/media/base/video_codecs.cc.bak	2016-11-29 21:04:19.000000000 +0100
++++ chromium-56.0.2924.10/media/base/video_codecs.cc	2016-12-05 00:32:51.625621718 +0100
+@@ -38,6 +38,24 @@ std::string GetCodecName(VideoCodec code
+       return "vp9";
+     case VideoCodec::kAV1:
+       return "av1";
++    case VideoCodec::kMSMPEG4V1:
++      return "msmpeg4v1";
++    case VideoCodec::kMSMPEG4V2:
++      return "msmpeg4v2";
++    case VideoCodec::kMSMPEG4V3:
++      return "msmpeg4v3";
++    case VideoCodec::kWMV7:
++      return "wmv1";
++    case VideoCodec::kWMV8:
++      return "wmv2";
++    case VideoCodec::kWMV9:
++      return "wmv3";
++    case VideoCodec::kVP6:
++      return "vp6";
++    case VideoCodec::kMPEG1:
++      return "mpeg1video";
++    case VideoCodec::kSorensonSpark:
++      return "flv1";
+   }
+   NOTREACHED();
+   return "";
+@@ -886,6 +904,50 @@ void ParseCodec(const std::string& codec
+     return;
+   }
+ #endif
++  if (codec_id == "msmpeg4v1") {
++    codec = VideoCodec::kMSMPEG4V1;
++    return;
++  }
++  if (codec_id == "msmpeg4v2") {
++    codec = VideoCodec::kMSMPEG4V2;
++    return;
++  }
++  if (codec_id == "msmpeg4v3") {
++    codec = VideoCodec::kMSMPEG4V3;
++    return;
++  }
++  if (codec_id == "wmv1") {
++    codec = VideoCodec::kWMV7;
++    return;
++  }
++  if (codec_id == "wmv2") {
++    codec = VideoCodec::kWMV8;
++    return;
++  }
++  if (codec_id == "wmv3") {
++    codec = VideoCodec::kWMV9;
++    return;
++  }
++  if (codec_id == "vc1") {
++    codec = VideoCodec::kVC1;
++    return;
++  }
++  if (codec_id == "vp6") {
++    codec = VideoCodec::kVP6;
++    return;
++  }
++  if (codec_id == "mpeg1video") {
++    codec = VideoCodec::kMPEG1;
++    return;
++  }
++  if (codec_id == "mpeg2video") {
++    codec = VideoCodec::kMPEG2;
++    return;
++  }
++  if (codec_id == "flv1") {
++    codec = VideoCodec::kSorensonSpark;
++    return;
++  }
+   codec = VideoCodec::kUnknown;
+ }
+ 
+--- chromium-56.0.2924.21/media/filters/ffmpeg_video_decoder.cc.flv	2016-12-10 20:33:18.005427356 +0100
++++ chromium-56.0.2924.21/media/filters/ffmpeg_video_decoder.cc	2016-12-10 20:34:28.610202853 +0100
+@@ -46,6 +46,15 @@
+ 
+     case VideoCodec::kTheora:
+     case VideoCodec::kMPEG4:
++    case VideoCodec::kMSMPEG4V1:
++    case VideoCodec::kMSMPEG4V2:
++    case VideoCodec::kMSMPEG4V3:
++    case VideoCodec::kWMV7:
++    case VideoCodec::kWMV8:
++    case VideoCodec::kWMV9:
++    case VideoCodec::kVP6:
++    case VideoCodec::kMPEG1:
++    case VideoCodec::kSorensonSpark:
+       // No extra threads for these codecs.
+       break;
+ 
+--- chromium-74.0.3729.40/media/base/audio_codecs.cc.wma	2019-03-29 22:57:18.887316626 +0100
++++ chromium-74.0.3729.40/media/base/audio_codecs.cc	2019-03-29 23:15:45.965274473 +0100
+@@ -50,7 +50,12 @@ std::string GetCodecName(AudioCodec code
+       return "mp2";
+     case AudioCodec::kDTS:
+       return "dts";
++    case AudioCodec::kWMA1:
++      return "wma1";
++    case AudioCodec::kWMA2:
++      return "wma2";
+   }
++  return "";
+ }
+ 
+ std::string GetProfileName(AudioCodecProfile profile) {
+@@ -64,6 +65,7 @@ std::string GetProfileName(AudioCodecPro
+     case AudioCodecProfile::kXHE_AAC:
+       return "xhe-aac";
+   }
++  return "";
+ }
+ 
+ AudioCodec StringToAudioCodec(const std::string& codec_id) {
+@@ -89,6 +93,10 @@ AudioCodec StringToAudioCodec(const std:
+     return AudioCodec::kMP2;
+   if (codec_id == "dts")
+     return AudioCodec::kDTS;
++  if (codec_id == "wma1")
++    return AudioCodec::kWMA1;
++  if (codec_id == "wma2")
++    return AudioCodec::kWMA2;
+   return AudioCodec::kUnknown;
+ }
+ 
+--- chromium-74.0.3729.40/media/base/audio_codecs.h.wma	2019-03-29 22:57:18.889316591 +0100
++++ chromium-74.0.3729.40/media/base/audio_codecs.h	2019-03-29 23:17:16.560724846 +0100
+@@ -35,13 +35,15 @@ enum AudioCodec {
+   kMpegHAudio = 17,
+   kMP2 = 18,
+   kDTS = 19,
++  kWMA1 = 20,
++  kWMA2 = 21,
+   // DO NOT ADD RANDOM AUDIO CODECS!
+   //
+   // The only acceptable time to add a new codec is if there is production code
+   // that uses said codec in the same CL.
+ 
+   // Must always be equal to the largest entry ever logged.
+-  kMaxValue = kDTS,
++  kMaxValue = kWMA2,
+ };
+ 
+ enum class AudioCodecProfile {
+--- chromium-74.0.3729.40/media/base/mime_util_internal.cc.wma	2019-03-29 22:57:18.903316352 +0100
++++ chromium-74.0.3729.40/media/base/mime_util_internal.cc	2019-03-29 23:29:55.405768520 +0100
+@@ -100,6 +100,8 @@ const StringToCodecMap& GetStringToCodec
+       {"vc-1", MimeUtil::VC1},
+       {"vp6", MimeUtil::VP6},
+       {"mpeg1", MimeUtil::MPEG1},
++      {"wma1", MimeUtil::WMA1},
++      {"wma2", MimeUtil::WMA2},
+   });
+ 
+   return *kStringToCodecMap;
+@@ -180,6 +181,10 @@ AudioCodec MimeUtilToAudioCodec(MimeUtil
+       return AudioCodec::kDTS;
+     case MimeUtil::MP2:
+       return AudioCodec::kMP2;
++    case MimeUtil::WMA1:
++      return AudioCodec::kWMA1;
++    case MimeUtil::WMA2:
++      return AudioCodec::kWMA2;
+     default:
+       break;
+   }
+@@ -307,6 +312,8 @@ void MimeUtil::AddSupportedMediaFormats(
+   matroska_audio_codecs.emplace(MPEG4_AAC);
+   matroska_audio_codecs.emplace(PCM);
+   matroska_audio_codecs.emplace(FLAC);
++  matroska_audio_codecs.emplace(WMA1);
++  matroska_audio_codecs.emplace(WMA2);
+ 
+   CodecSet matroska_video_codecs;
+   matroska_video_codecs.emplace(THEORA);
+--- chromium-74.0.3729.40/media/base/media_types.cc.gcc8	2019-03-27 19:50:19.000000000 +0100
++++ chromium-74.0.3729.40/media/base/media_types.cc	2019-03-30 21:18:15.797174455 +0100
+@@ -36,6 +36,15 @@ VideoType VideoType::FromDecoderConfig(c
+     case VideoCodec::kVC1:
+     case VideoCodec::kMPEG2:
+     case VideoCodec::kMPEG4:
++    case VideoCodec::kMSMPEG4V1:
++    case VideoCodec::kMSMPEG4V2:
++    case VideoCodec::kMSMPEG4V3:
++    case VideoCodec::kWMV7:
++    case VideoCodec::kWMV8:
++    case VideoCodec::kWMV9:
++    case VideoCodec::kVP6:
++    case VideoCodec::kMPEG1:
++    case VideoCodec::kSorensonSpark:
+       break;
+     case VideoCodec::kH264:
+     case VideoCodec::kVP9:
+--- chromium-91.0.4472.69/third_party/openscreen/src/cast/streaming/remoting.proto.bak	2021-05-22 18:27:21.174079735 +0200
++++ chromium-91.0.4472.69/third_party/openscreen/src/cast/streaming/remoting.proto	2021-05-22 18:29:37.209607248 +0200
+@@ -62,6 +62,8 @@ message AudioDecoderConfig {
+     kCodecMpegHAudio = 17;
+     kCodecMP2 = 18;
+     kCodecDTS = 19;
++    kCodecWMA1 = 20;
++    kCodecWMA2 = 21;
+   }
+ 
+   // Proto version of Chrome's media::SampleFormat.
+@@ -150,6 +152,15 @@ message VideoDecoderConfig {
+     kCodecHEVC = 8;
+     kCodecDolbyVision = 9;
+     kCodecAV1 = 10;
++    kCodecMSMPEG4V1 = 11;
++    kCodecMSMPEG4V2 = 12;
++    kCodecMSMPEG4V3 = 13;
++    kCodecWMV7 = 14;
++    kCodecWMV8 = 15;
++    kCodecWMV9 = 16;
++    kCodecVP6 = 17;
++    kCodecMPEG1 = 18;
++    kCodecSorensonSpark = 19;
+   }
+ 
+   // Proto version of Chrome's media::VideoCodecProfile.

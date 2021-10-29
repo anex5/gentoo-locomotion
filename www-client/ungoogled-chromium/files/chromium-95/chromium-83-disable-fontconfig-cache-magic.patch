@@ -1,0 +1,14 @@
+diff --git a/base/test/BUILD.gn b/base/test/BUILD.gn
+index aa5beeb..41a2f69 100644
+--- a/base/test/BUILD.gn
++++ b/base/test/BUILD.gn
+@@ -199,9 +199,6 @@ static_library("test_support") {
+     sources += [ "test_file_util_linux.cc" ]
+     public_deps += [ ":fontconfig_util_linux" ]
+     data_deps += [ "//third_party/test_fonts" ]
+-    if (current_toolchain == host_toolchain) {
+-      data_deps += [ ":do_generate_fontconfig_caches" ]
+-    }
+   }
+ 
+   if (is_mac) {

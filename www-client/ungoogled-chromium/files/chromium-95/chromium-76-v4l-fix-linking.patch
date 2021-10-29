@@ -1,0 +1,13 @@
+diff --git a/components/chromeos_camera/jpeg_encode_accelerator.h b/components/chromeos_camera/jpeg_encode_accelerator.h
+index 0cca112..535a461 100644
+--- a/components/chromeos_camera/jpeg_encode_accelerator.h
++++ b/components/chromeos_camera/jpeg_encode_accelerator.h
+@@ -72,7 +72,7 @@ class JpegEncodeAccelerator {
+   // call may asynchronously free system resources, but its client-visible
+   // effects are synchronous. After destructor returns, no more callbacks
+   // will be made on the client.
+-  virtual ~JpegEncodeAccelerator() = 0;
++  virtual ~JpegEncodeAccelerator() {}
+ 
+   // Initializes the JPEG encoder. Should be called once per encoder
+   // construction. This call is synchronous and returns ENCODE_OK iff

@@ -1,0 +1,919 @@
+--- chromium-68.0.3440.106/base/metrics/histogram_samples.cc.gcc8	2018-08-08 21:10:31.000000000 +0200
++++ chromium-68.0.3440.106/base/metrics/histogram_samples.cc	2018-08-14 02:31:33.960840778 +0200
+@@ -172,7 +172,9 @@
+ HistogramSamples::LocalMetadata::LocalMetadata() {
+   // This is the same way it's done for persistent metadata since no ctor
+   // is called for the data members in that case.
++#pragma GCC diagnostic ignored "-Wclass-memaccess"
+   memset(this, 0, sizeof(*this));
++#pragma GCC diagnostic pop
+ }
+ 
+ HistogramSamples::HistogramSamples(uint64_t id, Metadata* meta)
+--- chromium-68.0.3440.106/third_party/angle/src/libANGLE/renderer/vulkan/vk_cache_utils.cpp.gcc8	2018-08-08 21:13:09.000000000 +0200
++++ chromium-68.0.3440.106/third_party/angle/src/libANGLE/renderer/vulkan/vk_cache_utils.cpp	2018-08-14 21:35:47.655983018 +0200
+@@ -350,7 +350,9 @@
+ 
+ GraphicsPipelineDesc &GraphicsPipelineDesc::operator=(const GraphicsPipelineDesc &other)
+ {
++#pragma GCC diagnostic ignored "-Wclass-memaccess"
+     memcpy(this, &other, sizeof(GraphicsPipelineDesc));
++#pragma GCC diagnostic pop
+     return *this;
+ }
+ 
+--- chromium-68.0.3440.106/third_party/blink/renderer/platform/wtf/hash_table.h.gcc8	2018-08-08 21:11:52.000000000 +0200
++++ chromium-68.0.3440.106/third_party/blink/renderer/platform/wtf/hash_table.h	2018-08-14 22:04:23.904013134 +0200
+@@ -1304,7 +1304,9 @@ struct HashTableBucketInitializer<true>
+     // makes it possible to use this with types that don't support copying.
+     // The memset to 0 looks like a slow operation but is optimized by the
+     // compilers.
++#pragma GCC diagnostic ignored "-Wclass-memaccess"
+     memset(&bucket, 0, sizeof(bucket));
++#pragma GCC diagnostic pop
+   }
+ 
+   template <typename Traits, typename Allocator, typename Value>
+@@ -1314,7 +1316,9 @@ struct HashTableBucketInitializer<true>
+     // The memset to 0 looks like a slow operation but is optimized by the
+     // compilers.
+     if (!Allocator::kIsGarbageCollected) {
++#pragma GCC diagnostic ignored "-Wclass-memaccess"
+       memset(&bucket, 0, sizeof(bucket));
++#pragma GCC diagnostic pop
+       return;
+     }
+     AtomicMemzero(&bucket, sizeof(bucket));
+@@ -1815,7 +1819,9 @@ HashTable<Key, Value, Extractor, HashFun
+     if (IsEmptyOrDeletedBucket(table_[i])) {
+       DCHECK_NE(&table_[i], entry);
+       if (Traits::kEmptyValueIsZero) {
++#pragma GCC diagnostic ignored "-Wclass-memaccess"
+         memset(&temporary_table[i], 0, sizeof(ValueType));
++#pragma GCC diagnostic pop
+       } else {
+         InitializeBucket(temporary_table[i]);
+       }
+@@ -1830,7 +1836,9 @@ HashTable<Key, Value, Extractor, HashFun
+   Allocator::template BackingWriteBarrier(&table_);
+ 
+   if (Traits::kEmptyValueIsZero) {
++#pragma GCC diagnostic ignored "-Wclass-memaccess"
+     memset(original_table, 0, new_table_size * sizeof(ValueType));
++#pragma GCC diagnostic pop
+   } else {
+     for (unsigned i = 0; i < new_table_size; i++)
+       InitializeBucket(original_table[i]);
+--- chromium-68.0.3440.106/media/parsers/vp8_parser.cc.gcc8	2018-08-08 21:11:03.000000000 +0200
++++ chromium-68.0.3440.106/media/parsers/vp8_parser.cc	2018-08-14 23:13:10.772858869 +0200
+@@ -59,7 +59,9 @@
+   stream_ = ptr;
+   bytes_left_ = frame_size;
+ 
++#pragma GCC diagnostic ignored "-Wclass-memaccess"
+   memset(fhdr, 0, sizeof(*fhdr));
++#pragma GCC diagnostic pop
+   fhdr->data = stream_;
+   fhdr->frame_size = bytes_left_;
+ 
+--- chromium-68.0.3440.106/media/video/h264_parser.cc.gcc8	2018-08-08 21:11:05.000000000 +0200
++++ chromium-68.0.3440.106/media/video/h264_parser.cc	2018-08-14 23:18:45.317942396 +0200
+@@ -1368,7 +1368,9 @@
+   const H264PPS* pps;
+   Result res;
+ 
++#pragma GCC diagnostic ignored "-Wclass-memaccess"
+   memset(shdr, 0, sizeof(*shdr));
++#pragma GCC diagnostic pop
+ 
+   shdr->idr_pic_flag = (nalu.nal_unit_type == 5);
+   shdr->nal_ref_idc = nalu.nal_ref_idc;
+@@ -1516,7 +1518,9 @@
+ H264Parser::Result H264Parser::ParseSEI(H264SEIMessage* sei_msg) {
+   int byte;
+ 
++#pragma GCC diagnostic ignored "-Wclass-memaccess"
+   memset(sei_msg, 0, sizeof(*sei_msg));
++#pragma GCC diagnostic pop
+ 
+   READ_BITS_OR_RETURN(8, &byte);
+   while (byte == 0xff) {
+--- chromium-68.0.3440.106/components/web_cache/browser/web_cache_manager.cc.gcc8	2018-08-08 21:10:52.000000000 +0200
++++ chromium-68.0.3440.106/components/web_cache/browser/web_cache_manager.cc	2018-08-16 12:02:36.324221013 +0200
+@@ -80,7 +80,9 @@
+   active_renderers_.insert(renderer_id);
+ 
+   RendererInfo* stats = &(stats_[renderer_id]);
++#pragma GCC diagnostic ignored "-Wclass-memaccess"
+   memset(stats, 0, sizeof(*stats));
++#pragma GCC diagnostic pop
+   stats->access = Time::Now();
+ 
+   content::RenderProcessHost* host =
+--- chromium-68.0.3440.106/device/gamepad/public/cpp/gamepad_mojom_traits.cc.gcc8	2018-08-08 21:10:57.000000000 +0200
++++ chromium-68.0.3440.106/device/gamepad/public/cpp/gamepad_mojom_traits.cc	2018-08-16 14:55:08.981030117 +0200
+@@ -12,7 +12,9 @@
+ void StructTraits<
+     device::mojom::GamepadQuaternionDataView,
+     device::GamepadQuaternion>::SetToNull(device::GamepadQuaternion* out) {
++#pragma GCC diagnostic ignored "-Wclass-memaccess"
+   memset(out, 0, sizeof(device::GamepadQuaternion));
++#pragma GCC diagnostic pop
+   out->not_null = false;
+ }
+ 
+@@ -33,7 +35,9 @@
+ void StructTraits<device::mojom::GamepadVectorDataView,
+                   device::GamepadVector>::SetToNull(device::GamepadVector*
+                                                         out) {
++#pragma GCC diagnostic ignored "-Wclass-memaccess"
+   memset(out, 0, sizeof(device::GamepadVector));
++#pragma GCC diagnostic pop
+   out->not_null = false;
+ }
+ 
+@@ -101,7 +105,9 @@
+ void StructTraits<device::mojom::GamepadHapticActuatorDataView,
+                   device::GamepadHapticActuator>::
+     SetToNull(device::GamepadHapticActuator* out) {
++#pragma GCC diagnostic ignored "-Wclass-memaccess"
+   memset(out, 0, sizeof(device::GamepadHapticActuator));
++#pragma GCC diagnostic pop
+   out->not_null = false;
+ }
+ 
+@@ -119,7 +125,9 @@
+ // static
+ void StructTraits<device::mojom::GamepadPoseDataView,
+                   device::GamepadPose>::SetToNull(device::GamepadPose* out) {
++#pragma GCC diagnostic ignored "-Wclass-memaccess"
+   memset(out, 0, sizeof(device::GamepadPose));
++#pragma GCC diagnostic pop
+   out->not_null = false;
+ }
+ 
+--- chromium-68.0.3440.106/device/gamepad/gamepad_pad_state_provider.cc.gcc8	2018-08-08 21:10:57.000000000 +0200
++++ chromium-68.0.3440.106/device/gamepad/gamepad_pad_state_provider.cc	2018-08-16 14:57:16.836715112 +0200
+@@ -62,7 +62,9 @@
+ }
+ 
+ void GamepadPadStateProvider::ClearPadState(PadState& state) {
++#pragma GCC diagnostic ignored "-Wclass-memaccess"
+   memset(&state, 0, sizeof(PadState));
++#pragma GCC diagnostic pop
+ }
+ 
+ void GamepadPadStateProvider::InitializeDataFetcher(
+@@ -77,7 +79,9 @@
+   DCHECK(pad);
+ 
+   if (!pad_state->data.connected) {
++#pragma GCC diagnostic ignored "-Wclass-memaccess"
+     memset(pad, 0, sizeof(Gamepad));
++#pragma GCC diagnostic pop
+     return;
+   }
+ 
+--- chromium-68.0.3440.106/device/gamepad/gamepad_shared_buffer.cc.gcc8	2018-08-08 21:10:57.000000000 +0200
++++ chromium-68.0.3440.106/device/gamepad/gamepad_shared_buffer.cc	2018-08-16 15:12:56.372693313 +0200
+@@ -16,7 +16,9 @@
+   void* mem = shared_memory_mapping_.memory();
+   DCHECK(mem);
+   hardware_buffer_ = new (mem) GamepadHardwareBuffer();
++#pragma GCC diagnostic ignored "-Wclass-memaccess"
+   memset(&(hardware_buffer_->data), 0, sizeof(Gamepads));
++#pragma GCC diagnostic pop
+ }
+ 
+ GamepadSharedBuffer::~GamepadSharedBuffer() = default;
+--- chromium-68.0.3440.106/third_party/blink/renderer/platform/geometry/length.h.gcc8	2018-08-08 21:11:51.000000000 +0200
++++ chromium-68.0.3440.106/third_party/blink/renderer/platform/geometry/length.h	2018-08-16 21:04:12.500371375 +0200
+@@ -97,7 +97,9 @@ class PLATFORM_EXPORT Length {
+   explicit Length(scoped_refptr<const CalculationValue>);
+ 
+   Length(const Length& length) {
++#pragma GCC diagnostic ignored "-Wclass-memaccess"
+     memcpy(this, &length, sizeof(Length));
++#pragma GCC diagnostic pop
+     if (IsCalculated())
+       IncrementCalculatedRef();
+   }
+@@ -107,7 +109,9 @@ class PLATFORM_EXPORT Length {
+       length.IncrementCalculatedRef();
+     if (IsCalculated())
+       DecrementCalculatedRef();
++#pragma GCC diagnostic ignored "-Wclass-memaccess"
+     memcpy(this, &length, sizeof(Length));
++#pragma GCC diagnostic pop
+     return *this;
+   }
+ 
+--- chromium-68.0.3440.106/ppapi/proxy/gamepad_resource.cc.gcc8	2018-08-08 21:11:07.000000000 +0200
++++ chromium-68.0.3440.106/ppapi/proxy/gamepad_resource.cc	2018-08-16 21:14:14.496252776 +0200
+@@ -60,7 +60,9 @@
+   device::Gamepads read_into;
+   do {
+     version = buffer_->seqlock.ReadBegin();
++#pragma GCC diagnostic ignored "-Wclass-memaccess"
+     memcpy(&read_into, &buffer_->data, sizeof(read_into));
++#pragma GCC diagnostic pop
+     ++contention_count;
+     if (contention_count == kMaximumContentionCount)
+       break;
+--- chromium-68.0.3440.106/third_party/blink/renderer/modules/gamepad/gamepad_shared_memory_reader.cc.gcc8	2018-08-08 21:10:55.000000000 +0200
++++ chromium-68.0.3440.106/third_party/blink/renderer/modules/gamepad/gamepad_shared_memory_reader.cc	2018-08-16 22:01:05.038368945 +0200
+@@ -101,7 +101,9 @@ void GamepadSharedMemoryReader::SampleGa
+   base::subtle::Atomic32 version;
+   do {
+     version = gamepad_hardware_buffer_->seqlock.ReadBegin();
++#pragma GCC diagnostic ignored "-Wclass-memaccess"
+     memcpy(&read_into, &gamepad_hardware_buffer_->data, sizeof(read_into));
++#pragma GCC diagnostic pop
+     ++contention_count;
+     if (contention_count == kMaximumContentionCount)
+       break;
+@@ -116,7 +118,9 @@ void GamepadSharedMemoryReader::SampleGa
+   }
+ 
+   // New data was read successfully, copy it into the output buffer.
++#pragma GCC diagnostic ignored "-Wclass-memaccess"
+   memcpy(gamepads, &read_into, sizeof(*gamepads));
++#pragma GCC diagnostic pop
+ 
+   if (!ever_interacted_with_) {
+     // Clear the connected flag if the user hasn't interacted with any of the
+--- chromium-68.0.3440.106/third_party/blink/renderer/core/css/css_selector_list.cc.gcc8	2018-08-08 21:11:49.000000000 +0200
++++ chromium-68.0.3440.106/third_party/blink/renderer/core/css/css_selector_list.cc	2018-08-16 22:38:46.625948903 +0200
+@@ -262,8 +262,10 @@
+       // Move item from the parser selector vector into selector_array_ without
+       // invoking destructor (Ugh.)
+       CSSSelector* current_selector = current->ReleaseSelector().release();
++#pragma GCC diagnostic ignored "-Wclass-memaccess"
+       memcpy(&list.selector_array_[array_index], current_selector,
+              sizeof(CSSSelector));
++#pragma GCC diagnostic pop
+       WTF::Partitions::FastFree(current_selector);
+ 
+       current = current->TagHistory();
+--- chromium-68.0.3440.106/content/renderer/pepper/plugin_module.cc.gcc8	2018-08-08 21:10:55.000000000 +0200
++++ chromium-68.0.3440.106/content/renderer/pepper/plugin_module.cc	2018-08-17 09:00:00.010744283 +0200
+@@ -506,7 +506,9 @@
+   if (!host_globals)
+     host_globals = new HostGlobals;
+ 
++#pragma GCC diagnostic ignored "-Wclass-memaccess"
+   memset(&entry_points_, 0, sizeof(entry_points_));
++#pragma GCC diagnostic pop
+   pp_module_ = HostGlobals::Get()->AddModule(this);
+   GetLivePluginSet()->insert(this);
+ }
+--- chromium-70.0.3528.4/net/third_party/quiche/src/quic/core/quic_framer.cc.gcc8	2018-08-22 02:56:37.112699039 +0200
++++ chromium-70.0.3528.4/net/third_party/quiche/src/quic/core/quic_framer.cc	2018-08-22 20:08:42.304813883 +0200
+@@ -1718,10 +1718,12 @@ bool QuicFramer::ProcessIetfDataPacket(Q
+     absl::string_view remaining = encrypted_reader->PeekRemainingPayload();
+     if (remaining.length() >= sizeof(header->possible_stateless_reset_token)) {
+       header->has_possible_stateless_reset_token = true;
++#pragma GCC diagnostic ignored "-Wclass-memaccess"
+       memcpy(&header->possible_stateless_reset_token,
+              &remaining.data()[remaining.length() -
+                                sizeof(header->possible_stateless_reset_token)],
+              sizeof(header->possible_stateless_reset_token));
++#pragma GCC diagnostic pop
+     }
+   }
+ 
+--- chromium-72.0.3626.81/net/third_party/quiche/src/quic/core/frames/quic_inlined_frame.h.gcc8	2019-01-30 02:18:09.000000000 +0100
++++ chromium-72.0.3626.81/net/third_party/quiche/src/quic/core/frames/quic_inlined_frame.h	2019-02-02 21:38:28.056122562 +0100
+@@ -22,8 +22,10 @@ struct QUIC_EXPORT_PRIVATE QuicInlinedFr
+     static_cast<DerivedT*>(this)->type = type;
+     static_assert(std::is_standard_layout<DerivedT>::value,
+                   "Inlined frame must have a standard layout");
++#pragma GCC diagnostic ignored "-Winvalid-offsetof"
+     static_assert(offsetof(DerivedT, type) == 0,
+                   "type must be the first field.");
++#pragma GCC diagnostic pop
+     static_assert(sizeof(DerivedT) <= 24,
+                   "Frames larger than 24 bytes should not be inlined.");
+   }
+--- chromium-72.0.3626.81/net/third_party/quiche/src/quic/core/frames/quic_frame.h.gcc8	2019-01-30 02:18:09.000000000 +0100
++++ chromium-72.0.3626.81/net/third_party/quiche/src/quic/core/frames/quic_frame.h	2019-02-02 21:44:11.495095580 +0100
+@@ -116,8 +116,10 @@ static_assert(std::is_standard_layout<Qu
+               "QuicFrame must have a standard layout");
+ static_assert(sizeof(QuicFrame) <= 24,
+               "Frames larger than 24 bytes should be referenced by pointer.");
++#pragma GCC diagnostic ignored "-Winvalid-offsetof"
+ static_assert(offsetof(QuicStreamFrame, type) == offsetof(QuicFrame, type),
+               "Offset of |type| must match in QuicFrame and QuicStreamFrame");
++#pragma GCC diagnostic pop
+ 
+ // A inline size of 1 is chosen to optimize the typical use case of
+ // 1-stream-frame in QuicTransmissionInfo.retransmittable_frames.
+--- chromium-75.0.3766.2/third_party/pffft/src/pffft.c.gcc8	2019-04-16 03:14:21.000000000 +0200
++++ chromium-75.0.3766.2/third_party/pffft/src/pffft.c	2019-04-21 08:43:54.038591158 +0200
+@@ -213,6 +213,7 @@ typedef union v4sf_union {
+ #define assertv4(v,f0,f1,f2,f3) assert(v.f[0] == (f0) && v.f[1] == (f1) && v.f[2] == (f2) && v.f[3] == (f3))
+ 
+ /* detect bugs with the vector support macros */
++#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+ void validate_pffft_simd() {
+   float f[16] = { 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 };
+   v4sf_union a0, a1, a2, a3, t, u; 
+@@ -242,6 +243,7 @@ void validate_pffft_simd() {
+   VTRANSPOSE4(a0.v, a1.v, a2.v, a3.v);
+   assertv4(a0, 0, 4, 8, 12); assertv4(a1, 1, 5, 9, 13); assertv4(a2, 2, 6, 10, 14); assertv4(a3, 3, 7, 11, 15);
+ }
++#pragma GCC diagnostic pop
+ #endif //!PFFFT_SIMD_DISABLE
+ 
+ /* SSE and co like 16-bytes aligned pointers */
+--- chromium-75.0.3770.90/media/formats/ac3/ac3_util.cc.gcc8	2019-06-13 09:12:26.000000000 +0200
++++ chromium-75.0.3770.90/media/formats/ac3/ac3_util.cc	2019-06-16 15:37:16.960213605 +0200
+@@ -99,6 +99,7 @@ const uint8_t* FindNextSyncWord(const ui
+   return nullptr;
+ }
+ 
++#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+ // Returns the number of audio samples represented by the given E-AC3
+ // synchronization frame.
+ int ParseEac3SyncFrameSampleCount(Ac3Header& header) {
+@@ -189,6 +190,7 @@ int ParseTotalSampleCount(const uint8_t*
+ 
+   return total_sample_count;
+ }
++#pragma GCC diagnostic pop
+ 
+ }  // namespace anonymous
+ 
+--- chromium-75.0.3770.90/ui/accessibility/ax_event_generator.cc.gcc8	2019-06-13 09:13:11.000000000 +0200
++++ chromium-75.0.3770.90/ui/accessibility/ax_event_generator.cc	2019-06-16 17:07:56.924776860 +0200
+@@ -351,6 +351,7 @@ void AXEventGenerator::OnIntAttributeCha
+       AddEvent(node, Event::POSITION_IN_SET_CHANGED);
+       break;
+     case ax::mojom::IntAttribute::kRestriction: {
++#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+       bool was_enabled;
+       bool was_readonly;
+       GetRestrictionStates(static_cast<ax::mojom::Restriction>(old_value),
+@@ -369,6 +370,7 @@ void AXEventGenerator::OnIntAttributeCha
+         AddEvent(node, Event::WIN_IACCESSIBLE_STATE_CHANGED);
+       }
+       break;
++#pragma GCC diagnostic pop
+     }
+     case ax::mojom::IntAttribute::kScrollX:
+       AddEvent(node, Event::SCROLL_HORIZONTAL_POSITION_CHANGED);
+--- chromium-75.0.3770.90/v8/src/torque/torque-parser.cc.gcc8	2019-06-13 09:15:07.000000000 +0200
++++ chromium-75.0.3770.90/v8/src/torque/torque-parser.cc	2019-06-16 17:45:41.014811421 +0200
+@@ -962,6 +962,7 @@ base::Optional<ParseResult> MakeTypeswit
+         true, MakeNode<Identifier>("__value"), base::nullopt, expression));
+   }
+ 
++#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+   TypeExpression* accumulated_types;
+   for (size_t i = 0; i < cases.size(); ++i) {
+     CurrentSourcePosition::Scope current_source_position(cases[i].pos);
+@@ -1001,6 +1002,7 @@ base::Optional<ParseResult> MakeTypeswit
+         i > 0 ? MakeNode<UnionTypeExpression>(accumulated_types, cases[i].type)
+               : cases[i].type;
+   }
++#pragma GCC diagnostic pop
+   return ParseResult{result};
+ }
+ 
+--- chromium-75.0.3770.90/base/trace_event/trace_event.h.gcc8	2019-06-13 09:11:51.000000000 +0200
++++ chromium-75.0.3770.90/base/trace_event/trace_event.h	2019-06-16 20:37:04.325185470 +0200
+@@ -719,6 +719,7 @@ static void AddMetadataEvent(const unsig
+ 
+ #if !BUILDFLAG(USE_PERFETTO_CLIENT_LIBRARY)
+ 
++#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+ // Used by TRACE_EVENTx macros. Do not use directly.
+ class TRACE_EVENT_API_CLASS_EXPORT ScopedTracer {
+  public:
+@@ -747,6 +748,7 @@ class TRACE_EVENT_API_CLASS_EXPORT Scope
+   const char* name_;
+   base::trace_event::TraceEventHandle event_handle_;
+ };
++#pragma GCC diagnostic pop
+ 
+ // Used by TRACE_EVENT_BINARY_EFFICIENTx macro. Do not use directly.
+ class TRACE_EVENT_API_CLASS_EXPORT ScopedTraceBinaryEfficient {
+--- chromium-84.0.4147.89/third_party/blink/renderer/platform/wtf/vector.h.gcc9-11	2020-07-18 04:37:04.004312792 +0200
++++ chromium-84.0.4147.89/third_party/blink/renderer/platform/wtf/vector.h	2020-07-18 04:42:57.467684630 +0200
+@@ -227,9 +227,11 @@ struct VectorMover<true, T, Allocator> {
+           AtomicWriteMemcpy<sizeof(T)>(dst_end, src_end);
+       }
+     } else {
++#pragma GCC diagnostic ignored "-Wclass-memaccess"
+       memmove(dst, src,
+               reinterpret_cast<const char*>(src_end) -
+                   reinterpret_cast<const char*>(src));
++#pragma GCC diagnostic pop
+     }
+   }
+ 
+--- chromium-77.0.3865.10/third_party/vulkan-deps/glslang/src/glslang/Include/Types.h.gcc9	2019-08-06 13:58:24.000000000 +0200
++++ chromium-77.0.3865.10/third_party/vulkan-deps/glslang/src/glslang/Include/Types.h	2019-08-17 22:09:00.354573553 +0200
+@@ -1697,6 +1697,7 @@ public:
+     // Not for use across pool pops; it will cause multiple instances of TType to point to the same information.
+     // This only works if that information (like a structure's list of types) does not change and
+     // the instances are sharing the same pool.
++#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+     void shallowCopy(const TType& copyOf)
+     {
+         basicType = copyOf.basicType;
+@@ -1720,6 +1721,7 @@ public:
+ #endif
+         coopmat = copyOf.isCoopMat();
+     }
++#pragma GCC diagnostic pop
+ 
+     // Make complete copy of the whole type graph rooted at 'copyOf'.
+     void deepCopy(const TType& copyOf)
+--- chromium-77.0.3865.10/cc/paint/paint_op_reader.cc.gcc9	2019-08-06 13:56:02.000000000 +0200
++++ chromium-77.0.3865.10/cc/paint/paint_op_reader.cc	2019-08-17 23:17:28.692926351 +0200
+@@ -1,3 +1,4 @@
++#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+ // Copyright 2017 The Chromium Authors. All rights reserved.
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+@@ -1362,3 +1363,4 @@ void PaintOpReader::Read(SkRegion* regio
+ }
+ 
+ }  // namespace cc
++#pragma GCC diagnostic pop
+--- chromium-77.0.3865.10/third_party/crashpad/crashpad/util/net/http_transport_socket.cc.gcc9	2019-08-06 13:57:16.000000000 +0200
++++ chromium-77.0.3865.10/third_party/crashpad/crashpad/util/net/http_transport_socket.cc	2019-08-17 23:23:38.928748868 +0200
+@@ -388,6 +388,7 @@ bool WriteRequest(Stream* stream,
+     void* write_start;
+     size_t write_size;
+ 
++#pragma GCC diagnostic ignored "-Wstringop-truncation"
+     if (chunked) {
+       // Chunked encoding uses the entirety of buf. buf.size is presented in
+       // hexadecimal without any leading "0x". The terminating CR and LF will be
+@@ -421,6 +422,7 @@ bool WriteRequest(Stream* stream,
+       write_start = buf.data;
+       write_size = data_bytes;
+     }
++#pragma GCC diagnostic pop
+ 
+     // write_size will be 0 at EOF in non-chunked mode. Skip the write in that
+     // case. In contrast, at EOF in chunked mode, a zero-length chunk must be
+--- chromium-77.0.3865.35/v8/src/base/platform/platform-posix.cc.gcc9	2019-08-15 00:03:54.000000000 +0200
++++ chromium-77.0.3865.35/v8/src/base/platform/platform-posix.cc	2019-08-18 04:39:02.122335530 +0200
+@@ -807,10 +807,12 @@ static void* ThreadEntry(void* arg) {
+ }
+ 
+ 
++#pragma GCC diagnostic ignored "-Wstringop-truncation"
+ void Thread::set_name(const char* name) {
+   strncpy(name_, name, sizeof(name_) - 1);
+   name_[sizeof(name_) - 1] = '\0';
+ }
++#pragma GCC diagnostic pop
+ 
+ bool Thread::Start() {
+   int result;
+--- chromium-77.0.3865.35/third_party/blink/renderer/platform/heap/BUILD.gn.gcc9	2019-08-20 17:50:39.781443015 +0200
++++ chromium-77.0.3865.35/third_party/blink/renderer/platform/heap/BUILD.gn	2019-08-20 17:50:55.267181438 +0200
+@@ -49,6 +49,12 @@ source_set("heap_unsanitized") {
+   public_deps = [ "//third_party/blink/renderer/platform:platform_export" ]
+ }
+ 
++config("heap_config") {
++  cflags = [
++    "-Wno-error=maybe-uninitialized"
++  ]
++}
++
+ blink_platform_sources("heap") {
+   sources = [
+     "blink_gc_memory_dump_provider.h",
+@@ -199,6 +205,10 @@ blink_platform_sources("heap") {
+     "//third_party/blink/renderer/platform/loader:loader",
+     "//third_party/blink/renderer/platform/scheduler:scheduler",
+   ]
++
++  configs += [
++    ":heap_config"
++  ]
+ }
+ 
+ source_set("test_support") {
+--- chromium-77.0.3865.35/v8/BUILD.gn.gcc9	2019-08-15 00:03:54.000000000 +0200
++++ chromium-77.0.3865.35/v8/BUILD.gn	2019-08-21 03:16:02.972812269 +0200
+@@ -558,6 +558,10 @@ config("internal_config") {
+   if (v8_current_cpu == "riscv64") {
+     libs = [ "atomic" ]
+   }
++
++  cflags = [
++    "-Wno-error=maybe-uninitialized"
++  ]
+ }
+ 
+ # Should be applied to all targets that write trace events.
+--- chromium-79.0.3945.16/components/viz/common/resources/resource_sizes.h.gcc9-3	2019-10-29 23:02:00.000000000 +0100
++++ chromium-79.0.3945.16/components/viz/common/resources/resource_sizes.h	2019-11-04 20:01:07.684498329 +0100
+@@ -144,6 +144,7 @@ bool ResourceSizes::MaybeSizeInBytes(con
+   return MaybeSizeInBytesInternal<T>(size, format, false, bytes);
+ }
+ 
++#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+ template <typename T>
+ T ResourceSizes::CheckedWidthInBytes(int width, ResourceFormat format) {
+   VerifyType<T>();
+@@ -162,6 +163,7 @@ T ResourceSizes::CheckedSizeInBytes(cons
+   CHECK(MaybeSizeInBytesInternal<T>(size, format, false, &bytes));
+   return bytes;
+ }
++#pragma GCC diagnostic pop
+ 
+ template <typename T>
+ T ResourceSizes::UncheckedWidthInBytes(int width, ResourceFormat format) {
+--- chromium-85.0.4183.83/ui/gfx/x/xproto_internal.h.gcc10	2020-08-24 23:41:28.000000000 +0200
++++ chromium-85.0.4183.83/ui/gfx/x/xproto_internal.h	2020-08-31 14:52:43.895679326 +0200
+@@ -22,6 +22,7 @@
+ 
+ namespace x11 {
+ 
++#pragma GCC diagnostic ignored "-Wstringop-overflow"
+ class Connection;
+ 
+ template <typename T, typename Enable = void>
+@@ -199,6 +200,7 @@ std::unique_ptr<T> MakeExtension(Connect
+   return std::make_unique<T>(connection,
+                              reply ? *reply.reply : QueryExtensionReply{});
+ }
++#pragma GCC diagnostic pop
+ 
+ }  // namespace x11
+ 
+--- chromium-80.0.3987.87/ui/views/layout/flex_layout_types.cc.gcc9	2020-02-08 22:29:47.649810071 +0100
++++ chromium-80.0.3987.87/ui/views/layout/flex_layout_types.cc	2020-02-09 16:37:25.295597442 +0100
+@@ -143,6 +143,7 @@ int InterpolateSize(MinimumFlexSizeRule
+   }
+ }
+ 
++#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+ gfx::Size GetPreferredSize(MinimumFlexSizeRule minimum_width_rule,
+                            MaximumFlexSizeRule maximum_width_rule,
+                            MinimumFlexSizeRule minimum_height_rule,
+@@ -204,6 +205,7 @@ gfx::Size GetPreferredSize(MinimumFlexSi
+ 
+   return gfx::Size(width, height);
+ }
++#pragma GCC diagnostic pop
+ 
+ }  // namespace
+ 
+--- chromium-87.0.4280.40/third_party/crashpad/crashpad/client/pthread_create_linux.cc.gcc10	2020-10-29 23:26:23.000000000 +0100
++++ chromium-87.0.4280.40/third_party/crashpad/crashpad/client/pthread_create_linux.cc	2020-10-31 21:04:58.435263708 +0100
+@@ -41,6 +41,7 @@ void* InitializeSignalStackAndStart(Star
+ 
+ extern "C" {
+ 
++#pragma GCC diagnostic ignored "-Wignored-attributes"
+ __attribute__((visibility("default"))) int pthread_create(
+     pthread_t* thread,
+     const pthread_attr_t* attr,
+@@ -67,5 +68,6 @@ __attribute__((visibility("default"))) i
+   }
+   return result;
+ }
++#pragma GCC diagnostic pop
+ 
+ }  // extern "C"
+--- chromium-87.0.4280.40/ui/events/ozone/evdev/touch_filter/palm_model/onedevice_train_palm_detection_filter_inference.cc.gcc10	2020-10-29 23:26:28.000000000 +0100
++++ chromium-87.0.4280.40/ui/events/ozone/evdev/touch_filter/palm_model/onedevice_train_palm_detection_filter_inference.cc	2020-11-01 00:47:28.314432028 +0100
+@@ -17855,6 +17855,7 @@ const union {
+ // -----------------------------------------------------------------------------
+ // INFERENCE
+ // -----------------------------------------------------------------------------
++#pragma GCC diagnostic ignored "-Wrestrict"
+ 
+ int32_t input_from_feature_columns_input_layer_concat_concat0Shape[2] = {1,
+                                                                          193};
+@@ -17931,4 +17932,5 @@ void Inference(
+ #endif
+ }
+ }  // namespace internal_onedevice
++#pragma GCC diagnostic pop
+ }  // namespace ui
+--- chromium-87.0.4280.40/device/fido/aoa/android_accessory_discovery.cc.gcc10	2020-10-29 23:25:37.000000000 +0100
++++ chromium-87.0.4280.40/device/fido/aoa/android_accessory_discovery.cc	2020-11-01 03:29:09.433200898 +0100
+@@ -116,6 +116,7 @@ void AndroidAccessoryDiscovery::OnDevice
+                                   std::move(device)));
+ }
+ 
++#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+ static absl::optional<AndroidAccessoryDiscovery::InterfaceInfo>
+ FindAccessoryInterface(const device::mojom::UsbDeviceInfoPtr& device_info) {
+   for (const device::mojom::UsbConfigurationInfoPtr& config :
+@@ -275,6 +276,7 @@ void AndroidAccessoryDiscovery::OnAccess
+                      weak_factory_.GetWeakPtr(), std::move(device),
+                      std::move(interface_info), nonce));
+ }
++#pragma GCC diagnostic pop
+ 
+ void AndroidAccessoryDiscovery::OnSyncWritten(
+     mojo::Remote<device::mojom::UsbDevice> device,
+--- chromium-87.0.4280.40/ui/events/devices/x11/xinput_util.h.gcc10	2020-10-29 23:26:28.000000000 +0100
++++ chromium-87.0.4280.40/ui/events/devices/x11/xinput_util.h	2020-11-01 15:00:14.060480705 +0100
+@@ -11,6 +11,7 @@
+ 
+ namespace ui {
+ 
++#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+ EVENTS_DEVICES_X11_EXPORT
+ inline void SetXinputMask(void* mask, unsigned int opcode) {
+   const auto bit = 1 << (opcode & 7);
+@@ -22,6 +23,7 @@ inline bool IsXinputMaskSet(const void*
+   const auto bit = 1 << (opcode & 7);
+   return static_cast<const uint8_t*>(mask)[opcode / 8] & bit;
+ }
++#pragma GCC diagnostic pop
+ 
+ }  // namespace ui
+ 
+--- chromium-89.0.4389.47/net/dns/dns_response_result_extractor.cc.gcc10	2021-02-11 00:04:04.000000000 +0100
++++ chromium-89.0.4389.47/net/dns/dns_response_result_extractor.cc	2021-02-14 17:44:47.743345907 +0100
+@@ -2,6 +2,7 @@
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
++#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+ #include "net/dns/dns_response_result_extractor.h"
+ 
+ #include <limits.h>
+@@ -579,3 +580,4 @@ HostCache::Entry DnsResponseResultExtrac
+ }
+ 
+ }  // namespace net
++#pragma GCC diagnostic pop
+--- chromium-90.0.4430.19/third_party/fdlibm/ieee754.cc.gcc10	2021-03-09 19:40:25.000000000 +0100
++++ chromium-90.0.4430.19/third_party/fdlibm/ieee754.cc	2021-03-15 15:29:23.362307553 +0100
+@@ -329,6 +329,7 @@ ALWAYS_INLINE double __kernel_cos(double
+   }
+ }
+ 
++#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+ /* __kernel_rem_pio2(x,y,e0,nx,prec,ipio2)
+  * double x[],y[]; int e0,nx,prec; int ipio2[];
+  *
+@@ -636,6 +637,7 @@ recompute:
+   }
+   return n & 7;
+ }
++#pragma GCC diagnostic pop
+ 
+ /* __kernel_sin( x, y, iy)
+  * kernel sin function on [-pi/4, pi/4], pi/4 ~ 0.7854
+--- chromium-90.0.4430.19/third_party/tflite/src/tensorflow/lite/kernels/internal/kernel_utils.cc.gcc10	2021-03-15 17:06:24.019017959 +0100
++++ chromium-90.0.4430.19/third_party/tflite/src/tensorflow/lite/kernels/internal/kernel_utils.cc	2021-03-15 17:06:40.986667311 +0100
+@@ -21,6 +21,7 @@ limitations under the License.
+ namespace tflite {
+ namespace kernel_utils {
+ 
++#pragma GCC diagnostic ignored "-Wrestrict"
+ void RnnBatchStep(const float* input_ptr_batch, const float* input_weights_ptr,
+                   const float* recurrent_weights_ptr, const float* bias_ptr,
+                   int input_size, int num_units, int batch_size,
+@@ -350,6 +351,7 @@ void RnnBatchStep(
+     }
+   }
+ }
++#pragma GCC diagnostic pop
+ 
+ }  // namespace kernel_utils
+ }  // namespace tflite
+--- chromium-90.0.4430.19/third_party/tflite/src/tensorflow/lite/kernels/lstm_eval.cc.gcc10	2021-03-09 19:42:51.000000000 +0100
++++ chromium-90.0.4430.19/third_party/tflite/src/tensorflow/lite/kernels/lstm_eval.cc	2021-03-15 18:12:35.970572962 +0100
+@@ -38,6 +38,7 @@ namespace builtin {
+ namespace lstm_eval {
+ namespace {
+ 
++#pragma GCC diagnostic ignored "-Wrestrict"
+ void ComputeRowSums(
+     int32_t* input_to_input_row_sums, int32_t* input_to_forget_row_sums,
+     int32_t* input_to_cell_row_sums, int32_t* input_to_output_row_sums,
+@@ -2228,6 +2229,7 @@ TfLiteStatus EvalInteger8x8_8(
+ 
+   return kTfLiteOk;
+ }
++#pragma GCC diagnostic pop
+ 
+ }  // namespace lstm_eval
+ }  // namespace builtin
+--- chromium-90.0.4430.19/third_party/tflite/src/tensorflow/lite/kernels/svdf.cc.gcc10	2021-03-09 19:42:51.000000000 +0100
++++ chromium-90.0.4430.19/third_party/tflite/src/tensorflow/lite/kernels/svdf.cc	2021-03-15 18:18:31.350168794 +0100
+@@ -17,6 +17,7 @@ limitations under the License.
+ // factorization. See https://research.google.com/pubs/archive/43813.pdf for
+ // details.
+ 
++#pragma GCC diagnostic ignored "-Wrestrict"
+ #include "tensorflow/lite/kernels/internal/reference/svdf.h"
+ 
+ #include <cstddef>
+@@ -355,3 +356,4 @@ TfLiteRegistration* Register_SVDF() {
+ }  // namespace builtin
+ }  // namespace ops
+ }  // namespace tflite
++#pragma GCC diagnostic pop
+--- chromium-91.0.4472.69/third_party/perfetto/src/trace_processor/containers/nullable_vector.h.gcc11	2021-05-23 06:56:51.348962707 +0200
++++ chromium-91.0.4472.69/third_party/perfetto/src/trace_processor/containers/nullable_vector.h	2021-05-23 06:57:06.986680282 +0200
+@@ -154,7 +154,9 @@ class NullableVector : public NullableVe
+ 
+         opt_idx = valid_.IndexOf(idx);
+         PERFETTO_DCHECK(opt_idx);
++#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+         data_.insert(data_.begin() + static_cast<ptrdiff_t>(*opt_idx), val);
++#pragma GCC diagnostic pop
+       }
+     }
+   }
+--- chromium-91.0.4472.69/third_party/webrtc/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.cc.gcc11	2021-05-23 20:08:46.936656668 +0200
++++ chromium-91.0.4472.69/third_party/webrtc/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.cc	2021-05-23 20:09:06.675293745 +0200
+@@ -1521,7 +1521,9 @@ vpx_svc_ref_frame_config_t LibvpxVp9Enco
+     if (is_inter_layer_pred_allowed && sl_idx > first_active_spatial_layer_id) {
+       // Set up spatial reference.
+       RTC_DCHECK(last_updated_buf_idx);
++#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+       ref_config.gld_fb_idx[sl_idx] = *last_updated_buf_idx;
++#pragma GCC diagnostic pop
+       ref_config.reference_golden[sl_idx] = 1;
+     } else {
+       RTC_DCHECK(ref_config.reference_last[sl_idx] != 0 ||
+--- chromium-91.0.4472.69/ui/accessibility/platform/ax_platform_node_base.cc.gcc11	2021-05-20 04:17:57.000000000 +0200
++++ chromium-91.0.4472.69/ui/accessibility/platform/ax_platform_node_base.cc	2021-05-24 02:33:30.461690389 +0200
+@@ -1619,10 +1619,12 @@ int AXPlatformNodeBase::GetHypertextOffs
+     }
+   }
+ 
++#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+   if (endpoint_index_in_common_parent < index_in_common_parent)
+     return 0;
+   if (endpoint_index_in_common_parent > index_in_common_parent)
+     return static_cast<int32_t>(GetHypertext().size());
++#pragma GCC diagnostic pop
+ 
+   NOTREACHED();
+   return -1;
+--- chromium-91.0.4472.69/chrome/browser/themes/browser_theme_pack.cc.gcc11	2021-05-20 04:17:00.000000000 +0200
++++ chromium-91.0.4472.69/chrome/browser/themes/browser_theme_pack.cc	2021-05-24 06:00:31.324820360 +0200
+@@ -2,6 +2,7 @@
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
++#pragma GCC diagnostic ignored "-Wrestrict"
+ #include "chrome/browser/themes/browser_theme_pack.h"
+ 
+ #include <limits.h>
+--- chromium-91.0.4472.69/third_party/blink/renderer/core/layout/ng/ng_length_utils.cc.gcc11	2021-05-20 04:17:13.000000000 +0200
++++ chromium-91.0.4472.69/third_party/blink/renderer/core/layout/ng/ng_length_utils.cc	2021-05-24 13:06:10.739130702 +0200
+@@ -814,6 +814,7 @@ absl::optional<LogicalSize> ComputeNorma
+ 
+ }  // namespace
+ 
++#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+ // Computes size for a replaced element.
+ LogicalSize ComputeReplacedSize(const NGBlockNode& node,
+                                 const NGConstraintSpace& space,
+@@ -1103,6 +1104,7 @@ LogicalSize ComputeReplacedSize(const NG
+ 
+   return LogicalSize(*replaced_inline, *replaced_block);
+ }
++#pragma GCC diagnostic pop
+ 
+ int ResolveUsedColumnCount(int computed_count,
+                            LayoutUnit computed_size,
+--- chromium-91.0.4472.69/third_party/blink/renderer/core/layout/line/abstract_inline_text_box.cc.gcc11	2021-05-20 04:17:13.000000000 +0200
++++ chromium-91.0.4472.69/third_party/blink/renderer/core/layout/line/abstract_inline_text_box.cc	2021-05-24 16:07:24.568792417 +0200
+@@ -246,6 +246,7 @@ void LegacyAbstractInlineTextBox::Charac
+     widths.push_back(inline_text_box_->NewlineSpaceWidth());
+ }
+ 
++#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+ void AbstractInlineTextBox::GetWordBoundaries(
+     Vector<WordBoundaries>& words) const {
+   String text = GetText();
+@@ -315,6 +316,7 @@ void AbstractInlineTextBox::GetWordBound
+     word_start = absl::nullopt;
+   }
+ }
++#pragma GCC diagnostic pop
+ 
+ String LegacyAbstractInlineTextBox::GetText() const {
+   if (!inline_text_box_ || !GetLineLayoutItem())
+--- chromium-91.0.4472.69/third_party/blink/renderer/core/layout/line/abstract_inline_text_box.h.gcc11	2021-05-24 20:28:00.266559180 +0200
++++ chromium-91.0.4472.69/third_party/blink/renderer/core/layout/line/abstract_inline_text_box.h	2021-05-24 20:28:13.681312366 +0200
+@@ -43,6 +43,7 @@ namespace blink {
+ 
+ class InlineTextBox;
+ 
++#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+ // High-level abstraction of InlineTextBox to allow the accessibility module to
+ // get information about InlineTextBoxes without tight coupling.
+ class CORE_EXPORT AbstractInlineTextBox
+@@ -55,6 +56,7 @@ class CORE_EXPORT AbstractInlineTextBox
+     int start_index;
+     int end_index;
+   };
++#pragma GCC diagnostic pop
+ 
+   enum Direction { kLeftToRight, kRightToLeft, kTopToBottom, kBottomToTop };
+ 
+--- chromium-92.0.4515.51/third_party/blink/renderer/build/scripts/core/css/templates/cssom_keywords.cc.tmpl.gcc11	2021-06-11 00:12:04.000000000 +0200
++++ chromium-92.0.4515.51/third_party/blink/renderer/build/scripts/core/css/templates/cssom_keywords.cc.tmpl	2021-06-14 11:58:31.803178423 +0200
+@@ -12,6 +12,8 @@
+ #include "third_party/blink/renderer/platform/wtf/hash_map.h"
+ #include "third_party/blink/renderer/core/css/properties/css_parsing_utils.h"
+ 
++#pragma GCC diagnostic ignored "-Wswitch-unreachable"
++
+ namespace blink {
+ 
+ bool CSSOMKeywords::ValidKeywordForProperty(CSSPropertyID id,
+--- chromium-92.0.4515.51/third_party/blink/renderer/core/layout/ng/svg/ng_svg_text_layout_attributes_builder.cc.gcc11	2021-06-11 00:12:04.000000000 +0200
++++ chromium-92.0.4515.51/third_party/blink/renderer/core/layout/ng/svg/ng_svg_text_layout_attributes_builder.cc	2021-06-14 13:14:33.627275803 +0200
+@@ -222,6 +222,7 @@ NGSvgTextLayoutAttributesBuilder::NGSvgT
+     NGInlineNode ifc)
+     : block_flow_(To<LayoutBlockFlow>(ifc.GetLayoutBox())) {}
+ 
++#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+ // This is an implementation of "3. Resolve character positioning" in [1],
+ // without recursion.
+ //
+@@ -378,6 +379,7 @@ void NGSvgTextLayoutAttributesBuilder::B
+   }
+   attr_stack.Pop();
+ }
++#pragma GCC diagnostic pop
+ 
+ Vector<std::pair<unsigned, NGSvgCharacterData>>
+ NGSvgTextLayoutAttributesBuilder::CharacterDataList() {
+--- chromium-92.0.4515.51/third_party/blink/renderer/modules/manifest/manifest_parser.cc.gcc11	2021-06-11 00:12:05.000000000 +0200
++++ chromium-92.0.4515.51/third_party/blink/renderer/modules/manifest/manifest_parser.cc	2021-06-14 22:06:16.278647718 +0200
+@@ -2,6 +2,7 @@
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
++#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+ #include "third_party/blink/renderer/modules/manifest/manifest_parser.h"
+ 
+ #include <string>
+--- chromium-92.0.4515.51/third_party/blink/public/platform/cross_variant_mojo_util.h.gcc11	2021-06-15 16:50:45.931734117 +0200
++++ chromium-92.0.4515.51/third_party/blink/public/platform/cross_variant_mojo_util.h	2021-06-15 16:51:16.695161100 +0200
+@@ -63,6 +63,7 @@
+ #include "mojo/public/cpp/bindings/scoped_interface_endpoint_handle.h"
+ #include "mojo/public/cpp/system/message_pipe.h"
+ 
++#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+ namespace blink {
+ 
+ // Helpers for passing a variant-less non-associated interface across the Blink
+--- chromium-94.0.4606.20/base/allocator/partition_allocator/partition_direct_map_extent.h.gcc11	2021-08-25 21:12:06.000000000 +0200
++++ chromium-94.0.4606.20/base/allocator/partition_allocator/partition_direct_map_extent.h	2021-09-02 22:09:54.156776089 +0200
+@@ -43,11 +43,13 @@ ALWAYS_INLINE PartitionDirectMapExtent<t
+ PartitionDirectMapExtent<thread_safe>::FromSlotSpan(
+     SlotSpanMetadata<thread_safe>* slot_span) {
+   PA_DCHECK(slot_span->bucket->is_direct_mapped());
++#pragma GCC diagnostic ignored "-Waddress-of-packed-member"
+   // |*slot_span| is the first field of |PartitionDirectMapMetadata|, just cast.
+   auto* metadata =
+       reinterpret_cast<PartitionDirectMapMetadata<thread_safe>*>(slot_span);
+   PA_DCHECK(&metadata->page.slot_span_metadata == slot_span);
+   return &metadata->direct_map_extent;
++#pragma GCC diagnostic pop
+ }
+ 
+ }  // namespace internal
+--- chromium-94.0.4606.20/sql/recover_module/record.cc.gcc11	2021-08-25 21:12:26.000000000 +0200
++++ chromium-94.0.4606.20/sql/recover_module/record.cc	2021-09-02 22:25:02.062516943 +0200
+@@ -173,6 +173,7 @@ void ValueBytesDeleter(void* buffer) {
+ 
+ }  // namespace
+ 
++#pragma GCC diagnostic ignored "-Walloc-size-larger-than="
+ bool RecordReader::ReadValue(int column_index,
+                              sqlite3_context* receiver) const {
+   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+@@ -268,6 +269,7 @@ bool RecordReader::ReadValue(int column_
+   NOTREACHED() << "Invalid value type";
+   return false;
+ }
++#pragma GCC diagnostic pop
+ 
+ void RecordReader::Reset() {
+   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+--- chromium-94.0.4606.20/third_party/blink/renderer/core/paint/outline_painter.cc.gcc11	2021-09-04 12:48:10.089396703 +0200
++++ chromium-94.0.4606.20/third_party/blink/renderer/core/paint/outline_painter.cc	2021-09-04 12:48:33.501945563 +0200
+@@ -19,6 +19,7 @@
+ #include "third_party/blink/renderer/platform/graphics/skia/skia_utils.h"
+ #include "ui/native_theme/native_theme.h"
+ 
++#pragma GCC diagnostic ignored "-Wstringop-overflow="
+ namespace blink {
+ 
+ namespace {
