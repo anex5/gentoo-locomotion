@@ -18,7 +18,7 @@
 +    LOG(INFO) << "VA-API driver on VDPAU backend";
 +    return BufferAllocationMode::kWrapVdpau;
 +  }
- #if defined(USE_X11)
+ #if BUILDFLAG(USE_VAAPI_X11)
    // The IMPORT mode is used for Android on Chrome OS, so this doesn't apply
    // here.
 --- a/media/gpu/vaapi/vaapi_video_decode_accelerator.h
