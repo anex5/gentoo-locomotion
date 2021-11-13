@@ -1032,6 +1032,7 @@ src_configure() {
 	# Avoid CFLAGS problems, bug #352457, bug #390147.
 	if ! use custom-cflags; then
 		filter-ldflags "-Wl,-fuse-ld=*"
+		strip-flags
 
 		# Prevent linker from running out of address space, bug #471810 .
 		if use x86; then

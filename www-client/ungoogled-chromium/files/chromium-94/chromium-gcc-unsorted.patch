@@ -597,24 +597,6 @@
      ~DeviceQueueMap();
      DeviceQueueMap &operator=(const DeviceQueueMap &other);
  
---- chromium-94.0.4606.20/third_party/blink/renderer/platform/audio/audio_destination.h.gcc11	2021-08-25 21:12:29.000000000 +0200
-+++ chromium-94.0.4606.20/third_party/blink/renderer/platform/audio/audio_destination.h	2021-09-04 11:55:28.920473655 +0200
-@@ -43,11 +43,13 @@
- #include "third_party/blink/renderer/platform/wtf/text/wtf_string.h"
- #include "third_party/blink/renderer/platform/wtf/thread_safe_ref_counted.h"
- 
--namespace absl {
-+namespace std {
- template <typename>
- class optional;
- }
--
-+namespace absl {
-+using std::optional;
-+}
- namespace blink {
- 
- class PushPullFIFO;
 --- chromium-94.0.4606.20/third_party/blink/renderer/core/page/frame_tree.cc.gcc11	2021-08-25 21:12:28.000000000 +0200
 +++ chromium-94.0.4606.20/third_party/blink/renderer/core/page/frame_tree.cc	2021-09-04 12:52:19.835603937 +0200
 @@ -393,9 +393,9 @@ static void printFrames(const blink::Fra

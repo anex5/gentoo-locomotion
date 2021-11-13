@@ -35,10 +35,10 @@ SRC_URI="https://commondatastorage.googleapis.com/chromium-browser-official/chro
 LICENSE="BSD"
 SLOT="0"
 KEYWORDS="~amd64 ~arm64 ~x86"
-IUSE="atk alsa cfi clang convert-dict cups custom-cflags chromedriver dav1d debug gold gtk \
+IUSE="atk alsa cfi clang convert-dict cups custom-cflags chromedriver dav1d debug domain-substitution gold gtk \
 hangouts headless js-type-check libcxx kerberos man optimize-thinlto optimize-webui +partition +pdf pgo +proprietary-codecs pulseaudio selinux +suid \
-+system-ffmpeg +system-harfbuzz +system-libdrm +system-libvpx \
-+lld swiftshader screencast tcmalloc thinlto udev v4l v4lplugin vpx vaapi vdpau vulkan wayland widevine X xkbcommon xdg"
++system-icu +system-ffmpeg +system-harfbuzz +system-libdrm +system-libvpx \
++lld swiftshader screencast tcmalloc thinlto udev -v4l -v4lplugin vpx vaapi vdpau vulkan wayland widevine X xkbcommon xdg"
 RESTRICT="
 "
 REQUIRED_USE="
@@ -51,7 +51,7 @@ REQUIRED_USE="
 	libcxx? ( clang )
 	pgo? ( clang )
 	optimize-thinlto? ( thinlto )
-	thinlto? ( clang )
+	thinlto? ( clang lld )
 	gtk? ( || ( X wayland ) )
 	atk? ( gtk )
 	screencast? ( wayland )
@@ -74,6 +74,7 @@ COMMON_DEPEND="
 	media-libs/libpng:=
 	>=media-libs/libwebp-0.4.0:=
 	media-libs/mesa:=[gbm]
+	net-misc/curl[ssl]
 	sys-apps/pciutils:=
 	sys-libs/zlib:=[minizip]
 	virtual/udev
@@ -85,7 +86,6 @@ COMMON_DEPEND="
 	cups? ( >=net-print/cups-1.3.11:= )
 	sys-apps/dbus:=
 	gtk? ( x11-libs/gtk+:3[wayland?,X?] )
-	js-type-check? ( virtual/jre:* )
 	kerberos? ( virtual/krb5 )
 	libcxx? ( sys-libs/libcxx )
 	pdf? ( media-libs/lcms:= )
@@ -107,7 +107,7 @@ COMMON_DEPEND="
 		media-libs/freetype:=
 		>=media-libs/harfbuzz-3.0.0:0=[icu(-)]
 	)
-	>=dev-libs/icu-69.1:=
+	system-icu? ( >=dev-libs/icu-69.1:= )
 	dev-libs/jsoncpp
 	dev-libs/libevent
 	system-libvpx? ( >=media-libs/libvpx-1.9.0:=[postproc,svc] )
@@ -115,7 +115,7 @@ COMMON_DEPEND="
 	media-libs/openjpeg:2=
 	>=dev-libs/re2-0:=
 	v4lplugin? ( media-tv/v4l-utils )
-	vaapi? ( >=x11-libs/libva-2.7:=[X,drm] )
+	vaapi? ( >=x11-libs/libva-2.7:=[X?,drm] )
 	xkbcommon? (
 		x11-libs/libxkbcommon
 		x11-misc/xkeyboard-config
@@ -252,15 +252,6 @@ pkg_pretend() {
 		ewarn "Ensure system-* c++ dependencies are compiled with libcxx library"
         ewarn
 	fi
-
-	if use system-libvpx && use vaapi; then
-		ewarn
-		ewarn "New vaapi code depends heavily on libvpx-1.9, see #43"
-		ewarn "Consider disabling system-libvpx USE flag if using vaapi"
-		ewarn "A patch to make vaapi compatible with system libvpx-1.9 is welcome"
-		ewarn
-		#die "The build will fail!"
-	fi
 }
 
 pkg_setup() {
@@ -290,7 +281,6 @@ src_prepare() {
 		"${p}/chromium-91-sql-make-VirtualCursor-standard-layout-type.patch"
 		"${p}/chromium-py3-fixes.patch"
 		"${p}/chromium-system-openjpeg-r2.patch"
-		# "${p}/chromium-system-icu.patch"
 
 		# Extra patches taken from openSUSE and Arch
 		"${p}/chromium-glibc-malloc.patch"
@@ -320,13 +310,13 @@ src_prepare() {
 		"${p}/chromium-50-codec-warnings.patch"
 		"${p}/chromium-54-proprietary-codecs-assert.patch"
 		"${p}/chromium-53-bignum-werror-fix.patch"
-		"${p}/chromium-53-gn-system-icu-jsoncpp.patch"
+		"${p}/chromium-95-system-jsoncpp.patch"
 		"${p}/chromium-53-link-libgio-libpci-libudev-libbrlapi.patch"
 		"${p}/chromium-52-pdfium-system-libtiff-libpng.patch"
 		"${p}/chromium-58-glib.patch"
 		"${p}/chromium-58-system-nodejs.patch"
 		"${p}/chromium-72-system-closure-compiler.patch"
-		"${p}/chromium-77-system-icu.patch"
+		"${p}/chromium-74-pdfium-system-libopenjpeg2.patch"
 		"${p}/chromium-gcc-macro-redefined.patch"
 		"${p}/chromium-gcc-includes.patch"
 		"${p}/chromium-gcc-parentheses.patch"
@@ -348,11 +338,9 @@ src_prepare() {
 		"${p}/chromium-85-system-zlib.patch"
 		"${p}/chromium-87-system-zlib.patch"
 		"${p}/chromium-94-GetNeverPromptSitesBetween-crash.patch"
-		"${p}/chromium-94.0.4606.71-fix-no-matching-function-for-call-to-max-int-long-int.patch"
 
 		# Personal patches
 		"${p}/chromium-fix-tint-cstddef-include.patch"
-		#"${p}/chromium-94-include-cstring-h265_nalu_parser.patch"
 		"${p}/chromium-94-fix-building-without-safebrowsing.patch"
 		"${p}/chromium-tab-hover-cards-feature-r1.patch"
 		#"${p}/chromium-optional-dbus-r14.patch"
@@ -366,49 +354,43 @@ src_prepare() {
 
 	use convert-dict && eapply "${p}/chromium-ucf-dict-utility.patch"
 
-	if use system-ffmpeg; then
+	use system-icu && (
+		eapply "${p}/chromium-system-icu.patch"
+		eapply "${p}/chromium-77-system-icu.patch"
+	)
+
+	use system-ffmpeg && (
 		eapply "${p}/chromium-53-gn-system-opus.patch"
 		eapply "${p}/chromium-79-system-dav1d.patch"
 		eapply "${p}/chromium-94-system-ffmpeg.patch"
 		eapply "${p}/chromium-53-ffmpeg-no-deprecation-errors.patch"
-		#eapply "${p}/chromium-93-ffmpeg-4.4.patch"
-		#eapply -R "${p}/chromium-94-ffmpeg-roll.patch"
-	fi
+	)
 
-	use system-harfbuzz && eapply "${p}/chromium-94-system-freetype.patch"
+	use system-harfbuzz && (
+		eapply "${p}/chromium-94-system-freetype.patch"
+	)
 
-	eapply "${p}/chromium-system-jsoncpp-r2.patch"
 	sed -i '/^#include "third_party\/jsoncpp.*$/{s//#include <json\/value\.h>/;h};${x;/./{x;q0};x;q1}' components/mirroring/service/receiver_response.h || die
 	sed -i '/^.*json\/reader.h"$/{s//#include <json\/reader\.h>/;h};${x;/./{x;q0};x;q1}' components/mirroring/service/receiver_response.cc || die
 	sed -i '/^.*json\/writer.h"$/{s//#include <json\/writer\.h>/;h};${x;/./{x;q0};x;q1}' components/mirroring/service/receiver_response.cc || die
 
-	if use system-libvpx; then
-		#eapply "${p}/chromium-system-vpx-r2.patch"
-		eapply "${p}/chromium-88-system-libvpx.patch"
-		#has_version "=media-libs/libvpx-1.9*" && eapply "${p}/chromium-vpx-1.9-compatibility-r4.patch"
-	fi
+	use system-libvpx && eapply "${p}/chromium-88-system-libvpx.patch"
 
-	eapply "${p}/chromium-74-pdfium-system-libopenjpeg2.patch"
-
-	if use vaapi; then
-		#has_version "=x11-libs/libva-2.11.0" && eapply "${p}/chromium-fix-libva-redef.patch"
+	use vaapi && (
 		eapply "${p}/chromium-94-enable-vaapi-on-linux.patch"
 		eapply "${p}/chromium-86-fix-vaapi-on-intel.patch"
-		elog "Even though ${PN} is built with vaapi support, #ignore-gpu-blacklist"
-		elog "should be enabled via flags or commandline for it to work."
-	fi
-
-	use vdpau && eapply "${p}/vdpau-support-r3.patch"
+		use vdpau && eapply "${p}/vdpau-support-r3.patch"
+	)
 
 	use system-libdrm && eapply "${p}/chromium-system-libdrm.patch"
 
 	if use wayland; then
 		eapply "${p}/wayland-egl.patch"
-		use v4l && eapply "${p}/chromium-76-v4l-fix-linking.patch"
-		use v4l && eapply "${p}/chromium-v4l2-remove-legacy-kernel-headers.patch"
 		use vaapi && eapply "${p}/igalia/0001-ozone-add-va-api-support-to-wayland.patch"
 		use X || eapply "${p}/0014-ozone-wayland-don-t-build-xcb-for-pure-wayland-build.patch"
 	fi
+	use v4l && eapply "${p}/chromium-76-v4l-fix-linking.patch"
+	use v4l && eapply "${p}/chromium-v4l2-remove-legacy-kernel-headers.patch"
 
 	#Igalia patches
 	p="${FILESDIR}/chromium-$(ver_cut 1-1)/igalia"
@@ -483,9 +465,11 @@ src_prepare() {
 	"${UGC_WD}/utils/patches.py" -q apply . "${UGC_WD}/patches"
 	eend $? || die
 
-	ebegin "Applying domain substitution"
-	"${UGC_WD}/utils/domain_substitution.py" -q apply -r "${UGC_WD}/domain_regex.list" -f "${UGC_WD}/domain_substitution.list" -c build/domsubcache.tar.gz .
-	eend $? || die
+	use domain-substitution && (
+		ebegin "Applying domain substitution"
+		"${UGC_WD}/utils/domain_substitution.py" -q apply -r "${UGC_WD}/domain_regex.list" -f "${UGC_WD}/domain_substitution.list" -c build/domsubcache.tar.gz .
+		eend $? || die
+	)
 
 	local keeplibs=(
 		base/third_party/cityhash
@@ -538,11 +522,10 @@ src_prepare() {
 		third_party/catapult/tracing/third_party/pako
 		third_party/ced
 		third_party/cld_3
-	)
-	#use js-type-check &&
-	#keeplibs+=(
-	#	third_party/closure_compiler
 	#)
+	#use js-type-check && keeplibs+=(
+		third_party/closure_compiler
+	)
 	keeplibs+=(
 		third_party/crashpad
 		third_party/crashpad/crashpad/third_party/lss
@@ -675,12 +658,9 @@ src_prepare() {
 		third_party/pdfium/third_party/lcms
 		third_party/pdfium/third_party/skia_shared
 	)
-	#use perfetto &&
 	keeplibs+=(
 		third_party/perfetto
 		third_party/perfetto/protos/third_party/chromium
-	)
-	keeplibs+=(
 		third_party/pffft
 		third_party/ply
 		third_party/polymer
@@ -740,12 +720,7 @@ src_prepare() {
 		third_party/webrtc/modules/third_party/g722
 		third_party/webrtc/rtc_base/third_party/base64
 		third_party/webrtc/rtc_base/third_party/sigslot
-	)
-	#use widevine &&
-	keeplibs+=(
 		third_party/widevine
-	)
-	keeplibs+=(
 		third_party/woff2
 		third_party/wuffs
 		third_party/x11proto
@@ -759,7 +734,6 @@ src_prepare() {
 		v8/src/third_party/utf8-decoder
 		v8/third_party/inspector_protocol
 		v8/third_party/v8
-		base/third_party/libevent
 	)
 	use v4l && keeplibs+=(
 		third_party/v4l-utils
@@ -768,9 +742,6 @@ src_prepare() {
 	use wayland && keeplibs+=(
 		third_party/wayland
 		third_party/wayland-protocols
-	)
-
-	keeplibs+=( # needed when use_aura=true
 		third_party/minigbm
 		third_party/speech-dispatcher
 	)
@@ -854,7 +825,6 @@ src_configure() {
 	local gn_system_libraries=(
 		flac
 		fontconfig
-		icu
 		jsoncpp
 		libdrm
 		libevent
@@ -867,19 +837,16 @@ src_configure() {
 		snappy
 		zlib
 	)
-	if use system-ffmpeg; then
-		gn_system_libraries+=( ffmpeg opus openh264 )
-	fi
-	if use system-libvpx; then
-		gn_system_libraries+=( libvpx )
-	fi
-	if use system-harfbuzz; then
-		gn_system_libraries+=( freetype harfbuzz-ng )
-	fi
+	use system-ffmpeg && gn_system_libraries+=( dav1d ffmpeg opus openh264 )
+	use system-icu && gn_system_libraries+=( icu )
+	use system-libvpx && gn_system_libraries+=( libvpx )
+	use system-harfbuzz && gn_system_libraries+=( freetype harfbuzz-ng )
 	build/linux/unbundle/replace_gn_files.py --system-libraries "${gn_system_libraries[@]}" || die
 
 	# See dependency logic in third_party/BUILD.gn
 	myconf_gn+=( "use_system_harfbuzz=true" )
+
+	myconf_gn+=( "use_system_libpng=true" )
 
 	# Disable deprecated libgnome-keyring dependency, bug #713012
 	myconf_gn+=( "use_gnome_keyring=false" )
@@ -898,7 +865,7 @@ src_configure() {
 		"use_swiftshader_with_subzero=$(usetf swiftshader)"
 		"use_atk=$(usetf atk)"
 		"has_native_accessibility=$(usetf atk)"
-		#"use_dbus=$(usetf dbus)"
+		"use_dbus=true"
 		"use_udev=$(usetf udev)"
 		"rtc_build_libevent=$(usetf udev)"
 		"rtc_enable_libevent=$(usetf udev)"
@@ -907,12 +874,10 @@ src_configure() {
 		"angle_enable_vulkan_validation_layers=$(usetf vulkan)"
 		"angle_shared_libvulkan=$(usetf vulkan)"
 		"use_gtk=$(usetf gtk)"
-		#"rtc_use_gtk=$(usetf gtk)"
 		"rtc_use_x11=$(usetf X)"
 		"use_x11=$(usetf X)"
 		"angle_link_glx=$(usetf X)"
 		"rtc_use_pipewire=$(usetf screencast)"
-		#"rtc_pipewire_version=\"0.3\""
 		"use_thin_lto=$(usetf thinlto)"
 		"chrome_pgo_phase=$(usex pgo 2 0)"
 		"thin_lto_enable_optimizations=$(usetf optimize-thinlto)"
@@ -943,15 +908,11 @@ src_configure() {
 		"use_system_lcms2=true"
 		"enable_remoting=$(usetf screencast)"
 		"enable_print_preview=true"
-		#"enable_native_notifications=true"
 		"use_gio=$(usetf gtk)"
-		#"use_pic=$(usetf pic)"
 		"is_component_ffmpeg=true"
 		"use_low_quality_image_interpolation=false"
 		"use_glib=$(usetf gtk)"
 		"use_dawn=true"
-		# Disable pseudolocales, only used for testing
-		#"enable_pseudolocales=false"
 	)
 
 	# Disable nacl, we can't build without pnacl (http://crbug.com/269560).
@@ -965,7 +926,7 @@ src_configure() {
 		"enable_mdns=false"
 		"enable_one_click_signin=false"
 		"enable_reading_list=false"
-		#"enable_media_remoting=false"
+		"enable_media_remoting=true"
 		"enable_reporting=false"
 		"enable_service_discovery=false"
 		"exclude_unwind_tables=true"
@@ -983,6 +944,7 @@ src_configure() {
 	myconf_gn+=(
 		"use_system_libjpeg=true"
 		"use_system_zlib=true"
+		"icu_use_data_file=$(usetf !system-icu)"
 		"rtc_build_examples=false"
 		"use_gold=$(usetf gold)"
 		"use_lld=$(usetf lld)"
@@ -996,10 +958,16 @@ src_configure() {
 	myconf_gn+=(
 		"is_debug=$(usetf debug)"
 		"symbol_level=$(usex debug 2 0)"
-		"strip_debug_info=$(usex debug false true)"
+		"strip_debug_info=$(usetf !debug)"
 		#"sanitizer_no_symbols=$(usex debug false true)"
 		"blink_symbol_level=$(usex debug 2 0)"
 		"enable_iterator_debugging=$(usetf debug)"
+		"dcheck_always_on=$(usetf debug)"
+		"dcheck_is_configurable=$(usetf debug)"
+		# Disable pseudolocales, only used for testing
+		"enable_pseudolocales=false"
+		# Disable code formating of generated files
+		"blink_enable_generated_code_formatting=false"
 	)
 
 
@@ -1020,42 +988,31 @@ src_configure() {
 	fi
 
 	# ozone
-	if use wayland; then
-		myconf_gn+=(
-			"use_ozone=true"
-			"use_aura=true"
-			"use_egl=true"
-			#"is_desktop_linux=true"
-			"ozone_auto_platforms=false"
-			"ozone_platform_x11=$(usetf X)"
-			"ozone_platform_wayland=$(usetf wayland)"
-			"ozone_platform_headless=$(usetf headless)"
-			"ozone_platform_gbm=false"
-			#"use_bundled_weston=true" # not present
-			#"enable_wayland_server=true" # for chromeos
-			#"use_system_libwayland=$(usetf system-wayland)"
-			"use_wayland_gbm=false"
-			"enable_background_mode=true"
-			#"system_wayland_scanner_path=/usr/bin/wayland-scanner" #chromeos
-			"use_system_minigbm=false" # minigbm conflicts with mesa gbm
-			"use_system_libdrm=$(usetf system-libdrm)"
-			#"use_linux_v4l2_only=$(usetf v4l)"
-            #"toolkit_views=true"
-		)
-	else
-		myconf_gn+=(
-			"use_ozone=false"
-			#"use_aura=false" # Can't build with aura disabled for X11+gtk build. Check ui/gfx/native_widget_types.h:195:2: error: #error Unknown build environment
-            #"use_egl=false" # Aura req egl
-		)
-	fi
+	myconf_gn+=(
+		"use_ozone=true"
+		"use_aura=true"
+		"use_egl=true"
+		"ozone_auto_platforms=false"
+		"ozone_platform_x11=$(usetf X)"
+		"ozone_platform_wayland=$(usetf wayland)"
+		"ozone_platform_headless=$(usetf headless)"
+		"ozone_platform_gbm=false"
+		#"use_bundled_weston=true" # not present
+		#"enable_wayland_server=true" # for chromeos
+		#"use_system_libwayland=$(usetf system-wayland)"
+		"use_wayland_gbm=false"
+		"enable_background_mode=true"
+		#"system_wayland_scanner_path=/usr/bin/wayland-scanner" #chromeos
+		"use_system_minigbm=false" # minigbm conflicts with mesa gbm
+		"use_system_libdrm=$(usetf system-libdrm)"
+        #"toolkit_views=true"
+	)
 
 	local myarch="$(tc-arch)"
 
 	# Avoid CFLAGS problems, bug #352457, bug #390147.
 	if ! use custom-cflags; then
 		filter-ldflags "-Wl,-fuse-ld=*"
-		filter-flags "-O*" "-Wl,-O*" #See #25
 		strip-flags
 
 		# Prevent linker from running out of address space, bug #471810 .
@@ -1156,9 +1113,6 @@ src_configure() {
 
 	# Disable unknown warning message from clang.
 	tc-is-clang && append-flags -Wno-unknown-warning-option
-
-	# Explicitly disable ICU data file support for system-icu builds.
-	use system-icu && myconf_gn+=( "icu_use_data_file=false" )
 
 	myconf_gn+=( "target_os=\"linux\"" )
 
@@ -1293,9 +1247,7 @@ src_install() {
 		[[ ${#files[@]} -gt 0 ]] && doins "${files[@]}"
 	)
 
-	if ! use system-icu; then
-		doins out/Release/icudtl.dat
-	fi
+	use system-icu || doins out/Release/icudtl.dat
 
 	doins -r out/Release/locales
 	doins -r out/Release/resources
