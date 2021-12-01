@@ -1,0 +1,10 @@
+--- chromium-96.0.4664.9/build/linux/BUILD.gn.system-freetype	2021-10-15 06:38:53.000000000 +0200
++++ chromium-96.0.4664.9/build/linux/BUILD.gn	2021-10-17 18:56:43.402168730 +0200
+@@ -25,6 +25,7 @@ if (use_system_freetype) {
+     visibility = [
+       "//third_party:freetype_harfbuzz",
+       "//third_party/harfbuzz-ng:harfbuzz_source",
++      "//build/config/freetype:freetype",
+     ]
+     packages = [ "freetype2" ]
+   }

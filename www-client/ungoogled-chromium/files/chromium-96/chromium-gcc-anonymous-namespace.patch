@@ -1,0 +1,664 @@
+--- chromium-72.0.3626.81/components/viz/service/hit_test/hit_test_manager.cc.gcc8	2019-01-30 02:17:57.000000000 +0100
++++ chromium-72.0.3626.81/components/viz/service/hit_test/hit_test_manager.cc	2019-02-03 02:50:05.305012810 +0100
+@@ -10,7 +10,7 @@
+ 
+ namespace viz {
+ 
+-namespace {
++namespace internal {
+ // TODO(gklassen): Review and select appropriate sizes based on
+ // telemetry / UMA.
+ constexpr uint32_t kMaxRegionsPerSurface = 1024;
+@@ -164,9 +164,9 @@ void HitTestManager::SetHitTestAsyncQuer
+ bool HitTestManager::ValidateHitTestRegionList(
+     const SurfaceId& surface_id,
+     HitTestRegionList* hit_test_region_list) {
+-  if (hit_test_region_list->regions.size() > kMaxRegionsPerSurface)
++  if (hit_test_region_list->regions.size() > internal::kMaxRegionsPerSurface)
+     return false;
+-  if (!FlagsAndAsyncReasonsMatch(
++  if (!internal::FlagsAndAsyncReasonsMatch(
+           hit_test_region_list->flags,
+           hit_test_region_list->async_hit_test_reasons)) {
+     return false;
+@@ -178,7 +178,7 @@ bool HitTestManager::ValidateHitTestRegi
+       region.frame_sink_id = FrameSinkId(surface_id.frame_sink_id().client_id(),
+                                          region.frame_sink_id.sink_id());
+     }
+-    if (!FlagsAndAsyncReasonsMatch(region.flags, region.async_hit_test_reasons))
++    if (!internal::FlagsAndAsyncReasonsMatch(region.flags, region.async_hit_test_reasons))
+       return false;
+   }
+   return true;
+--- chromium-75.0.3766.2/chrome/browser/ui/views/desktop_capture/desktop_media_tab_list.h.gcc8	2019-04-16 03:14:00.000000000 +0200
++++ chromium-75.0.3766.2/chrome/browser/ui/views/desktop_capture/desktop_media_tab_list.h	2019-04-21 21:43:50.393548403 +0200
+@@ -13,7 +13,7 @@ class TableView;
+ class View;
+ }  // namespace views
+ 
+-namespace {
++namespace tab_list_internal {
+ class TabListModel;
+ class TabListViewObserver;
+ }  // namespace
+@@ -61,8 +61,8 @@ class DesktopMediaTabList : public Deskt
+   friend class DesktopMediaTabListTest;
+ 
+   DesktopMediaListController* controller_;
+-  std::unique_ptr<TabListModel> model_;
+-  std::unique_ptr<TabListViewObserver> view_observer_;
++  std::unique_ptr<tab_list_internal::TabListModel> model_;
++  std::unique_ptr<tab_list_internal::TabListViewObserver> view_observer_;
+ 
+   // These members are owned in the tree of views under this ListView's children
+   // so it's safe to store raw pointers to them.
+--- chromium-75.0.3766.2/chrome/browser/ui/views/desktop_capture/desktop_media_tab_list.cc.gcc8	2019-04-16 03:14:00.000000000 +0200
++++ chromium-75.0.3766.2/chrome/browser/ui/views/desktop_capture/desktop_media_tab_list.cc	2019-04-21 21:59:32.612639241 +0200
+@@ -43,6 +43,8 @@ const int kListWidth = 346;
+ // between.
+ const base::TimeDelta kClearPreviewDelay = base::Milliseconds(200);
+ 
++} namespace tab_list_internal {
++
+ // ui::TableModel that wraps a DesktopMediaListController and listens for
+ // updates from it.
+ class TabListModel : public ui::TableModel,
+@@ -192,12 +194,12 @@ DesktopMediaTabList::DesktopMediaTabList
+ 
+   SetLayoutManager(std::make_unique<views::FillLayout>());
+ 
+-  model_ = std::make_unique<TabListModel>(
++  model_ = std::make_unique<tab_list_internal::TabListModel>(
+       controller_, base::BindRepeating(&DesktopMediaTabList::OnPreviewUpdated,
+                                        weak_factory_.GetWeakPtr()));
+   auto selection_changed_callback = base::BindRepeating(
+       &DesktopMediaTabList::OnSelectionChanged, weak_factory_.GetWeakPtr());
+-  view_observer_ = std::make_unique<TabListViewObserver>(
++  view_observer_ = std::make_unique<tab_list_internal::TabListViewObserver>(
+       controller_, selection_changed_callback);
+ 
+   auto list = std::make_unique<views::TableView>(
+--- chromium-85.0.4183.83/components/browsing_data/core/counters/passwords_counter.cc.gcc10	2020-08-24 23:40:32.000000000 +0200
++++ chromium-85.0.4183.83/components/browsing_data/core/counters/passwords_counter.cc	2020-09-02 11:01:29.679068545 +0200
+@@ -18,7 +18,7 @@
+ #include "url/gurl.h"
+ 
+ namespace browsing_data {
+-namespace {
++namespace internal {
+ 
+ bool IsPasswordSyncEnabled(const syncer::SyncService* sync_service) {
+   if (!sync_service)
+@@ -182,10 +182,10 @@ PasswordsCounter::PasswordsCounter(
+     scoped_refptr<password_manager::PasswordStoreInterface> account_store,
+     syncer::SyncService* sync_service)
+     : sync_tracker_(this, sync_service) {
+-  profile_store_fetcher_ = std::make_unique<PasswordStoreFetcher>(
++  profile_store_fetcher_ = std::make_unique<internal::PasswordStoreFetcher>(
+       profile_store,
+       base::BindRepeating(&PasswordsCounter::Restart, base::Unretained(this))),
+-  account_store_fetcher_ = std::make_unique<PasswordStoreFetcher>(
++  account_store_fetcher_ = std::make_unique<internal::PasswordStoreFetcher>(
+       account_store,
+       base::BindRepeating(&PasswordsCounter::Restart, base::Unretained(this)));
+   DCHECK(profile_store);
+@@ -210,7 +210,7 @@ const std::vector<std::string>& Password
+ }
+ 
+ void PasswordsCounter::OnInitialized() {
+-  sync_tracker_.OnInitialized(base::BindRepeating(&IsPasswordSyncEnabled));
++  sync_tracker_.OnInitialized(base::BindRepeating(&internal::IsPasswordSyncEnabled));
+ }
+ 
+ const char* PasswordsCounter::GetPrefName() const {
+--- chromium-85.0.4183.83/components/browsing_data/core/counters/passwords_counter.h.gcc10	2020-08-24 23:40:32.000000000 +0200
++++ chromium-85.0.4183.83/components/browsing_data/core/counters/passwords_counter.h	2020-09-02 11:00:17.201437600 +0200
+@@ -18,7 +18,7 @@ class PasswordStoreInterface;
+ }
+ 
+ namespace browsing_data {
+-namespace {
++namespace internal {
+ class PasswordStoreFetcher;
+ }
+ class PasswordsCounter : public browsing_data::BrowsingDataCounter {
+@@ -77,8 +77,8 @@ class PasswordsCounter : public browsing
+   void Count() override;
+ 
+   base::CancelableTaskTracker cancelable_task_tracker_;
+-  std::unique_ptr<PasswordStoreFetcher> profile_store_fetcher_;
+-  std::unique_ptr<PasswordStoreFetcher> account_store_fetcher_;
++  std::unique_ptr<internal::PasswordStoreFetcher> profile_store_fetcher_;
++  std::unique_ptr<internal::PasswordStoreFetcher> account_store_fetcher_;
+   SyncTracker sync_tracker_;
+   int remaining_tasks_ = 0;
+ };
+--- chromium-85.0.4183.83/chrome/browser/ui/signin_reauth_view_controller.cc.gcc10	2020-08-24 23:40:29.000000000 +0200
++++ chromium-85.0.4183.83/chrome/browser/ui/signin_reauth_view_controller.cc	2020-09-02 13:40:00.589559160 +0200
+@@ -30,7 +30,7 @@
+ #include "google_apis/gaia/gaia_urls.h"
+ #include "third_party/abseil-cpp/absl/types/optional.h"
+ 
+-namespace {
++namespace internal {
+ 
+ class ReauthWebContentsObserver : public content::WebContentsObserver {
+  public:
+@@ -82,7 +82,7 @@ SigninReauthViewController::SigninReauth
+       reauth_web_contents_.get(), reauth_url, false,
+       base::BindOnce(&SigninReauthViewController::OnGaiaReauthPageComplete,
+                      weak_ptr_factory_.GetWeakPtr()));
+-  reauth_web_contents_observer_ = std::make_unique<ReauthWebContentsObserver>(
++  reauth_web_contents_observer_ = std::make_unique<internal::ReauthWebContentsObserver>(
+       reauth_web_contents_.get(), this);
+ }
+ 
+--- chromium-85.0.4183.83/chrome/browser/ui/signin_reauth_view_controller.h.gcc10	2020-08-24 23:40:29.000000000 +0200
++++ chromium-85.0.4183.83/chrome/browser/ui/signin_reauth_view_controller.h	2020-09-02 13:39:25.082226279 +0200
+@@ -17,7 +17,7 @@
+ 
+ class Browser;
+ 
+-namespace {
++namespace internal {
+ class ReauthWebContentsObserver;
+ }
+ 
+@@ -192,7 +192,7 @@ class SigninReauthViewController
+ 
+   // WebContents of the Gaia reauth page.
+   std::unique_ptr<content::WebContents> reauth_web_contents_;
+-  std::unique_ptr<ReauthWebContentsObserver> reauth_web_contents_observer_;
++  std::unique_ptr<internal::ReauthWebContentsObserver> reauth_web_contents_observer_;
+   // Raw pointer is only set if |reauth_web_contents_| was transferred to a new
+   // tab for the SAML flow.
+   content::WebContents* raw_reauth_web_contents_ = nullptr;
+--- chromium-87.0.4280.40/chrome/browser/ui/views/global_media_controls/media_notification_device_selector_view.h.gcc10	2020-10-29 23:25:30.000000000 +0100
++++ chromium-87.0.4280.40/chrome/browser/ui/views/global_media_controls/media_notification_device_selector_view.h	2020-11-01 13:43:51.953911974 +0100
+@@ -15,8 +15,9 @@
+ #include "media/audio/audio_device_description.h"
+ #include "ui/base/metadata/metadata_header_macros.h"
+ 
+-namespace {
++namespace internal {
+ class ExpandDeviceSelectorButton;
++} namespace {
+ const char kAudioDevicesCountHistogramName[] =
+     "Media.GlobalMediaControls.NumberOfAvailableAudioDevices";
+ const char kCastDeviceCountHistogramName[] =
+@@ -136,7 +137,7 @@ class MediaNotificationDeviceSelectorVie
+   // Child views
+   AudioDeviceEntryView* current_audio_device_entry_view_ = nullptr;
+   views::View* expand_button_strip_ = nullptr;
+-  ExpandDeviceSelectorButton* expand_button_ = nullptr;
++  internal::ExpandDeviceSelectorButton* expand_button_ = nullptr;
+   views::View* device_entry_views_container_ = nullptr;
+ 
+   base::CallbackListSubscription audio_device_subscription_;
+--- chromium-87.0.4280.40/chrome/browser/ui/views/global_media_controls/media_notification_device_selector_view.cc.gcc10	2020-11-01 13:44:45.065987517 +0100
++++ chromium-87.0.4280.40/chrome/browser/ui/views/global_media_controls/media_notification_device_selector_view.cc	2020-11-01 13:45:00.568717641 +0100
+@@ -81,7 +81,8 @@ void RecordCastDeviceCountMetrics(Global
+     }
+   }
+ }
+-
++}  // anonymous namespace
++namespace internal {
+ class ExpandDeviceSelectorButton : public IconLabelBubbleView {
+  public:
+   explicit ExpandDeviceSelectorButton(IconLabelBubbleView::Delegate* delegate);
+@@ -94,9 +95,9 @@ class ExpandDeviceSelectorButton : publi
+   IconLabelBubbleView::Delegate* delegate_;
+ };
+ 
+-}  // anonymous namespace
++} // namespace internal
+ 
+-ExpandDeviceSelectorButton::ExpandDeviceSelectorButton(
++internal::ExpandDeviceSelectorButton::ExpandDeviceSelectorButton(
+     IconLabelBubbleView::Delegate* delegate)
+     : IconLabelBubbleView(
+           views::style::GetFont(views::style::TextContext::CONTEXT_BUTTON,
+@@ -123,7 +124,7 @@ ExpandDeviceSelectorButton::ExpandDevice
+   SetPreferredSize(size);
+ }
+ 
+-void ExpandDeviceSelectorButton::OnColorsChanged() {
++void internal::ExpandDeviceSelectorButton::OnColorsChanged() {
+   UpdateLabelColors();
+   SetBorder(views::CreateRoundedRectBorder(
+       1, kExpandButtonStripSize.height() / 2, gfx::Insets(),
+@@ -159,7 +160,7 @@ MediaNotificationDeviceSelectorView::Med
+   expand_button_strip_->SetPreferredSize(kExpandButtonStripSize);
+ 
+   expand_button_ = expand_button_strip_->AddChildView(
+-      std::make_unique<ExpandDeviceSelectorButton>(this));
++      std::make_unique<internal::ExpandDeviceSelectorButton>(this));
+   expand_button_->SetCallback(base::BindRepeating(
+       &MediaNotificationDeviceSelectorView::ExpandButtonPressed,
+       base::Unretained(this)));
+--- chromium-87.0.4280.40/components/media_message_center/media_notification_view_modern_impl.h.gcc10	2020-10-29 23:25:34.000000000 +0100
++++ chromium-87.0.4280.40/components/media_message_center/media_notification_view_modern_impl.h	2020-11-01 13:52:43.623648761 +0100
+@@ -23,7 +23,7 @@ class ToggleImageButton;
+ 
+ namespace media_message_center {
+ 
+-namespace {
++namespace internal {
+ class MediaButton;
+ }  // anonymous namespace
+ 
+@@ -156,10 +156,10 @@ class COMPONENT_EXPORT(MEDIA_MESSAGE_CEN
+   MediaArtworkView* artwork_ = nullptr;
+   views::Label* title_label_ = nullptr;
+   views::Label* subtitle_label_ = nullptr;
+-  MediaButton* picture_in_picture_button_ = nullptr;
++  internal::MediaButton* picture_in_picture_button_ = nullptr;
+   views::View* notification_controls_spacer_ = nullptr;
+   views::View* media_controls_container_ = nullptr;
+-  MediaButton* play_pause_button_ = nullptr;
++  internal::MediaButton* play_pause_button_ = nullptr;
+   MediaControlsProgressView* progress_ = nullptr;
+   views::ToggleImageButton* mute_button_ = nullptr;
+   MediaNotificationVolumeSliderView* volume_slider_ = nullptr;
+--- chromium-87.0.4280.40/components/media_message_center/media_notification_view_modern_impl.cc.gcc10	2020-10-29 23:25:34.000000000 +0100
++++ chromium-87.0.4280.40/components/media_message_center/media_notification_view_modern_impl.cc	2020-11-01 13:53:55.309398312 +0100
+@@ -164,6 +164,7 @@ const std::u16string GetAccessibleNameFo
+   return std::u16string();
+ }
+ 
++} namespace internal {
+ class MediaButton : public views::ImageButton {
+  public:
+   MediaButton(PressedCallback callback, int icon_size, gfx::Size button_size)
+@@ -282,7 +283,7 @@ MediaNotificationViewModernImpl::MediaNo
+                       MediaSessionAction::kSeekBackward);
+ 
+     {
+-      auto play_pause_button = std::make_unique<MediaButton>(
++      auto play_pause_button = std::make_unique<internal::MediaButton>(
+           views::Button::PressedCallback(), kPlayPauseIconSize,
+           kPlayPauseButtonSize);
+       play_pause_button->SetCallback(
+@@ -410,7 +411,7 @@ MediaNotificationViewModernImpl::MediaNo
+     if (item_->SourceType() != SourceType::kCast) {
+       // The picture-in-picture button appears directly under the media
+       // labels.
+-      auto picture_in_picture_button = std::make_unique<MediaButton>(
++      auto picture_in_picture_button = std::make_unique<internal::MediaButton>(
+           views::Button::PressedCallback(), kPipButtonIconSize, kPipButtonSize);
+       picture_in_picture_button->SetCallback(base::BindRepeating(
+           &MediaNotificationViewModernImpl::ButtonPressed,
+@@ -628,7 +629,7 @@ void MediaNotificationViewModernImpl::Up
+ void MediaNotificationViewModernImpl::CreateMediaButton(
+     views::View* parent_view,
+     MediaSessionAction action) {
+-  auto button = std::make_unique<MediaButton>(
++  auto button = std::make_unique<internal::MediaButton>(
+       views::Button::PressedCallback(), kMediaButtonIconSize, kMediaButtonSize);
+   button->SetCallback(
+       base::BindRepeating(&MediaNotificationViewModernImpl::ButtonPressed,
+@@ -692,7 +693,7 @@ void MediaNotificationViewModernImpl::Up
+     if (child == play_pause_button_)
+       continue;
+ 
+-    MediaButton* button = static_cast<MediaButton*>(child);
++    internal::MediaButton* button = static_cast<internal::MediaButton*>(child);
+ 
+     button->SetButtonColor(foreground);
+   }
+--- chromium-87.0.4280.40/chrome/browser/push_messaging/push_messaging_service_impl.h.gcc10	2020-10-29 23:25:28.000000000 +0100
++++ chromium-87.0.4280.40/chrome/browser/push_messaging/push_messaging_service_impl.h	2020-11-01 15:10:34.213112278 +0100
+@@ -65,7 +65,7 @@ namespace instance_id {
+ class InstanceIDDriver;
+ }  // namespace instance_id
+ 
+-namespace {
++namespace internal {
+ struct PendingMessage {
+   PendingMessage(std::string app_id, gcm::IncomingMessage message);
+   PendingMessage(const PendingMessage& other);
+@@ -223,7 +223,7 @@ class PushMessagingServiceImpl : public
+                         bool did_show_generic_notification);
+ 
+   void OnCheckedOriginForAbuse(
+-      PendingMessage message,
++      internal::PendingMessage message,
+       AbusiveOriginPermissionRevocationRequest::Outcome outcome);
+ 
+   void DeliverNextQueuedMessageForServiceWorkerRegistration(
+@@ -417,7 +417,7 @@ class PushMessagingServiceImpl : public
+   Profile* profile_;
+   std::unique_ptr<AbusiveOriginPermissionRevocationRequest>
+       abusive_origin_revocation_request_;
+-  std::queue<PendingMessage> messages_pending_permission_check_;
++  std::queue<internal::PendingMessage> messages_pending_permission_check_;
+ 
+   // {Origin, ServiceWokerRegistratonId} key for message delivery queue. This
+   // ensures that we only deliver one message at a time per ServiceWorker.
+@@ -425,7 +425,7 @@ class PushMessagingServiceImpl : public
+ 
+   // Queue of pending messages per ServiceWorkerRegstration to be delivered one
+   // at a time. This allows us to enforce visibility requirements.
+-  base::flat_map<MessageDeliveryQueueKey, std::queue<PendingMessage>>
++  base::flat_map<MessageDeliveryQueueKey, std::queue<internal::PendingMessage>>
+       message_delivery_queue_;
+ 
+   int push_subscription_count_;
+--- chromium-87.0.4280.40/chrome/browser/push_messaging/push_messaging_service_impl.cc.gcc10	2020-10-29 23:25:28.000000000 +0100
++++ chromium-87.0.4280.40/chrome/browser/push_messaging/push_messaging_service_impl.cc	2020-11-01 15:12:36.900845849 +0100
+@@ -177,7 +177,9 @@ void LogMessageReceivedEventToDevTools(
+       content::DevToolsBackgroundService::kPushMessaging,
+       "Push message received" /* event_name */, message_id, event_metadata);
+ }
++}  // namespace
+ 
++namespace internal {
+ PendingMessage::PendingMessage(std::string app_id, gcm::IncomingMessage message)
+     : app_id(std::move(app_id)),
+       message(std::move(message)),
+@@ -393,7 +395,7 @@ void PushMessagingServiceImpl::CheckOrig
+   if (messages_pending_permission_check_.empty())
+     return;
+ 
+-  PendingMessage message =
++  internal::PendingMessage message =
+       std::move(messages_pending_permission_check_.front());
+   messages_pending_permission_check_.pop();
+ 
+@@ -415,7 +417,7 @@ void PushMessagingServiceImpl::CheckOrig
+ }
+ 
+ void PushMessagingServiceImpl::OnCheckedOriginForAbuse(
+-    PendingMessage message,
++    internal::PendingMessage message,
+     AbusiveOriginPermissionRevocationRequest::Outcome outcome) {
+   abusive_origin_revocation_request_.reset();
+ 
+@@ -439,7 +441,7 @@ void PushMessagingServiceImpl::OnChecked
+   if (outcome == AbusiveOriginPermissionRevocationRequest::Outcome::
+                      PERMISSION_NOT_REVOKED &&
+       IsPermissionSet(origin)) {
+-    std::queue<PendingMessage>& delivery_queue =
++    std::queue<internal::PendingMessage>& delivery_queue =
+         message_delivery_queue_[{origin, service_worker_registration_id}];
+     delivery_queue.push(std::move(message));
+ 
+@@ -474,9 +476,9 @@ void PushMessagingServiceImpl::
+   if (iter == message_delivery_queue_.end())
+     return;
+ 
+-  const std::queue<PendingMessage>& delivery_queue = iter->second;
++  const std::queue<internal::PendingMessage>& delivery_queue = iter->second;
+   CHECK(!delivery_queue.empty());
+-  const PendingMessage& next_message = delivery_queue.front();
++  const internal::PendingMessage& next_message = delivery_queue.front();
+ 
+   const std::string& app_id = next_message.app_id;
+   const gcm::IncomingMessage& message = next_message.message;
+@@ -634,7 +636,7 @@ void PushMessagingServiceImpl::DidHandle
+   CHECK(iter != message_delivery_queue_.end());
+ 
+   // Remove the delivered message from the queue.
+-  std::queue<PendingMessage>& delivery_queue = iter->second;
++  std::queue<internal::PendingMessage>& delivery_queue = iter->second;
+   CHECK(!delivery_queue.empty());
+ 
+   base::UmaHistogramLongTimes(
+--- chromium-89.0.4389.47/chrome/browser/ui/views/web_apps/frame_toolbar/web_app_navigation_button_container.cc.gcc10	2021-02-11 00:03:54.000000000 +0100
++++ chromium-89.0.4389.47/chrome/browser/ui/views/web_apps/frame_toolbar/web_app_navigation_button_container.cc	2021-02-16 10:28:14.285087792 +0100
+@@ -30,7 +30,7 @@
+ #include "base/win/windows_version.h"
+ #endif
+ 
+-namespace {
++namespace internal {
+ 
+ constexpr int kPaddingBetweenNavigationButtons = 5;
+ 
+@@ -159,14 +159,14 @@ WebAppNavigationButtonContainer::WebAppN
+   views::BoxLayout& layout =
+       *SetLayoutManager(std::make_unique<views::BoxLayout>(
+           views::BoxLayout::Orientation::kHorizontal,
+-          gfx::Insets(0, kWebAppFrameLeftMargin),
+-          kPaddingBetweenNavigationButtons));
++          gfx::Insets(0, internal::kWebAppFrameLeftMargin),
++          internal::kPaddingBetweenNavigationButtons));
+   // Right align to clip the leftmost items first when not enough space.
+   layout.set_main_axis_alignment(views::BoxLayout::MainAxisAlignment::kEnd);
+   layout.set_cross_axis_alignment(
+       views::BoxLayout::CrossAxisAlignment::kCenter);
+ 
+-  back_button_ = AddChildView(std::make_unique<WebAppToolbarBackButton>(
++  back_button_ = AddChildView(std::make_unique<internal::WebAppToolbarBackButton>(
+       base::BindRepeating(
+           [](Browser* browser, const ui::Event& event) {
+             chrome::ExecuteCommandWithDisposition(
+@@ -185,7 +185,7 @@ WebAppNavigationButtonContainer::WebAppN
+ 
+   const auto* app_controller = browser_->app_controller();
+   if (app_controller->HasReloadButton()) {
+-    reload_button_ = AddChildView(std::make_unique<WebAppToolbarReloadButton>(
++    reload_button_ = AddChildView(std::make_unique<internal::WebAppToolbarReloadButton>(
+         browser_->command_controller()));
+     reload_button_->set_tag(IDC_RELOAD);
+ 
+--- chromium-89.0.4389.47/chrome/browser/ui/views/web_apps/frame_toolbar/web_app_navigation_button_container.h.gcc10	2021-02-11 00:03:54.000000000 +0100
++++ chromium-89.0.4389.47/chrome/browser/ui/views/web_apps/frame_toolbar/web_app_navigation_button_container.h	2021-02-16 10:25:50.042674919 +0100
+@@ -10,7 +10,7 @@
+ #include "ui/base/metadata/metadata_header_macros.h"
+ #include "ui/views/view.h"
+ 
+-namespace {
++namespace internal {
+ class WebAppToolbarBackButton;
+ class WebAppToolbarReloadButton;
+ }  // namespace
+@@ -45,8 +45,8 @@ class WebAppNavigationButtonContainer :
+   Browser* const browser_;
+ 
+   // These members are owned by the views hierarchy.
+-  WebAppToolbarBackButton* back_button_ = nullptr;
+-  WebAppToolbarReloadButton* reload_button_ = nullptr;
++  internal::WebAppToolbarBackButton* back_button_ = nullptr;
++  internal::WebAppToolbarReloadButton* reload_button_ = nullptr;
+ };
+ 
+ #endif  // CHROME_BROWSER_UI_VIEWS_WEB_APPS_FRAME_TOOLBAR_WEB_APP_NAVIGATION_BUTTON_CONTAINER_H_
+--- chromium-90.0.4430.19/chrome/browser/permissions/crowd_deny_preload_data.h.gcc10	2021-03-09 19:39:27.000000000 +0100
++++ chromium-90.0.4430.19/chrome/browser/permissions/crowd_deny_preload_data.h	2021-03-15 23:00:40.023835460 +0100
+@@ -27,7 +27,7 @@ namespace testing {
+ class ScopedCrowdDenyPreloadDataOverride;
+ }
+ 
+-namespace {
++namespace internal {
+ struct PendingOrigin {
+   PendingOrigin(
+       url::Origin origin,
+@@ -106,7 +106,7 @@ class CrowdDenyPreloadData {
+   DomainToReputationMap domain_to_reputation_map_;
+   scoped_refptr<base::SequencedTaskRunner> loading_task_runner_;
+   absl::optional<base::Version> version_on_disk_;
+-  std::queue<PendingOrigin> origins_pending_verification_;
++  std::queue<internal::PendingOrigin> origins_pending_verification_;
+ };
+ 
+ namespace testing {
+--- chromium-90.0.4430.19/chrome/browser/permissions/crowd_deny_preload_data.cc.gcc10	2021-03-09 19:39:27.000000000 +0100
++++ chromium-90.0.4430.19/chrome/browser/permissions/crowd_deny_preload_data.cc	2021-03-15 23:01:43.475519104 +0100
+@@ -47,6 +47,9 @@ DomainToReputationMap LoadAndParseAndInd
+   }
+   return DomainToReputationMap(std::move(domain_reputation_pairs));
+ }
++}  // namespace
++
++namespace internal {
+ 
+ PendingOrigin::PendingOrigin(
+     url::Origin origin,
+--- chromium-91.0.4472.69/chrome/browser/policy/cbcm_invalidations_initializer.h.gcc11	2021-05-20 04:16:59.000000000 +0200
++++ chromium-91.0.4472.69/chrome/browser/policy/cbcm_invalidations_initializer.h	2021-05-24 05:54:27.440455002 +0200
+@@ -17,7 +17,7 @@ class SharedURLLoaderFactory;
+ namespace policy {
+ class CloudPolicyClient;
+ 
+-namespace {
++namespace internal {
+ class MachineLevelDeviceAccountInitializerHelper;
+ }
+ 
+@@ -50,7 +50,7 @@ class CBCMInvalidationsInitializer {
+   void AccountInitCallback(const std::string& account_email, bool success);
+ 
+   Delegate* delegate_;
+-  std::unique_ptr<MachineLevelDeviceAccountInitializerHelper>
++  std::unique_ptr<internal::MachineLevelDeviceAccountInitializerHelper>
+       account_initializer_helper_;
+ };
+ 
+--- chromium-91.0.4472.69/chrome/browser/policy/cbcm_invalidations_initializer.cc.gcc11	2021-05-20 04:16:59.000000000 +0200
++++ chromium-91.0.4472.69/chrome/browser/policy/cbcm_invalidations_initializer.cc	2021-05-24 05:55:18.400526152 +0200
+@@ -15,7 +15,7 @@
+ 
+ namespace policy {
+ 
+-namespace {
++namespace internal {
+ 
+ // A helper class to make the appropriate calls into the device account
+ // initializer and manage the ChromeBrowserCloudManagementRegistrar callback's
+@@ -146,7 +146,7 @@ void CBCMInvalidationsInitializer::OnSer
+     // token. Creating this object starts that process and the callback will
+     // be called from it whether it succeeds or not.
+     account_initializer_helper_ =
+-        std::make_unique<MachineLevelDeviceAccountInitializerHelper>(
++        std::make_unique<internal::MachineLevelDeviceAccountInitializerHelper>(
+             account_email, client,
+             base::BindOnce(&CBCMInvalidationsInitializer::AccountInitCallback,
+                            base::Unretained(this), account_email),
+--- chromium-92.0.4515.51/content/browser/web_contents/web_contents_impl.h.gcc11	2021-06-11 00:11:59.000000000 +0200
++++ chromium-92.0.4515.51/content/browser/web_contents/web_contents_impl.h	2021-06-13 22:28:25.994540060 +0200
+@@ -102,7 +102,7 @@ class InterfaceProvider;
+ }  // namespace service_manager
+ 
+ namespace content {
+-namespace {
++namespace internal {
+ class JavaScriptDialogDismissNotifier;
+ }
+ enum class PictureInPictureResult;
+@@ -2172,7 +2172,7 @@ class CONTENT_EXPORT WebContentsImpl : p
+ 
+   // Tracks clients who want to be notified when a JavaScript dialog is
+   // dismissed.
+-  std::unique_ptr<JavaScriptDialogDismissNotifier>
++  std::unique_ptr<internal::JavaScriptDialogDismissNotifier>
+       javascript_dialog_dismiss_notifier_;
+ 
+   // The max number of loaded frames that have been seen in this WebContents.
+--- chromium-92.0.4515.51/content/browser/web_contents/web_contents_impl.cc.gcc11	2021-06-11 00:11:59.000000000 +0200
++++ chromium-92.0.4515.51/content/browser/web_contents/web_contents_impl.cc	2021-06-13 22:31:37.000095275 +0200
+@@ -263,6 +263,8 @@ class CloseDialogCallbackWrapper
+   CloseCallback callback_;
+ };
+ 
++} namespace internal {
++
+ // This is a small helper class created while a JavaScript dialog is showing
+ // and destroyed when it's dismissed. Clients can register callbacks to receive
+ // a notification when the dialog is dismissed.
+@@ -289,6 +291,8 @@ class JavaScriptDialogDismissNotifier {
+   std::vector<base::OnceClosure> callbacks_;
+ };
+ 
++} namespace {
++
+ bool FrameCompareDepth(RenderFrameHostImpl* a, RenderFrameHostImpl* b) {
+   return a->GetFrameDepth() < b->GetFrameDepth();
+ }
+@@ -6658,7 +6662,7 @@ void WebContentsImpl::RunJavaScriptDialo
+ 
+   // While a JS message dialog is showing, defer commits in this WebContents.
+   javascript_dialog_dismiss_notifier_ =
+-      std::make_unique<JavaScriptDialogDismissNotifier>();
++      std::make_unique<internal::JavaScriptDialogDismissNotifier>();
+ 
+   // Suppress JavaScript dialogs when requested.
+   bool should_suppress = delegate_ && delegate_->ShouldSuppressDialogs(this);
+@@ -6768,7 +6772,7 @@ void WebContentsImpl::RunBeforeUnloadCon
+   // While a JS beforeunload dialog is showing, defer commits in this
+   // WebContents.
+   javascript_dialog_dismiss_notifier_ =
+-      std::make_unique<JavaScriptDialogDismissNotifier>();
++      std::make_unique<internal::JavaScriptDialogDismissNotifier>();
+ 
+   bool should_suppress = delegate_ && delegate_->ShouldSuppressDialogs(this);
+   bool has_non_devtools_handlers = delegate_ && dialog_manager_;
+--- chromium-94.0.4606.20/chrome/browser/ui/views/global_media_controls/media_notification_footer_view.h.gcc11	2021-08-25 21:12:13.000000000 +0200
++++ chromium-94.0.4606.20/chrome/browser/ui/views/global_media_controls/media_notification_footer_view.h	2021-09-03 23:43:02.957312330 +0200
+@@ -10,7 +10,7 @@
+ #include "ui/views/controls/button/button.h"
+ #include "ui/views/view.h"
+ 
+-namespace {
++namespace internal {
+ class DeviceEntryButton;
+ }  // anonymous namespace
+ 
+@@ -50,7 +50,7 @@ class MediaNotificationFooterView
+ 
+   SkColor foreground_color_ = gfx::kPlaceholderColor;
+ 
+-  DeviceEntryButton* overflow_button_ = nullptr;
++  internal::DeviceEntryButton* overflow_button_ = nullptr;
+ 
+   Delegate* delegate_ = nullptr;
+ };
+--- chromium-94.0.4606.20/chrome/browser/ui/views/global_media_controls/media_notification_footer_view.cc.gcc11	2021-08-25 21:12:13.000000000 +0200
++++ chromium-94.0.4606.20/chrome/browser/ui/views/global_media_controls/media_notification_footer_view.cc	2021-09-03 23:44:24.713751289 +0200
+@@ -17,7 +17,7 @@
+ #include "ui/views/controls/button/label_button.h"
+ #include "ui/views/layout/flex_layout.h"
+ 
+-namespace {
++namespace internal {
+ 
+ constexpr int kEntryMaxWidth = 150;
+ constexpr int kDeviceIconSize = 12;
+@@ -105,7 +105,7 @@ MediaNotificationFooterView::MediaNotifi
+   if (!is_cast_session)
+     return;
+ 
+-  AddChildView(std::make_unique<DeviceEntryButton>(
++  AddChildView(std::make_unique<internal::DeviceEntryButton>(
+       stop_casting_callback, nullptr,
+       l10n_util::GetStringUTF16(
+           IDS_GLOBAL_MEDIA_CONTROLS_STOP_CASTING_BUTTON_LABEL)));
+@@ -120,7 +120,7 @@ void MediaNotificationFooterView::OnMedi
+     DeviceEntryUI* device_entry = entry.second;
+ 
+     auto* device_entry_button =
+-        AddChildView(std::make_unique<DeviceEntryButton>(
++        AddChildView(std::make_unique<internal::DeviceEntryButton>(
+             base::BindRepeating(&MediaNotificationFooterView::OnDeviceSelected,
+                                 base::Unretained(this), tag),
+             device_entry->icon(),
+@@ -133,7 +133,7 @@ void MediaNotificationFooterView::OnMedi
+             .WithOrder(1));
+   }
+ 
+-  overflow_button_ = AddChildView(std::make_unique<DeviceEntryButton>(
++  overflow_button_ = AddChildView(std::make_unique<internal::DeviceEntryButton>(
+       base::BindRepeating(&MediaNotificationFooterView::OnOverflowButtonClicked,
+                           base::Unretained(this))));
+   overflow_button_->SetProperty(
+@@ -172,7 +172,7 @@ void MediaNotificationFooterView::SetDel
+ 
+ void MediaNotificationFooterView::UpdateButtonsColor() {
+   for (auto* view : children())
+-    static_cast<DeviceEntryButton*>(view)->UpdateColor(foreground_color_);
++    static_cast<internal::DeviceEntryButton*>(view)->UpdateColor(foreground_color_);
+ }
+ 
+ void MediaNotificationFooterView::OnDeviceSelected(int tag) {

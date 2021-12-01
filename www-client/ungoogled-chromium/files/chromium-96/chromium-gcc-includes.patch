@@ -1,0 +1,246 @@
+--- chromium-61.0.3163.59/third_party/webrtc/modules/audio_processing/aec3/aec_state.cc.bak	2017-08-23 21:08:14.000000000 +0200
++++ chromium-61.0.3163.59/third_party/webrtc/modules/audio_processing/aec3/aec_state.cc	2017-08-29 13:07:50.789475942 +0200
+@@ -10,7 +10,7 @@
+ 
+ #include "modules/audio_processing/aec3/aec_state.h"
+ 
+-#include <math.h>
++#include <cmath>
+
+ #include <algorithm>
+ #include <numeric>
+--- chromium-65.0.3325.51/device/vr/util/sample_queue.h.gcc7	2018-02-06 21:05:25.000000000 +0100
++++ chromium-65.0.3325.51/device/vr/util/sample_queue.h	2018-02-17 20:35:26.406726748 +0100
+@@ -7,6 +7,7 @@
+ 
+ #include <cstddef>
+ #include <vector>
++#include <cstdint>
+ 
+ #include "base/component_export.h"
+ #include "base/macros.h"
+--- chromium-79.0.3945.16/ui/gfx/font.cc.gcc9	2019-11-03 22:02:27.414544634 +0100
++++ chromium-79.0.3945.16/ui/gfx/font.cc	2019-11-03 22:02:44.564248042 +0100
+@@ -8,6 +8,8 @@
+ #include "build/build_config.h"
+ #include "ui/gfx/platform_font.h"
+ 
++#include <algorithm>
++
+ namespace gfx {
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+--- chromium-83.0.4103.56/ui/gfx/linux/drm_util_linux.h.gcc10	2020-05-13 20:40:37.000000000 +0200
++++ chromium-83.0.4103.56/ui/gfx/linux/drm_util_linux.h	2020-05-13 23:14:18.138748303 +0200
+@@ -7,6 +7,8 @@
+ 
+ #include "ui/gfx/buffer_types.h"
+ 
++#include <cstdint>
++
+ namespace ui {
+ 
+ int GetFourCCFormatFromBufferFormat(gfx::BufferFormat format);
+--- chromium-89.0.4389.58/third_party/webrtc/common_video/h264/sps_parser.h.gcc10	2021-02-17 21:39:41.000000000 +0100
++++ chromium-89.0.4389.58/third_party/webrtc/common_video/h264/sps_parser.h	2021-02-18 22:12:42.002525039 +0100
+@@ -13,6 +13,7 @@
+ 
+ #include "absl/types/optional.h"
+ #include "rtc_base/bitstream_reader.h"
++#include <stdint.h>
+ 
+ namespace webrtc {
+ 
+--- chromium-89.0.4389.58/third_party/webrtc/common_video/h264/pps_parser.h.gcc10	2021-02-17 21:39:41.000000000 +0100
++++ chromium-89.0.4389.58/third_party/webrtc/common_video/h264/pps_parser.h	2021-02-18 22:23:59.266625600 +0100
+@@ -16,6 +16,7 @@
+ 
+ #include "absl/types/optional.h"
+ #include "api/array_view.h"
++#include <stdint.h>
+ 
+ namespace webrtc {
+ 
+--- chromium-89.0.4389.58/third_party/webrtc/modules/include/module_common_types_public.h.gcc10	2021-02-17 21:39:42.000000000 +0100
++++ chromium-89.0.4389.58/third_party/webrtc/modules/include/module_common_types_public.h	2021-02-18 22:35:39.950321166 +0100
+@@ -13,6 +13,8 @@
+ 
+ #include <limits>
+ 
++#include <stdint.h>
++
+ #include "absl/types/optional.h"
+ 
+ namespace webrtc {
+--- chromium-89.0.4389.58/third_party/blink/renderer/core/page/scrolling/text_fragment_selector_generator.cc.gcc10	2021-02-18 19:13:05.536928409 +0100
++++ chromium-89.0.4389.58/third_party/blink/renderer/core/page/scrolling/text_fragment_selector_generator.cc	2021-02-19 11:31:20.084498189 +0100
+@@ -20,6 +20,7 @@
+ #include "third_party/blink/renderer/core/page/scrolling/text_fragment_finder.h"
+ #include "third_party/blink/renderer/core/page/scrolling/text_fragment_selector.h"
+ #include "third_party/blink/renderer/platform/text/text_boundaries.h"
++#include "third_party/abseil-cpp/absl/base/attributes.h"
+ 
+ using LinkGenerationError = shared_highlighting::LinkGenerationError;
+ 
+--- chromium-91.0.4472.69/third_party/blink/renderer/core/frame/local_frame_view.cc.gcc11	2021-05-23 23:35:34.723118462 +0200
++++ chromium-91.0.4472.69/third_party/blink/renderer/core/frame/local_frame_view.cc	2021-05-24 12:02:42.872680386 +0200
+@@ -30,6 +30,7 @@
+ #include <memory>
+ #include <utility>
+ 
++#include "absl/base/attributes.h"
+ #include "base/callback.h"
+ #include "base/feature_list.h"
+ #include "base/memory/ptr_util.h"
+--- chromium-92.0.4515.51/gpu/command_buffer/common/skia_utils.h.gcc10	2021-06-11 00:12:00.000000000 +0200
++++ chromium-92.0.4515.51/gpu/command_buffer/common/skia_utils.h	2021-06-12 21:20:11.755579660 +0200
+@@ -7,6 +7,7 @@
+ 
+ #include "gpu/raster_export.h"
+ #include "third_party/abseil-cpp/absl/types/optional.h"
++#include <cstdint>
+ 
+ class GrDirectContext;
+ 
+--- chromium-92.0.4515.51/media/capture/video/file_video_capture_device.cc.gcc10	2021-06-11 00:12:01.000000000 +0200
++++ chromium-92.0.4515.51/media/capture/video/file_video_capture_device.cc	2021-06-12 23:02:36.001369629 +0200
+@@ -9,6 +9,7 @@
+ #include <memory>
+ #include <utility>
+ 
++#include "absl/base/attributes.h"
+ #include "base/bind.h"
+ #include "base/cxx17_backports.h"
+ #include "base/location.h"
+--- chromium-92.0.4515.51/device/bluetooth/bluez/metrics_recorder.h.gcc10	2021-06-11 00:11:59.000000000 +0200
++++ chromium-92.0.4515.51/device/bluetooth/bluez/metrics_recorder.h	2021-06-12 23:38:46.735130352 +0200
+@@ -6,6 +6,7 @@
+ #define DEVICE_BLUETOOTH_BLUEZ_METRICS_RECORDER_H_
+ 
+ #include "third_party/abseil-cpp/absl/types/optional.h"
++#include <string>
+ 
+ namespace bluetooth {
+ 
+--- chromium-92.0.4515.51/gpu/config/device_perf_info.h.gcc10	2021-06-11 00:12:00.000000000 +0200
++++ chromium-92.0.4515.51/gpu/config/device_perf_info.h	2021-06-13 00:01:10.858705572 +0200
+@@ -5,6 +5,7 @@
+ #ifndef GPU_CONFIG_DEVICE_PERF_INFO_H_
+ #define GPU_CONFIG_DEVICE_PERF_INFO_H_
+ 
++#include <cstdint>
+ #include "build/build_config.h"
+ #include "gpu/gpu_export.h"
+ #include "third_party/abseil-cpp/absl/types/optional.h"
+--- chromium-92.0.4515.51/third_party/blink/renderer/platform/graphics/dark_mode_types.h.gcc11	2021-06-11 00:12:05.000000000 +0200
++++ chromium-92.0.4515.51/third_party/blink/renderer/platform/graphics/dark_mode_types.h	2021-06-15 11:06:18.936448816 +0200
+@@ -5,6 +5,8 @@
+ #ifndef THIRD_PARTY_BLINK_RENDERER_PLATFORM_GRAPHICS_DARK_MODE_TYPES_H_
+ #define THIRD_PARTY_BLINK_RENDERER_PLATFORM_GRAPHICS_DARK_MODE_TYPES_H_
+ 
++#include <cstdint>
++
+ namespace blink {
+ 
+ enum class DarkModeResult : uint8_t {
+--- chromium-94.0.4606.20/media/renderers/video_frame_rgba_to_yuva_converter.cc.gcc11	2021-08-25 21:12:23.000000000 +0200
++++ chromium-94.0.4606.20/media/renderers/video_frame_rgba_to_yuva_converter.cc	2021-09-03 01:22:33.534682886 +0200
+@@ -19,6 +19,7 @@
+ #include "third_party/skia/include/core/SkImage.h"
+ #include "third_party/skia/include/gpu/GrDirectContext.h"
+ #include "ui/gfx/gpu_memory_buffer.h"
++#include "third_party/abseil-cpp/absl/memory/memory.h"
+ 
+ namespace {
+ 
+--- chromium-94.0.4606.20/media/video/h265_nalu_parser.cc.gcc11	2021-08-25 21:12:24.000000000 +0200
++++ chromium-94.0.4606.20/media/video/h265_nalu_parser.cc	2021-09-03 01:32:43.760789941 +0200
+@@ -5,6 +5,7 @@
+ #include "media/video/h265_nalu_parser.h"
+ 
+ #include <stddef.h>
++#include <string.h>
+ 
+ #include <algorithm>
+ #include <cmath>
+--- chromium-94.0.4606.20/ui/accessibility/platform/inspect/ax_property_node.cc.gcc11	2021-08-25 21:13:16.000000000 +0200
++++ chromium-94.0.4606.20/ui/accessibility/platform/inspect/ax_property_node.cc	2021-09-03 02:42:04.789169352 +0200
+@@ -9,6 +9,8 @@
+ #include "third_party/abseil-cpp/absl/types/optional.h"
+ #include "ui/accessibility/platform/inspect/ax_inspect.h"
+ 
++#include <memory>
++
+ namespace ui {
+ 
+ // static
+--- chromium-94.0.4606.20/components/policy/core/browser/webui/json_generation.h.gcc11	2021-08-25 21:12:18.000000000 +0200
++++ chromium-94.0.4606.20/components/policy/core/browser/webui/json_generation.h	2021-09-03 19:11:57.506866149 +0200
+@@ -5,6 +5,7 @@
+ #ifndef COMPONENTS_POLICY_CORE_BROWSER_WEBUI_JSON_GENERATION_H_
+ #define COMPONENTS_POLICY_CORE_BROWSER_WEBUI_JSON_GENERATION_H_
+ 
++#include <memory>
+ #include <string>
+ 
+ #include "components/policy/policy_export.h"
+--- chromium-94.0.4606.20/ui/accessibility/platform/inspect/ax_property_node.h.gcc11	2021-08-25 21:13:16.000000000 +0200
++++ chromium-94.0.4606.20/ui/accessibility/platform/inspect/ax_property_node.h	2021-09-03 22:12:33.354061297 +0200
+@@ -5,6 +5,7 @@
+ #ifndef UI_ACCESSIBILITY_PLATFORM_INSPECT_AX_PROPERTY_NODE_H_
+ #define UI_ACCESSIBILITY_PLATFORM_INSPECT_AX_PROPERTY_NODE_H_
+ 
++#include <memory>
+ #include <string>
+ #include <vector>
+ 
+--- chromium-96.0.4664.9/third_party/pdfium/core/fxcodec/fx_codec.h.gcc11	2021-10-15 06:42:47.000000000 +0200
++++ chromium-96.0.4664.9/third_party/pdfium/core/fxcodec/fx_codec.h	2021-10-17 20:23:58.171670851 +0200
+@@ -8,6 +8,7 @@
+ #define CORE_FXCODEC_FX_CODEC_H_
+ 
+ #include <map>
++#include <cstdint>
+ 
+ #include "third_party/base/optional.h"
+ 
+--- chromium-96.0.4664.9/base/command_line.h.gcc11	2021-10-15 06:38:53.000000000 +0200
++++ chromium-96.0.4664.9/base/command_line.h	2021-10-17 20:44:04.919510983 +0200
+@@ -19,6 +19,7 @@
+ #include <stddef.h>
+ #include <functional>
+ #include <map>
++#include <memory>
+ #include <string>
+ #include <vector>
+ 
+--- chromium-96.0.4664.9/ui/ozone/platform/wayland/gpu/drm_render_node_path_finder.cc.gcc11	2021-10-15 06:40:05.000000000 +0200
++++ chromium-96.0.4664.9/ui/ozone/platform/wayland/gpu/drm_render_node_path_finder.cc	2021-10-18 01:08:58.666377406 +0200
+@@ -5,6 +5,7 @@
+ #include "ui/ozone/platform/wayland/gpu/drm_render_node_path_finder.h"
+ 
+ #include <fcntl.h>
++#include <string.h>
+ #include <sys/stat.h>
+ #include <sys/types.h>
+ #include <unistd.h>
+--- chromium-96.0.4664.9/content/public/browser/document_service.h.gcc11	2021-10-18 03:51:59.705327411 +0200
++++ chromium-96.0.4664.9/content/public/browser/document_service.h	2021-10-18 03:52:16.596001252 +0200
+@@ -12,6 +12,7 @@
+ #include "base/threading/thread_checker.h"
+ #include "content/common/content_export.h"
+ #include "content/public/browser/document_service_internal.h"
++#include "content/public/browser/render_frame_host.h"
+ #include "mojo/public/cpp/bindings/pending_receiver.h"
+ #include "mojo/public/cpp/bindings/receiver.h"
+ #include "url/origin.h"
+--- chromium-96.0.4664.9/chrome/browser/ui/user_education/tutorial/tutorial.cc.gcc11	2021-10-15 06:39:00.000000000 +0200
++++ chromium-96.0.4664.9/chrome/browser/ui/user_education/tutorial/tutorial.cc	2021-10-18 04:37:15.493877651 +0200
+@@ -11,6 +11,7 @@
+ #include "chrome/browser/ui/user_education/tutorial/tutorial_description.h"
+ #include "chrome/browser/ui/user_education/tutorial/tutorial_service.h"
+ #include "third_party/abseil-cpp/absl/types/optional.h"
++#include "third_party/abseil-cpp/absl/memory/memory.h"
+ #include "ui/base/interaction/element_identifier.h"
+ #include "ui/base/interaction/element_tracker.h"
+ #include "ui/base/interaction/interaction_sequence.h"
