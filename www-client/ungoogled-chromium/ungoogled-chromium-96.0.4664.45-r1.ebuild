@@ -175,7 +175,6 @@ BDEPEND="
 	>=dev-util/gperf-3.0.3
 	>=dev-util/ninja-1.7.2
 	>=net-libs/nodejs-7.6.0[inspector]
-	sys-apps/hwids[usb(+)]
 	>=sys-devel/bison-2.4.3
 	sys-devel/flex
 	virtual/pkgconfig
@@ -290,6 +289,7 @@ src_prepare() {
 		"${p}/chromium-fix-shim-headers-r0.patch"
 		"${p}/chromium-91-sql-make-VirtualCursor-standard-layout-type.patch"
 		"${p}/chromium-system-openjpeg-r2.patch"
+		"${p}/chromium-96-fix-std-vector-include.patch"
 
 		# Extra patches taken from openSUSE and Arch
 		"${p}/chromium-glibc-malloc.patch"
@@ -348,7 +348,6 @@ src_prepare() {
 
 		# Personal patches
 		"${p}/chromium-fix-tint-cstddef-include.patch"
-		#"${p}/chromium-94-fix-building-without-safebrowsing.patch"
 		#"${p}/chromium-tab-hover-cards-feature-r1.patch"
 		#"${p}/chromium-optional-dbus-r14.patch"
 		"${p}/chromium-optional-atk-r4.patch"
