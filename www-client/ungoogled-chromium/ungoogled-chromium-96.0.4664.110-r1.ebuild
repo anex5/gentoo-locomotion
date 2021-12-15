@@ -282,7 +282,6 @@ src_prepare() {
 		"${p}/chromium-96-compiler.patch"
 		"${p}/chromium-93-InkDropHost-crash.patch"
 		"${p}/chromium-96-EnumTable-crash.patch"
-		"${p}/chromium-96-xfce-maximize.patch"
 		"${p}/chromium-78-protobuf-RepeatedPtrField-export.patch"
 		"${p}/chromium-use-oauth2-client-switches-as-default.patch"
 		"${p}/chromium-shim_headers.patch"
