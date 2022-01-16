@@ -18,15 +18,15 @@ HOMEPAGE="https://llvm.org/"
 
 LICENSE="Apache-2.0-with-LLVM-exceptions UoI-NCSA BSD public-domain rc"
 SLOT="$(ver_cut 1)"
-KEYWORDS="~amd64 ~arm ~arm64 ~ppc ~ppc64 ~riscv ~sparc ~x86 ~amd64-linux ~ppc-macos ~x64-macos"
-IUSE="debug doc exegesis gold libedit +libffi man ncurses test xar xml z3
-	kernel_Darwin"
+KEYWORDS=""
+IUSE="+binutils-plugin debug doc exegesis libedit +libffi ncurses test xar xml
+	z3 kernel_Darwin"
 RESTRICT="!test? ( test )"
 
 RDEPEND="
 	sys-libs/zlib:0=[${MULTILIB_USEDEP}]
+	binutils-plugin? ( >=sys-devel/binutils-2.31.1-r4:*[plugins] )
 	exegesis? ( dev-libs/libpfm:= )
-	gold? ( >=sys-devel/binutils-2.31.1-r4:*[plugins] )
 	libedit? ( dev-libs/libedit:0=[${MULTILIB_USEDEP}] )
 	libffi? ( >=dev-libs/libffi-3.0.13-r1:0=[${MULTILIB_USEDEP}] )
 	ncurses? ( >=sys-libs/ncurses-5.9-r3:0=[${MULTILIB_USEDEP}] )
@@ -34,7 +34,7 @@ RDEPEND="
 	xml? ( dev-libs/libxml2:2=[${MULTILIB_USEDEP}] )
 	z3? ( >=sci-mathematics/z3-4.7.1:0=[${MULTILIB_USEDEP}] )"
 DEPEND="${RDEPEND}
-	gold? ( sys-libs/binutils-libs )"
+	binutils-plugin? ( sys-libs/binutils-libs )"
 BDEPEND="
 	dev-lang/perl
 	>=dev-util/cmake-3.16
@@ -54,16 +54,17 @@ BDEPEND="
 RDEPEND="${RDEPEND}
 	!sys-devel/llvm:0"
 PDEPEND="sys-devel/llvm-common
-	gold? ( >=sys-devel/llvmgold-${SLOT} )"
+	binutils-plugin? ( >=sys-devel/llvmgold-${SLOT} )"
 
 LLVM_COMPONENTS=( llvm )
-LLVM_MANPAGES=pregenerated
+LLVM_MANPAGES=
 LLVM_PATCHSET=${PV/_/-}
 LLVM_USE_TARGETS=provide
 llvm.org_set_globals
 
 PATCHES=(
 	"${FILESDIR}"/13.0.0/0001-llvm-fix-typos-found-by-PVS.patch
+	"${FILESDIR}"/13.0.0/disable-bswap-for-spir.patch
 )
 
 python_check_deps() {
@@ -300,7 +301,7 @@ get_distribution_components() {
 			opt-viewer
 		)
 
-		if [ use man && llvm_are_manpages_built ]; then
+		if llvm_are_manpages_built; then
 			out+=(
 				# manpages
 				docs-dsymutil-man
@@ -312,7 +313,7 @@ get_distribution_components() {
 			docs-llvm-html
 		)
 
-		use gold && out+=(
+		use binutils-plugin && out+=(
 			LLVMgold
 		)
 	fi
@@ -394,7 +395,7 @@ multilib_src_configure() {
 
 	if multilib_is_native_abi; then
 		local build_docs=OFF
-		if [ use man && llvm_are_manpages_built ]; then
+		if llvm_are_manpages_built; then
 			build_docs=ON
 			mycmakeargs+=(
 				-DCMAKE_INSTALL_MANDIR="${EPREFIX}/usr/lib/llvm/${SLOT}/share/man"
@@ -410,7 +411,7 @@ multilib_src_configure() {
 			-DLLVM_ENABLE_DOXYGEN=OFF
 			-DLLVM_INSTALL_UTILS=ON
 		)
-		use gold && mycmakeargs+=(
+		use binutils-plugin && mycmakeargs+=(
 			-DLLVM_BINUTILS_INCDIR="${EPREFIX}"/usr/include
 		)
 	fi
@@ -503,7 +504,7 @@ multilib_src_install_all() {
 	_EOF_
 
 	docompress "/usr/lib/llvm/${SLOT}/share/man"
-	use man && llvm_install_manpages
+	#llvm_install_manpages
 }
 
 pkg_postinst() {
