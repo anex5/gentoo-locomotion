@@ -3,7 +3,7 @@
 
 EAPI=7
 
-PYTHON_COMPAT=( python3_{7..10} )
+PYTHON_COMPAT=( python3_{8..10} )
 CMAKE_ECLASS=cmake
 inherit java-pkg-opt-2 java-ant-2 cmake-multilib python-r1 toolchain-funcs
 
@@ -21,8 +21,8 @@ SRC_URI="https://github.com/${PN}/${PN}/archive/${PV}.tar.gz -> ${P}.tar.gz
 
 LICENSE="Apache-2.0"
 SLOT="0/${PV}" # subslot = libopencv* soname version
-KEYWORDS="amd64 ~arm arm64 ~ppc ~ppc64 ~riscv x86"
-IUSE="contrib contribcvv contribdnn contribfreetype contribhdf contribovis contribsfm contribxfeatures2d cuda debug dnnsamples download +eigen examples +features2d ffmpeg gdal gflags glog gphoto2 gstreamer gtk3 ieee1394 jpeg jpeg2k lapack lto opencl openexr opengl openmp opencvapps png +python qt5 tesseract testprograms threads tiff vaapi v4l vtk vulkan webp xine"
+KEYWORDS="~amd64 ~arm ~arm64 ~ppc ~ppc64 ~riscv ~x86"
+IUSE="contrib contribcvv contribdnn contribfreetype contribhdf contribovis contribsfm contribxfeatures2d cuda debug dnncuda dnnsamples download +eigen examples +features2d ffmpeg gdal gflags glog gphoto2 gstreamer gtk3 ieee1394 jpeg jpeg2k lapack lto opencl openexr opengl openmp opencvapps png +python qt5 tesseract testprograms threads tiff vaapi v4l vtk vulkan webp xine -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70 -sm_75 -sm_86"
 
 # The following lines are shamelessly stolen from ffmpeg-9999.ebuild with modifications
 ARM_CPU_FEATURES=(
@@ -63,7 +63,9 @@ REQUIRED_USE="
 	cpu_flags_x86_avx2? ( cpu_flags_x86_f16c )
 	cpu_flags_x86_f16c? ( cpu_flags_x86_avx )
 	cuda? ( contrib
-		tesseract? ( opencl ) )
+		tesseract? ( opencl )
+		|| ( sm_30 sm_35 sm_50 sm_52 sm_61 sm_70 sm_75 sm_86 )
+	)
 	dnnsamples? ( examples )
 	gflags? ( contrib )
 	glog? ( contrib )
@@ -74,6 +76,7 @@ REQUIRED_USE="
 	contribovis? ( contrib )
 	contribsfm? ( contrib eigen gflags glog )
 	contribxfeatures2d? ( contrib download )
+	dnncuda? ( cuda || ( sm_61 sm_70 sm_75 sm_86 ) )
 	examples? ( contribdnn )
 	java? ( python )
 	opengl? ( qt5 )
@@ -118,7 +121,7 @@ RDEPEND="
 	jpeg2k? ( media-libs/openjpeg:2=[${MULTILIB_USEDEP}] )
 	lapack? (
 		virtual/cblas
-		virtual/lapack
+		>=virtual/lapack-3.10
 	)
 	opencl? ( virtual/opencl[${MULTILIB_USEDEP}] )
 	openexr? ( >media-libs/openexr-3.0.0:3=[${MULTILIB_USEDEP}] )
@@ -139,7 +142,7 @@ RDEPEND="
 		opengl? ( dev-qt/qtopengl:5= )
 	)
 	tesseract? ( app-text/tesseract[opencl=,${MULTILIB_USEDEP}] )
-	threads? ( dev-cpp/tbb[${MULTILIB_USEDEP}] )
+	threads? ( dev-cpp/tbb:=[${MULTILIB_USEDEP}] )
 	tiff? ( media-libs/tiff:0[${MULTILIB_USEDEP}] )
 	v4l? ( >=media-libs/libv4l-0.8.3[${MULTILIB_USEDEP}] )
 	vaapi? ( x11-libs/libva[${MULTILIB_USEDEP}] )
@@ -148,12 +151,7 @@ RDEPEND="
 	xine? ( media-libs/xine-lib )"
 # bug #747949 for eigen (eigen-3.3.8 was broken upstream)
 DEPEND="${RDEPEND}
-	eigen? (
-		|| (
-			>=dev-cpp/eigen-3.3.8-r1:3
-			<dev-cpp/eigen-3.3.8:3
-		)
-	)
+	eigen? ( >=dev-cpp/eigen-3.3.8-r1:3 )
 	java? ( >=virtual/jdk-1.8:* )"
 BDEPEND="virtual/pkgconfig"
 
@@ -268,6 +266,17 @@ MULTILIB_WRAPPED_HEADERS=(
 	/usr/include/opencv4/opencv2/hdf.hpp
 	# [contrib_ovis]
 	/usr/include/opencv4/opencv2/ovis.hpp
+	# [contrib_sfm]
+	/usr/include/opencv4/opencv2/sfm.hpp
+	/usr/include/opencv4/opencv2/sfm/conditioning.hpp
+	/usr/include/opencv4/opencv2/sfm/fundamental.hpp
+	/usr/include/opencv4/opencv2/sfm/io.hpp
+	/usr/include/opencv4/opencv2/sfm/numeric.hpp
+	/usr/include/opencv4/opencv2/sfm/projection.hpp
+	/usr/include/opencv4/opencv2/sfm/reconstruct.hpp
+	/usr/include/opencv4/opencv2/sfm/robust.hpp
+	/usr/include/opencv4/opencv2/sfm/simple_pipeline.hpp
+	/usr/include/opencv4/opencv2/sfm/triangulation.hpp
 	# [vtk]
 	/usr/include/opencv4/opencv2/viz.hpp
 	/usr/include/opencv4/opencv2/viz/types.hpp
@@ -285,8 +294,6 @@ PATCHES=(
 	"${FILESDIR}"/${PN}-4.1.2-opencl-license.patch
 	"${FILESDIR}"/${PN}-4.4.0-disable-native-cpuflag-detect.patch
 	"${FILESDIR}"/${PN}-4.5.0-link-with-cblas-for-lapack.patch
-	"${FILESDIR}"/${PN}-4.5.3-lapack-3.10.patch
-
 )
 
 pkg_pretend() {
@@ -331,6 +338,16 @@ src_prepare() {
 }
 
 multilib_src_configure() {
+	use debug && CMAKE_BUILD_TYPE="Debug" || CMAKE_BUILD_TYPE="Release"
+
+	local CUDA_ARCH=""
+	if use cuda; then
+		for CA in 30 35 50 52 61 70 75 86; do
+			use sm_${CA} && CUDA_ARCH+="${CA},"
+		done
+		CUDA_ARCH=${CUDA_ARCH::-1}
+	fi
+
 	# please dont sort here, order is the same as in CMakeLists.txt
 	GLOBALCMAKEARGS=(
 	# Optional 3rd party components
@@ -348,6 +365,7 @@ multilib_src_configure() {
 		-DWITH_GTK=$(usex gtk3)
 		-DWITH_GTK_2_X=OFF # only want gtk3 nowadays
 		-DWITH_IPP=OFF
+		-DWITH_VULKAN=$(usex vulkan)
 		# Jasper was removed from tree because of security problems.
 		# Upstream were/are making progress. We use openjpeg instead.
 		# bug 734284
@@ -392,7 +410,6 @@ multilib_src_configure() {
 		-DWITH_MATLAB=OFF
 		-DWITH_VA=$(usex vaapi)
 		-DWITH_VA_INTEL=$(usex vaapi)
-		-DWITH_VULKAN=$(usex vulkan)
 		-DWITH_GDAL=$(multilib_native_usex gdal)
 		-DWITH_GPHOTO2=$(usex gphoto2)
 		-DWITH_LAPACK=$(multilib_native_usex lapack)
@@ -406,6 +423,11 @@ multilib_src_configure() {
 		-DWITH_NVCUVID=OFF
 	#	-DWITH_NVCUVID=$(usex cuda)
 		-DCUDA_NPP_LIBRARY_ROOT_DIR=$(usex cuda "${EPREFIX}/opt/cuda" "")
+		-DWITH_CUDNN=$(usex dnncuda)
+		-DOPENCV_DNN_CUDA=$(usex dnncuda)
+		-DCUDA_FAST_MATH=$(multilib_native_usex cuda)
+		-DCUDA_ARCH_BIN=\"${CUDA_ARCH}\"
+		-DCUDA_ARCH_PTX=\"${CUDA_ARCH}\"
 	# ===================================================
 	# OpenCV build components
 	# ===================================================
@@ -525,6 +547,7 @@ multilib_src_configure() {
 		-DINSTALL_PYTHON_EXAMPLES=OFF
 		-DBUILD_opencv_python2=OFF
 		-DBUILD_opencv_python3=OFF
+		-DBUILD_NEW_PYTHON_SUPPORT=ON
 	)
 
 	cmake_src_configure
