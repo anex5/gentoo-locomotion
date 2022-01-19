@@ -8,16 +8,17 @@ PYTHON_COMPAT=( python3_{7..9} )
 
 MY_PN="OpenSfM"
 
-inherit distutils-r1 #cmake python-single-r1
+inherit distutils-r1
 
+DISTUTILS_USE_SETUPTOOLS=no
 DESCRIPTION="Open source Structure-from-Motion pipeline"
 HOMEPAGE="https://www.opensfm.org"
 
 if [[ ${PV} = *9999 ]]; then
 	inherit git-r3
 	EGIT_REPO_URI="https://github.com/mapillary/OpenSfM"
-	EGIT_SUBMODULES=()
-	EGIT_BRANCH="master"
+	EGIT_SUBMODULES=( opensfm/src/third_party/pybind11 )
+	EGIT_BRANCH="main"
 	KEYWORDS=""
 else
 	SRC_URI="https://github.com/mapillary/${MY_PN}/archive/v${PV}/${P}.tar.gz -> ${P}.tar.gz"
@@ -31,7 +32,7 @@ SLOT="0"
 
 KEYWORDS="~amd64"
 
-IUSE="doc"
+IUSE="doc test"
 
 REQUIRED_USE="${PYTHON_REQUIRED_USE}"
 
@@ -67,25 +68,38 @@ DEPEND="
 RDEPEND="${DEPEND}"
 
 BDEPEND="
-	dev-python/pybind11[${PYTHON_USEDEP}]
 	>=dev-util/cmake-3.0.0
 "
+	#dev-python/pybind11[${PYTHON_USEDEP}]
 
-RESTRICT="mirror"
+RESTRICT="
+	mirror
+	test ( test )
+"
 
-#PATCHES=(
-#	"${FILESDIR}/fix-include-libs.patch"
-#)
-#distutils_enable_sphinx doc --no-autodoc
-#distutils_enable_tests pytest
 src_prepare() {
 	default
 	use doc || sed -i -e "/from sphinx\.setup_command import BuildDoc/d" -e "/\"build_doc\": BuildDoc\,/d" setup.py || die
 	sed -i -e "/\"bin\/opensfm\"\,/a		\"bin\/opensfm_main\.py\"," setup.py || die
 
 	#Enable cxx14-std as CERES-2.0 req it and unbundle pybind11
-	sed -i -e "s|\(set(CMAKE_CXX_STANDARD \)11|\114|" \
-		-e "s|add_subdirectory(third_party\/pybind11)|find_package (pybind11 CONFIG REQUIRED)|" opensfm/src/CMakeLists.txt || die
-	sed -i -e "/^target_link_libraries(/,/)/s|pybind11|pybind11::headers|g" opensfm/src/{foundation,bundle,dense,features,geometry,robust,sfm,geo,map}/CMakeLists.txt || die
+	sed -i -e "s|\(set(CMAKE_CXX_STANDARD \)11|\114|" opensfm/src/CMakeLists.txt || die
+	#	-e "s|add_subdirectory(third_party\/pybind11)|find_package (pybind11 CONFIG REQUIRED)|" opensfm/src/CMakeLists.txt || die
+	#sed -i -e "/^target_link_libraries(/,/)/s|pybind11|pybind11::headers|g" opensfm/src/{foundation,bundle,dense,features,geometry,robust,sfm,geo,map}/CMakeLists.txt || die
+
 }
+
+python_compile_all() {
+	local targets=()
+	use doc && targets+=( build_doc )
+
+	if [[ ${targets[@]} ]]; then
+		esetup.py "${targets[@]}"
+	fi
+}
+
+python_test() {
+	esetup.py test
+}
+
 
