@@ -5,10 +5,12 @@ EAPI=7
 
 inherit multilib-minimal toolchain-funcs
 
+MY_PV=5.10.1
+
 DESCRIPTION="Sparse Cholesky factorization and update/downdate library"
 HOMEPAGE="https://people.engr.tamu.edu/davis/suitesparse.html"
 #SRC_URI="http://202.36.178.9/sage/${P}.tar.bz2"
-SRC_URI="https://github.com/DrTimothyAldenDavis/SuiteSparse/archive/v5.8.1.tar.gz -> SuiteSparse-5.8.1.tar.gz"
+SRC_URI="https://github.com/DrTimothyAldenDavis/SuiteSparse/archive/v${MY_PV}.tar.gz -> SuiteSparse-${MY_PV}.tar.gz"
 
 LICENSE="LGPL-2.1+ modify? ( GPL-2+ ) matrixops? ( GPL-2+ )"
 SLOT="0"
@@ -37,7 +39,7 @@ DEPEND="
 RDEPEND="${DEPEND}"
 RESTRICT="mirror"
 
-S=${WORKDIR}/SuiteSparse-5\.8\.1
+S=${WORKDIR}/SuiteSparse-${MY_PV}
 
 PATCHES=(
 	"${FILESDIR}/suitesparseconfig.mk.patch"
@@ -48,8 +50,8 @@ PATCHES=(
 src_prepare() {
 	default
 	tc-export CC CXX F77 FC AR RANLIB
-	use cuda && eapply "${FILESDIR}/cuda.patch"
-	S=${WORKDIR}/SuiteSparse-5\.8\.1/${PN^^}
+	#use cuda && eapply "${FILESDIR}/cuda.patch"
+	S=${WORKDIR}/SuiteSparse-${MY_PV}/${PN^^}
 	multilib_copy_sources
 }
 

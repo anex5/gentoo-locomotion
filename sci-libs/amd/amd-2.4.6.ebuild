@@ -5,21 +5,23 @@ EAPI=7
 
 inherit multilib-minimal toolchain-funcs
 
+MY_PV="5.10.1"
+
 DESCRIPTION="Library to order a sparse matrix prior to Cholesky factorization"
 HOMEPAGE="http://faculty.cse.tamu.edu/davis/suitesparse.html"
-SRC_URI="https://github.com/DrTimothyAldenDavis/SuiteSparse/archive/v5.8.1.tar.gz -> SuiteSparse-5.8.1.tar.gz"
+SRC_URI="https://github.com/DrTimothyAldenDavis/SuiteSparse/archive/v${MY_PV}.tar.gz -> SuiteSparse-${MY_PV}.tar.gz"
 
 LICENSE="BSD"
 SLOT="0"
 KEYWORDS="~alpha ~amd64 ~arm ~arm64 ~hppa ~ia64 ~mips ~ppc ~ppc64 ~sparc ~x86 ~amd64-linux ~x86-linux ~x86-macos"
 IUSE="doc fortran static-libs"
 
-S=${WORKDIR}/SuiteSparse-5\.8\.1/${PN^^}
+S=${WORKDIR}/SuiteSparse-${MY_PV}/${PN^^}
 
 BDEPEND="virtual/pkgconfig
 	doc? ( virtual/latex-base )
 	fortran? ( virtual/fortran )"
-DEPEND=">=sci-libs/suitesparseconfig-5.8.1"
+DEPEND=">=sci-libs/suitesparseconfig-${MY_PV}"
 REPEND="${DEPEND}"
 RESTRICT="mirror"
 
@@ -75,12 +77,9 @@ multilib_src_install_all() {
 
 	use doc && einstalldocs
 
-	if ! use static-libs; then
-		find "${ED}" -name "*.a" -delete || die
-	fi
+	use !static-libs &&	find "${ED}" -name "*.a" -delete || die
 
 	# strip .la files
 	find "${ED}" -name '*.la' -delete || die
-
 }
 
