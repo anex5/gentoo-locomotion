@@ -4,29 +4,21 @@
 EAPI=7
 
 PYTHON_COMPAT=( python3_{8..10} )
-inherit cmake llvm llvm.org multilib-minimal pax-utils \
+inherit cmake llvm llvm.org multilib multilib-minimal \
 	prefix python-single-r1 toolchain-funcs
 
 DESCRIPTION="C language family frontend for LLVM"
 HOMEPAGE="https://llvm.org/"
-
-# Keep in sync with sys-devel/llvm
-ALL_LLVM_EXPERIMENTAL_TARGETS=( ARC CSKY VE )
-ALL_LLVM_TARGETS=( AArch64 AMDGPU ARM AVR BPF Hexagon Lanai Mips MSP430
-	NVPTX PowerPC RISCV Sparc SystemZ WebAssembly X86 XCore
-	"${ALL_LLVM_EXPERIMENTAL_TARGETS[@]}" )
-ALL_LLVM_TARGETS=( "${ALL_LLVM_TARGETS[@]/#/llvm_targets_}" )
 
 # MSVCSetupApi.h: MIT
 # sorttable.js: MIT
 
 LICENSE="Apache-2.0-with-LLVM-exceptions UoI-NCSA MIT"
 SLOT="$(ver_cut 1)"
-KEYWORDS="~amd64 ~arm ~arm64 ~ppc ~ppc64 ~riscv ~sparc ~x86 ~amd64-linux ~x64-macos"
+KEYWORDS=""
 IUSE="debug default-compiler-rt default-libcxx default-lld
-	doc llvm-libunwind man +static-analyzer test xml kernel_FreeBSD ${ALL_LLVM_TARGETS[*]}"
-REQUIRED_USE="${PYTHON_REQUIRED_USE}
-	|| ( ${ALL_LLVM_TARGETS[*]} )"
+	doc llvm-libunwind +static-analyzer test xml"
+REQUIRED_USE="${PYTHON_REQUIRED_USE}"
 RESTRICT="!test? ( test )"
 
 RDEPEND="
@@ -34,11 +26,6 @@ RDEPEND="
 	static-analyzer? ( dev-lang/perl:* )
 	xml? ( dev-libs/libxml2:2=[${MULTILIB_USEDEP}] )
 	${PYTHON_DEPS}"
-for x in "${ALL_LLVM_TARGETS[@]}"; do
-	RDEPEND+="
-		${x}? ( ~sys-devel/llvm-${PV}:${SLOT}[${x}] )"
-done
-unset x
 
 DEPEND="${RDEPEND}"
 BDEPEND="
@@ -46,11 +33,8 @@ BDEPEND="
 	doc? ( dev-python/sphinx )
 	xml? ( virtual/pkgconfig )
 	${PYTHON_DEPS}"
-RDEPEND="${RDEPEND}
-	!<sys-devel/llvm-4.0.0_rc:0
-	!sys-devel/clang:0"
 PDEPEND="
-	sys-devel/clang-common
+	~sys-devel/clang-common-${PV}
 	~sys-devel/clang-runtime-${PV}
 	default-compiler-rt? (
 		=sys-libs/compiler-rt-${PV%_*}*
@@ -61,13 +45,14 @@ PDEPEND="
 	default-lld? ( sys-devel/lld )"
 
 LLVM_COMPONENTS=( clang clang-tools-extra )
-LLVM_MANPAGES=pregenerated
+LLVM_MANPAGES=
 LLVM_TEST_COMPONENTS=(
 	llvm/lib/Testing/Support
 	llvm/utils/{lit,llvm-lit,unittest}
 	llvm/utils/{UpdateTestChecks,update_cc_test_checks.py}
 )
-LLVM_PATCHSET=12.0.1
+LLVM_PATCHSET=${PV/_/-}
+LLVM_USE_TARGETS=llvm
 llvm.org_set_globals
 
 # Multilib notes:
@@ -188,6 +173,7 @@ get_distribution_components() {
 			clang-offload-bundler
 			clang-offload-wrapper
 			clang-refactor
+			clang-repl
 			clang-rename
 			clang-scan-deps
 			diagtool
@@ -208,7 +194,7 @@ get_distribution_components() {
 			pp-trace
 		)
 
-		if [ use man && llvm_are_manpages_built ]; then
+		if llvm_are_manpages_built; then
 			out+=(
 				# manpages
 				docs-clang-man
@@ -225,6 +211,7 @@ get_distribution_components() {
 			clang-check
 			clang-extdef-mapping
 			scan-build
+			scan-build-py
 			scan-view
 		)
 	fi
@@ -281,7 +268,7 @@ multilib_src_configure() {
 
 	if multilib_is_native_abi; then
 		local build_docs=OFF
-		if [ use man && llvm_are_manpages_built ]; then
+		if llvm_are_manpages_built; then
 			build_docs=ON
 			mycmakeargs+=(
 				-DLLVM_BUILD_DOCS=ON
@@ -391,11 +378,6 @@ src_install() {
 				"/usr/lib/llvm/${SLOT}/bin/${abi_chost}-${i}"
 		done
 	done
-
-	# Remove unnecessary headers on FreeBSD, bug #417171
-	if use kernel_FreeBSD; then
-		rm "${ED}"/usr/lib/clang/${clang_full_version}/include/{std,float,iso,limits,tgmath,varargs}*.h || die
-	fi
 }
 
 multilib_src_install() {
@@ -415,7 +397,7 @@ multilib_src_install_all() {
 	fi
 
 	docompress "/usr/lib/llvm/${SLOT}/share/man"
-	use man && llvm_install_manpages
+	#llvm_install_manpages
 	# match 'html' non-compression
 	use doc && docompress -x "/usr/share/doc/${PF}/tools-extra"
 	# +x for some reason; TODO: investigate

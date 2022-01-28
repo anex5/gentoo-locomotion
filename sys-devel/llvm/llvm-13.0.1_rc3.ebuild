@@ -19,8 +19,7 @@ HOMEPAGE="https://llvm.org/"
 LICENSE="Apache-2.0-with-LLVM-exceptions UoI-NCSA BSD public-domain rc"
 SLOT="$(ver_cut 1)"
 KEYWORDS=""
-IUSE="+binutils-plugin debug doc exegesis libedit +libffi ncurses test xar xml
-	z3 kernel_Darwin"
+IUSE="+binutils-plugin debug doc exegesis libedit +libffi ncurses test xar xml z3"
 RESTRICT="!test? ( test )"
 
 RDEPEND="
@@ -53,7 +52,7 @@ BDEPEND="
 # installed means llvm-config there will take precedence.
 RDEPEND="${RDEPEND}
 	!sys-devel/llvm:0"
-PDEPEND="sys-devel/llvm-common
+PDEPEND="~sys-devel/llvm-common-${PV}
 	binutils-plugin? ( >=sys-devel/llvmgold-${SLOT} )"
 
 LLVM_COMPONENTS=( llvm )
