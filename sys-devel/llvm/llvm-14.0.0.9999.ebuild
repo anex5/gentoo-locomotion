@@ -17,7 +17,7 @@ HOMEPAGE="https://llvm.org/"
 
 LICENSE="Apache-2.0-with-LLVM-exceptions UoI-NCSA BSD MIT public-domain rc"
 SLOT="$(ver_cut 1)"
-KEYWORDS="~amd64 ~arm ~arm64 ~ppc ~ppc64 ~riscv ~sparc ~x86 ~amd64-linux ~ppc-macos ~x64-macos"
+#KEYWORDS="~amd64 ~arm ~arm64 ~ppc ~ppc64 ~riscv ~sparc ~x86 ~amd64-linux ~ppc-macos ~x64-macos"
 IUSE="asserts benchmark +binutils-plugin bootstrap ccache +clang +compiler-rt cuda debug doc \
 	elibc_glibc elibc_musl examples exegesis libedit +libcxx +libunwind +libffi \
 	+libfuzzer lldb lto man +memprof +ompt +openmp offload hwloc static-analyzer static-libs \
