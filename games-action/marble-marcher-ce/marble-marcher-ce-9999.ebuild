@@ -1,7 +1,7 @@
 # Copyright 1999-2020 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=7
+EAPI=8
 
 inherit git-r3 cmake readme.gentoo-r1
 
@@ -9,16 +9,12 @@ if [[ ${PV} == 9999 ]]; then
 	EGIT_REPO_URI="https://github.com/WAUthethird/Marble-Marcher-Community-Edition"
 	EGIT_BRANCH="master"
 else
-	EGIT_REPO_URI="https://github.com/WAUthethird/Marble-Marcher-Community-Edition"
-	EGIT_BRANCH="master"
-	EGIT_COMMIT="a9157f86875684a0534b21551ef5b0cd60cd88c0"
+	SRC_URI="https://github.com/WAUthethird/Marble-Marcher-Community-Edition/archive/refs/tags/${PV}.tar.gz"
 	KEYWORDS="~amd64 ~x86"
 fi
 
 DESCRIPTION="A procedurally rendered fractal physics marble game"
 HOMEPAGE="https://michaelmoroz.itch.io/mmce"
-
-# PATCHES=( "${FILESDIR}/.patch" )
 
 SLOT="0"
 LICENSE="GPL-2"
@@ -31,16 +27,17 @@ DEPEND="
 	media-libs/openal:*
 	media-libs/anttweakbar:*
 "
-RDEPEND=""
+RDEPEND="${DEPEND}"
 BDEPEND="
 	>=dev-libs/boost-1.60.0
 	>=dev-cpp/eigen-3.3.4
 "
 
+RESTRICT="mirror"
+
 DOC_CONTENTS="
 Marble Marcher: Community Edition comes with a wealth of new features and improvements, including performance improvements and graphical enhancements.
 "
-#DOCS=( README.md )
 
 src_configure() {
 	cmake_src_configure
