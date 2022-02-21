@@ -124,7 +124,7 @@ RDEPEND="
 		>=virtual/lapack-3.10
 	)
 	opencl? ( virtual/opencl[${MULTILIB_USEDEP}] )
-	openexr? ( >media-libs/openexr-3.0.0:3=[${MULTILIB_USEDEP}] )
+	openexr? ( media-libs/openexr:=[${MULTILIB_USEDEP}] )
 	opengl? (
 		virtual/opengl[${MULTILIB_USEDEP}]
 		virtual/glu[${MULTILIB_USEDEP}]
@@ -149,7 +149,6 @@ RDEPEND="
 	vtk? ( sci-libs/vtk[rendering] )
 	webp? ( media-libs/libwebp:=[${MULTILIB_USEDEP}] )
 	xine? ( media-libs/xine-lib )"
-# bug #747949 for eigen (eigen-3.3.8 was broken upstream)
 DEPEND="${RDEPEND}
 	eigen? ( >=dev-cpp/eigen-3.3.8-r1:3 )
 	java? ( >=virtual/jdk-1.8:* )"
@@ -373,7 +372,7 @@ multilib_src_configure() {
 		-DWITH_JPEG=$(usex jpeg)
 		-DWITH_OPENJPEG=$(usex jpeg2k)
 		-DWITH_WEBP=$(usex webp)
-		-DWITH_OPENEXR=$(usex openexr)
+		-DWITH_OPENEXR=$(multilib_native_usex openexr)
 		-DWITH_OPENGL=$(usex opengl)
 		-DWITH_OPENVX=OFF
 		-DWITH_OPENNI=OFF	# Not packaged
@@ -547,7 +546,7 @@ multilib_src_configure() {
 		-DINSTALL_PYTHON_EXAMPLES=OFF
 		-DBUILD_opencv_python2=OFF
 		-DBUILD_opencv_python3=OFF
-		-DBUILD_NEW_PYTHON_SUPPORT=ON
+		-DBUILD_NEW_PYTHON_SUPPORT=$(usex python)
 	)
 
 	cmake_src_configure
