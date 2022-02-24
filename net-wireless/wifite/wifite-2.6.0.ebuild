@@ -1,10 +1,10 @@
 # Copyright 1999-2021 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=7
+EAPI=8
 
 #DISTUTILS_USE_SETUPTOOLS=bdepend
-PYTHON_COMPAT=( python3_{7..9} )
+PYTHON_COMPAT=( python3_{8..10} )
 inherit distutils-r1
 
 MY_P="${PN}2-${PV}"
@@ -40,5 +40,6 @@ PDEPEND="net-wireless/aircrack-ng[${PYTHON_USEDEP}]
 		net-analyzer/macchanger
 	)"
 
+RESTRICT="mirror"
 #python2 only:
 #net-wireless/pyrit[${PYTHON_USEDEP},opencl?]

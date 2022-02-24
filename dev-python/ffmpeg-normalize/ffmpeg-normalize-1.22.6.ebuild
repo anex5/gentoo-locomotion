@@ -1,15 +1,15 @@
 # Copyright 1999-2020 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI="7"
-PYTHON_COMPAT=( python3_{6..9} )
+EAPI="8"
+PYTHON_COMPAT=( python3_{8..10} )
 
 inherit distutils-r1 git-r3
 
 DESCRIPTION="A utility for batch-normalizing audio using ffmpeg"
 HOMEPAGE="https://github.com/slhck/ffmpeg-normalize"
 EGIT_REPO_URI="https://github.com/slhck/ffmpeg-normalize"
-EGIT_COMMIT="ff587733e033ed036c081bc5bf23881f2aeca04f"
+EGIT_COMMIT="5c68c551a2fc1fa5aaeaecb41ff2202b7eed23aa"
 
 LICENSE="MIT"
 SLOT="0"
