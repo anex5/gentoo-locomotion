@@ -175,6 +175,7 @@ src_unpack() {
 }
 
 src_configure() {
+	export PKG_CONFIG_ALLOW_CROSS=1
 	myfeatures=(
 		$(usev notmuch)
 		$(usev maildir)
@@ -187,4 +188,15 @@ src_configure() {
 src_install() {
 	use man && doman "${S}/man.bak/i3status-rs.1"
 	cargo_src_install ${myfeatures:+--features "${myfeatures[*]}"}
+
+	insinto /usr/share/${PN}/icons
+	doins files/icons/*.toml
+
+	insinto /usr/share/${PN}/themes
+	doins files/themes/*.toml
+
+	insinto /usr/share/doc/${PN}/examples
+	doins examples/*.toml
+
+	fperms 0640 /usr/share/${PN}
 }
