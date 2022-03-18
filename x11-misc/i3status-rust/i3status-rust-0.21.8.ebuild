@@ -11,17 +11,17 @@ base64-0.13.0
 bitflags-1.3.2
 bstr-0.2.17
 byteorder-1.4.3
-cc-1.0.72
+cc-1.0.73
 cfg-if-1.0.0
 charset-0.1.3
 chrono-0.4.19
 chrono-tz-0.6.1
 chrono-tz-build-0.0.2
 clap-2.34.0
-crossbeam-channel-0.5.2
-crossbeam-utils-0.8.7
-curl-0.4.42
-curl-sys-0.4.52+curl-7.81.0
+crossbeam-channel-0.5.3
+crossbeam-utils-0.8.8
+curl-0.4.43
+curl-sys-0.4.53+curl-7.82.0
 darling-0.10.2
 darling_core-0.10.2
 darling_macro-0.10.2
@@ -38,8 +38,8 @@ fastrand-1.7.0
 fnv-1.0.7
 from_variants-0.6.0
 from_variants_impl-0.6.0
-gethostname-0.2.2
-getrandom-0.2.4
+gethostname-0.2.3
+getrandom-0.2.5
 globset-0.4.8
 globwalk-0.8.1
 ident_case-1.0.1
@@ -50,26 +50,26 @@ instant-0.1.12
 itertools-0.10.3
 itoa-1.0.1
 lazy_static-1.4.0
-libc-0.2.117
+libc-0.2.120
 libdbus-sys-0.2.2
 libpulse-binding-2.26.0
 libpulse-sys-1.19.3
 libsensors-sys-0.2.0
-libz-sys-1.1.3
+libz-sys-1.1.5
 log-0.4.14
-maildir-0.5.0
+maildir-0.6.0
 mailparse-0.13.8
 memchr-2.4.1
 memoffset-0.6.5
 neli-0.6.1
 neli-proc-macros-0.1.1
-neli-wifi-0.1.0
+neli-wifi-0.3.1
 nix-0.23.1
 notmuch-0.7.1
 num-derive-0.3.3
 num-integer-0.1.44
 num-traits-0.2.14
-once_cell-1.9.0
+once_cell-1.10.0
 openssl-probe-0.1.5
 openssl-sys-0.9.72
 parse-zoneinfo-0.3.0
@@ -86,13 +86,13 @@ proc-macro2-1.0.36
 pure-rust-locales-0.5.6
 quote-1.0.15
 quoted_printable-0.4.5
-rand-0.8.4
+rand-0.8.5
 rand_chacha-0.3.1
 rand_core-0.6.3
 rand_hc-0.3.1
-redox_syscall-0.2.10
+redox_syscall-0.2.11
 redox_users-0.4.0
-regex-1.5.4
+regex-1.5.5
 regex-syntax-0.6.25
 remove_dir_all-0.5.3
 ryu-1.0.9
@@ -101,16 +101,16 @@ schannel-0.1.19
 sensors-0.2.2
 serde-1.0.136
 serde_derive-1.0.136
-serde_json-1.0.78
+serde_json-1.0.79
 shellexpand-2.1.0
 signal-hook-0.3.13
 signal-hook-registry-1.4.0
-siphasher-0.3.9
+siphasher-0.3.10
 socket2-0.4.4
 strsim-0.9.3
 swayipc-3.0.0
-swayipc-types-1.0.0
-syn-1.0.86
+swayipc-types-1.0.1
+syn-1.0.88
 tempfile-3.3.0
 termtree-0.2.4
 textwrap-0.11.0
@@ -198,5 +198,5 @@ src_install() {
 	insinto /usr/share/doc/${PN}/examples
 	doins examples/*.toml
 
-	fperms 0640 /usr/share/${PN}
+	fperms 0644 /usr/share/${PN}
 }
