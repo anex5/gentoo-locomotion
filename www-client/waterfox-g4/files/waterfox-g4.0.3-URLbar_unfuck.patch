@@ -1,0 +1,574 @@
+--- Waterfox-G4.0.3/browser/app/profile/firefox.js
++++ Waterfox-G4.0.3/browser/app/profile/firefox.js
+@@ -321,16 +321,27 @@
+ #ifdef XP_MACOSX
+   pref("browser.fullscreen.autohide", false);
+ #else
+   pref("browser.fullscreen.autohide", true);
+ #endif
+ 
+ pref("browser.overlink-delay", 80);
+ 
++#ifdef UNIX_BUT_NOT_MAC
++  pref("browser.urlbar.clickSelectsAll", false);
++#else
++  pref("browser.urlbar.clickSelectsAll", true);
++#endif
++#ifdef UNIX_BUT_NOT_MAC
++  pref("browser.urlbar.doubleClickSelectsAll", true);
++#else
++  pref("browser.urlbar.doubleClickSelectsAll", false);
++#endif
++
+ // Whether using `ctrl` when hitting return/enter in the URL bar
+ // (or clicking 'go') should prefix 'www.' and suffix
+ // browser.fixup.alternate.suffix to the URL bar value prior to
+ // navigating.
+ pref("browser.urlbar.ctrlCanonizesURLs", true);
+ 
+ // Whether we announce to screen readers when tab-to-search results are
+ // inserted.
+--- Waterfox-G4.0.3/browser/components/search/content/searchbar.js
++++ Waterfox-G4.0.3/browser/components/search/content/searchbar.js
+@@ -442,25 +442,26 @@
+       this.destroy();
+       while (this.firstChild) {
+         this.firstChild.remove();
+       }
+     }
+ 
+     /**
+      * Determines if we should select all the text in the searchbar based on the
+-     * searchbar state, and whether the selection is empty.
++     * clickSelectsAll pref, searchbar state, and whether the selection is empty.
+      */
+     _maybeSelectAll() {
+       if (
+         !this._preventClickSelectsAll &&
++        UrlbarPrefs.get("clickSelectsAll") &&
+         document.activeElement == this._textbox &&
+         this._textbox.selectionStart == this._textbox.selectionEnd
+       ) {
+-        this.select();
++        this._textbox.editor.selectAll();
+       }
+     }
+ 
+     _setupEventListeners() {
+       this.addEventListener("click", event => {
+         this._maybeSelectAll();
+       });
+ 
+@@ -555,16 +556,21 @@
+         // Hide popup when icon is clicked while popup is open
+         if (isIconClick && this.textbox.popup.popupOpen) {
+           this.textbox.popup.closePopup();
+         } else if (isIconClick || this._textbox.value) {
+           // Open the suggestions whenever clicking on the search icon or if there
+           // is text in the textbox.
+           this.openSuggestionsPanel(true);
+         }
++
++        if (event.detail == 2 && UrlbarPrefs.get("doubleClickSelectsAll")) {
++          this._textbox.editor.selectAll();
++          event.preventDefault();
++        }
+       });
+     }
+ 
+     _setupTextboxEventListeners() {
+       this.textbox.addEventListener("input", event => {
+         this.textbox.popup.removeAttribute("showonlysettings");
+       });
+ 
+--- Waterfox-G4.0.3/browser/components/urlbar/tests/browser/browser_doubleClickSelectsAll.js
++++ Waterfox-G4.0.3/browser/components/urlbar/tests/browser/browser_doubleClickSelectsAll.js
+@@ -0,0 +1,45 @@
++/* This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
++
++function doubleClick(target) {
++  let promise = BrowserTestUtils.waitForEvent(target, "dblclick");
++  EventUtils.synthesizeMouseAtCenter(
++    target,
++    { clickCount: 1 },
++    target.ownerGlobal
++  );
++  EventUtils.synthesizeMouseAtCenter(
++    target,
++    { clickCount: 2 },
++    target.ownerGlobal
++  );
++  return promise;
++}
++
++add_task(async function() {
++  await SpecialPowers.pushPrefEnv({
++    set: [
++      ["browser.urlbar.clickSelectsAll", false],
++      ["browser.urlbar.doubleClickSelectsAll", true],
++    ],
++  });
++
++  let url = "about:mozilla";
++  let win = await BrowserTestUtils.openNewBrowserWindow();
++  await BrowserTestUtils.openNewForegroundTab({ gBrowser: win.gBrowser, url });
++
++  await doubleClick(win.gURLBar.inputField);
++  is(
++    win.gURLBar.selectionStart,
++    0,
++    "Selection should start at the beginning of the urlbar value"
++  );
++  is(
++    win.gURLBar.selectionEnd,
++    url.length,
++    "Selection should end at the end of the urlbar value"
++  );
++
++  win.close();
++});
+--- Waterfox-G4.0.3/browser/components/urlbar/tests/browser/browser.ini
++++ Waterfox-G4.0.3/browser/components/urlbar/tests/browser/browser.ini
+@@ -74,16 +74,17 @@
+ [browser_customizeMode.js]
+ [browser_cutting.js]
+ [browser_decode.js]
+ [browser_delete.js]
+ [browser_deleteAllText.js]
+ [browser_display_selectedAction_Extensions.js]
+ [browser_dns_first_for_single_words.js]
+ skip-if = verify && os == 'linux' # Bug 1581635
++[browser_doubleClickSelectsAll.js]
+ [browser_downArrowKeySearch.js]
+ [browser_dragdropURL.js]
+ [browser_dynamicResults.js]
+ support-files =
+   dynamicResult0.css
+   dynamicResult1.css
+ [browser_edit_invalid_url.js]
+ [browser_engagement.js]
+--- Waterfox-G4.0.3/browser/components/urlbar/tests/browser/browser_retainedResultsOnFocus.js
++++ Waterfox-G4.0.3/browser/components/urlbar/tests/browser/browser_retainedResultsOnFocus.js
+@@ -66,17 +66,20 @@
+   info("Focus with the mouse.");
+   promiseState = checkPanelStatePersists(win, false);
+   EventUtils.synthesizeMouseAtCenter(win.gURLBar.inputField, {}, win);
+   await promiseState;
+ }
+ 
+ add_task(async function setup() {
+   await SpecialPowers.pushPrefEnv({
+-    set: [["browser.urlbar.autoFill", true]],
++    set: [
++	["browser.urlbar.autoFill", true],
++	["browser.urlbar.clickSelectsAll", true]
++    ],
+   });
+   // Add some history for the empty panel and autofill.
+   await PlacesTestUtils.addVisits([
+     {
+       uri: "https://example.com/",
+       transition: PlacesUtils.history.TRANSITIONS.TYPED,
+     },
+     {
+--- Waterfox-G4.0.3/browser/components/urlbar/tests/browser/browser_urlbar_selection.js
++++ Waterfox-G4.0.3/browser/components/urlbar/tests/browser/browser_urlbar_selection.js
+@@ -57,95 +57,97 @@
+     toX,
+     toY,
+     { type: "mouseup" },
+     target.ownerGlobal
+   );
+   return promise;
+ }
+ 
+-function resetPrimarySelection(val = "") {
+-  if (Services.clipboard.supportsSelectionClipboard()) {
+-    // Reset the clipboard.
+-    clipboardHelper.copyStringToClipboard(
+-      val,
+-      Services.clipboard.kSelectionClipboard
+-    );
+-  }
+-}
+-
+-function checkPrimarySelection(expectedVal = "") {
+-  if (Services.clipboard.supportsSelectionClipboard()) {
+-    let primaryAsText = SpecialPowers.getClipboardData(
+-      "text/unicode",
+-      SpecialPowers.Ci.nsIClipboard.kSelectionClipboard
+-    );
+-    Assert.equal(primaryAsText, expectedVal);
+-  }
+-}
+-
+ add_task(async function setup() {
++  SpecialPowers.pushPrefEnv({
++    set: [["browser.urlbar.clickSelectsAll", true]],
++  });
++
+   // On macOS, we must "warm up" the Urlbar to get the first test to pass.
+   gURLBar.value = "";
+   await click(gURLBar.inputField);
+   gURLBar.blur();
+ });
+ 
+ add_task(async function leftClickSelectsAll() {
+-  resetPrimarySelection();
+   gURLBar.value = exampleSearch;
+   await click(gURLBar.inputField);
+   Assert.equal(
+     gURLBar.selectionStart,
+     0,
+     "The entire search term should be selected."
+   );
+   Assert.equal(
+     gURLBar.selectionEnd,
+     exampleSearch.length,
+     "The entire search term should be selected."
+   );
+   gURLBar.blur();
+-  checkPrimarySelection();
+ });
+ 
+ add_task(async function leftClickSelectsUrl() {
+-  resetPrimarySelection();
+   gURLBar.value = exampleUrl;
+   await click(gURLBar.inputField);
+   Assert.equal(gURLBar.selectionStart, 0, "The entire url should be selected.");
+   Assert.equal(
+     gURLBar.selectionEnd,
+     exampleUrl.length,
+     "The entire url should be selected."
+   );
+   gURLBar.blur();
+-  checkPrimarySelection();
++});
++
++// Test to ensure that the doubleClickSelectsAll pref does not interfere with
++// single click behaviour (Double CSA itself is tested in
++// urlbar/tests/browser_doubleClickSelectsAll.js).
++add_task(async function bothPrefsEnabled() {
++  Services.prefs.setBoolPref("browser.urlbar.doubleClickSelectsAll", true);
++  gURLBar.value = exampleSearch;
++  await click(gURLBar.inputField);
++  Assert.equal(
++    gURLBar.selectionStart,
++    0,
++    "The entire search term should be selected."
++  );
++  Assert.equal(
++    gURLBar.selectionEnd,
++    exampleSearch.length,
++    "The entire search term should be selected."
++  );
++  gURLBar.blur();
++  Services.prefs.clearUserPref("browser.urlbar.doubleClickSelectsAll");
+ });
+ 
+ add_task(async function rightClickSelectsAll() {
++  // The text should be selected even when the pref is disabled.
++  await SpecialPowers.pushPrefEnv({
++    set: [["browser.urlbar.clickSelectsAll", false]],
++  });
++
+   gURLBar.inputField.focus();
+   gURLBar.value = exampleUrl;
+ 
+   // Remove the selection so the focus() call above doesn't influence the test.
+   gURLBar.selectionStart = gURLBar.selectionEnd = 0;
+ 
+-  resetPrimarySelection();
+-
+   await openContextMenu(gURLBar.inputField);
+ 
+   Assert.equal(gURLBar.selectionStart, 0, "The entire URL should be selected.");
+   Assert.equal(
+     gURLBar.selectionEnd,
+     exampleUrl.length,
+     "The entire URL should be selected."
+   );
+ 
+-  checkPrimarySelection();
+-
+   let contextMenu = gURLBar.querySelector("moz-input-box").menupopup;
+ 
+   // While the context menu is open, test the "Select All" button.
+   let contextMenuItem = contextMenu.firstElementChild;
+   while (
+     contextMenuItem.nextElementSibling &&
+     contextMenuItem.getAttribute("cmd") != "cmd_selectAll"
+   ) {
+@@ -173,106 +175,90 @@
+   Assert.equal(
+     gURLBar.selectionEnd,
+     exampleUrl.length,
+     "The entire URL should be selected after clicking selectAll button."
+   );
+ 
+   gURLBar.querySelector("moz-input-box").menupopup.hidePopup();
+   gURLBar.blur();
+-  checkPrimarySelection(gURLBar.value);
+   await SpecialPowers.popPrefEnv();
+ });
+ 
+ add_task(async function contextMenuDoesNotCancelSelection() {
+   gURLBar.inputField.focus();
+   gURLBar.value = exampleUrl;
+ 
+   gURLBar.selectionStart = 3;
+   gURLBar.selectionEnd = 7;
+ 
+-  resetPrimarySelection();
+-
+   await openContextMenu(gURLBar.inputField);
+ 
+   Assert.equal(
+     gURLBar.selectionStart,
+     3,
+     "The selection should not have changed."
+   );
+   Assert.equal(
+     gURLBar.selectionEnd,
+     7,
+     "The selection should not have changed."
+   );
+ 
+   gURLBar.querySelector("moz-input-box").menupopup.hidePopup();
+   gURLBar.blur();
+-  checkPrimarySelection();
+ });
+ 
+ add_task(async function dragSelect() {
+-  resetPrimarySelection();
+   gURLBar.value = exampleSearch.repeat(10);
+   // Drags from an artibrary offset of 30 to test for bug 1562145: that the
+   // selection does not start at the beginning.
+   await drag(gURLBar.inputField, 30, 0, 60, 0);
+   Assert.greater(
+     gURLBar.selectionStart,
+     0,
+     "Selection should not start at the beginning of the string."
+   );
+ 
+-  let selectedVal = gURLBar.value.substring(
+-    gURLBar.selectionStart,
+-    gURLBar.selectionEnd
+-  );
+   gURLBar.blur();
+-  checkPrimarySelection(selectedVal);
+ });
+ 
+ /**
+  * Testing for bug 1571018: that the entire Urlbar isn't selected when the
+  * Urlbar is dragged following a selectsAll event then a blur.
+  */
+ add_task(async function dragAfterSelectAll() {
+-  resetPrimarySelection();
+   gURLBar.value = exampleSearch.repeat(10);
+   await click(gURLBar.inputField);
+   Assert.equal(
+     gURLBar.selectionStart,
+     0,
+     "The entire search term should be selected."
+   );
+   Assert.equal(
+     gURLBar.selectionEnd,
+     exampleSearch.repeat(10).length,
+     "The entire search term should be selected."
+   );
+ 
+   gURLBar.blur();
+-  checkPrimarySelection();
+ 
+   // The offset of 30 is arbitrary.
+   await drag(gURLBar.inputField, 30, 0, 60, 0);
+ 
+   Assert.notEqual(
+     gURLBar.selectionStart,
+     0,
+     "Only part of the search term should be selected."
+   );
+   Assert.notEqual(
+     gURLBar.selectionEnd,
+     exampleSearch.repeat(10).length,
+     "Only part of the search term should be selected."
+   );
+-
+-  checkPrimarySelection(
+-    gURLBar.value.substring(gURLBar.selectionStart, gURLBar.selectionEnd)
+-  );
+ });
+ 
+ /**
+  * Testing for bug 1571018: that the entire Urlbar is selected when the Urlbar
+  * is refocused following a partial text selection then a blur.
+  */
+ add_task(async function selectAllAfterDrag() {
+   gURLBar.value = exampleSearch;
+--- Waterfox-G4.0.3/browser/components/urlbar/UrlbarInput.jsm
++++ Waterfox-G4.0.3/browser/components/urlbar/UrlbarInput.jsm
+@@ -2665,26 +2665,29 @@
+     if (this.getAttribute("pageproxystate") == "valid") {
+       this.value = "";
+       this.setPageProxyState("invalid", true);
+     }
+   }
+ 
+   /**
+    * Determines if we should select all the text in the Urlbar based on the
+-   *  Urlbar state, and whether the selection is empty.
++   * clickSelectsAll pref, Urlbar state, and whether the selection is empty.
++   * @param {boolean} [ignoreClickSelectsAllPref]
++   *        If true, the browser.urlbar.clickSelectsAll pref will be ignored.
+    */
+-  _maybeSelectAll() {
++  _maybeSelectAll(ignoreClickSelectsAllPref = false) {
+     if (
+       !this._preventClickSelectsAll &&
++      (ignoreClickSelectsAllPref || UrlbarPrefs.get("clickSelectsAll")) &&
+       this._compositionState != UrlbarUtils.COMPOSITION.COMPOSING &&
+       this.document.activeElement == this.inputField &&
+       this.inputField.selectionStart == this.inputField.selectionEnd
+     ) {
+-      this.select();
++      this.editor.selectAll();
+     }
+   }
+ 
+   // Event handlers below.
+ 
+   _on_command(event) {
+     // Something is executing a command, likely causing a focus change. This
+     // should not be recorded as an abandonment. If the user is entering search
+@@ -2789,17 +2792,19 @@
+   _on_contextmenu(event) {
+     this.addSearchEngineHelper.refreshContextMenu(event);
+ 
+     // Context menu opened via keyboard shortcut.
+     if (!event.button) {
+       return;
+     }
+ 
+-    this._maybeSelectAll();
++    // If the user right clicks, we select all regardless of the value of
++    // the browser.urlbar.clickSelectsAll pref.
++    this._maybeSelectAll(/* ignoreClickSelectsAllPref */ event.button == 2);
+   }
+ 
+   _on_focus(event) {
+     if (!this._hideFocus) {
+       this.setAttribute("focused", "true");
+     }
+ 
+     // If the value was trimmed, check whether we should untrim it.
+@@ -2820,17 +2825,17 @@
+       if (untrim) {
+         this.inputField.value = this._focusUntrimmedValue = this._untrimmedValue;
+       }
+     }
+ 
+     if (this.focusedViaMousedown) {
+       this.view.autoOpen({ event });
+     } else if (this.inputField.hasAttribute("refocused-by-panel")) {
+-      this._maybeSelectAll();
++      this._maybeSelectAll(true);
+     }
+ 
+     this._updateUrlTooltip();
+     this.formatValue();
+ 
+     // Hide popup notifications, to reduce visual noise.
+     if (
+       this.getAttribute("pageproxystate") != "valid" &&
+@@ -2881,17 +2886,20 @@
+         }
+ 
+         // Clear any previous selection unless we are focused, to ensure it
+         // doesn't affect drag selection.
+         if (this.focusedViaMousedown) {
+           this.selectionStart = this.selectionEnd = 0;
+         }
+ 
+-        if (event.target.id == SEARCH_BUTTON_ID) {
++        if (event.detail == 2 && UrlbarPrefs.get("doubleClickSelectsAll")) {
++          this.editor.selectAll();
++          event.preventDefault();
++        } else if (event.target.id == SEARCH_BUTTON_ID) {
+           this._preventClickSelectsAll = true;
+           this.search(UrlbarTokenizer.RESTRICT.SEARCH);
+         } else {
+           // Do not suppress the focus border if we are already focused. If we
+           // did, we'd hide the focus border briefly then show it again if the
+           // user has Top Sites disabled, creating a flashing effect.
+           this.view.autoOpen({
+             event,
+--- Waterfox-G4.0.3/browser/components/urlbar/UrlbarPrefs.jsm
++++ Waterfox-G4.0.3/browser/components/urlbar/UrlbarPrefs.jsm
+@@ -46,16 +46,21 @@
+   // autofilled even if the user hasn't actually visited them.
+   ["autoFill.searchEngines", false],
+ 
+   // Affects the frecency threshold of the autofill algorithm.  The threshold is
+   // the mean of all origin frecencies plus one standard deviation multiplied by
+   // this value.  See UrlbarProviderPlaces.
+   ["autoFill.stddevMultiplier", [0.0, "float"]],
+ 
++  // If true, this optimizes for replacing the full URL rather than editing
++  // part of it. This also copies the urlbar value to the selection clipboard
++  // on systems that support it.
++  ["clickSelectsAll", false],
++
+   // Whether using `ctrl` when hitting return/enter in the URL bar
+   // (or clicking 'go') should prefix 'www.' and suffix
+   // browser.fixup.alternate.suffix to the URL bar value prior to
+   // navigating.
+   ["ctrlCanonizesURLs", true],
+ 
+   // Whether copying the entire URL from the location bar will put a human
+   // readable (percent-decoded) URL on the clipboard.
+@@ -66,16 +71,21 @@
+   // "heuristic" result).  We fetch it as fast as possible.
+   ["delay", 50],
+ 
+   // Some performance tests disable this because extending the urlbar needs
+   // layout information that we can't get before the first paint. (Or we could
+   // but this would mean flushing layout.)
+   ["disableExtendForTests", false],
+ 
++  // If true, this optimizes for replacing the full URL rather than selecting a
++  // portion of it. This also copies the urlbar value to the selection
++  // clipboard on systems that support it.
++  ["doubleClickSelectsAll", false],
++
+   // Ensure we use trailing dots for DNS lookups for single words that could
+   // be hosts.
+   ["dnsResolveFullyQualifiedNames", true],
+ 
+   // Controls when to DNS resolve single word search strings, after they were
+   // searched for. If the string is resolved as a valid host, show a
+   // "Did you mean to go to 'host'" prompt.
+   // 0 - never resolve; 1 - use heuristics (default); 2 - always resolve
+--- Waterfox-G4.0.3/modules/libpref/init/all.js
++++ Waterfox-G4.0.3/modules/libpref/init/all.js
+@@ -3274,16 +3274,18 @@
+   pref("network.protocol-handler.warn-external.file", false);
+   pref("browser.drag_out_of_frame_style", 1);
+ 
+   // Middle-mouse handling
+   pref("middlemouse.paste", true);
+   pref("middlemouse.openNewWindow", true);
+   pref("middlemouse.scrollbarPosition", true);
+ 
++  pref("browser.urlbar.clickSelectsAll", false);
++
+   // Tab focus model bit field:
+   // 1 focuses text controls, 2 focuses other form elements, 4 adds links.
+   // Leave this at the default, 7, to match mozilla1.0-era user expectations.
+   // pref("accessibility.tabfocus", 1);
+ 
+   pref("helpers.global_mime_types_file", "/etc/mime.types");
+   pref("helpers.global_mailcap_file", "/etc/mailcap");
+   pref("helpers.private_mime_types_file", "~/.mime.types");
