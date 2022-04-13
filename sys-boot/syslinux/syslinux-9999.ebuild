@@ -3,20 +3,23 @@
 
 EAPI=7
 
-inherit git-r3 eutils toolchain-funcs
+inherit git-r3 toolchain-funcs
 
 DESCRIPTION="SYSLINUX, PXELINUX, ISOLINUX, EXTLINUX and MEMDISK bootloaders"
 HOMEPAGE="https://www.syslinux.org/"
 
 EGIT_REPO_URI="https://repo.or.cz/syslinux"
-EGIT_COMMIT="458a54133ecdf1685c02294d812cb562fe7bf4c3"
+#EGIT_COMMIT="05ac953c23f90b2328d393f7eecde96e41aed067"
+EGIT_SUBMODULES=()
 
 LICENSE="GPL-2"
 SLOT="0"
-KEYWORDS="-* amd64 x86"
+KEYWORDS=""
 IUSE="custom-cflags"
 
-RDEPEND="sys-fs/mtools
+RDEPEND="
+	sys-apps/util-linux
+	sys-fs/mtools
 		dev-perl/Crypt-PasswdMD5
 		dev-perl/Digest-SHA1"
 DEPEND="${RDEPEND}
@@ -25,7 +28,7 @@ DEPEND="${RDEPEND}
 	>=sys-boot/gnu-efi-3.0u
 	virtual/os-headers"
 
-S=${WORKDIR}/${P}
+#S=${WORKDIR}/${P}
 
 # This ebuild is a departure from the old way of rebuilding everything in syslinux
 # This departure is necessary since hpa doesn't support the rebuilding of anything other
@@ -36,16 +39,35 @@ QA_PREBUILT="usr/share/${PN}/*.c32"
 
 # removed all the unpack/patching stuff since we aren't rebuilding the core stuff anymore
 
-src_prepare() {
-	rm -f gethostip #bug 137081
+PATCHES=(
+	#"${FILESDIR}"/${PN}-6.03-sysmacros.patch #579928
+	"${FILESDIR}"/0002-gfxboot-menu-label.patch
+	"${FILESDIR}"/0004-gnu-efi-from-arch.patch
+	"${FILESDIR}"/0005-gnu-efi-version-compatibility.patch
+	"${FILESDIR}"/0015-efi-main.c-include-efisetjmp.h.patch
+	"${FILESDIR}"/0017-Replace-builtin-strlen-that-appears-to-get-optimized.patch
+	"${FILESDIR}"/0016-strip-gnu-property.patch
+	"${FILESDIR}"/0017-single-load-segment.patch
+	"${FILESDIR}"/0018-prevent-pow-optimization.patch
+	#"${FILESDIR}"/0025-reproducible-build.patch
+	"${FILESDIR}"/syslinux-6.04_pre1-fcommon.patch #705730
+	#"${FILESDIR}"/syslinux-6.04_pre3-acpi_off.patch
+)
 
-	eapply "${FILESDIR}"/syslinux-6.04_pre1-singleloadsegment.patch #662678
-	#eapply "${FILESDIR}"/syslinux-6.04_pre3-acpi_off.patch
+src_prepare() {
+	default
+
+	rm -f gethostip #bug 137081
 
 	# Don't prestrip or override user LDFLAGS, bug #305783
 	local SYSLINUX_MAKEFILES="extlinux/Makefile linux/Makefile mtools/Makefile \
 		sample/Makefile utils/Makefile"
 	sed -i ${SYSLINUX_MAKEFILES} -e '/^LDFLAGS/d' || die "sed failed"
+	sed -i mk/efi.mk mk/syslinux.mk -e "/^LIBDIR/s|\/lib|\/$(get_libdir)|g" || die "sed failed"
+	# disable debug and development flags to reduce bootloader size
+	truncate --size 0 mk/devel.mk
+	append-ldflags "--no-dynamic-linker"
+	append-cflags "-fno-PIE"
 
 	if use custom-cflags; then
 		sed -i ${SYSLINUX_MAKEFILES} \
@@ -79,33 +101,34 @@ src_prepare() {
 		fi
 	fi
 
-	default
+	tc-export AR CC LD OBJCOPY RANLIB
+}
+
+_emake() {
+	emake \
+		AR="${AR}" \
+		CC="${CC}" \
+		LD="${LD}" \
+		OBJCOPY="${OBJCOPY}" \
+		RANLIB="${RANLIB}" \
+		"$@"
 }
 
 src_compile() {
 	# build system abuses the LDFLAGS variable to pass arguments to ld
 	unset LDFLAGS
-	emake 
+	_emake spotless
 	if [[ ! -z ${loaderarch} ]]; then
-		emake CC="$(tc-getCC)" LD="$(tc-getLD)" ${loaderarch}
+		_emake ${loaderarch}
 	fi
-	emake CC="$(tc-getCC)" LD="$(tc-getLD)" ${loaderarch} installer
+	_emake bios
+	_emake installer
 }
 
 src_install() {
 	# parallel install fails sometimes
 	einfo "loaderarch=${loaderarch}"
-	emake -j1 LD="$(tc-getLD)" INSTALLROOT="${D}" MANDIR=/usr/share/man bios ${loaderarch} install
+	_emake -j1 INSTALLROOT="${D}" MANDIR=/usr/share/man bios ${loaderarch} install
 	dodoc README NEWS doc/*.txt
 }
 
-pkg_postinst() {
-	# print warning for users upgrading from the previous stable version
-	if has 4.07 ${REPLACING_VERSIONS}; then
-		ewarn "syslinux now uses dynamically linked ELF executables. Before you reboot,"
-		ewarn "ensure that needed dependencies are fulfilled. For example, run from your"
-		ewarn "syslinux directory:"
-		ewarn
-		ewarn "LD_LIBRARY_PATH=\".\" ldd menu.c32"
-	fi
-}
