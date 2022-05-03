@@ -57,7 +57,7 @@ LLVM_TEST_COMPONENTS=(
 	llvm/utils/{lit,llvm-lit,unittest}
 	llvm/utils/{UpdateTestChecks,update_cc_test_checks.py}
 )
-LLVM_PATCHSET=${PV/_/-}-r1
+LLVM_PATCHSET=${PV/_/-}
 LLVM_USE_TARGETS=llvm
 llvm.org_set_globals
 
