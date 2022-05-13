@@ -1,7 +1,7 @@
-# Copyright 1999-2020 Gentoo Foundation
+# Copyright 1999-2022 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI="7"
+EAPI="8"
 
 DESCRIPTION="A library that adds an easy GUI into OpenGL applications"
 HOMEPAGE="http://www.antisphere.com/Wiki/tools:anttweakbar?sb=tools"
