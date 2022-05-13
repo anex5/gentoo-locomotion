@@ -1,7 +1,7 @@
 # Copyright 2020-2021 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=7
+EAPI=8
 
 CRATES="
 aho-corasick-0.7.18
@@ -18,7 +18,7 @@ chrono-0.4.19
 chrono-tz-0.6.1
 chrono-tz-build-0.0.2
 clap-2.34.0
-crossbeam-channel-0.5.3
+crossbeam-channel-0.5.4
 crossbeam-utils-0.8.8
 curl-0.4.43
 curl-sys-0.4.53+curl-7.82.0
@@ -33,13 +33,13 @@ dirs-next-2.0.0
 dirs-sys-next-0.1.2
 doc-comment-0.3.3
 either-1.6.1
-encoding_rs-0.8.30
+encoding_rs-0.8.31
 fastrand-1.7.0
 fnv-1.0.7
 from_variants-0.6.0
 from_variants_impl-0.6.0
 gethostname-0.2.3
-getrandom-0.2.5
+getrandom-0.2.6
 globset-0.4.8
 globwalk-0.8.1
 ident_case-1.0.1
@@ -50,14 +50,14 @@ instant-0.1.12
 itertools-0.10.3
 itoa-1.0.1
 lazy_static-1.4.0
-libc-0.2.120
+libc-0.2.123
 libdbus-sys-0.2.2
 libpulse-binding-2.26.0
 libpulse-sys-1.19.3
 libsensors-sys-0.2.0
 libz-sys-1.1.5
-log-0.4.14
-maildir-0.6.0
+log-0.4.16
+maildir-0.6.1
 mailparse-0.13.8
 memchr-2.4.1
 memoffset-0.6.5
@@ -77,21 +77,21 @@ phf-0.10.1
 phf_codegen-0.10.0
 phf_generator-0.10.0
 phf_shared-0.10.0
-pkg-config-0.3.24
+pkg-config-0.3.25
 ppv-lite86-0.2.16
 predicates-2.1.1
 predicates-core-1.0.3
 predicates-tree-1.0.5
-proc-macro2-1.0.36
+proc-macro2-1.0.37
 pure-rust-locales-0.5.6
-quote-1.0.15
+quote-1.0.18
 quoted_printable-0.4.5
 rand-0.8.5
 rand_chacha-0.3.1
 rand_core-0.6.3
 rand_hc-0.3.1
-redox_syscall-0.2.11
-redox_users-0.4.0
+redox_syscall-0.2.13
+redox_users-0.4.3
 regex-1.5.5
 regex-syntax-0.6.25
 remove_dir_all-0.5.3
@@ -110,7 +110,7 @@ socket2-0.4.4
 strsim-0.9.3
 swayipc-3.0.0
 swayipc-types-1.0.1
-syn-1.0.88
+syn-1.0.91
 tempfile-3.3.0
 termtree-0.2.4
 textwrap-0.11.0
@@ -118,7 +118,7 @@ thiserror-1.0.30
 thiserror-impl-1.0.30
 thread_local-1.1.4
 time-0.1.43
-toml-0.5.8
+toml-0.5.9
 uncased-0.9.6
 unicode-width-0.1.9
 unicode-xid-0.2.2
@@ -152,7 +152,6 @@ DEPEND="
 	net-wireless/bluez
 	net-misc/curl
 	sys-apps/fakeroot
-	app-i18n/ibus
 	kdeconnect? ( kde-misc/kdeconnect )
 	sys-apps/lm-sensors
 	networkmanager? ( net-misc/networkmanager )
@@ -189,14 +188,15 @@ src_install() {
 	use man && doman "${S}/man.bak/i3status-rs.1"
 	cargo_src_install ${myfeatures:+--features "${myfeatures[*]}"}
 
+	#dodir usr/share/${PN}/{icons,themes,examples} || die
+	#fperms 0644 /usr/share/${PN}
+
 	insinto /usr/share/${PN}/icons
 	doins files/icons/*.toml
 
 	insinto /usr/share/${PN}/themes
 	doins files/themes/*.toml
 
-	insinto /usr/share/doc/${PN}/examples
+	insinto /usr/share/${PN}/examples
 	doins examples/*.toml
-
-	fperms 0644 /usr/share/${PN}
 }
