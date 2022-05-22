@@ -23,10 +23,10 @@ with the following contents:
 ```ini
 [gentoo-locomotion]
 priority = 50
-location = /path/to/local/gentoo-locomotion-overlay
+location = /var/db/repos/gentoo-locomotion
 auto-sync = yes
 sync-type = git
-sync-uri = https://github.com/anex5/gentoo-locomotion.git
+sync-uri = https://github.com/anex5/gentoo-locomotion
 ```
 
 > **Note:** I recommend that you manually install the overlay, as obviously you
