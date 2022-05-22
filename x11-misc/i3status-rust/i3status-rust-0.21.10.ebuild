@@ -89,7 +89,6 @@ quoted_printable-0.4.5
 rand-0.8.5
 rand_chacha-0.3.1
 rand_core-0.6.3
-rand_hc-0.3.1
 redox_syscall-0.2.13
 redox_users-0.4.3
 regex-1.5.5
@@ -184,19 +183,13 @@ src_configure() {
 	cargo_src_configure --no-default-features
 }
 
+src_compile() {
+	cargo_src_compile ${myfeatures:+--features "${myfeatures[*]}"}
+}
+
 src_install() {
 	use man && doman "${S}/man.bak/i3status-rs.1"
 	cargo_src_install ${myfeatures:+--features "${myfeatures[*]}"}
-
-	#dodir usr/share/${PN}/{icons,themes,examples} || die
-	#fperms 0644 /usr/share/${PN}
-
-	insinto /usr/share/${PN}/icons
-	doins files/icons/*.toml
-
-	insinto /usr/share/${PN}/themes
-	doins files/themes/*.toml
-
-	insinto /usr/share/${PN}/examples
-	doins examples/*.toml
+	instinto /usr/share/"${PN}"
+	doins -r files/icons files/themes examples
 }
