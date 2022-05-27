@@ -190,6 +190,7 @@ src_compile() {
 src_install() {
 	use man && doman "${S}/man.bak/i3status-rs.1"
 	cargo_src_install ${myfeatures:+--features "${myfeatures[*]}"}
-	instinto /usr/share/"${PN}"
+	insinto /usr/share/"${PN}"
 	doins -r files/icons files/themes examples
+	fperms 0755 /usr/share/${PN}
 }

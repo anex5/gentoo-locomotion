@@ -1,6 +1,5 @@
 # Copyright 2021 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
-# $Id$
 
 EAPI=7
 
@@ -16,7 +15,7 @@ HOMEPAGE="https://www.opensfm.org"
 
 if [[ ${PV} = *9999 ]]; then
 	inherit git-r3
-	EGIT_REPO_URI="https://github.com/mapillary/OpenSfM"
+	EGIT_REPO_URI="https://github.com/mapillary/${MY_PN}"
 	EGIT_SUBMODULES=( opensfm/src/third_party/pybind11 )
 	EGIT_BRANCH="main"
 	KEYWORDS=""
@@ -25,6 +24,8 @@ else
 	KEYWORDS="~amd64 ~x86"
 	S=${WORKDIR}/${MY_PN}-${PV}
 fi
+
+QA_PRESTRIPPED="usr/lib/${EPYTHON}/site-packages/${PN}/{pyfeatures,pydense,pysfm,pygeometry,pyrobust,pygeo,pymap,pybundle}.cpython-310-x86_64-linux-gnu.so"
 
 LICENSE="BSD-2"
 
