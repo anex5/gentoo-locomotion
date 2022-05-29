@@ -425,6 +425,7 @@ multilib_src_configure() {
 		-DWITH_CUDNN=$(usex dnncuda)
 		-DOPENCV_DNN_CUDA=$(usex dnncuda)
 		-DCUDA_FAST_MATH=$(multilib_native_usex cuda)
+		-DCUDA_NVCC_FLAGS=$(multilib_native_usex cuda "-Xcompiler;-fno-lto" '')
 		-DCUDA_ARCH_BIN=\"${CUDA_ARCH}\"
 		-DCUDA_ARCH_PTX=\"${CUDA_ARCH}\"
 	# ===================================================
@@ -548,6 +549,7 @@ multilib_src_configure() {
 		-DBUILD_opencv_python3=OFF
 		-DBUILD_NEW_PYTHON_SUPPORT=$(usex python)
 	)
+
 
 	cmake_src_configure
 
