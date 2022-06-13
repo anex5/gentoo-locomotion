@@ -3,7 +3,7 @@
 
 EAPI="7"
 
-FIREFOX_PATCHSET="firefox-91esr-patches-05j.tar.xz"
+FIREFOX_PATCHSET="firefox-91esr-patches-08j.tar.xz"
 
 LLVM_MAX_SLOT=14
 
@@ -15,25 +15,24 @@ WANT_AUTOCONF="2.1"
 VIRTUALX_REQUIRED="pgo"
 
 inherit autotools check-reqs desktop flag-o-matic gnome2-utils llvm \
-	multiprocessing pax-utils python-any-r1 toolchain-funcs \
+	multiprocessing pax-utils python-any-r1 toolchain-funcs linux-info \
 	virtualx xdg
 
-MOZ_SRC_BASE_URI="https://archive.mozilla.org/pub/firefox/releases/91.7.0esr"
 MY_PV="G4.${PV}"
 MY_P="Waterfox-G4.${PV}"
 
 PATCH_URIS=(
-	https://dev.gentoo.org/juippis/mozilla/patchsets/${FIREFOX_PATCHSET}
+	https://dev.gentoo.org/~{juippis,axs,polynomial-c,whissi}/mozilla/patchsets/${FIREFOX_PATCHSET}
 )
 
-
-SRC_URI="https://github.com/MrAlex94/Waterfox/archive/${MY_PV}.tar.gz -> ${P}.tar.gz
+#SRC_URI="https://github.com/MrAlex94/Waterfox/archive/${MY_PV}.tar.gz -> ${P}.tar.gz
+SRC_URI="https://github.com/WaterfoxCo/Waterfox/archive/${MY_PV}.tar.gz -> ${P}.tar.gz
 	${PATCH_URIS[@]}"
 
 DESCRIPTION="Waterfox Web Browser"
 HOMEPAGE="https://www.waterfox.net"
 
-KEYWORDS="amd64 arm64 x86"
+KEYWORDS="~amd64 ~arm64 ~x86"
 
 SLOT="0"
 LICENSE="MPL-2.0 GPL-2 LGPL-2.1"
@@ -52,7 +51,7 @@ REQUIRED_USE="
 BDEPEND="${PYTHON_DEPS}
 	app-arch/unzip
 	app-arch/zip
-	>=dev-util/cbindgen-0.19.0
+	>=dev-util/cbindgen-0.24.0
 	>=net-libs/nodejs-10.23.1
 	virtual/pkgconfig
 	>=virtual/rust-1.51.0
@@ -492,7 +491,7 @@ src_prepare() {
 
 	eapply "${FILESDIR}/${PN}-fix_langpack_id.patch"
 
-	eapply "${FILESDIR}/${PN}-0.8-dav1d-1.0.0.patch"
+	#eapply "${FILESDIR}/${PN}-0.8-dav1d-1.0.0.patch"
 
 	# Allow user to apply any additional patches without modifing ebuild
 	eapply_user
@@ -726,9 +725,6 @@ src_configure() {
 			mozconfig_add_options_ac '+lto-cross' MOZ_LTO=cross
 			mozconfig_add_options_ac '+lto-cross' MOZ_LTO_RUST=1
 		else
-			# Linking only works when using ld.gold when LTO is enabled
-			#mozconfig_add_options_ac "forcing ld=gold due to USE=lto" --enable-linker=gold
-
 			# ThinLTO is currently broken, see bmo#164449
 			mozconfig_add_options_ac '+lto' --enable-lto=full
 			mozconfig_add_options_ac "linker is set to bfd" --enable-linker=bfd
@@ -1159,21 +1155,16 @@ src_install() {
 		newicon -s ${size} "${icon}" ${PN}.png
 	done
 
-	# Install menus
+	# Install menu
 	local app_name="${PN^}"
 	local desktop_file="${FILESDIR}/icon/${PN}.desktop"
 	local desktop_filename="${PN}.desktop"
 	local exec_command="${PN}"
 
-	#local wrapper_wayland="${PN}-wayland.sh"
-	#local wrapper_x11="${PN}-x11.sh"
-	#local desktop_file="${FILESDIR}/icon/${PN}-r2.desktop"
-	#local display_protocols="auto X11"
 	local icon="${PN}"
 	local use_wayland="false"
 
 	if use wayland ; then
-		#display_protocols+=" Wayland"
 		use_wayland="true"
 	fi
 

@@ -1,0 +1,12 @@
+[Unit]
+Description=Moonraker is a python based web server that exposes APIs that applications may use to interact with Klipper
+After=network.target klipper.service
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+User=klipper
+ExecStart=/opt/moonraker/moonraker/moonraker.py \
+  --configfile /etc/klipper/moonraker.conf \
+  --nologfile

@@ -1,7 +1,7 @@
 # Copyright 1999-2022 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=7
+EAPI=8
 
 PYTHON_COMPAT=( python3_{8..10} )
 inherit cmake llvm.org multilib-minimal pax-utils python-any-r1 \
@@ -31,10 +31,14 @@ RDEPEND="
 	ncurses? ( >=sys-libs/ncurses-5.9-r3:0=[${MULTILIB_USEDEP}] )
 	xar? ( app-arch/xar )
 	xml? ( dev-libs/libxml2:2=[${MULTILIB_USEDEP}] )
-	z3? ( >=sci-mathematics/z3-4.7.1:0=[${MULTILIB_USEDEP}] )"
-DEPEND="${RDEPEND}
-	binutils-plugin? ( sys-libs/binutils-libs )"
+	z3? ( >=sci-mathematics/z3-4.7.1:0=[${MULTILIB_USEDEP}] )
+"
+DEPEND="
+	${RDEPEND}
+	binutils-plugin? ( sys-libs/binutils-libs )
+"
 BDEPEND="
+	${PYTHON_DEPS}
 	dev-lang/perl
 	>=dev-util/cmake-3.16
 	sys-devel/gnuconfig
@@ -47,13 +51,20 @@ BDEPEND="
 		dev-python/sphinx[${PYTHON_USEDEP}]
 	') )
 	libffi? ( virtual/pkgconfig )
-	${PYTHON_DEPS}"
+	test? (
+		sys-apps/which
+	)
+"
 # There are no file collisions between these versions but having :0
 # installed means llvm-config there will take precedence.
-RDEPEND="${RDEPEND}
-	!sys-devel/llvm:0"
-PDEPEND="~sys-devel/llvm-common-${PV}
-	binutils-plugin? ( >=sys-devel/llvmgold-${SLOT} )"
+RDEPEND="
+	${RDEPEND}
+	!sys-devel/llvm:0
+"
+PDEPEND="
+	~sys-devel/llvm-common-${PV}
+	binutils-plugin? ( >=sys-devel/llvmgold-${SLOT} )
+"
 
 LLVM_COMPONENTS=( llvm cmake third-party )
 LLVM_MANPAGES=
@@ -174,6 +185,10 @@ src_prepare() {
 	check_live_ebuild
 
 	llvm.org_src_prepare
+
+	# remove regressing test
+	# https://github.com/llvm/llvm-project/issues/55761
+	rm test/Other/ChangePrinters/DotCfg/print-changed-dot-cfg.ll || die
 }
 
 # Is LLVM being linked against libc++?
@@ -323,7 +338,7 @@ get_distribution_components() {
 }
 
 multilib_src_configure() {
-	CMAKE_BUILD_TYPE=Release
+	CMAKE_BUILD_TYPE="Release"
 	local ffi_cflags ffi_ldflags
 	if use libffi; then
 		ffi_cflags=$($(tc-getPKG_CONFIG) --cflags-only-I libffi)

@@ -1,0 +1,13 @@
+[Unit]
+Description=3d-Printer firmware, which combines the power of a general purpose computer with one or more micro-controllers
+After=network.target
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+User=klipper
+RuntimeDirectory=klipper
+ExecStart=/opt/klipper/klippy/klippy.py /etc/klipper/printer.cfg \
+  --api-server=/run/klipper/klipper.sock \
+  --logfile=/var/log/klipper/klipper.log
