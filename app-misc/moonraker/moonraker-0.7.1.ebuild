@@ -2,7 +2,7 @@
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=7
-PYTHON_COMPAT=( python3_{8,9} )
+PYTHON_COMPAT=( python3_{8..10} )
 
 inherit python-single-r1 systemd
 
@@ -27,6 +27,8 @@ RDEPEND="${DEPEND}
 		>=dev-python/pyserial-3.4[${PYTHON_USEDEP}]
 		>=www-servers/tornado-6.1[${PYTHON_USEDEP}]')"
 
+RESTRICT="mirror"
+
 DOCS=( LICENSE docs/api_changes.md )
 
 src_prepare() {
@@ -47,7 +49,7 @@ src_install() {
 	doins -r moonraker
 	dodir "/opt/${PN}/scripts"
 	insinto "/opt/${PN}/scripts"
-	doins scripts/extract_metadata.py "${FILESDIR}/update_manager.conf"
+	#doins scripts/extract_metadata.py "${FILESDIR}/update_manager.conf"
 
 	python_fix_shebang "${D}/opt/moonraker/moonraker/moonraker.py" || die
 
