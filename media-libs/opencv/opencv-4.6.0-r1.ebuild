@@ -1,11 +1,10 @@
 # Copyright 1999-2021 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=7
+EAPI=8
 
-PYTHON_COMPAT=( python3_{8..10} )
-CMAKE_ECLASS=cmake
-inherit java-pkg-opt-2 java-ant-2 cmake-multilib python-r1 toolchain-funcs
+PYTHON_COMPAT=( python3_{8..11} )
+inherit flag-o-matic java-pkg-opt-2 java-ant-2 cmake-multilib python-r1 toolchain-funcs
 
 DESCRIPTION="A collection of algorithms and sample code for various computer vision problems"
 HOMEPAGE="https://opencv.org"
@@ -117,7 +116,7 @@ RDEPEND="
 		sys-libs/libraw1394[${MULTILIB_USEDEP}]
 	)
 	java? ( >=virtual/jre-1.8:* )
-	jpeg? ( virtual/jpeg:0[${MULTILIB_USEDEP}] )
+	jpeg? ( media-libs/libjpeg-turbo:=[${MULTILIB_USEDEP}] )
 	jpeg2k? ( media-libs/openjpeg:2=[${MULTILIB_USEDEP}] )
 	lapack? (
 		virtual/cblas
@@ -317,7 +316,8 @@ src_prepare() {
 	fi
 
 	if use contrib; then
-		cd  "${WORKDIR}/${PN}_contrib-${PV}" || die
+		cd "${WORKDIR}/${PN}_contrib-${PV}" || die
+		eapply "${FILESDIR}"/e182fc8675a167044b129a3bdf3c4ad2d3399f68.patch
 		if use contribxfeatures2d; then
 			mv "${WORKDIR}"/*.i "${WORKDIR}/${PN}_contrib-${PV}"/modules/xfeatures2d/src/ || die
 		fi
@@ -549,7 +549,6 @@ multilib_src_configure() {
 		-DBUILD_opencv_python3=OFF
 		-DBUILD_NEW_PYTHON_SUPPORT=$(usex python)
 	)
-
 
 	cmake_src_configure
 
