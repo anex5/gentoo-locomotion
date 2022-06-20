@@ -3,15 +3,13 @@
 
 EAPI=7
 
-inherit git-r3 toolchain-funcs
+inherit git-r3 toolchain-funcs flag-o-matic
 
 DESCRIPTION="SYSLINUX, PXELINUX, ISOLINUX, EXTLINUX and MEMDISK bootloaders"
 HOMEPAGE="https://www.syslinux.org/"
 
-#EGIT_REPO_URI="https://repo.or.cz/syslinux"
-#EGIT_COMMIT="05ac953c23f90b2328d393f7eecde96e41aed067"
-EGIT_REPO_URI="https://github.com/awalls-cx18/syslinux"
-EGIT_BRANCH="acpioff-6.04-pre1"
+EGIT_REPO_URI="https://repo.or.cz/syslinux"
+EGIT_COMMIT="bd91041bff259cf4303fa6bbb0b6bce33fa7c1e8"
 EGIT_SUBMODULES=()
 
 LICENSE="GPL-2"
@@ -30,8 +28,6 @@ DEPEND="${RDEPEND}
 	>=sys-boot/gnu-efi-3.0u
 	virtual/os-headers"
 
-#S=${WORKDIR}/${P}
-
 # This ebuild is a departure from the old way of rebuilding everything in syslinux
 # This departure is necessary since hpa doesn't support the rebuilding of anything other
 # than the installers.
@@ -42,9 +38,12 @@ QA_PREBUILT="usr/share/${PN}/*.c32"
 # removed all the unpack/patching stuff since we aren't rebuilding the core stuff anymore
 
 PATCHES=(
+	#"${FILESDIR}"/syslinux-6.04_pre1-acpi_off.patch
+	"${FILESDIR}"/syslinux-6.03-sysmacros.patch
 	"${FILESDIR}"/0002-gfxboot-menu-label.patch
 	"${FILESDIR}"/0003-memdisk-Force-ld-output-format-to-32-bits.patch
 	"${FILESDIR}"/0004-gnu-efi-from-arch.patch
+	"${FILESDIR}"/0004-Inherit-toolchain-vars-from-environment.patch
 	"${FILESDIR}"/0005-gnu-efi-version-compatibility.patch
 	"${FILESDIR}"/0015-efi-main.c-include-efisetjmp.h.patch
 	"${FILESDIR}"/0017-Replace-builtin-strlen-that-appears-to-get-optimized.patch
@@ -55,6 +54,7 @@ PATCHES=(
 	"${FILESDIR}"/0006-The-VPrint-definition-is-now-part-of-the-exports-of-.patch
 	"${FILESDIR}"/0007-Update-the-longjump-calls-to-fit-the-new-declaration.patch
 	"${FILESDIR}"/syslinux-6.04_pre1-fcommon.patch #705730
+	"${FILESDIR}"/syslinux-6.04_pre3-debug.c-fix-printf-include.patch
 )
 
 src_prepare() {

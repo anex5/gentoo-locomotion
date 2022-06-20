@@ -1,8 +1,8 @@
 # Copyright 2021 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=7
-PYTHON_COMPAT=( python3_{8..10} )
+EAPI=8
+PYTHON_COMPAT=( python3_{9..11} )
 
 inherit python-single-r1 systemd
 
@@ -13,7 +13,7 @@ SRC_URI="https://github.com/Arksine/moonraker/archive/v${PV}.tar.gz -> ${P}.tar.
 LICENSE="GPL-3"
 SLOT="0"
 KEYWORDS="~amd64 ~arm ~arm64 ~x86"
-IUSE="doc"
+IUSE="systemd doc"
 
 DEPEND="
 	acct-group/klipper
@@ -23,6 +23,9 @@ RDEPEND="${DEPEND}
 	${PYTHON_DEPS}
 	app-misc/klipper
 	$(python_gen_cond_dep '
+		dev-python/distro[${PYTHON_USEDEP}]
+		dev-python/inotify_simple[${PYTHON_USEDEP}]
+		dev-python/streaming-form-data[${PYTHON_USEDEP}]
 		>=dev-python/pillow-8.0.1[${PYTHON_USEDEP}]
 		>=dev-python/pyserial-3.4[${PYTHON_USEDEP}]
 		>=www-servers/tornado-6.1[${PYTHON_USEDEP}]')"
@@ -53,7 +56,7 @@ src_install() {
 
 	python_fix_shebang "${D}/opt/moonraker/moonraker/moonraker.py" || die
 
-	systemd_newunit "${FILESDIR}/moonraker.service" "moonraker.service"
+	use systemd && systemd_newunit "${FILESDIR}/moonraker.service" "moonraker.service"
 }
 
 pkg_postinst() {

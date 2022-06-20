@@ -9,7 +9,7 @@ DESCRIPTION="SYSLINUX, PXELINUX, ISOLINUX, EXTLINUX and MEMDISK bootloaders"
 HOMEPAGE="https://www.syslinux.org/"
 
 EGIT_REPO_URI="https://repo.or.cz/syslinux"
-#EGIT_COMMIT="05ac953c23f90b2328d393f7eecde96e41aed067"
+EGIT_COMMIT="458a54133ecdf1685c02294d812cb562fe7bf4c3"
 EGIT_SUBMODULES=()
 
 LICENSE="GPL-2"
@@ -38,7 +38,9 @@ QA_PREBUILT="usr/share/${PN}/*.c32"
 # removed all the unpack/patching stuff since we aren't rebuilding the core stuff anymore
 
 PATCHES=(
+	#"${FILESDIR}"/acpi_off.patch
 	"${FILESDIR}"/0002-gfxboot-menu-label.patch
+	#"${FILESDIR}"/0003-memdisk-Force-ld-output-format-to-32-bits.patch
 	"${FILESDIR}"/0004-gnu-efi-from-arch.patch
 	"${FILESDIR}"/0005-gnu-efi-version-compatibility.patch
 	"${FILESDIR}"/0015-efi-main.c-include-efisetjmp.h.patch
@@ -47,8 +49,10 @@ PATCHES=(
 	"${FILESDIR}"/0017-single-load-segment.patch
 	"${FILESDIR}"/0018-prevent-pow-optimization.patch
 	#"${FILESDIR}"/0025-reproducible-build.patch
+	#"${FILESDIR}"/0006-The-VPrint-definition-is-now-part-of-the-exports-of-.patch
+	#"${FILESDIR}"/0007-Update-the-longjump-calls-to-fit-the-new-declaration.patch
 	"${FILESDIR}"/syslinux-6.04_pre1-fcommon.patch #705730
-	"${FILESDIR}"/acpi_off.patch
+	"${FILESDIR}"/syslinux-6.04_pre3-debug.c-fix-printf-include.patch
 )
 
 src_prepare() {

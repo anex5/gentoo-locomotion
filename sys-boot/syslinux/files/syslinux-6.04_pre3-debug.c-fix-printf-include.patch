@@ -1,0 +1,10 @@
+--- b/com32/lib/syslinux/debug.c	2022-04-17 10:55:31.171365205 +0300
++++ a/com32/lib/syslinux/debug.c	2022-04-17 11:01:40.313440173 +0300
+@@ -1,6 +1,7 @@
+ #include <linux/list.h>
+ #include <string.h>
+ #include <stdbool.h>
++#include <stdio.h>
+ 
+ #ifdef DYNAMIC_DEBUG
+ 

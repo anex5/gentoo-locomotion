@@ -88896,13 +88896,15 @@ diff --git a/com32/Makefile b/com32/Makefile
 index da632a17..88abeba2 100644
 --- a/com32/Makefile
 +++ b/com32/Makefile
-@@ -1,5 +1,5 @@
- SUBDIRS = tools lib libutil gpllib libupload elflink/ldlinux modules mboot \
--	  menu samples elflink rosh cmenu hdt gfxboot sysdump lua/src chain
-+	  menu samples elflink rosh cmenu hdt gfxboot sysdump lua/src chain acpioff
+@@ -3,7 +3,7 @@ SUBDIRS = tools lib libutil gpllib libup
+
+ ifneq ($(FWCLASS),EFI)
+ # These tools are no applicable to EFI, or need serious porting
+-SUBDIRS += hdt gfxboot sysdump chain
++SUBDIRS += hdt gfxboot sysdump chain acpioff
+ endif
 
  .PHONY: subdirs $(SUBDIRS)
- subdirs: $(SUBDIRS)
 
 From 6eaee17e39335d5d7a41da2dd563b2eb2417f778 Mon Sep 17 00:00:00 2001
 From: Andy Walls <awalls@md.metrocast.net>

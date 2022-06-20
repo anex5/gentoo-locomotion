@@ -4,13 +4,11 @@
 EAPI="8"
 PYTHON_COMPAT=( python3_{9..11} )
 
-inherit distutils-r1 git-r3
+inherit distutils-r1
 
 DESCRIPTION="A utility for batch-normalizing audio using ffmpeg"
 HOMEPAGE="https://github.com/slhck/ffmpeg-normalize"
 SRC_URI="https://github.com/slhck/ffmpeg-normalize/archive/refs/tags/v${PV}.tar.gz -> ${P}.tar.gz"
-#EGIT_REPO_URI="https://github.com/slhck/ffmpeg-normalize"
-#EGIT_COMMIT="5c68c551a2fc1fa5aaeaecb41ff2202b7eed23aa"
 
 LICENSE="MIT"
 SLOT="0"
