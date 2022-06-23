@@ -135,7 +135,7 @@ inherit cargo
 
 DESCRIPTION="A feature-rich and resource-friendly replacement for i3status, written in Rust."
 HOMEPAGE="https://github.com/greshake/i3status-rust/"
-SRC_URI="https://github.com/greshake/i3status-rust/archive/v${PV}.tar.gz -> ${P}.tar.gz
+SRC_URI="https://github.com/greshake/${PN}/archive/refs/tags/v${PV}.tar.gz -> ${P}.tar.gz
 	$(cargo_crate_uris ${CRATES})"
 
 LICENSE="GPL-3"

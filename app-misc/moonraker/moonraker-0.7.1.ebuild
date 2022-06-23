@@ -24,7 +24,7 @@ RDEPEND="${DEPEND}
 	app-misc/klipper
 	$(python_gen_cond_dep '
 		dev-python/distro[${PYTHON_USEDEP}]
-		dev-python/inotify_simple[${PYTHON_USEDEP}]
+		dev-python/inotify-simple[${PYTHON_USEDEP}]
 		dev-python/streaming-form-data[${PYTHON_USEDEP}]
 		>=dev-python/pillow-8.0.1[${PYTHON_USEDEP}]
 		>=dev-python/pyserial-3.4[${PYTHON_USEDEP}]
