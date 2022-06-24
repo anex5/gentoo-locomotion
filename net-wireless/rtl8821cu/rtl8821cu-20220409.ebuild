@@ -17,9 +17,9 @@ DEPEND="virtual/linux-sources"
 
 S="${WORKDIR}/rtl8821CU-${COMMIT}"
 
-#PATCHES=(
-#	"${FILESDIR}/sse-extra-cflags.patch"
-#)
+PATCHES=(
+	"${FILESDIR}/rtl8821cu-5.18-kernel-fix.patch"
+)
 
 pkg_setup() {
 	if use kernel_linux; then
