@@ -19,7 +19,7 @@ VIRTUALX_REQUIRED="pgo"
 
 inherit autotools check-reqs desktop flag-o-matic gnome2-utils linux-info \
 	llvm multiprocessing pax-utils python-any-r1 toolchain-funcs \
-	virtualx xdg
+	virtualx xdg xdg-utils
 
 PATCH_URIS=(
 	https://dev.gentoo.org/~{juippis,polynomial-c,whissi}/mozilla/patchsets/${FIREFOX_PATCHSET}
@@ -581,7 +581,7 @@ src_prepare() {
 	BUILD_DIR="${WORKDIR}/${PN}_build"
 	mkdir -p "${BUILD_DIR}" || die
 
-	xdg_enviroment_reset
+	xdg_environment_reset
 }
 
 src_configure() {
