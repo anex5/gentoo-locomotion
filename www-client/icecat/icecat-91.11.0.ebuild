@@ -10,7 +10,7 @@ FIREFOX_PATCHSET="firefox-91esr-patches-07j.tar.xz"
 
 LLVM_MAX_SLOT=14
 
-PYTHON_COMPAT=( python3_{8..11} )
+PYTHON_COMPAT=( python3_{9..11} )
 PYTHON_REQ_USE="ncurses,sqlite,ssl"
 
 WANT_AUTOCONF="2.1"
@@ -153,6 +153,8 @@ DEPEND="${COMMON_DEPEND}
 	wayland? ( >=x11-libs/gtk+-3.11:3[wayland] )
 	amd64? ( virtual/opengl )
 	x86? ( virtual/opengl )"
+
+RESTRICT="fetch"
 
 S="${WORKDIR}/${PN}-${PV%_*}"
 
@@ -540,7 +542,7 @@ src_prepare() {
 
 	eapply "${WORKDIR}/firefox-patches"
 
-	eapply "${FILESDIR}/fix-ftbfs-newer-cbindgen.patch"
+	#eapply "${FILESDIR}/fix-ftbfs-newer-cbindgen.patch"
 
 	# Allow user to apply any additional patches without modifing ebuild
 	eapply_user
