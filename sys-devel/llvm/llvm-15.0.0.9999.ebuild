@@ -3,23 +3,29 @@
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{8..10} )
-inherit git-r3 cmake flag-o-matic multilib-minimal pax-utils python-any-r1 toolchain-funcs
+PYTHON_COMPAT=( python3_{9..11} )
+inherit cmake flag-o-matic multilib-minimal pax-utils python-any-r1 toolchain-funcs
 
 DESCRIPTION="Low Level Virtual Machine. Includes clang and many other tools"
 HOMEPAGE="https://llvm.org/"
 
+inherit git-r3
 EGIT_REPO_URI="https://github.com/llvm/llvm-project"
 EGIT_BRANCH="main"
+
+#SRC_URI="https://github.com/llvm/llvm-project/releases/download/llvmorg-${PV}/llvm-project-${PV}.src.tar.xz"
+#if [[ -n ${LLVM_PATCHSET} ]]; then
+#	SRC_URI+="https://dev.gentoo.org/~mgorny/dist/llvm/llvm-gentoo-patchset-${LLVM_PATCHSET}.tar.xz"
+#fi
 
 LICENSE="Apache-2.0-with-LLVM-exceptions UoI-NCSA BSD MIT public-domain rc"
 SLOT="$(ver_cut 1)"
 #KEYWORDS="~amd64 ~arm ~arm64 ~ppc ~ppc64 ~riscv ~sparc ~x86 ~amd64-linux ~ppc-macos ~x64-macos"
 IUSE_PROJECTS="clang clang-tools-extra cross-project-tests flang libc libclc lld lldb mlir openmp polly pstl"
 IUSE_RTLIBS="libcxx libcxxabi libunwind compiler-rt libc libomp"
-IUSE="asserts benchmark +binutils-plugin bootstrap ccache cuda debug doc elibc_glibc elibc_musl \
+IUSE="asserts benchmark binutils-plugin bootstrap ccache cuda debug doc elibc_glibc elibc_musl \
 	examples exegesis libedit +libffi +libfuzzer lto man +memprof +ompt offload ocaml hwloc \
-	static-analyzer static-libs -system-lld +thinlto ncurses +orc pgo pic +profile test +xray xar xml z3"
+	static-analyzer static-libs system-clang system-lld thinlto ncurses +orc pgo pic test +xray xar xml z3"
 
 SANITIZER_FLAGS=(
 	asan dfsan lsan msan hwasan tsan ubsan safestack cfi scudo shadowcallstack gwp-asan
@@ -37,15 +43,14 @@ ALL_LLVM_TARGET_FLAGS=(
 IUSE+=" ${ALL_LLVM_TARGET_FLAGS[@]/#/+} ${IUSE_RTLIBS/#/+} ${IUSE_PROJECTS/#/+} ${SANITIZER_FLAGS[@]/#/+}"
 RESTRICT="!test? ( test )"
 REQUIRED_USE="
+	bootstrap? ( clang )
 	thinlto? ( lto )
 	pgo? ( lto )
-	libcxx? ( clang )
 	libunwind? ( libcxx )
 	compiler-rt? ( libcxx )
 	cuda? ( openmp llvm_targets_NVPTX )
 	offload? ( openmp cuda? ( abi_x86_64 ) )
 	ompt? ( openmp )
-	bootstrap? ( clang )
 "
 CDEPEND="
 	sys-libs/zlib:0=[${MULTILIB_USEDEP}]
@@ -88,19 +93,19 @@ RDEPEND="${RDEPEND}
 			cuda? ( dev-util/nvidia-cuda-toolkit:= )
 		)
 	)
-"
-PDEPEND="
 	sys-devel/llvm-common
 	binutils-plugin? ( >=sys-devel/llvmgold-${SLOT} )
-	!sys-devel/clang
-	!sys-libs/compiler-rt
-	!sys-libs/libcxx
-	!sys-libs/libcxxabi
-	!sys-libs/libunwind
-	!sys-libs/llvm-libunwind
-	!sys-devel/lld
-	!sys-libs/openmp
-	!sys-libs/polly
+	clang? ( !sys-devel/clang )
+	compiler-rt? ( !sys-libs/compiler-rt )
+	libcxx? ( !sys-libs/libcxx )
+	libcxxabi? ( !sys-libs/libcxxabi )
+	libunwind? (
+		!sys-libs/llvm-libunwind
+		!sys-libs/libunwind
+	)
+	lld? ( !sys-devel/lld )
+	openmp? ( !sys-libs/libomp )
+	polly? ( !sys-libs/polly )
 "
 
 PATCHES=(
@@ -131,16 +136,7 @@ src_unpack() {
 
 	git-r3_src_unpack
 
-	#if apply_pgo_profile; then
-	#	cd "${WORKDIR}" || die
-	#	local profile_hash
-	#	if use llvm-next; then
-	#		profile_hash="${LLVM_NEXT_HASH}"
-	#	else
-	#		profile_hash="${LLVM_HASH}"
-	#	fi
-	#	unpack "llvm-profdata-${profile_hash}.tar.xz"
-	#fi
+	#default
 }
 
 
@@ -161,10 +157,6 @@ src_prepare() {
 		fi
 	done
 
-	# TODO: fix these tests to be skipped upstream
-	if use asan && ! use profile; then
-		rm test/asan/TestCases/asan_and_llvm_coverage_test.cpp || die
-	fi
 	if use ubsan && ! use cfi; then
 		> test/cfi/CMakeLists.txt || die
 	fi
@@ -173,6 +165,10 @@ src_prepare() {
 	cp "${BROOT}/usr/share/gnuconfig/config.guess" cmake/ || die
 
 	cmake_src_prepare
+
+	# Native libdir is used to hold LLVMgold.so
+	# shellcheck disable=SC2034
+	NATIVE_LIBDIR=$(get_libdir)
 }
 
 multilib_src_configure() {
@@ -181,17 +177,20 @@ multilib_src_configure() {
 	CMAKE_BUILD_TYPE=$(usex debug Debug Release)
 
 	local nolib_flags=( -nodefaultlibs -lc )
-	if use clang; then
+	if use system-clang; then
 		local -x CC=${CHOST}-clang
 		local -x CXX=${CHOST}-clang++
+		local -x AR="llvm-ar"
+		local -x NM="llvm-nm"
+		local -x RANLIB="llvm-ranlib"
 		strip-unsupported-flags
 		# ensure we can use clang before installing compiler-rt
 		local -x LDFLAGS="${LDFLAGS} ${nolib_flags[*]}"
-	elif ! test_compiler; then
-		if test_compiler "${nolib_flags[@]}"; then
-			local -x LDFLAGS="${LDFLAGS} ${nolib_flags[*]}"
-			ewarn "${CC} seems to lack runtime, trying with ${nolib_flags[*]}"
-		fi
+	#elif ! test_compiler; then
+	#	if test_compiler "${nolib_flags[@]}"; then
+	#		local -x LDFLAGS="${LDFLAGS} ${nolib_flags[*]}"
+	#		ewarn "${CC} seems to lack runtime, trying with ${nolib_flags[*]}"
+	#	fi
 	fi
 
 	local flag want_sanitizer=OFF
@@ -204,6 +203,17 @@ multilib_src_configure() {
 		ffi_cflags="$($(tc-getPKG_CONFIG) --cflags-only-I libffi)";
 		ffi_ldflags="$($(tc-getPKG_CONFIG) --libs-only-L --keep-system-libs libffi)"
 	)
+
+	use thinlto && append-ldflags "-Wl,-mllvm,-import-instr-limit=1"
+
+	if use system-lld; then
+		# The standalone toolchain may be run at places not supporting
+		# smallPIE, disabling it for lld.
+		# Pass -fuse-ld=lld to make cmake happy.
+		append-ldflags "-fuse-ld=lld -Wl,--pack-dyn-relocs=none"
+		# Disable warning about profile not matching.
+		append-flags "-Wno-backend-plugin"
+	fi
 
 	local libdir=$(get_libdir)
 
@@ -261,18 +271,34 @@ multilib_src_configure() {
 		-DOCAMLFIND=NO
 
 		-DLLVM_ENABLE_LIBCXX=$(usex libcxx ON OFF)
-		-DLLVM_USE_LINKER=$(usex system-lld lld "")
+		#-DLLVM_USE_LINKER=$(usex system-lld lld "")
 		-DLLVM_ENABLE_LLD=$(usex lld ON OFF)
-		-DLLVM_ENABLE_LTO=$(usex lto $(usex clang $(usex thinlto "Thin" "Full") OFF) "")
-		#-DLLVM_BUILD_INSTRUMENTED=$(usex pgo IR NO)
-		#-DLLVM_PROFDATA_FILE="${WORKDIR}/llvm.profdata"
+		-DLLVM_ENABLE_LTO=$(usex lto $(usex thinlto "Thin" "Full") OFF)
+		-DLLVM_BUILD_INSTRUMENTED=$(usex pgo IR NO)
+		-DLLVM_PROFDATA_FILE="${WORKDIR}/llvm.profdata"
 		-DLLVM_OPTIMIZED_TABLEGEN=$(usex debug ON OFF)
 		-DLLVM_ENABLE_PIC=$(usex pic ON OFF)
+		-DLLVM_ENABLE_PER_TARGET_RUNTIME_DIR=OFF
 		-DLLVM_CCACHE_BUILD=$(usex ccache ON OFF)
+	)
+
+	use clang && mycmakeargs+=(
 		-DCLANG_ENABLE_BOOTSTRAP=$(usex bootstrap ON OFF)
 		-DCLANG_BOOTSTRAP_PASSTHROUGH=$(usex bootstrap ON OFF)
-		#-DBOOTSTRAP_CMAKE_CXX_FLAGS
-		#-DBOOTSTRAP_CMAKE_C_FLAGS
+		-DCLANG_DEFAULT_PIE_ON_LINUX=ON
+		-DCLANG_TOOLING_BUILD_AST_INTROSPECTION=OFF
+		# override default stdlib and rtlib
+		-DCLANG_DEFAULT_CXX_STDLIB=libc++
+		-DCLANG_DEFAULT_RTLIB=compiler-rt
+	)
+
+	use bootstrap && mycmakeargs+=(
+		-DLLVM_BUILD_RUNTIME=NO
+		-DBOOTSTRAP_LLVM_ENABLE_LTO=$(usex lto ON OFF)
+		-DBOOTSTRAP_LLVM_ENABLE_LLD=ON
+		-DBOOTSTRAP_LLVM_BUILD_INSTRUMENTED=$(usex pgo ON OFF)
+		#-DBOOTSTRAP_CMAKE_CXX_FLAGS=${CXXFLAGS}
+		#-DBOOTSTRAP_CMAKE_C_FLAGS=${CFLAGS}
 	)
 
 	use compiler-rt && mycmakeargs+=(
@@ -286,11 +312,11 @@ multilib_src_configure() {
 		-DCOMPILER_RT_BUILD_LIBFUZZER=$(usex libfuzzer)
 		-DCOMPILER_RT_BUILD_MEMPROF=$(usex memprof)
 		-DCOMPILER_RT_BUILD_ORC=$(usex orc)
-		-DCOMPILER_RT_BUILD_PROFILE=$(usex profile)
 		-DCOMPILER_RT_BUILD_SANITIZERS="${want_sanitizer}"
 		-DCOMPILER_RT_BUILD_XRAY=$(usex xray)
 		# By default do not enable PGO for compiler-rt
 		-DCOMPILER_RT_ENABLE_PGO=OFF
+		#-DCOMPILER_RT_BUILD_PROFILE=$(usex profile)
 		-DCOMPILER_RT_BUILTINS_HIDE_SYMBOLS=OFF
 	)
 
@@ -334,6 +360,10 @@ multilib_src_configure() {
 
 		# avoid dependency on libgcc_s if compiler-rt is used
 		-DLIBUNWIND_USE_COMPILER_RT=$(usex clang)
+	)
+
+	use lldb && mycmakeargs+=(
+		-DLLDB_ENABLE_LUA=OFF
 	)
 
 	use openmp && mycmakeargs+=(
@@ -398,31 +428,18 @@ multilib_src_configure() {
 		)
 	fi
 
-	# workaround BMI bug in gcc-7 (fixed in 7.4)
-	# https://bugs.gentoo.org/649880
-	# apply only to x86, https://bugs.gentoo.org/650506
-	if tc-is-gcc && [[ ${MULTILIB_ABI_FLAG} == abi_x86* ]] &&
-			[[ $(gcc-major-version) -eq 7 && $(gcc-minor-version) -lt 4 ]]
-	then
-		local CFLAGS="${CFLAGS} -mno-bmi"
-		local CXXFLAGS="${CXXFLAGS} -mno-bmi"
-	fi
-
 	# LLVM can have very high memory consumption while linking,
 	# exhausting the limit on 32-bit linker executable
 	use x86 && local -x LDFLAGS="${LDFLAGS} -Wl,--no-keep-memory"
 
 	# LLVM_ENABLE_ASSERTIONS=NO does not guarantee this for us, #614844
-	use debug || local -x CPPFLAGS="${CPPFLAGS} -DNDEBUG"
+	use debug || append-cppflags -DNDEBUG
 	cmake_src_configure
+	einfo "${LLVM_TARGETS}"
 }
 
 multilib_src_compile() {
-	use bootstrap && (
-		use pgo && cmake_build stage2-instrumented stage2-instrumented-generate-profdata stage2
-	) || (
-		cmake_src_compile
-	)
+	cmake_src_compile
 
 	pax-mark m "${BUILD_DIR}"/bin/llvm-rtdyld
 	pax-mark m "${BUILD_DIR}"/bin/lli
