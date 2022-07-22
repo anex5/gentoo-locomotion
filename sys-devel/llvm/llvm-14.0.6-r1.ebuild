@@ -68,7 +68,7 @@ PDEPEND="
 
 LLVM_COMPONENTS=( llvm cmake third-party )
 LLVM_MANPAGES=
-LLVM_PATCHSET=${PV/_/-}
+LLVM_PATCHSET=${PV}-r1
 LLVM_USE_TARGETS=provide
 llvm.org_set_globals
 
@@ -147,7 +147,7 @@ check_distribution_components() {
 
 				all_targets+=( "${l}" )
 			fi
-		done < <(ninja -t targets all)
+		done < <(${NINJA} -t targets all)
 
 		while read -r l; do
 			my_targets+=( "${l}" )
