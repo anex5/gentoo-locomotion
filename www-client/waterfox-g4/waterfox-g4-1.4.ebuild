@@ -1,13 +1,13 @@
 # Copyright 1999-2022 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI="7"
+EAPI="8"
 
-FIREFOX_PATCHSET="firefox-91esr-patches-08j.tar.xz"
+FIREFOX_PATCHSET="firefox-91esr-patches-10j.tar.xz"
 
 LLVM_MAX_SLOT=14
 
-PYTHON_COMPAT=( python3_{8..10} )
+PYTHON_COMPAT=( python3_{8..11} )
 PYTHON_REQ_USE="ncurses,sqlite,ssl"
 
 WANT_AUTOCONF="2.1"
@@ -18,6 +18,8 @@ inherit autotools check-reqs desktop flag-o-matic gnome2-utils llvm \
 	multiprocessing pax-utils python-any-r1 toolchain-funcs linux-info \
 	virtualx xdg
 
+WF_SRC_BASE_URI="https://github.com/WaterfoxCo/Waterfox/archive"
+
 MY_PV="G4.${PV}"
 MY_P="Waterfox-G4.${PV}"
 
@@ -26,13 +28,13 @@ PATCH_URIS=(
 )
 
 #SRC_URI="https://github.com/MrAlex94/Waterfox/archive/${MY_PV}.tar.gz -> ${P}.tar.gz
-SRC_URI="https://github.com/WaterfoxCo/Waterfox/archive/${MY_PV}.tar.gz -> ${P}.tar.gz
+SRC_URI="${WF_SRC_BASE_URI}/${MY_PV}.tar.gz -> ${P}.tar.gz
 	${PATCH_URIS[@]}"
 
 DESCRIPTION="Waterfox Web Browser"
 HOMEPAGE="https://www.waterfox.net"
 
-KEYWORDS="~amd64 ~arm64 ~x86"
+KEYWORDS="amd64 ~arm64 x86"
 
 SLOT="0"
 LICENSE="MPL-2.0 GPL-2 LGPL-2.1"
@@ -62,9 +64,6 @@ BDEPEND="${PYTHON_DEPS}
 			<sys-devel/lld-$((LLVM_MAX_SLOT + 1))
 			pgo? ( <sys-libs/compiler-rt-sanitizers-$((LLVM_MAX_SLOT + 1))[profile] )
 		)
-	)
-	lto? (
-		!clang? ( sys-devel/binutils[gold] )
 	)
 	amd64? ( >=dev-lang/nasm-2.13 )
 	x86? ( >=dev-lang/nasm-2.13 )
@@ -164,15 +163,15 @@ RESTRICT="mirror"
 S="${WORKDIR}/${MY_P}"
 MOZ_L10N_SOURCEDIR="${S}/browser/locales/l10n"
 
-PATCHES=(
+#PATCHES=(
 	#"${FILESDIR}/g3-kde.patch"
 	#"${FILESDIR}/mozilla-nongnome-proxies.patch"
 	#"${FILESDIR}/mozilla-ntlm-full-path.patch"
 	#"${FILESDIR}/Use-remoting-name-for-GDK-application-names.patch"
-	"${FILESDIR}/sandbox-fips.patch"
+	#"${FILESDIR}/sandbox-fips.patch"
 	#"${FILESDIR}/remoting-name.patch"
-	"${FILESDIR}/ignore_bad_validator.patch"
-)
+	#"${FILESDIR}/ignore_bad_validator.patch"
+#)
 
 # Allow MOZ_GMP_PLUGIN_LIST to be set in an eclass or
 # overridden in the enviromnent (advanced hackers only)
@@ -484,6 +483,7 @@ pkg_setup() {
 
 src_prepare() {
 	use lto && rm -v "${WORKDIR}"/firefox-patches/*-LTO-Only-enable-LTO-*.patch
+	rm "${WORKDIR}"/firefox-patches/0034-bmo-1773259-cbindgen-root_clip_chain-fix.patch || die
 	eapply "${WORKDIR}/firefox-patches"
 
 	# unfuck URLbar
@@ -722,8 +722,6 @@ src_configure() {
 			mozconfig_add_options_ac "forcing ld=lld due to USE=clang and USE=lto" --enable-linker=lld
 
 			mozconfig_add_options_ac '+lto' --enable-lto=cross
-			mozconfig_add_options_ac '+lto-cross' MOZ_LTO=cross
-			mozconfig_add_options_ac '+lto-cross' MOZ_LTO_RUST=1
 		else
 			# ThinLTO is currently broken, see bmo#164449
 			mozconfig_add_options_ac '+lto' --enable-lto=full
@@ -732,13 +730,10 @@ src_configure() {
 
 		if use pgo ; then
 			mozconfig_add_options_ac '+pgo' MOZ_PGO=1
-			# Allow for a proper pgo build
-			echo "mk_add_options PROFILE_GEN_SCRIPT='EXTRA_TEST_ARGS=10 \$(MAKE) -C \$(MOZ_OBJDIR) pgo-profile-run'" >> "${S}"/.mozconfig
 
 			if use clang ; then
 				# Used in build/pgo/profileserver.py
 				export LLVM_PROFDATA="llvm-profdata"
-				mozconfig_add_options_ac '+pgo-rust' MOZ_PGO_RUST=1
 			fi
 		fi
 	else
@@ -746,8 +741,6 @@ src_configure() {
 		if use clang ; then
 			# This is upstream's default
 			mozconfig_add_options_ac "forcing ld=lld due to USE=clang" --enable-linker=lld
-		# elif tc-ld-is-gold ; then
-		#	mozconfig_add_options_ac "linker is set to gold" --enable-linker=gold
 		else
 			mozconfig_add_options_ac "linker is set to bfd" --enable-linker=bfd
 		fi
@@ -907,96 +900,6 @@ src_configure() {
 		done
 	fi
 
-	#######
-	### Disable features
-	mozconfig_add_options_ac '' --disable-accessibility
-	mozconfig_add_options_ac '' --disable-address-sanitizer
-	mozconfig_add_options_ac '' --disable-address-sanitizer-reporter
-
-	mozconfig_add_options_ac '' --disable-callgrind
-	mozconfig_add_options_ac '' --disable-crashreporter
-
-	mozconfig_add_options_ac '' --disable-debug
-	mozconfig_add_options_ac '' --disable-debug-js-modules
-	mozconfig_add_options_ac '' --disable-debug-symbols
-	mozconfig_add_options_ac '' --disable-dmd
-	mozconfig_add_options_ac '' --disable-dtrace
-	mozconfig_add_options_ac '' --disable-dump-painting
-
-	mozconfig_add_options_ac '' --disable-frame-pointers
-
-	#mozconfig_add_options_ac '' --disable-gold
-	mozconfig_add_options_ac '' --disable-gpsd
-	mozconfig_add_options_ac '' --disable-gtest-in-build
-
-	mozconfig_add_options_ac '' --disable-instruments
-	mozconfig_add_options_ac '' --disable-ipdl-tests
-
-	mozconfig_add_options_ac '' --disable-jprof
-
-	mozconfig_add_options_ac '' --disable-logrefcnt
-
-	mozconfig_add_options_ac '' --disable-memory-sanitizer
-	mozconfig_add_options_ac '' --disable-mobile-optimize
-
-	mozconfig_add_options_ac '' --disable-necko-wifi
-
-	mozconfig_add_options_ac '' --disable-parental-controls
-	mozconfig_add_options_ac '' --disable-perf
-	mozconfig_add_options_ac '' --disable-profiling
-
-	mozconfig_add_options_ac '' --disable-reflow-perf
-	mozconfig_add_options_ac '' --disable-rust-debug
-	mozconfig_add_options_ac '' --disable-rust-tests
-
-	mozconfig_add_options_ac '' --disable-signed-overflow-sanitizer
-	mozconfig_add_options_ac '' --disable-system-extension-dirs
-
-	mozconfig_add_options_ac '' --disable-thread-sanitizer
-	mozconfig_add_options_ac '' --disable-trace-logging
-
-	mozconfig_add_options_ac '' --disable-undefined-sanitizer
-	mozconfig_add_options_ac '' --disable-unsigned-overflow-sanitizer
-	mozconfig_add_options_ac '' --disable-updater
-
-	mozconfig_add_options_ac '' --disable-valgrind
-	mozconfig_add_options_ac '' --disable-verify-mar
-	mozconfig_add_options_ac '' --disable-vtune
-
-	mozconfig_add_options_ac '' --disable-warnings-as-errors
-	mozconfig_add_options_ac '' --disable-wasm-codegen-debug
-	mozconfig_add_options_ac '' --disable-webrender-debugger
-
-	mozconfig_add_options_ac '' --without-debug-label
-	mozconfig_add_options_ac '' --without-google-location-service-api-keyfile
-	mozconfig_add_options_ac '' --without-google-safebrowsing-api-keyfile
-	mozconfig_add_options_ac '' --without-mozilla-api-keyfile
-	mozconfig_add_options_ac '' --without-pocket-api-keyfile
-
-	mozconfig_add_options_ac '' MOZ_DATA_REPORTING=
-	mozconfig_add_options_ac '' MOZ_DEVICES=
-	mozconfig_add_options_ac '' MOZ_LOGGING=
-	mozconfig_add_options_ac '' MOZ_PAY=
-	mozconfig_add_options_ac '' MOZ_SERVICES_HEALTHREPORTER=
-	mozconfig_add_options_ac '' MOZ_SERVICES_METRICS=
-	mozconfig_add_options_ac '' MOZ_TELEMETRY_REPORTING=
-
-	### Enable good features
-	mozconfig_add_options_ac '' --enable-icf
-	mozconfig_add_options_ac '' --enable-install-strip
-	mozconfig_add_options_ac '' --enable-rust-simd
-	mozconfig_add_options_ac '' --enable-strip
-	mozconfig_add_options_ac '' --enable-webrtc
-
-	echo "export MOZ_DATA_REPORTING=" >> "${S}"/.mozconfig
-	echo "export MOZ_DEVICES=" >> "${S}"/.mozconfig
-	echo "export MOZ_LOGGING=" >> "${S}"/.mozconfig
-	echo "export MOZ_PAY=" >> "${S}"/.mozconfig
-	echo "export MOZ_SERVICES_HEALTHREPORTER=" >> "${S}"/.mozconfig
-	echo "export MOZ_SERVICES_METRICS=" >> "${S}"/.mozconfig
-	echo "export MOZ_TELEMETRY_REPORTING=" >> "${S}"/.mozconfig
-	#######
-
 	echo
 	echo "=========================================================="
 	echo "Building ${PF} with the following configuration"
@@ -1021,21 +924,6 @@ src_compile() {
 		gnome2_environment_reset
 
 		addpredict /root
-		addpredict /etc/gconf
-		# Firefox tries to use dri stuff when it's run, see bug 380283
-		shopt -s nullglob
-		cards=$(echo -n /dev/dri/card* | sed 's/ /:/g')
-		if test -z "${cards}"; then
-			cards=$(echo -n /dev/ati/card* /dev/nvidiactl* | sed 's/ /:/g')
-			if test -n "${cards}"; then
-				# Binary drivers seem to cause access violations anyway, so
-				# let's use indirect rendering so that the device files aren't
-				# touched at all. See bug 394715.
-				export LIBGL_ALWAYS_INDIRECT=1
-			fi
-		fi
-		shopt -u nullglob
-		[[ -n "${cards}" ]] && addpredict "${cards}"
 	fi
 
 	local -x GDK_BACKEND=x11
