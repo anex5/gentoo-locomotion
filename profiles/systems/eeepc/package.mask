@@ -1,0 +1,3 @@
+#>sys-fs/udev-250.7
+#>=sys-kernel/gentoo-sources-5.18.0
+#>=sys-kernel/linux-headers-5.18

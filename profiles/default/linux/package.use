@@ -1,0 +1,7 @@
+sys-apps/systemd-utils tmpfiles
+sys-apps/openrc sysv-utils
+dev-lang/python -bluetooth
+sys-apps/portage -native-extensions -rsync-verify
+dev-libs/glib -elf
+sys-libs/glibc -gd
+dev-libs/libical -glib
