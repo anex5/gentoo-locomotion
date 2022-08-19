@@ -22,7 +22,7 @@ USE="${USE} crypt ssl -cracklib pam"
 USE="${USE} acpi cairo cpudetection dbus dri -ieee1394 -gpm scanner smp upower usb usbredir -video_cards_dummy"
 
 # Hardware CPU
-USE="${USE} 3dnow 3dnowext aes avx fma3 fma4 lm-sensors mmx mmxext padlock popcnt sse sse2 sse3 sse4_1 sse4_2 sse4a ssse3 xop"
+USE="${USE} -3dnow -3dnowext aes avx fma3 fma4 lm-sensors mmx mmxext padlock popcnt sse sse2 sse3 sse4_1 sse4_2 sse4a ssse3 xop"
 
 # Internet Messager
 USE="${USE} -gadu -irc -jabber -oscar"
@@ -40,7 +40,7 @@ USE="${USE} mimap box smtp"
 USE="${USE} bittorrent ftp idn imap nfs rdesktop -samba sasl vnc rtmp brotli expat"
 
 # Network connections
-USE="${USE} ppp upnp ap eap-sim wep wps tkip"
+USE="${USE} ppp upnp ap eap-sim wep wps tkip -iptables"
 
 # Office
 USE="${USE} -aspell -spell hunspell spell"
@@ -116,7 +116,7 @@ PORTAGE_COMPRESS_FLAGS = "-9 -n8"
 CAMERAS="*"
 GPSD_PROTOCOLS="aivdm garmin garmintxt geostar gpsclock nmea0183 nmea2000 sirf tsip"
 SANE_BACKENDS="*"
-CPU_FLAGS_X86="3dnow 3dnowext mmx sse sse2 *"
+CPU_FLAGS_X86="-3dnow -3dnowext mmx sse sse2 *"
 DISTDIR="/var/cache/portage/distfiles"
 EMERGE_DEFAULT_OPTS="${EMERGE_DEFAULT_OPTS} --autounmask --binpkg-changed-deps=n --binpkg-respect-use=y --quiet-build=y --ask --tree --keep-going --autounmask-write=y --verbose --verbose-conflicts --backtrack=33"
 FEATURES="parallel-install -news -userpriv -gpg-keepalive -binpkg-signing"
@@ -133,4 +133,3 @@ PORTAGE_NICENESS=9
 EGIT_CLONE_TYPE="shallow"
 EGIT3_STORE_DIR="/var/cache/portage/git-r3"
 
-VIDEO_CARDS="amdgpu fbdev i915 i965 intel iris nouveau nv nvidia r100 r200 r300 r600 radeon qxl radeonsi vesa virtualbox"

@@ -9,7 +9,7 @@ KEYWORDS="amd64 x86"
 
 LICENSE="GPL-2+"
 SLOT="0"
-IUSE="video_cards_i915 video_cards_nouveau video_cards_amdgpu video_cards_radeon video_cards_vboxvideo +alsa +vfio +kvm +zswap +drm bbswitch +blacklist"
+IUSE="video_cards_i915 video_cards_nouveau video_cards_amdgpu video_cards_radeon video_cards_virtualbox +alsa +vfio +kvm +zswap +drm bbswitch +blacklist"
 
 S=${WORKDIR}
 
@@ -41,7 +41,7 @@ pkg_preinst() {
 	use video_cards_nouveau && doins ${FILESDIR}/nouveau.conf
 	use video_cards_amdgpu && doins ${FILESDIR}/amdgpu.conf
 	use video_cards_radeon && doins ${FILESDIR}/radeon.conf
-	use video_cards_vboxvideo && doins ${FILESDIR}/vboxvideo.conf
+	use video_cards_virtualbox && doins ${FILESDIR}/vboxvideo.conf
 	use blacklist && doins ${FILESDIR}/blacklist.conf
 }
 
