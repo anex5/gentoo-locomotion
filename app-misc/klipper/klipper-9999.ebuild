@@ -42,7 +42,6 @@ src_compile() {
 }
 
 src_install() {
-
 	if use doc; then
 		dodoc -r ${DOCS[@]} docs/*.md docs/img docs/prints
 	fi
@@ -76,6 +75,7 @@ src_install() {
 	#python_fix_shebang ${python_scripts[@]}
 
 	use systemd && systemd_newunit "${FILESDIR}/klipper.service" "klipper.service"
+	newinitd "${FILESDIR}/klipper" klipper
 
 	dodir /etc/klipper
 	keepdir /etc/klipper
@@ -94,6 +94,7 @@ src_install() {
 pkg_postinst() {
 	echo
 	elog "Next steps:"
+	elog
 	elog "  create a cross-compiler for your printer board, for example MKS robin E3D board uses following toolchain:"
 	elog
 	elog "  crossdev -t arm-none-eabi --lenv 'USE=nano' --genv 'EXTRA_ECONF=\"--with-multilib-list=rmprofile\"' --without-headers"
@@ -110,12 +111,19 @@ pkg_postinst() {
 	elog "  Use official klipper documentation for flash instructions."
 	elog
 	elog "  Provide a valid printer.cfg in /etc/klipper, which should be writeable by the user 'klipper'"
-	elog "  Afterwards enable the klipper service with:"
+	elog
+	elog "  Afterwards run the klipper service with:"
+	elog
+	elog "    /etc/init.d/klipper start"
+	elog
+	elog "  or with systemd service"
 	elog
 	elog "    systemctl enable klipper.service"
 	elog
 	elog "  To use the virtual_sdcard feature of klipper the path"
-	elog "  /var/spool/klipper/virtual_sdcard/"
+	elog
+	elog "    /var/spool/klipper/virtual_sdcard/"
+	elog
 	elog "  should be used in printer.cfg."
 	echo
 }

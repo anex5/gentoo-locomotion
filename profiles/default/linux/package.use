@@ -5,4 +5,4 @@ sys-apps/portage -native-extensions -rsync-verify
 dev-libs/glib -elf
 sys-libs/glibc -gd
 dev-libs/libical -glib
-sys-devel/gcc -fortran
+sys-devel/gcc -fortran custom-cflags

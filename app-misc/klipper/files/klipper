@@ -1,0 +1,22 @@
+#!/sbin/openrc-run
+
+pidfile="/run/klipper.pid"
+
+command="/opt/klipper/klippy/klippy.py"
+command_args="/etc/klipper/printer.cfg --api-server=/run/klipper/klipper.sock --logfile=/var/log/klipper/klipper.log"
+command_background="true"
+
+name="Klipper Daemon"
+description="3d-Printer firmware, which combines the power of a general purpose computer with one or more micro-controllers"
+
+start_pre() {
+	# We need to test if /run/klipper exists, since script will fail if it does not
+	checkpath -q -d "/run/klipper"
+}
+
+depend()
+{
+	need localmount
+	after net
+}
+
