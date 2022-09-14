@@ -1,9 +1,9 @@
 # Copyright 1999-2020 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=7
+EAPI=8
 
-PYTHON_COMPAT=( python3_{7..10} )
+PYTHON_COMPAT=( python3_{9..11} )
 
 inherit cmake toolchain-funcs python-any-r1
 
@@ -46,7 +46,7 @@ BDEPEND="
 
 PATCHES=(
 	"${FILESDIR}/${PN}-1.14.0-cmake-gentoo-release.patch"
-	"${FILESDIR}/${PN}-1.15.0-llvm-12.patch"
+	"${FILESDIR}/${PN}-1.18.0-llvm-15.patch"
 )
 
 DOCS=( README.md "${S}"/docs/{ReleaseNotes.txt,faq.rst,ispc.rst,perf.rst,perfguide.rst} )
@@ -64,7 +64,7 @@ src_prepare() {
 		# On amd64 systems, build system enables x86/i686 build too.
 		# This ebuild doesn't even have multilib support, nor need it.
 		# https://bugs.gentoo.org/730062
-		elog "Removing auto-x86 build on amd64"
+		einfo "Removing auto-x86 build on amd64"
 		sed -i -e 's:set(target_arch "i686"):return():' cmake/GenerateBuiltins.cmake || die
 	fi
 
@@ -76,9 +76,9 @@ src_configure() {
 	local mycmakeargs=(
 		-DCMAKE_SKIP_RPATH=ON
 		-DARM_ENABLED=$(usex arm)
-		-DGENX_ENABLED=OFF
 		#-DNVPTX_ENABLED=OFF
 		-DISPC_INCLUDE_EXAMPLES=$(usex examples)
+		-DISPC_INCLUDE_DPCPP_EXAMPLES=$(usex examples)
 		-DISPC_INCLUDE_TESTS=$(usex test)
 		-DISPC_INCLUDE_UTILS=ON
 		-DISPC_NO_DUMPS=ON

@@ -100,8 +100,8 @@ RDEPEND="
 	contribovis? ( dev-games/ogre:0/1.12 )
 	ffmpeg? ( media-video/ffmpeg:0=[${MULTILIB_USEDEP}] )
 	gdal? ( sci-libs/gdal:= )
-	gflags? ( dev-cpp/gflags[${MULTILIB_USEDEP}] )
-	glog? ( dev-cpp/glog[${MULTILIB_USEDEP}] )
+	gflags? ( dev-cpp/gflags:=[${MULTILIB_USEDEP}] )
+	glog? ( dev-cpp/glog:=[${MULTILIB_USEDEP}] )
 	gphoto2? ( media-libs/libgphoto2:=[${MULTILIB_USEDEP}] )
 	gstreamer? (
 		media-libs/gstreamer:1.0[${MULTILIB_USEDEP}]
@@ -425,7 +425,7 @@ multilib_src_configure() {
 		-DWITH_CUDNN=$(usex dnncuda)
 		-DOPENCV_DNN_CUDA=$(usex dnncuda)
 		-DCUDA_FAST_MATH=$(multilib_native_usex cuda)
-		-DCUDA_NVCC_FLAGS=$(multilib_native_usex cuda "-Xcompiler;-fno-lto" '')
+		-DCUDA_NVCC_FLAGS=$(multilib_native_usex cuda "-Xcompiler;-fno-lto;${NVCCFLAGS}" '')
 		-DCUDA_ARCH_BIN=\"${CUDA_ARCH}\"
 		-DCUDA_ARCH_PTX=\"${CUDA_ARCH}\"
 	# ===================================================

@@ -64,7 +64,7 @@ LLVM_TEST_COMPONENTS=(
 	llvm/utils/{lit,llvm-lit,unittest}
 	llvm/utils/{UpdateTestChecks,update_cc_test_checks.py}
 )
-LLVM_PATCHSET=${PV/_/-}
+LLVM_PATCHSET=${PV/_/-}-r1
 LLVM_USE_TARGETS=llvm
 llvm.org_set_globals
 
@@ -127,7 +127,7 @@ check_distribution_components() {
 
 				all_targets+=( "${l}" )
 			fi
-		done < <(ninja -t targets all)
+		done < <(${NINJA} -t targets all)
 
 		while read -r l; do
 			my_targets+=( "${l}" )
@@ -164,6 +164,27 @@ get_distribution_components() {
 		clang-resource-headers
 		libclang-headers
 
+		aarch64-resource-headers
+		arm-common-resource-headers
+		arm-resource-headers
+		core-resource-headers
+		cuda-resource-headers
+		hexagon-resource-headers
+		hip-resource-headers
+		hlsl-resource-headers
+		mips-resource-headers
+		opencl-resource-headers
+		openmp-resource-headers
+		ppc-htm-resource-headers
+		ppc-resource-headers
+		riscv-resource-headers
+		systemz-resource-headers
+		utility-resource-headers
+		ve-resource-headers
+		webassembly-resource-headers
+		windows-resource-headers
+		x86-resource-headers
+
 		# libs
 		clang-cpp
 		libclang
@@ -180,7 +201,9 @@ get_distribution_components() {
 			clang
 			clang-format
 			clang-offload-bundler
+			clang-offload-packager
 			clang-offload-wrapper
+			clang-pseudo
 			clang-refactor
 			clang-repl
 			clang-rename

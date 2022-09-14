@@ -3,7 +3,7 @@
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{8..10} )
+PYTHON_COMPAT=( python3_{8..11} )
 inherit cmake llvm.org multilib-minimal pax-utils python-any-r1 \
 	toolchain-funcs
 
@@ -51,9 +51,6 @@ BDEPEND="
 		dev-python/sphinx[${PYTHON_USEDEP}]
 	') )
 	libffi? ( virtual/pkgconfig )
-	test? (
-		sys-apps/which
-	)
 "
 # There are no file collisions between these versions but having :0
 # installed means llvm-config there will take precedence.
@@ -68,23 +65,22 @@ PDEPEND="
 
 LLVM_COMPONENTS=( llvm cmake third-party )
 LLVM_MANPAGES=
-LLVM_PATCHSET=${PV}-r1
+LLVM_PATCHSET=${PV/_/-}-r1
 LLVM_USE_TARGETS=provide
 llvm.org_set_globals
 
-PATCHES=(
-	#"${FILESDIR}"/13.0.0/0001-llvm-fix-typos-found-by-PVS.patch
-	"${FILESDIR}"/13.0.0/disable-bswap-for-spir.patch
-)
+#PATCHES=(
+#	"${FILESDIR}"/13.0.0/disable-bswap-for-spir.patch
+#)
 
 python_check_deps() {
 	use doc || return 0
 
-	has_version -b "dev-python/recommonmark[${PYTHON_USEDEP}]" &&
-	has_version -b "dev-python/sphinx[${PYTHON_USEDEP}]"
+	python_has_version -b "dev-python/recommonmark[${PYTHON_USEDEP}]" &&
+	python_has_version -b "dev-python/sphinx[${PYTHON_USEDEP}]"
 }
 
-check_live_ebuild() {
+check_uptodate() {
 	local prod_targets=(
 		$(sed -n -e '/set(LLVM_ALL_TARGETS/,/)/p' CMakeLists.txt \
 			| tail -n +2 | head -n -1)
@@ -181,14 +177,10 @@ src_prepare() {
 	# Update config.guess to support more systems
 	cp "${BROOT}/usr/share/gnuconfig/config.guess" cmake/ || die
 
-	# Verify that the live ebuild is up-to-date
-	check_live_ebuild
+	# Verify that the ebuild is up-to-date
+	check_uptodate
 
 	llvm.org_src_prepare
-
-	# remove regressing test
-	# https://github.com/llvm/llvm-project/issues/55761
-	rm test/Other/ChangePrinters/DotCfg/print-changed-dot-cfg.ll || die
 }
 
 # Is LLVM being linked against libc++?
@@ -234,6 +226,7 @@ get_distribution_components() {
 			count
 			not
 			yaml-bench
+			UnicodeNameMappingGenerator
 
 			# tools
 			bugpoint
@@ -255,11 +248,13 @@ get_distribution_components() {
 			llvm-cxxdump
 			llvm-cxxfilt
 			llvm-cxxmap
+			llvm-debuginfod
 			llvm-debuginfod-find
 			llvm-diff
 			llvm-dis
 			llvm-dlltool
 			llvm-dwarfdump
+			llvm-dwarfutil
 			llvm-dwp
 			llvm-exegesis
 			llvm-extract
@@ -292,6 +287,7 @@ get_distribution_components() {
 			llvm-readelf
 			llvm-readobj
 			llvm-reduce
+			llvm-remark-size-diff
 			llvm-rtdyld
 			llvm-sim
 			llvm-size
