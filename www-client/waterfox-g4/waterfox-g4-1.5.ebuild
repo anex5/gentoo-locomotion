@@ -5,7 +5,7 @@ EAPI="8"
 
 FIREFOX_PATCHSET="firefox-91esr-patches-10j.tar.xz"
 
-LLVM_MAX_SLOT=14
+LLVM_MAX_SLOT=15
 
 PYTHON_COMPAT=( python3_{8..11} )
 PYTHON_REQ_USE="ncurses,sqlite,ssl"
@@ -491,8 +491,6 @@ src_prepare() {
 
 	eapply "${FILESDIR}/${PN}-fix_langpack_id.patch"
 
-	#eapply "${FILESDIR}/${PN}-0.8-dav1d-1.0.0.patch"
-
 	# Allow user to apply any additional patches without modifing ebuild
 	eapply_user
 
@@ -865,9 +863,6 @@ src_configure() {
 
 	# Disable notification when build system has finished
 	export MOZ_NOSPAM=1
-
-	export MOZ_REQUIRE_SIGNING=0
-	export MOZ_INCLUDE_SOURCE_INFO=1
 
 	# Portage sets XARGS environment variable to "xargs -r" by default which
 	# breaks build system's check_prog() function which doesn't support arguments
