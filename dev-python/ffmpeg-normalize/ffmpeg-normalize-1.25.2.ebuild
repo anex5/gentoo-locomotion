@@ -1,7 +1,7 @@
-# Copyright 1999-2020 Gentoo Foundation
+# Copyright 2022 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI="8"
+EAPI=8
 PYTHON_COMPAT=( python3_{9..11} )
 
 inherit distutils-r1
@@ -17,7 +17,7 @@ IUSE=""
 
 RDEPEND="
 	dev-python/tqdm[${PYTHON_USEDEP}]
-	>=media-video/ffmpeg-3.1:=
+	>=media-video/ffmpeg-4.2:=
 "
 
 DEPEND="${RDEPEND}

@@ -1,9 +1,9 @@
 # Copyright 2020 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=7
+EAPI=8
 
-inherit git-r3 cmake-utils desktop
+inherit git-r3 cmake desktop
 
 DESCRIPTION="Digital Storage Osziloscope"
 HOMEPAGE="http://www.openhantek.org/"
@@ -35,16 +35,16 @@ S="${WORKDIR}"/${PN}-${PV}
 src_configure() {
 	export PREFIX=/usr
 	export CXX="/usr/bin/$(tc-getCXX)"
-	export CC="/usr/bin/$(tc-getCC)" 
+	export CC="/usr/bin/$(tc-getCC)"
 	#ewarn "${CXX}"
-	cmake-utils_src_configure
+	cmake_src_configure
 }
 
 src_install() {
 	newicon ${PN}/res/images/openhantek.png openhantek.png
 	#make_desktop_entry openhantek OpenHantek openhantek Electronics
 	dodoc ${PN}/readme.md
-	cmake-utils_src_install
+	cmake_src_install
 }
 
 pkg_postinst() {

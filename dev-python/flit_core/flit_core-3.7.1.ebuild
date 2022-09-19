@@ -1,8 +1,7 @@
-# Copyright 2019-2022 Gentoo Authors
+# Copyright 2022 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-# please keep this ebuild at EAPI 7 -- sys-apps/portage dep
-EAPI=7
+EAPI=8
 
 DISTUTILS_USE_PEP517=standalone
 PYTHON_COMPAT=( python3_{8..10} pypy3 )

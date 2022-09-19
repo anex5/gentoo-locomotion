@@ -1,15 +1,15 @@
 # Copyright 1999-2020 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI="7"
-PYTHON_COMPAT=( python{2_7,3_{5,6,7}} )
+EAPI=8
+PYTHON_COMPAT=( python3_{8..11} )
 
 inherit distutils-r1 git-r3
 
 DESCRIPTION="A tiny library for Python text normalisation. Useful for ad-hoc text processing."
 HOMEPAGE="https://pypi.org/project/normality http://pudo.org friedrich@pudo.org "
 EGIT_REPO_URI="https://github.com/pudo/normality"
-EGIT_COMMIT="e1296c60a2e22cfa650bc4bc9608f6bd53a76370"
+EGIT_COMMIT="e23d4bd4b66254813adbc3b472919ab16a87e10b"
 
 LICENSE="MIT"
 SLOT="0"

@@ -1,7 +1,7 @@
 # Copyright 1999-2018 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=5
+EAPI=8
 
 inherit eutils git-r3
 
@@ -31,7 +31,7 @@ src_prepare() {
 	fi
 
 	# Allow user patches to be applied without modifying the ebuild
-	epatch_user
+	eapply_user
 }
 
 src_install() {
