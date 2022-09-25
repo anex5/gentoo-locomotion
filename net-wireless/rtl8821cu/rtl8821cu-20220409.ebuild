@@ -18,7 +18,7 @@ DEPEND="virtual/linux-sources"
 S="${WORKDIR}/rtl8821CU-${COMMIT}"
 
 PATCHES=(
-	"${FILESDIR}/rtl8821cu-5.18-kernel-fix.patch"
+	"${FILESDIR}/be82ca45434aeacd356a7ac65950ef89ca15e640.patch"
 )
 
 pkg_setup() {

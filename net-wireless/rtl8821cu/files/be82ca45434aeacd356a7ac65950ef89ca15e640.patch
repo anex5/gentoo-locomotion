@@ -1,0 +1,77 @@
+From be82ca45434aeacd356a7ac65950ef89ca15e640 Mon Sep 17 00:00:00 2001
+From: Shiwei Zhang <ylxdzsw@gmail.com>
+Date: Sat, 27 Aug 2022 14:46:50 +0800
+Subject: [PATCH] fix for 5.19.3
+
+---
+ include/ieee80211.h           |  6 +++---
+ os_dep/linux/ioctl_cfg80211.c | 16 ++++++++--------
+ 2 files changed, 11 insertions(+), 11 deletions(-)
+
+diff --git a/include/ieee80211.h b/include/ieee80211.h
+index dde8b4c..9eb3343 100644
+--- a/include/ieee80211.h
++++ b/include/ieee80211.h
+@@ -1529,18 +1529,18 @@ enum ieee80211_state {
+ 	(((Addr[2]) & 0xff) == 0xff) && (((Addr[3]) & 0xff) == 0xff) && (((Addr[4]) & 0xff) == 0xff) && \
+ 				     (((Addr[5]) & 0xff) == 0xff))
+ #else
+-extern __inline int is_multicast_mac_addr(const u8 *addr)
++__inline int is_multicast_mac_addr(const u8 *addr)
+ {
+ 	return (addr[0] != 0xff) && (0x01 & addr[0]);
+ }
+ 
+-extern __inline int is_broadcast_mac_addr(const u8 *addr)
++__inline int is_broadcast_mac_addr(const u8 *addr)
+ {
+ 	return ((addr[0] == 0xff) && (addr[1] == 0xff) && (addr[2] == 0xff) &&   \
+ 		(addr[3] == 0xff) && (addr[4] == 0xff) && (addr[5] == 0xff));
+ }
+ 
+-extern __inline int is_zero_mac_addr(const u8 *addr)
++__inline int is_zero_mac_addr(const u8 *addr)
+ {
+ 	return ((addr[0] == 0x00) && (addr[1] == 0x00) && (addr[2] == 0x00) &&   \
+ 		(addr[3] == 0x00) && (addr[4] == 0x00) && (addr[5] == 0x00));
+diff --git a/os_dep/linux/ioctl_cfg80211.c b/os_dep/linux/ioctl_cfg80211.c
+index d9c81c9..1808620 100644
+--- a/os_dep/linux/ioctl_cfg80211.c
++++ b/os_dep/linux/ioctl_cfg80211.c
+@@ -417,7 +417,7 @@ u8 rtw_cfg80211_ch_switch_notify(_adapter *adapter, u8 ch, u8 bw, u8 offset, u8
+ 	if (ret != _SUCCESS)
+ 		goto exit;
+ 
+-	cfg80211_ch_switch_notify(adapter->pnetdev, &chdef);
++	cfg80211_ch_switch_notify(adapter->pnetdev, &chdef, 0);
+ 
+ #else
+ 	int freq = rtw_ch2freq(ch);
+@@ -4929,7 +4929,7 @@ static int cfg80211_rtw_change_beacon(struct wiphy *wiphy, struct net_device *nd
+ 	return ret;
+ }
+ 
+-static int cfg80211_rtw_stop_ap(struct wiphy *wiphy, struct net_device *ndev)
++static int cfg80211_rtw_stop_ap(struct wiphy *wiphy, struct net_device *ndev, unsigned int link_id)
+ {
+ 	_adapter *adapter = (_adapter *)rtw_netdev_priv(ndev);
+ 
+@@ -9678,12 +9678,12 @@ void rtw_wdev_unregister(struct wireless_dev *wdev)
+ 
+ 	rtw_cfg80211_indicate_scan_done(adapter, _TRUE);
+ 
+-	#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)) || defined(COMPAT_KERNEL_RELEASE)
+-	if (wdev->current_bss) {
+-		RTW_INFO(FUNC_ADPT_FMT" clear current_bss by cfg80211_disconnected\n", FUNC_ADPT_ARG(adapter));
+-		rtw_cfg80211_indicate_disconnect(adapter, 0, 1);
+-	}
+-	#endif
++	// #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)) || defined(COMPAT_KERNEL_RELEASE)
++	// if (wdev->current_bss) {
++	// 	RTW_INFO(FUNC_ADPT_FMT" clear current_bss by cfg80211_disconnected\n", FUNC_ADPT_ARG(adapter));
++	// 	rtw_cfg80211_indicate_disconnect(adapter, 0, 1);
++	// }
++	// #endif
+ 
+ 	if (pwdev_priv->pmon_ndev) {
+ 		RTW_INFO("%s, unregister monitor interface\n", __func__);

@@ -44,6 +44,7 @@ BDEPEND="
 "
 PDEPEND="
 	~sys-devel/clang-common-${PV}
+	sys-devel/clang-toolchain-symlinks:${SLOT}
 	~sys-devel/clang-runtime-${PV}
 	default-compiler-rt? (
 		=sys-libs/compiler-rt-${PV%_*}*
@@ -64,7 +65,7 @@ LLVM_TEST_COMPONENTS=(
 	llvm/utils/{lit,llvm-lit,unittest}
 	llvm/utils/{UpdateTestChecks,update_cc_test_checks.py}
 )
-LLVM_PATCHSET=${PV/_/-}-r4
+LLVM_PATCHSET=${PV/_/-}
 LLVM_USE_TARGETS=llvm
 llvm.org_set_globals
 

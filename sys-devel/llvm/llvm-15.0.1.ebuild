@@ -60,18 +60,15 @@ RDEPEND="
 "
 PDEPEND="
 	~sys-devel/llvm-common-${PV}
+	sys-devel/llvm-toolchain-symlinks:${SLOT}
 	binutils-plugin? ( >=sys-devel/llvmgold-${SLOT} )
 "
 
 LLVM_COMPONENTS=( llvm cmake third-party )
 LLVM_MANPAGES=
-LLVM_PATCHSET=${PV/_/-}-r1
+LLVM_PATCHSET=${PV/_/-}
 LLVM_USE_TARGETS=provide
 llvm.org_set_globals
-
-#PATCHES=(
-#	"${FILESDIR}"/13.0.0/disable-bswap-for-spir.patch
-#)
 
 python_check_deps() {
 	use doc || return 0
@@ -518,7 +515,7 @@ multilib_src_install_all() {
 		LDPATH="$( IFS=:; echo "${LLVM_LDPATHS[*]}" )"
 	_EOF_
 
-	docompress "/usr/lib/llvm/${SLOT}/share/man"
+	#docompress "/usr/lib/llvm/${SLOT}/share/man"
 	#llvm_install_manpages
 }
 
