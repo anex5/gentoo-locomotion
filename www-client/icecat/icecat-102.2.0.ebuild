@@ -59,25 +59,13 @@ BDEPEND="${PYTHON_DEPS}
 	>=dev-util/cbindgen-0.24.3
 	net-libs/nodejs
 	virtual/pkgconfig
-	<virtual/rust-1.63
-	|| (
-		(
-			sys-devel/clang:14
-			sys-devel/llvm:14
-			clang? (
-				=sys-devel/lld-14*
-				pgo? ( =sys-libs/compiler-rt-sanitizers-14*[profile] )
-			)
-		)
-		(
-			sys-devel/clang:13
-			sys-devel/llvm:13
-			clang? (
-				=sys-devel/lld-13*
-				pgo? ( =sys-libs/compiler-rt-sanitizers-13*[profile] )
-			)
-		)
+	<virtual/rust-1.65
+	clang? (
+		<sys-devel/clang-$((LLVM_MAX_SLOT + 1))
+		<sys-devel/lld-$((LLVM_MAX_SLOT + 1))
+		pgo? ( <sys-libs/compiler-rt-sanitizers-$((LLVM_MAX_SLOT + 1))[profile] )
 	)
+	<sys-devel/llvm-$((LLVM_MAX_SLOT + 1))
 	amd64? ( >=dev-lang/nasm-2.14 )
 	x86? ( >=dev-lang/nasm-2.14 )
 	buildtarball? ( ~www-client/makeicecat-"${PV}"[buildtarball] )"
@@ -93,7 +81,7 @@ COMMON_DEPEND="
 	media-libs/fontconfig
 	media-libs/freetype
 	media-libs/mesa
-	media-videodffmpeg
+	media-video/ffmpeg
 	sys-libs/zlib
 	virtual/freedesktop-icon-theme
 	virtual/opengl
@@ -166,6 +154,8 @@ DEPEND="${COMMON_DEPEND}
 			>=media-sound/apulse-0.1.12-r4[sdk]
 		)
 	)"
+
+RESTRICT="mirror"
 
 S="${WORKDIR}/${PN}-${PV%_*}"
 
