@@ -455,11 +455,11 @@ pkg_setup() {
 			fi
 		fi
 
-		if ver_test $(rustc -V | tr -cd '[0-9.]' | cut -d" " -f2) -ge "1.63"; then
-			ewarn "Rust-1.63 is currently unsupported for building Firefox-102."
+		if ver_test $(rustc -V | tr -cd '[0-9.]' | cut -d" " -f2) -ge "1.65"; then
+			ewarn "Rust-1.65 is currently unsupported for building Firefox-102."
 			ewarn "Please use 'eselect rust' to switch to a lower version, then resume"
 			ewarn "building Firefox."
-			die "Rust-1.63 detected. Use eselect rust to choose <1.63"
+			die "Rust-1.65 detected. Use eselect rust to choose <1.63"
 		fi
 
 		python-any-r1_pkg_setup

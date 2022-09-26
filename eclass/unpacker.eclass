@@ -242,16 +242,16 @@ unpack_makeself() {
 			"${exe[@]}" | tar --no-same-owner -xf -
 			;;
 		bzip2*)
-			"${exe[@]}" | bzip2 -dc | tar --no-same-owner -xf -
+			"${exe[@]}" | lbzip2 -dc | tar --no-same-owner -xf -
 			;;
 		gzip*)
 			"${exe[@]}" | tar --no-same-owner -xzf -
 			;;
 		compress*)
-			"${exe[@]}" | gunzip | tar --no-same-owner -xf -
+			"${exe[@]}" | pigz -dc | tar --no-same-owner -xf -
 			;;
 		XZ*)
-			"${exe[@]}" | unxz | tar --no-same-owner -xf -
+			"${exe[@]}" | pixz -dc | tar --no-same-owner -xf -
 			;;
 		*)
 			eerror "Unknown filetype \"${filetype}\" ?"
