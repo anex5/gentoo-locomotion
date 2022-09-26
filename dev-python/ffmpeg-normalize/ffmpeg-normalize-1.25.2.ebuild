@@ -17,6 +17,7 @@ IUSE=""
 
 RDEPEND="
 	dev-python/tqdm[${PYTHON_USEDEP}]
+	dev-python/ffmpeg-progress-yield[${PYTHON_USEDEP}]
 	>=media-video/ffmpeg-4.2:=
 "
 

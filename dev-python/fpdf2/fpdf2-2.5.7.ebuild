@@ -15,11 +15,11 @@ mirror://pypi/${P:0:1}/${PN}/${P}.tar.gz"
 LICENSE="GPL-3"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
-IUSE="test"
+
+RDEPEND="
+	dev-python/defusedxml[${PYTHON_USEDEP}]
+	dev-python/pillow[${PYTHON_USEDEP}]
+	dev-python/svg-path[${PYTHON_USEDEP}]
+"
 
 RESTRICT="mirror"
-
-RDEPEND=""
-
-DEPEND="${RDEPEND}
-	dev-python/setuptools[${PYTHON_USEDEP}]"
