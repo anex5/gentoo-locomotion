@@ -1,0 +1,29 @@
+#!/sbin/openrc-run
+# Copyright 2022 Gentoo Authors
+# Distributed under the terms of the GNU General Public License v2
+
+name="Moonraker daemon"
+description="Moonraker Klipper HTTP Server"
+
+pidfile=${pidfile:-"/run/${RC_SVCNAME}.pid"}
+user=${user:-klipper}
+group=${group:-klipper}
+
+command="/opt/${RC_SVCNAME}/${RC_SVCNAME}.py"
+command_args="${command_args:--c /etc/klipper/${RC_SVCNAME}.conf}"
+command_background="true"
+
+start_pre() {
+	# We need to test if /run/klipper exists, since script will fail if it does not
+	checkpath -q -d "/run/${RC_SVCNAME}"
+}
+
+depend()
+{
+	need localmount
+	after net
+}
+
+start_stop_daemon_args="--user ${user} --group ${group} \
+	--stdout /var/log/${RC_SVCNAME}/${RC_SVCNAME}.log \
+	--stderr /var/log/${RC_SVCNAME}/${RC_SVCNAME}.log"

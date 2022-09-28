@@ -1,0 +1,26 @@
+--- a/moonraker/components/machine.py	2022-09-28 01:10:23.989193046 +0300
++++ b/moonraker/components/machine.py	2022-09-28 10:33:56.724917989 +0300
+@@ -104,7 +104,7 @@ class Machine:
+                                 service_name: str
+                                 ) -> None:
+         await self._execute_cmd(
+-            f'sudo systemctl {action} {service_name}')
++            f'sudo /etc/init.d/{service_name} {action}')
+ 
+     async def _handle_service_request(self, web_request: WebRequest) -> str:
+         name: str = web_request.get('service')
+@@ -249,12 +249,11 @@ class Machine:
+     async def _find_active_services(self):
+         shell_cmd: SCMDComp = self.server.lookup_component('shell_command')
+         scmd = shell_cmd.build_shell_command(
+-            "systemctl list-units --type=service")
++            "rc-status -s")
+         try:
+             resp = await scmd.run_with_response()
+             lines = resp.split('\n')
+-            services = [line.split()[0].strip() for line in lines
+-                        if ".service" in line.strip()]
++            services = [line.split()[0].strip() for line in lines]
+         except Exception:
+             services = []
+         for svc in services:

@@ -2,14 +2,21 @@
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
-PYTHON_COMPAT=( python3_{8..10} )
+PYTHON_COMPAT=( python3_{9..11} )
 
 inherit git-r3 python-single-r1 systemd
 
 DESCRIPTION="Klipper is a 3d-Printer firmware"
 HOMEPAGE="https://www.klipper3d.org/"
-EGIT_REPO_URI="https://github.com/Klipper3d/klipper"
-EGIT_BRANCH="master"
+if [[ ${PV} = *9999 ]]; then
+	inherit git-r3
+	EGIT_REPO_URI="https://github.com/Klipper3d/${PN}"
+	EGIT_BRANCH="master"
+	KEYWORDS=""
+else
+	SRC_URI="https://github.com/Klipper3d/${PN}/archive/v${PV}.tar.gz -> ${P}.tar.gz"
+	KEYWORDS="~amd64 ~x86 ~arm ~arm64 ~mips"
+fi
 
 LICENSE="GPL-3"
 SLOT="0"
@@ -20,7 +27,6 @@ DEPEND="
 	acct-group/klipper
 	acct-user/klipper
 "
-
 RDEPEND="
 	${DEPEND}
 	${PYTHON_DEPS}
@@ -34,11 +40,14 @@ RDEPEND="
 		virtual/python-greenlet[${PYTHON_USEDEP}]
 	')
 "
+RESTRICT="mirror"
 
 DOCS=( COPYING )
 
 src_compile() {
-	:
+	sed -i -r -e "s/(\!\/usr\/bin\/env )python2/\1${EPYTHON}/" klippy/klippy.py || die
+	${EPYTHON} -m compileall klippy
+	${EPYTHON} klippy/chelper/__init__.py
 }
 
 src_install() {
@@ -51,42 +60,43 @@ src_install() {
 		doins -r config/*
 	fi
 
-	# currently only these are python3 compatible or have missing dependencies
-	local python_scripts=( scripts/buildcommands.py \
-		scripts/calibrate_shaper.py \
-		scripts/update_chitu.py \
-		scripts/update_mks_robin.py \
-		klippy/klippy.py \
-	)
-
 	insinto "/opt/${PN}"
 	doins -r Makefile klippy lib src
 
-	insinto "/opt/${PN}/scripts"
-	insopts -m0755
-	doins -r ${python_scripts[@]} scripts/flash-*.sh scripts/check-gcc.sh
+	# currently only these are python3 compatible or have missing dependencies
+	local python_scripts=( \
+		buildcommands.py \
+		calibrate_shaper.py \
+		update_chitu.py \
+		update_mks_robin.py \
+	)
 
 	# UPSTREAM-ISSUE https://github.com/KevinOConnor/klipper/issues/3689
 	for f in ${python_scripts[@]}; do
-		sed -i -r -e "s/(\!\/usr\/bin\/env )python2/\1${EPYTHON}/" "${D}/opt/${PN}/${f}" || die
+		sed -i -r -e "s/(\!\/usr\/bin\/env )python2/\1${EPYTHON}/" "scripts/${f}" || die
 	done
 
+	insinto "/opt/${PN}/scripts"
+	insopts -m0755
+	pushd scripts >/dev/null || die
+	python_fix_shebang ${python_scripts[@]}
+	doins -r ${python_scripts[@]} flash-*.sh check-gcc.sh
+	popd >/dev/null || die
+
 	chmod 0755 "${D}/opt/${PN}/klippy/klippy.py"
-	#python_fix_shebang ${python_scripts[@]}
 
-	use systemd && systemd_newunit "${FILESDIR}/klipper.service" "klipper.service"
-	newinitd "${FILESDIR}/klipper" klipper
+	use systemd && systemd_newunit "${FILESDIR}/${PN}.service" "${PN}.service" || newinitd "${FILESDIR}/${PN}.initd" ${PN}
 
-	dodir /etc/klipper
-	keepdir /etc/klipper
+	dodir /etc/${PN}
+	keepdir /etc/${PN}
 
-	dodir /var/spool/klipper/virtual_sdcard
-	keepdir /var/spool/klipper/virtual_sdcard
+	dodir /var/spool/${PN}/virtual_sdcard
+	keepdir /var/spool/${PN}/virtual_sdcard
 
-	dodir /var/log/klipper
-	keepdir /var/log/klipper
+	dodir /var/log/${PN}
+	keepdir /var/log/${PN}
 
-	fowners -R klipper:klipper /opt/klipper /var/spool/klipper/ /etc/klipper /var/log/klipper
+	fowners -R ${PN}:${PN} /opt/${PN} /var/spool/${PN}/ /etc/${PN} /var/log/${PN}
 
 	doenvd "${FILESDIR}/99klipper"
 }
@@ -94,18 +104,14 @@ src_install() {
 pkg_postinst() {
 	echo
 	elog "Next steps:"
-	elog
 	elog "  create a cross-compiler for your printer board, for example MKS robin E3D board uses following toolchain:"
-	elog
-	elog "  crossdev -t arm-none-eabi --lenv 'USE=nano' --genv 'EXTRA_ECONF=\"--with-multilib-list=rmprofile\"' --without-headers"
+	elog "    crossdev -t arm-none-eabi --lenv 'USE=nano' --genv 'EXTRA_ECONF=\"--with-multilib-list=rmprofile\"' --without-headers"
 	elog
 	elog "  Use following command to configure your printer board firmware:"
-	elog
 	elog "    cd /opt/klipper"
 	elog "    make ARCH=\${ARCH} CROSS_PREFIX=\${ARCH}-none-eabi- menuconfig"
 	elog
 	elog "  to build the firmware: "
-	elog
 	elog "    make ARCH=\${ARCH} CROSS_PREFIX=\${ARCH}-none-eabi- -j\$(nproc)"
 	elog
 	elog "  Use official klipper documentation for flash instructions."
@@ -113,17 +119,11 @@ pkg_postinst() {
 	elog "  Provide a valid printer.cfg in /etc/klipper, which should be writeable by the user 'klipper'"
 	elog
 	elog "  Afterwards run the klipper service with:"
-	elog
 	elog "    /etc/init.d/klipper start"
-	elog
 	elog "  or with systemd service"
-	elog
 	elog "    systemctl enable klipper.service"
 	elog
 	elog "  To use the virtual_sdcard feature of klipper the path"
-	elog
-	elog "    /var/spool/klipper/virtual_sdcard/"
-	elog
-	elog "  should be used in printer.cfg."
+	elog "  /var/spool/klipper/virtual_sdcard/ should be used in printer.cfg."
 	echo
 }

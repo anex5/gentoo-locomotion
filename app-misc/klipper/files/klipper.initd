@@ -1,0 +1,29 @@
+#!/sbin/openrc-run
+# Copyright 2022 Gentoo Authors
+# Distributed under the terms of the GNU General Public License v2
+
+name="Klipper daemon"
+description="3D printer firmware with motion planning on the host"
+
+pidfile=${pidfile:-"/run/${RC_SVCNAME}.pid"}
+user=${user:-${RC_SVCNAME}}
+group=${group:-${RC_SVCNAME}}
+
+command="/opt/${RC_SVCNAME}/klippy/klippy.py"
+command_args="${command_args:-/etc/klipper/printer.cfg --api-server=/run/${RC_SVCNAME}/${RC_SVCNAME}.sock --logfile=/var/log/${RC_SVCNAME}/${RC_SVCNAME}.log}"
+command_background="true"
+
+start_pre() {
+	# We need to test if /run/klipper exists, since script will fail if it does not
+	checkpath --owner ${RC_SVCNAME}:${RC_SVCNAME} --mode 0700 -q -d "/run/${RC_SVCNAME}"
+}
+
+depend()
+{
+	need localmount
+	after net
+}
+
+start_stop_daemon_args="--user ${user} --group ${group} \
+	--stdout /var/log/${RC_SVCNAME}/${RC_SVCNAME}.log \
+	--stderr /var/log/${RC_SVCNAME}/${RC_SVCNAME}.log"
