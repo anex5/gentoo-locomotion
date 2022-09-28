@@ -37,7 +37,7 @@ USE="${USE} spell truetype userlocales"
 USE="${USE} mimap box smtp"
 
 # Net protocols
-USE="${USE} bittorrent ftp idn imap nfs rdesktop -samba sasl vnc rtmp brotli expat"
+USE="${USE} bittorrent ftp idn imap nfs rdesktop -samba sasl vnc rtmp brotli expat ipv6"
 
 # Network connections
 USE="${USE} ppp upnp ap eap-sim wep wps tkip -iptables"
@@ -92,6 +92,7 @@ BOOTSTRAP_USE="unicode internal-glib pkg-config split-usr xml python_targets_pyt
 
 PYTHON_TARGETS="python3_10"
 PYTHON_SINGLE_TARGET="python3_10"
+PYTHON_ABIS="3.10"
 
 POSTGRES_TARGETS="postgres12 postgres13"
 PHP_TARGETS="php7-4 php8-0"

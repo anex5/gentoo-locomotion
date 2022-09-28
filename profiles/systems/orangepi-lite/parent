@@ -1,2 +1,2 @@
-gentoo-locomotion:arch/armv7a
+gentoo-locomotion:arch/arm
 gentoo-locomotion:default/linux/musl

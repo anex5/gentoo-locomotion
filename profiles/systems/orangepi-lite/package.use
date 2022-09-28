@@ -1,0 +1,6 @@
+sys-libs/musl -crypt
+app-arch/tar -plzip
+gnome-base/librsvg -vala
+dev-libs/boost -numpy
+sys-devel/binutils -pgo
+
