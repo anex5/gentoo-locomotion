@@ -6,11 +6,11 @@
 EAPI="8"
 
 # Using Gentoos firefox patches as system libraries and lto are quite nice
-FIREFOX_PATCHSET="firefox-102esr-patches-02j.tar.xz"
+FIREFOX_PATCHSET="firefox-102esr-patches-03j.tar.xz"
 
-LLVM_MAX_SLOT=15
+LLVM_MAX_SLOT=14
 
-PYTHON_COMPAT=( python3_{9..11} )
+PYTHON_COMPAT=( python3_{8..11} )
 PYTHON_REQ_USE="ncurses,sqlite,ssl"
 
 WANT_AUTOCONF="2.1"
@@ -19,7 +19,7 @@ VIRTUALX_REQUIRED="pgo"
 
 inherit autotools check-reqs desktop flag-o-matic gnome2-utils linux-info \
 	llvm multiprocessing pax-utils python-any-r1 toolchain-funcs \
-	virtualx xdg xdg-utils
+	virtualx xdg
 
 PATCH_URIS=(
 	https://dev.gentoo.org/~{juippis,whissi,slashbeast}/mozilla/patchsets/${FIREFOX_PATCHSET}
@@ -33,7 +33,7 @@ SRC_URI="
 DESCRIPTION="GNU IceCat Web Browser"
 HOMEPAGE="https://www.gnu.org/software/gnuzilla/"
 
-KEYWORDS="amd64 arm64 ~ppc64 x86"
+KEYWORDS="~amd64"
 
 SLOT="0"
 LICENSE="MPL-2.0 GPL-2 LGPL-2.1"
@@ -60,12 +60,24 @@ BDEPEND="${PYTHON_DEPS}
 	net-libs/nodejs
 	virtual/pkgconfig
 	virtual/rust
-	clang? (
-		<sys-devel/clang-$((LLVM_MAX_SLOT + 1))
-		<sys-devel/lld-$((LLVM_MAX_SLOT + 1))
-		pgo? ( <sys-libs/compiler-rt-sanitizers-$((LLVM_MAX_SLOT + 1))[profile] )
+	|| (
+		(
+			sys-devel/clang:14
+			sys-devel/llvm:14
+			clang? (
+				=sys-devel/lld-14*
+				pgo? ( =sys-libs/compiler-rt-sanitizers-14*[profile] )
+			)
+		)
+		(
+			sys-devel/clang:13
+			sys-devel/llvm:13
+			clang? (
+				=sys-devel/lld-13*
+				pgo? ( =sys-libs/compiler-rt-sanitizers-13*[profile] )
+			)
+		)
 	)
-	<sys-devel/llvm-$((LLVM_MAX_SLOT + 1))
 	amd64? ( >=dev-lang/nasm-2.14 )
 	x86? ( >=dev-lang/nasm-2.14 )
 	buildtarball? ( ~www-client/makeicecat-"${PV}"[buildtarball] )"
@@ -100,8 +112,8 @@ COMMON_DEPEND="
 	x11-libs/pango
 	x11-libs/pixman
 	dbus? (
-		sys-apps/dbus
 		dev-libs/dbus-glib
+		sys-apps/dbus
 	)
 	jack? ( virtual/jack )
 	libproxy? ( net-libs/libproxy )
@@ -113,8 +125,8 @@ COMMON_DEPEND="
 		>=media-libs/libaom-1.0.0:=
 	)
 	system-harfbuzz? (
-		>=media-libs/harfbuzz-2.8.1:0=
 		>=media-gfx/graphite2-1.3.13
+		>=media-libs/harfbuzz-2.8.1:0=
 	)
 	system-icu? ( >=dev-libs/icu-71.1:= )
 	system-jpeg? ( >=media-libs/libjpeg-turbo-1.2.1 )
@@ -129,9 +141,9 @@ COMMON_DEPEND="
 	)
 	wifi? (
 		kernel_linux? (
-			sys-apps/dbus
 			dev-libs/dbus-glib
 			net-misc/networkmanager
+			sys-apps/dbus
 		)
 	)"
 
@@ -154,8 +166,6 @@ DEPEND="${COMMON_DEPEND}
 			>=media-sound/apulse-0.1.12-r4[sdk]
 		)
 	)"
-
-RESTRICT="mirror"
 
 S="${WORKDIR}/${PN}-${PV%_*}"
 
@@ -455,13 +465,6 @@ pkg_setup() {
 			fi
 		fi
 
-		if ver_test $(rustc -V | tr -cd '[0-9.]' | cut -d" " -f2) -ge "1.65"; then
-			ewarn "Rust-1.65 is currently unsupported for building Firefox-102."
-			ewarn "Please use 'eselect rust' to switch to a lower version, then resume"
-			ewarn "building Firefox."
-			die "Rust-1.65 detected. Use eselect rust to choose <1.63"
-		fi
-
 		python-any-r1_pkg_setup
 
 		# Avoid PGO profiling problems due to enviroment leakage
@@ -567,16 +570,11 @@ src_prepare() {
 	einfo "Removing pre-built binaries ..."
 	find "${S}"/third_party -type f \( -name '*.so' -o -name '*.o' \) -print -delete || die
 
-	# Clearing checksums where we have applied patches
-	moz_clear_vendor_checksums audioipc
-	moz_clear_vendor_checksums audioipc-client
-	moz_clear_vendor_checksums audioipc-server
-
 	# Create build dir
 	BUILD_DIR="${WORKDIR}/${PN}_build"
 	mkdir -p "${BUILD_DIR}" || die
 
-	xdg_enviroment_reset
+	xdg_environment_reset
 }
 
 src_configure() {
@@ -1104,7 +1102,7 @@ pkg_postinst() {
 	elog "Cloudflare browser checks are broken with GNU IceCats anti fingerprinting measures."
 	elog "You can fix cloudflare browser checks by undoing them in about:config like below:"
 	# Specifying (X11) is necessary for it to work, even in a Wayland session
-	elog "   general.appversion.override: 91.0 (X11)"
+	elog "   general.appversion.override: ${PV%.[0-9]*} (X11)"
 	elog "   general.oscpu.override: Linux x86_64"
 	elog "   general.platform.override: Linux x86_64"
 
