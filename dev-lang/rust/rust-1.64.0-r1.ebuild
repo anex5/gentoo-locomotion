@@ -3,7 +3,7 @@
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{9..11} )
+PYTHON_COMPAT=( python3_{8..11} )
 
 inherit bash-completion-r1 check-reqs estack flag-o-matic llvm multiprocessing \
 	multilib multilib-build python-any-r1 rust-toolchain toolchain-funcs verify-sig
@@ -19,7 +19,7 @@ else
 	SLOT="stable/${ABI_VER}"
 	MY_P="rustc-${PV}"
 	SRC="${MY_P}-src.tar.xz"
-	KEYWORDS="~amd64 ~arm ~arm64 ~mips ~ppc64 ~riscv ~sparc ~x86"
+	KEYWORDS="amd64 arm arm64 ~mips ppc64 ~riscv sparc x86"
 fi
 
 RUST_STAGE0_VERSION="1.$(($(ver_cut 2) - 1)).0"
@@ -271,6 +271,13 @@ pkg_setup() {
 		local llvm_config="$(get_llvm_prefix "${LLVM_MAX_SLOT}")/bin/llvm-config"
 		export LLVM_LINK_SHARED=1
 		export RUSTFLAGS="${RUSTFLAGS} -Lnative=$("${llvm_config}" --libdir)"
+
+		if $(tc-is-clang); then
+			if $(is_libcxx_linked); then
+				export LLVM_USE_LIBCXX=1
+				export CXXSTDLIB="c++"
+			fi
+		fi
 	fi
 }
 
@@ -413,7 +420,7 @@ src_configure() {
 			echo "use-libcxx = true"
 			echo "static-libstdcpp = false"
 		fi)
-		use-linker = "lld"
+		#use-linker = "lld"
 		$(case "${rust_target}" in
 			i586-*-linux-*)
 				# https://github.com/rust-lang/rust/issues/93059
@@ -447,7 +454,7 @@ src_configure() {
 		compiler-docs = $(toml_usex doc)
 		submodules = false
 		python = "${EPYTHON}"
-		locked-deps = true
+		locked-deps = false
 		vendor = true
 		extended = true
 		tools = [${tools}]
@@ -487,8 +494,8 @@ src_configure() {
 		codegen-tests = $(toml_usex debug)
 		dist-src = $(toml_usex debug)
 		remap-debuginfo = $(toml_usex debug)
-		lld = $(usex system-llvm true false)
-		use-lld = true
+		lld = $(usex system-llvm false true)
+		#use-lld = true
 		# only deny warnings if doc+wasm are NOT requested, documenting stage0 wasm std fails without it
 		# https://github.com/rust-lang/rust/issues/74976
 		# https://github.com/rust-lang/rust/issues/76526
