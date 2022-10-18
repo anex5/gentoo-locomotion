@@ -3,4 +3,4 @@ app-arch/tar -plzip
 gnome-base/librsvg -vala
 dev-libs/boost -numpy
 sys-devel/binutils -pgo
-
+sys-apps/portage -native-extensions

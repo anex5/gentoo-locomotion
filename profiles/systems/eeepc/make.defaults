@@ -9,8 +9,12 @@ SYMLINK_LIB="no"
 
 CPU_FLAGS_X86="mmx mmxext sse sse2 sse3 ssse3"
 
-CFLAGS="-O2 -mtune=bonnell -march=bonnell -msahf -mmovbe -mfxsr -mssse3 -mcx16 -g0 --param l1-cache-size=24 --param l1-cache-line-size=64 --param l2-cache-size=512 -pipe -fno-stack-protector -fomit-frame-pointer"
-CXXFLAGS="${CFLAGS}"
+CFLAGS="-O2 -mtune=bonnell -march=bonnell -msahf -mmovbe -mfxsr -mssse3 -mcx16 -g0 \
+--param l1-cache-size=24 --param l1-cache-line-size=64 --param l2-cache-size=512 -pipe -fno-stack-protector -fomit-frame-pointer \
+--param lto-max-streaming-parallelism=3 -fgraphite-identity -floop-nest-optimize -fdevirtualize-at-ltrans -fno-plt"
+CXXFLAGS="${CFLAGS}" 
+
+RUSTFLAGS="-C target-cpu=atom"
 
 MAKEOPTS="-j8 --quiet"
 NUNJAOPTS=-j8

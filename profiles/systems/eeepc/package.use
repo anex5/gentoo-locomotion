@@ -1,2 +1,3 @@
 dev-libs/glib -elf
 sys-devel/binutils -pgo
+sys-apps/portage -native-extensions

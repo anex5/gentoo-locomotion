@@ -8,7 +8,7 @@ EAPI="8"
 # Using Gentoos firefox patches as system libraries and lto are quite nice
 FIREFOX_PATCHSET="firefox-102esr-patches-03j.tar.xz"
 
-LLVM_MAX_SLOT=14
+LLVM_MAX_SLOT=15
 
 PYTHON_COMPAT=( python3_{8..11} )
 PYTHON_REQ_USE="ncurses,sqlite,ssl"
@@ -19,7 +19,7 @@ VIRTUALX_REQUIRED="pgo"
 
 inherit autotools check-reqs desktop flag-o-matic gnome2-utils linux-info \
 	llvm multiprocessing pax-utils python-any-r1 toolchain-funcs \
-	virtualx xdg
+	virtualx xdg xdg-utils
 
 PATCH_URIS=(
 	https://dev.gentoo.org/~{juippis,whissi,slashbeast}/mozilla/patchsets/${FIREFOX_PATCHSET}
@@ -33,7 +33,7 @@ SRC_URI="
 DESCRIPTION="GNU IceCat Web Browser"
 HOMEPAGE="https://www.gnu.org/software/gnuzilla/"
 
-KEYWORDS="~amd64"
+KEYWORDS="amd64 arm64 x86"
 
 SLOT="0"
 LICENSE="MPL-2.0 GPL-2 LGPL-2.1"
@@ -60,24 +60,12 @@ BDEPEND="${PYTHON_DEPS}
 	net-libs/nodejs
 	virtual/pkgconfig
 	virtual/rust
-	|| (
-		(
-			sys-devel/clang:14
-			sys-devel/llvm:14
-			clang? (
-				=sys-devel/lld-14*
-				pgo? ( =sys-libs/compiler-rt-sanitizers-14*[profile] )
-			)
-		)
-		(
-			sys-devel/clang:13
-			sys-devel/llvm:13
-			clang? (
-				=sys-devel/lld-13*
-				pgo? ( =sys-libs/compiler-rt-sanitizers-13*[profile] )
-			)
-		)
+	clang? (
+		<sys-devel/clang-$((LLVM_MAX_SLOT + 1))
+		<sys-devel/lld-$((LLVM_MAX_SLOT + 1))
+		pgo? ( <sys-libs/compiler-rt-sanitizers-$((LLVM_MAX_SLOT + 1))[profile] )
 	)
+	<sys-devel/llvm-$((LLVM_MAX_SLOT + 1))
 	amd64? ( >=dev-lang/nasm-2.14 )
 	x86? ( >=dev-lang/nasm-2.14 )
 	buildtarball? ( ~www-client/makeicecat-"${PV}"[buildtarball] )"
@@ -166,6 +154,8 @@ DEPEND="${COMMON_DEPEND}
 			>=media-sound/apulse-0.1.12-r4[sdk]
 		)
 	)"
+
+RESTRICT="mirror"
 
 S="${WORKDIR}/${PN}-${PV%_*}"
 

@@ -28,7 +28,7 @@ USE="${USE} -3dnow -3dnowext aes avx fma3 fma4 lm-sensors mmx mmxext padlock pop
 USE="${USE} -gadu -irc -jabber -oscar"
 
 # Image support
-USE="${USE} -dcmtk -dftk -exif -fexif -gd -gif -heif -imagemagick jpeg -jpeg2k -mng -openexr -pdf png raw sixel -svg -tiff -webp -wmf -wxwindows -xmp"
+USE="${USE} -dcmtk -dftk exif fexif -gd gif -heif -imagemagick jpeg jpegxl jpeg2k -mng -openexr pdf png raw sixel svg tiff webp -wmf -wxwindows -xmp"
 
 # Locale and Fonts
 USE="${USE} spell truetype userlocales"
@@ -97,8 +97,8 @@ PYTHON_ABIS="3.10"
 POSTGRES_TARGETS="postgres12 postgres13"
 PHP_TARGETS="php7-4 php8-0"
 ADA_TARGET="gnat_2020"
-LUA_SINGLE_TARGET="lua5-1"
-LUA_TARGETS="lua5-1"
+LUA_SINGLE_TARGET="luajit"
+LUA_TARGETS="luajit"
 
 TWISTED_DISABLE_WRITING_OF_PLUGIN_CACHE="1"
 COLLISION_IGNORE="/boot/dtbs/* /lib/modules/*"
@@ -114,7 +114,7 @@ PORTAGE_COMPRESSION_COMMAND="pixz"
 PORTAGE_BZIP2_COMMAND="lbzip2 -n8"
 PORTAGE_BUNZIP2_COMMAND="lbunzip2 -n8"
 PORTAGE_COMPRESS="lbzip2"
-PORTAGE_COMPRESS_FLAGS = "-9 -n8"
+PORTAGE_COMPRESS_FLAGS="-9 -n8"
 CAMERAS="*"
 GPSD_PROTOCOLS="aivdm garmin garmintxt geostar gpsclock nmea0183 nmea2000 sirf tsip"
 SANE_BACKENDS="*"

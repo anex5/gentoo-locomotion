@@ -420,7 +420,6 @@ src_configure() {
 			echo "use-libcxx = true"
 			echo "static-libstdcpp = false"
 		fi)
-		#use-linker = "lld"
 		$(case "${rust_target}" in
 			i586-*-linux-*)
 				# https://github.com/rust-lang/rust/issues/93059
@@ -495,7 +494,6 @@ src_configure() {
 		dist-src = $(toml_usex debug)
 		remap-debuginfo = $(toml_usex debug)
 		lld = $(usex system-llvm false true)
-		#use-lld = true
 		# only deny warnings if doc+wasm are NOT requested, documenting stage0 wasm std fails without it
 		# https://github.com/rust-lang/rust/issues/74976
 		# https://github.com/rust-lang/rust/issues/76526

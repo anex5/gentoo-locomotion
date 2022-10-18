@@ -8,7 +8,6 @@ app-admin/eselect
 app-arch/bzip2
 app-arch/gzip
 app-arch/xz-utils
-app-arch/tar
 app-shells/bash:0
 net-misc/rsync
 net-misc/wget
