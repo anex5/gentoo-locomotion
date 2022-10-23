@@ -4,3 +4,8 @@ gnome-base/librsvg -vala
 dev-libs/boost -numpy
 sys-devel/binutils -pgo
 sys-apps/portage -native-extensions
+dev-lang/python -bluetooth
+dev-lang/perl minimal
+sys-apps/openrc sysv-utils
+media-fonts/unifont -utils
+app-arch/cabextract -extras

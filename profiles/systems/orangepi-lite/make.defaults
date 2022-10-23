@@ -1,25 +1,17 @@
 # Copyright 1999-2022 Gentoo Foundation.
 # Distributed under the terms of the GNU General Public License v2
 
-FEATURES="sandbox sfperms strict"
-
-USE="nptl unicode -berkdb"
-
-SYMLINK_LIB="no"
-
 CPU_FLAGS_ARM="edsp neon thumb vfp vfpv3 vfpv4 vfp-d32 v4 v5 v6 v7 thumb2"
 
 CFLAGS="-O3 -marm -march=armv7-a -mtune=cortex-a7 -mfpu=neon-vfpv4 -mfloat-abi=hard -funroll-loops -pipe -fno-stack-protector -fomit-frame-pointer" #ffast-math
 CXXFLAGS="${CFLAGS}"
+RUSTFLAGS="-C target-cpu=armv7-a"
 
+CARGO_BUILD_JOBS=8
 MAKEOPTS="-j8 --quiet"
 NUNJAOPTS=-j8
-EMERGE_JOBS=1
-EMERGE_LD_AVG=1
 
 VIDEO_CARDS="Mali400"
 INPUT_DEVICES="libinput"
 ALSA_CARDS="usb-audio"
 
-LINGUAS="en ru ru_RU en_US"
-L10N="en ru ru-RU en-US"

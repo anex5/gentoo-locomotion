@@ -4,13 +4,13 @@ USE=""
 USE="${USE} 7z lbzip2 lzma pigz pixz plzip rar zstd lz4 lzo"
 
 # Audio
-USE="${USE} alsa amr -arts audiofile cdda cue id3tag flac -gstreamer lame mad mikmod mp3 mpeg ogg oggvorbis openal opencore-amr opus pipewire -pulseaudio taglib wavpack vorbis vpx"
+USE="${USE} alsa amr -arts audiofile -cdda cue id3tag flac -gstreamer lame mad mikmod mp3 mpeg ogg oggvorbis openal opencore-amr opus pipewire -pulseaudio taglib wavpack vorbis vpx"
 
 # CD and DVD
 USE="${USE} -cdparanoia -css -dvd -dvdr -dvdread vcd"
 
 # Devices
-USE="${USE} ios ipod udev"
+USE="${USE} -ios -ipod udev"
 
 # Documentation format
 USE="${USE} -chm -djvu -ebook -postscript"
@@ -22,7 +22,7 @@ USE="${USE} crypt ssl -cracklib pam"
 USE="${USE} acpi cairo cpudetection dbus dri -ieee1394 -gpm scanner smp upower usb usbredir -video_cards_dummy"
 
 # Hardware CPU
-USE="${USE} -3dnow -3dnowext aes avx fma3 fma4 lm-sensors mmx mmxext padlock popcnt sse sse2 sse3 sse4_1 sse4_2 sse4a ssse3 xop"
+USE="${USE} -3dnow -3dnowext -aes -avx -fma3 -fma4 lm-sensors -mmx -mmxext -padlock -popcnt -sse -sse2 -sse3 -sse4_1 -sse4_2 -sse4a -ssse3 -xop"
 
 # Internet Messager
 USE="${USE} -gadu -irc -jabber -oscar"
@@ -67,7 +67,7 @@ USE="${USE} bluetooth wimax"
 # Window manager and speciality
 USE="${USE} -gtk -libnotify -qt3 -qt4 -qt5 -semantic-desktop -gnome -X -wayland"
 
-L10N="en be bg bs cs da de de-1901 el es es-AR es-CL es-ES es-MX et fi fr fr-CA hr hu it kk lt lv nl pl pt pt-BR pt-PT ro ru sk sl sr sq sv uk"
+L10N="en ru"
 
 GENTOO_MIRRORS="\
 https://mirror.yandex.ru/gentoo-distfiles
@@ -107,9 +107,8 @@ LC_MESSAGES="C"
 AUTOCLEAN="yes"
 BINPKG_FORMAT="gpkg"
 BINPKG_COMPRESS="xz"
-#BINPKG_GPG_SIGNING_GPG_HOME="/home/anex5/.gnupg"
+#BINPKG_GPG_SIGNING_GPG_HOME=".gnupg"
 #BINPKG_GPG_SIGNING_KEY="0x"
-XZ_OPT="-T0 --x86 --lzma2=preset=9e,dict=256MB,nice=273,depth=200,lc=4"
 PORTAGE_COMPRESSION_COMMAND="pixz"
 PORTAGE_BZIP2_COMMAND="lbzip2 -n8"
 PORTAGE_BUNZIP2_COMMAND="lbunzip2 -n8"
@@ -118,20 +117,19 @@ PORTAGE_COMPRESS_FLAGS="-9 -n8"
 CAMERAS="*"
 GPSD_PROTOCOLS="aivdm garmin garmintxt geostar gpsclock nmea0183 nmea2000 sirf tsip"
 SANE_BACKENDS="*"
-CPU_FLAGS_X86="-3dnow -3dnowext mmx sse sse2 *"
+
 DISTDIR="/var/cache/portage/distfiles"
 EMERGE_DEFAULT_OPTS="${EMERGE_DEFAULT_OPTS} --autounmask --binpkg-changed-deps=n --binpkg-respect-use=y --quiet-build=y --ask --tree --keep-going --autounmask-write=y --verbose --verbose-conflicts --backtrack=33"
-FEATURES="parallel-install -news -userpriv -gpg-keepalive -binpkg-signing"
+FEATURES="parallel-install -news userpriv -gpg-keepalive -binpkg-signing"
 INPUT_DEVICES="${INPUT_DEVICES} evdev mutouch synaptics"
 INSTALL_MASK="/etc/systemd /lib*/systemd/*/*.service /usr/lib*/systemd/*/*.service /etc/shorewall*/* -/etc/shorewall*/shorewall*.conf"
 LCD_DEVICES="*"
 LIRC_DEVICES="devinput"
 PORTAGE_TMPDIR="/var/tmp"
-PORT_LOGDIR="/var/tmp/log"
+PORT_LOGDIR="/var/tmp/log/portage"
 PORTAGE_ELOG_CLASSES="log warn error info"
 PORTAGE_ELOG_SYSTEM="echo:log,warn save:log,warn,error,info syslog:error"
 PORTAGE_NICENESS=9
 
 EGIT_CLONE_TYPE="shallow"
 EGIT3_STORE_DIR="/var/cache/portage/git-r3"
-
