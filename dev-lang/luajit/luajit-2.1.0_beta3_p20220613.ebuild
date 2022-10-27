@@ -45,12 +45,11 @@ get-abi-cflags() {
 	local m
 	for m in "${map[@]}" ; do
 		l=( ${m} )
-		[[ $1 == ${l[0]} ]] && echo ${l[1]} && break
+		[[ $1 == ${l[0]} ]] && echo -${l[1]} && break
 	done
 }
 
 _emake() {
-	local abi_cflags=-$(get-abi-cflags ${ABI})
 	emake \
 		Q= \
 		PREFIX="${EPREFIX}/usr" \
@@ -61,7 +60,7 @@ _emake() {
 		CCOPT="" \
 		CCOPT_x86="" \
 		HOST_LUA="${LUA}" \
-		HOST_CC="$(tc-getBUILD_CC) ${abi_cflags}" \
+		HOST_CC="$(tc-getBUILD_CC) $(get-abi-cflags ${ABI})" \
 		HOST_CFLAGS="${BUILD_CPPFLAGS} ${BUILD_CFLAGS}" \
 		HOST_LDFLAGS="${BUILD_LDFLAGS}" \
 		STATIC_CC="$(tc-getCC)" \

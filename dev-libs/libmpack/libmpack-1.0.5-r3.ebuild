@@ -27,10 +27,9 @@ src_prepare() {
 	eautoreconf
 }
 
-src_compile() {
+_emake() {
 	local myemakeargs=(
 		"VERBOSE=1"
-		"ARCH=$(tc-arch-kernel)"
 		"PREFIX=${EPREFIX}/usr"
 		"HOST_CC=$(tc-getBUILD_CC)"
 		"HOST_CFLAGS=${BUILD_CPPFLAGS} ${BUILD_CFLAGS}"
@@ -42,7 +41,11 @@ src_compile() {
 		"INCDIR=${EPREFIX}/usr/include"
 	)
 
-	emake "${myemakeargs[@]}" lib-bin
+	emake "${myemakeargs[@]}" "${@}"
+}
+
+src_compile() {
+	_emake lib-bin
 }
 
 src_test() {
@@ -50,22 +53,7 @@ src_test() {
 }
 
 src_install() {
-	local myemakeargs=(
-		"VERBOSE=1"
-		"ARCH=$(tc-arch-kernel)"
-		"HOST_CC=$(tc-getBUILD_CC)"
-		"HOST_CFLAGS=${BUILD_CPPFLAGS} ${BUILD_CFLAGS}"
-		"HOST_LDFLAGS=${BUILD_LDFLAGS}"
-		"CC=$(tc-getCC)"
-		"LD=$(tc-getLD)"
-		"PREFIX=${EPREFIX}/usr"
-		"DESTDIR=${D}"
-		"LIBDIR=${EPREFIX}/usr/$(get_libdir)"
-		"INCDIR=${EPREFIX}/usr/include"
-		"XLDFLAGS=-shared"
-	)
-
-	emake "${myemakeargs[@]}" install
+	_emake "DESTDIR=${D}" "XLDFLAGS=-shared" install
 
 	if [[ ${CHOST} == *-darwin* ]] ; then
 		local file="libmpack.0.0.0.dylib"

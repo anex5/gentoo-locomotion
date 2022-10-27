@@ -67,7 +67,11 @@ USE="${USE} bluetooth wimax"
 # Window manager and speciality
 USE="${USE} -gtk -libnotify -qt3 -qt4 -qt5 -semantic-desktop -gnome -X -wayland"
 
-L10N="en ru"
+ALSA_CARDS=""
+VIDEO_CARDS=""
+
+LINGUAS="en ru ru_RU en_US"
+L10N="en ru ru-RU en-US"
 
 GENTOO_MIRRORS="\
 https://mirror.yandex.ru/gentoo-distfiles

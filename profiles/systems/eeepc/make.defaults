@@ -1,30 +1,28 @@
 # Copyright 1999-2022 Gentoo Foundation.
 # Distributed under the terms of the GNU General Public License v2
 
-FEATURES="sandbox sfperms strict"
+FEATURES="sandbox sfperms strict noman nodoc noinfo"
 
-USE="nptl unicode -berkdb"
+USE="nptl unicode -berkdb -man -X -xwayland wayland gles2 egl gbm"
 
 SYMLINK_LIB="no"
 
 CPU_FLAGS_X86="mmx mmxext sse sse2 sse3 ssse3"
 
-CFLAGS="-O2 -mtune=bonnell -march=bonnell -msahf -mmovbe -mfxsr -mssse3 -mcx16 -g0 \
---param l1-cache-size=24 --param l1-cache-line-size=64 --param l2-cache-size=512 -pipe -fno-stack-protector -fomit-frame-pointer \
+CFLAGS="-O3 -mtune=bonnell -march=bonnell -msahf -mmovbe -mfxsr -mssse3 -mcx16 -g0 -fno-stack-protector \
+--param l1-cache-size=24 --param l1-cache-line-size=64 --param l2-cache-size=512 -pipe \
 --param lto-max-streaming-parallelism=3 -fgraphite-identity -floop-nest-optimize -fdevirtualize-at-ltrans -fno-plt"
+
 CXXFLAGS="${CFLAGS}" 
 
 RUSTFLAGS="-C target-cpu=atom"
-
+CARGO_BUILD_JOBS=8
 MAKEOPTS="-j8 --quiet"
-NUNJAOPTS=-j8
+#NUNJAOPTS=-j8
 EMERGE_JOBS=1
 EMERGE_LD_AVG=1
 
-VIDEO_CARDS="intel"
-INPUT_DEVICES="libinput"
-ALSA_CARDS="hda-intel"
-
-LINGUAS="en ru ru_RU en_US"
-L10N="en ru ru-RU en-US"
+VIDEO_CARDS="-* intel"
+INPUT_DEVICES="-* libinput"
+ALSA_CARDS="-* hda-intel usb-audio"
 
