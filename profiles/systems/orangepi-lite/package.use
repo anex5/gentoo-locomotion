@@ -5,3 +5,4 @@ sys-devel/binutils -pgo
 sys-apps/portage -native-extensions
 dev-lang/python -bluetooth
 sys-devel/gcc libssp
+dev-python/pydantic -native-extensions

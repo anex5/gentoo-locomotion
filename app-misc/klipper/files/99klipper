@@ -1,1 +1,5 @@
-CONFIG_PROTECT=/opt/klipper/.config
+CONFIG_PROTECT="/opt/klipper/.config /etc/klipper/printer.cfg"
+
+KLIPPER_CONFIG="/etc/klipper/printer.cfg"
+KLIPPER_LOG="/var/log/klipper/klipper.log"
+KLIPPER_SOCKET="/run/klipper/klipper.sock"

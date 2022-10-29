@@ -9,22 +9,27 @@ pidfile=${pidfile:-"/run/${RC_SVCNAME}.pid"}
 user=${user:-${RC_SVCNAME}}
 group=${group:-${RC_SVCNAME}}
 
+: ${klipper_config:=${KLIPPER_CONFIG:-/etc/klipper/printer.cfg}}
+: ${klipper_socket:=${KLIPPER_SOCKET:-/run/${RC_SVCNAME}/${RC_SVCNAME}.sock}}
+: ${klipper_log:=${KLIPPER_LOG:-/var/log/${RC_SVCNAME}/${RC_SVCNAME}.log}}
+
 command="/opt/${RC_SVCNAME}/klippy/klippy.py"
-command_args="${command_args:-/etc/klipper/printer.cfg --api-server=/run/${RC_SVCNAME}/${RC_SVCNAME}.sock --logfile=/var/log/${RC_SVCNAME}/${RC_SVCNAME}.log}"
+command_args="${command_args:-${klipper_config} --api-server=${klipper_socket} --logfile=${klipper_log}}"
 command_background="true"
 
 start_pre() {
-	# We need to test if /run/klipper exists, since script will fail if it does not
-	checkpath --owner ${RC_SVCNAME}:${RC_SVCNAME} --mode 0700 -q -d "/run/${RC_SVCNAME}"
-    checkpath --owner ${RC_SVCNAME}:${RC_SVCNAME} --mode 0744 -q -d "/var/log/${RC_SVCNAME}"
+	# We need to test if runtime directories exists, since script will fail if it does not
+	checkpath --owner ${RC_SVCNAME}:${RC_SVCNAME} --mode 0744 -q -d "${klipper_config%\/*}"
+ 	checkpath --owner ${RC_SVCNAME}:${RC_SVCNAME} --mode 0744 -q -d "${klipper_socket%\/*}"
+	checkpath --owner ${RC_SVCNAME}:${RC_SVCNAME} --mode 0700 -q -d "${klipper_log%\/*}"
 }
 
-depend()
-{
+depend() {
 	need localmount
+	need udev
 	after net
 }
 
 start_stop_daemon_args="--user ${user} --group ${group} \
-	--stdout /var/log/${RC_SVCNAME}/${RC_SVCNAME}.log \
-	--stderr /var/log/${RC_SVCNAME}/${RC_SVCNAME}.log"
+	--stdout ${klipper_log} \
+	--stderr ${klipper_log}"

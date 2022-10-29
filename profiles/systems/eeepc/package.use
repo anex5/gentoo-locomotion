@@ -4,3 +4,4 @@ sys-apps/portage -native-extensions
 dev-lang/python -bluetooth 
 # Musl libc does not have stack protection symbols
 sys-devel/gcc libssp
+dev-python/pydantic -native-extensions

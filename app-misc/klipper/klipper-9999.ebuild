@@ -4,7 +4,7 @@
 EAPI=8
 PYTHON_COMPAT=( python3_{9..11} )
 
-inherit git-r3 python-single-r1 systemd
+inherit python-single-r1 systemd
 
 DESCRIPTION="Klipper is a 3d-Printer firmware"
 HOMEPAGE="https://www.klipper3d.org/"
@@ -43,6 +43,19 @@ RDEPEND="
 RESTRICT="mirror"
 
 DOCS=( COPYING )
+
+# set_config <file> <option name> <yes value> <no value> test
+# a value of "#" will just comment out the option
+set_config() {
+	local file="${ED}/$1" var=$2 val com
+	eval "${@:5}" && val=$3 || val=$4
+	[[ ${val} == "#" ]] && com="#" && val='\2'
+	sed -i -r -e "/^#?${var}=/{s:=([\"'])?([^ ]*)\1?:=\1${val}\1:;s:^#?:${com}:}" "${file}"
+}
+
+set_config_yes_no() {
+	set_config "$1" "$2" YES NO "${@:3}"
+}
 
 src_compile() {
 	sed -i -r -e "s/(\!\/usr\/bin\/env )python2/\1${EPYTHON}/" klippy/klippy.py || die
@@ -97,6 +110,10 @@ src_install() {
 	keepdir /var/log/${PN}
 
 	fowners -R ${PN}:${PN} /opt/${PN} /var/spool/${PN}/ /etc/${PN} /var/log/${PN}
+
+	use systemd || set_config /etc/rc.conf rc_env_allow "KLIPPER_CONFIG KLIPPER_LOG KLIPPER_SOCKET"
+
+	chmod ug+rwX /var/log/${PN}
 
 	doenvd "${FILESDIR}/99klipper"
 }
