@@ -19,9 +19,9 @@ command_background="true"
 
 start_pre() {
 	# We need to test if runtime directories exists, since script will fail if it does not
-	checkpath --owner ${RC_SVCNAME}:${RC_SVCNAME} --mode 0744 -q -d "${klipper_config%\/*}"
- 	checkpath --owner ${RC_SVCNAME}:${RC_SVCNAME} --mode 0744 -q -d "${klipper_socket%\/*}"
-	checkpath --owner ${RC_SVCNAME}:${RC_SVCNAME} --mode 0700 -q -d "${klipper_log%\/*}"
+	checkpath --owner ${RC_SVCNAME}:${RC_SVCNAME} --mode 0775 -q -d "${klipper_config%\/*}"
+ 	checkpath --owner ${RC_SVCNAME}:${RC_SVCNAME} --mode 0755 -q -d "${klipper_socket%\/*}"
+	checkpath --owner ${RC_SVCNAME}:${RC_SVCNAME} --mode 0755 -q -d "${klipper_log%\/*}"
 }
 
 depend() {

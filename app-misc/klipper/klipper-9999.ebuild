@@ -113,8 +113,6 @@ src_install() {
 
 	use systemd || set_config /etc/rc.conf rc_env_allow "KLIPPER_CONFIG KLIPPER_LOG KLIPPER_SOCKET"
 
-	chmod ug+rwX /var/log/${PN}
-
 	doenvd "${FILESDIR}/99klipper"
 }
 
