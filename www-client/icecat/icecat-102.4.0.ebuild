@@ -33,7 +33,7 @@ SRC_URI="
 DESCRIPTION="GNU IceCat Web Browser"
 HOMEPAGE="https://www.gnu.org/software/gnuzilla/"
 
-KEYWORDS="amd64 arm64 x86"
+KEYWORDS="amd64 x86"
 
 SLOT="0"
 LICENSE="MPL-2.0 GPL-2 LGPL-2.1"
@@ -565,6 +565,8 @@ src_prepare() {
 	mkdir -p "${BUILD_DIR}" || die
 
 	xdg_environment_reset
+
+	default
 }
 
 src_configure() {

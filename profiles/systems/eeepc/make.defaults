@@ -15,7 +15,7 @@ CFLAGS="-O3 -mtune=bonnell -march=bonnell -msahf -mmovbe -mfxsr -mssse3 -mcx16 -
 
 CXXFLAGS="${CFLAGS}" 
 
-RUSTFLAGS="-C target-cpu=atom"
+RUSTFLAGS="-C target-cpu=bonnell"
 CARGO_BUILD_JOBS=8
 MAKEOPTS="-j8 --quiet"
 #NUNJAOPTS=-j8

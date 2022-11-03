@@ -1,0 +1,397 @@
+--- a/browser/app/profile/firefox.js
++++ b/browser/app/profile/firefox.js
+@@ -342,6 +342,17 @@
+ 
+ pref("browser.overlink-delay", 80);
+ 
++#ifdef UNIX_BUT_NOT_MAC
++  pref("browser.urlbar.clickSelectsAll", false);
++#else
++  pref("browser.urlbar.clickSelectsAll", true);
++#endif
++#ifdef UNIX_BUT_NOT_MAC
++  pref("browser.urlbar.doubleClickSelectsAll", true);
++#else
++  pref("browser.urlbar.doubleClickSelectsAll", false);
++#endif
++
+ pref("browser.theme.colorway-closet", false);
+ 
+ // Whether using `ctrl` when hitting return/enter in the URL bar
+--- a/browser/components/search/content/searchbar.js
++++ b/browser/components/search/content/searchbar.js
+@@ -443,15 +443,16 @@
+ 
+     /**
+      * Determines if we should select all the text in the searchbar based on the
+-     * searchbar state, and whether the selection is empty.
++     * clickSelectsAll pref, searchbar state, and whether the selection is empty.
+      */
+     _maybeSelectAll() {
+       if (
+         !this._preventClickSelectsAll &&
++	UrlbarPrefs.get("clickSelectsAll") &&
+         document.activeElement == this._textbox &&
+         this._textbox.selectionStart == this._textbox.selectionEnd
+       ) {
+-        this.select();
++        this._textbox.editor.selectAll();
+       }
+     }
+ 
+@@ -556,6 +557,11 @@
+           // is text in the textbox.
+           this.openSuggestionsPanel(true);
+         }
++
++        if (event.detail == 2 && UrlbarPrefs.get("doubleClickSelectsAll")) {
++          this._textbox.editor.selectAll();
++          event.preventDefault();
++        }
+       });
+     }
+ 
+--- a/browser/components/urlbar/tests/browser/browser_doubleClickSelectsAll.js
++++ b/browser/components/urlbar/tests/browser/browser_doubleClickSelectsAll.js
+@@ -0,0 +1,45 @@
++/* This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
++
++function doubleClick(target) {
++  let promise = BrowserTestUtils.waitForEvent(target, "dblclick");
++  EventUtils.synthesizeMouseAtCenter(
++    target,
++    { clickCount: 1 },
++    target.ownerGlobal
++  );
++  EventUtils.synthesizeMouseAtCenter(
++    target,
++    { clickCount: 2 },
++    target.ownerGlobal
++  );
++  return promise;
++}
++
++add_task(async function() {
++  await SpecialPowers.pushPrefEnv({
++    set: [
++      ["browser.urlbar.clickSelectsAll", false],
++      ["browser.urlbar.doubleClickSelectsAll", true],
++    ],
++  });
++
++  let url = "about:mozilla";
++  let win = await BrowserTestUtils.openNewBrowserWindow();
++  await BrowserTestUtils.openNewForegroundTab({ gBrowser: win.gBrowser, url });
++
++  await doubleClick(win.gURLBar.inputField);
++  is(
++    win.gURLBar.selectionStart,
++    0,
++    "Selection should start at the beginning of the urlbar value"
++  );
++  is(
++    win.gURLBar.selectionEnd,
++    url.length,
++    "Selection should end at the end of the urlbar value"
++  );
++
++  win.close();
++});
+--- a/browser/components/urlbar/tests/browser/browser.ini
++++ b/browser/components/urlbar/tests/browser/browser.ini
+@@ -86,6 +86,7 @@
+ [browser_display_selectedAction_Extensions.js]
+ [browser_dns_first_for_single_words.js]
+ skip-if = verify && os == 'linux' # Bug 1581635
++[browser_doubleClickSelectsAll.js]
+ [browser_downArrowKeySearch.js]
+ https_first_disabled = true
+ [browser_dragdropURL.js]
+--- a/browser/components/urlbar/tests/browser/browser_retainedResultsOnFocus.js
++++ b/browser/components/urlbar/tests/browser/browser_retainedResultsOnFocus.js
+@@ -71,7 +71,10 @@
+ 
+ add_setup(async function() {
+   await SpecialPowers.pushPrefEnv({
+-    set: [["browser.urlbar.autoFill", true]],
++    set: [
++	["browser.urlbar.autoFill", true],
++	["browser.urlbar.clickSelectsAll", true]
++    ],
+   });
+   // Add some history for the empty panel and autofill.
+   await PlacesTestUtils.addVisits([
+--- a/browser/components/urlbar/tests/browser/browser_urlbar_selection.js
++++ b/browser/components/urlbar/tests/browser/browser_urlbar_selection.js
+@@ -62,27 +62,11 @@
+   return promise;
+ }
+ 
+-function resetPrimarySelection(val = "") {
+-  if (Services.clipboard.supportsSelectionClipboard()) {
+-    // Reset the clipboard.
+-    clipboardHelper.copyStringToClipboard(
+-      val,
+-      Services.clipboard.kSelectionClipboard
+-    );
+-  }
+-}
+-
+-function checkPrimarySelection(expectedVal = "") {
+-  if (Services.clipboard.supportsSelectionClipboard()) {
+-    let primaryAsText = SpecialPowers.getClipboardData(
+-      "text/unicode",
+-      SpecialPowers.Ci.nsIClipboard.kSelectionClipboard
+-    );
+-    Assert.equal(primaryAsText, expectedVal);
+-  }
+-}
+-
+ add_setup(async function() {
++  SpecialPowers.pushPrefEnv({
++    set: [["browser.urlbar.clickSelectsAll", true]],
++  });
++
+   // On macOS, we must "warm up" the Urlbar to get the first test to pass.
+   gURLBar.value = "";
+   await click(gURLBar.inputField);
+@@ -90,7 +74,6 @@
+ });
+ 
+ add_task(async function leftClickSelectsAll() {
+-  resetPrimarySelection();
+   gURLBar.value = exampleSearch;
+   await click(gURLBar.inputField);
+   Assert.equal(
+@@ -104,11 +87,9 @@
+     "The entire search term should be selected."
+   );
+   gURLBar.blur();
+-  checkPrimarySelection();
+ });
+ 
+ add_task(async function leftClickSelectsUrl() {
+-  resetPrimarySelection();
+   gURLBar.value = exampleUrl;
+   await click(gURLBar.inputField);
+   Assert.equal(gURLBar.selectionStart, 0, "The entire url should be selected.");
+@@ -118,18 +99,42 @@
+     "The entire url should be selected."
+   );
+   gURLBar.blur();
+-  checkPrimarySelection();
++});
++
++// Test to ensure that the doubleClickSelectsAll pref does not interfere with
++// single click behaviour (Double CSA itself is tested in
++// urlbar/tests/browser_doubleClickSelectsAll.js).
++add_task(async function bothPrefsEnabled() {
++  Services.prefs.setBoolPref("browser.urlbar.doubleClickSelectsAll", true);
++  gURLBar.value = exampleSearch;
++  await click(gURLBar.inputField);
++  Assert.equal(
++    gURLBar.selectionStart,
++    0,
++    "The entire search term should be selected."
++  );
++  Assert.equal(
++    gURLBar.selectionEnd,
++    exampleSearch.length,
++    "The entire search term should be selected."
++  );
++  gURLBar.blur();
++  Services.prefs.clearUserPref("browser.urlbar.doubleClickSelectsAll");
+ });
+ 
+ add_task(async function rightClickSelectsAll() {
++  // The text should be selected even when the pref is disabled.
++  await SpecialPowers.pushPrefEnv({
++    set: [["browser.urlbar.clickSelectsAll", false]],
++  });
++
++
+   gURLBar.inputField.focus();
+   gURLBar.value = exampleUrl;
+ 
+   // Remove the selection so the focus() call above doesn't influence the test.
+   gURLBar.selectionStart = gURLBar.selectionEnd = 0;
+ 
+-  resetPrimarySelection();
+-
+   await openContextMenu(gURLBar.inputField);
+ 
+   Assert.equal(gURLBar.selectionStart, 0, "The entire URL should be selected.");
+@@ -139,8 +144,6 @@
+     "The entire URL should be selected."
+   );
+ 
+-  checkPrimarySelection();
+-
+   let contextMenu = gURLBar.querySelector("moz-input-box").menupopup;
+ 
+   // While the context menu is open, test the "Select All" button.
+@@ -178,7 +181,6 @@
+ 
+   gURLBar.querySelector("moz-input-box").menupopup.hidePopup();
+   gURLBar.blur();
+-  checkPrimarySelection(gURLBar.value);
+   await SpecialPowers.popPrefEnv();
+ });
+ 
+@@ -189,8 +191,6 @@
+   gURLBar.selectionStart = 3;
+   gURLBar.selectionEnd = 7;
+ 
+-  resetPrimarySelection();
+-
+   await openContextMenu(gURLBar.inputField);
+ 
+   Assert.equal(
+@@ -206,11 +206,9 @@
+ 
+   gURLBar.querySelector("moz-input-box").menupopup.hidePopup();
+   gURLBar.blur();
+-  checkPrimarySelection();
+ });
+ 
+ add_task(async function dragSelect() {
+-  resetPrimarySelection();
+   gURLBar.value = exampleSearch.repeat(10);
+   // Drags from an artibrary offset of 30 to test for bug 1562145: that the
+   // selection does not start at the beginning.
+@@ -221,12 +219,7 @@
+     "Selection should not start at the beginning of the string."
+   );
+ 
+-  let selectedVal = gURLBar.value.substring(
+-    gURLBar.selectionStart,
+-    gURLBar.selectionEnd
+-  );
+   gURLBar.blur();
+-  checkPrimarySelection(selectedVal);
+ });
+ 
+ /**
+@@ -234,7 +227,6 @@
+  * Urlbar is dragged following a selectsAll event then a blur.
+  */
+ add_task(async function dragAfterSelectAll() {
+-  resetPrimarySelection();
+   gURLBar.value = exampleSearch.repeat(10);
+   await click(gURLBar.inputField);
+   Assert.equal(
+@@ -249,7 +241,6 @@
+   );
+ 
+   gURLBar.blur();
+-  checkPrimarySelection();
+ 
+   // The offset of 30 is arbitrary.
+   await drag(gURLBar.inputField, 30, 0, 60, 0);
+@@ -264,10 +255,6 @@
+     exampleSearch.repeat(10).length,
+     "Only part of the search term should be selected."
+   );
+-
+-  checkPrimarySelection(
+-    gURLBar.value.substring(gURLBar.selectionStart, gURLBar.selectionEnd)
+-  );
+ });
+ 
+ /**
+--- a/browser/components/urlbar/UrlbarInput.jsm
++++ b/browser/components/urlbar/UrlbarInput.jsm
+@@ -2810,16 +2810,19 @@
+ 
+   /**
+    * Determines if we should select all the text in the Urlbar based on the
+-   *  Urlbar state, and whether the selection is empty.
++   * clickSelectsAll pref, Urlbar state, and whether the selection is empty.
++   * @param {boolean} [ignoreClickSelectsAllPref]
++   *        If true, the browser.urlbar.clickSelectsAll pref will be ignored.
+    */
+-  _maybeSelectAll() {
++  _maybeSelectAll(ignoreClickSelectsAllPref = false) {
+     if (
+       !this._preventClickSelectsAll &&
++      (ignoreClickSelectsAllPref || UrlbarPrefs.get("clickSelectsAll")) &&
+       this._compositionState != UrlbarUtils.COMPOSITION.COMPOSING &&
+       this.document.activeElement == this.inputField &&
+       this.inputField.selectionStart == this.inputField.selectionEnd
+     ) {
+-      this.select();
++      this.editor.selectAll();
+     }
+   }
+ 
+@@ -2936,7 +2939,9 @@
+       return;
+     }
+ 
+-    this._maybeSelectAll();
++    // If the user right clicks, we select all regardless of the value of
++    // the browser.urlbar.clickSelectsAll pref.
++    this._maybeSelectAll(/* ignoreClickSelectsAllPref */ event.button == 2);
+   }
+ 
+   _on_focus(event) {
+@@ -2967,7 +2972,7 @@
+     if (this.focusedViaMousedown) {
+       this.view.autoOpen({ event });
+     } else if (this.inputField.hasAttribute("refocused-by-panel")) {
+-      this._maybeSelectAll();
++      this._maybeSelectAll(true);
+     }
+ 
+     this._updateUrlTooltip();
+@@ -3028,7 +3033,10 @@
+           this.selectionStart = this.selectionEnd = 0;
+         }
+ 
+-        if (event.target.id == SEARCH_BUTTON_ID) {
++	if (event.detail == 2 && UrlbarPrefs.get("doubleClickSelectsAll")) {
++          this.editor.selectAll();
++          event.preventDefault();
++        } else if (event.target.id == SEARCH_BUTTON_ID) {
+           this._preventClickSelectsAll = true;
+           this.search(UrlbarTokenizer.RESTRICT.SEARCH);
+         } else {
+--- a/browser/components/urlbar/UrlbarPrefs.jsm
++++ b/browser/components/urlbar/UrlbarPrefs.jsm
+@@ -70,6 +70,11 @@
+   // this value.  See UrlbarProviderPlaces.
+   ["autoFill.stddevMultiplier", [0.0, "float"]],
+ 
++  // If true, this optimizes for replacing the full URL rather than editing
++  // part of it. This also copies the urlbar value to the selection clipboard
++  // on systems that support it.
++  ["clickSelectsAll", false],
++
+   // Whether best match results can be blocked. This pref is a fallback for the
+   // Nimbus variable `bestMatchBlockingEnabled`.
+   ["bestMatch.blockingEnabled", false],
+@@ -97,6 +102,11 @@
+   // but this would mean flushing layout.)
+   ["disableExtendForTests", false],
+ 
++  // If true, this optimizes for replacing the full URL rather than selecting a
++  // portion of it. This also copies the urlbar value to the selection
++  // clipboard on systems that support it.
++  ["doubleClickSelectsAll", false],
++
+   // Ensure we use trailing dots for DNS lookups for single words that could
+   // be hosts.
+   ["dnsResolveFullyQualifiedNames", true],
+--- a/modules/libpref/init/all.js
++++ b/modules/libpref/init/all.js
+@@ -3124,6 +3124,8 @@
+   pref("middlemouse.openNewWindow", true);
+   pref("middlemouse.scrollbarPosition", true);
+ 
++  pref("browser.urlbar.clickSelectsAll", false);
++
+   // Tab focus model bit field:
+   // 1 focuses text controls, 2 focuses other form elements, 4 adds links.
+   // Leave this at the default, 7, to match mozilla1.0-era user expectations.
