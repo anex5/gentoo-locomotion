@@ -8,7 +8,7 @@ USE="nptl unicode -berkdb -man -X -xwayland wayland gles2 egl gbm"
 CPU_FLAGS_ARM="edsp neon thumb vfp vfpv3 vfpv4 vfp-d32 v4 v5 v6 v7 thumb2"
 
 CFLAGS="-O3 -marm -march=armv7-a -mtune=cortex-a7 -mfpu=neon-vfpv4 -mfloat-abi=hard -funroll-loops -pipe -fno-stack-protector -fomit-frame-pointer \
---param lto-max-streaming-parallelism=3 -fgraphite-identity -floop-nest-optimize -fdevirtualize-at-ltrans -fno-plt"
+--param lto-max-streaming-parallelism=1 -fgraphite-identity -floop-nest-optimize -ftree-loop-distribution -fdevirtualize-at-ltrans -fno-plt"
 CXXFLAGS="${CFLAGS}"
 RUSTFLAGS="-C target-cpu=armv7-a"
 

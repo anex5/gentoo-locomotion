@@ -1,5 +1,5 @@
 #!/sbin/openrc-run
 supervisor=supervise-daemon
-pidfile="/run/${RC_SVCNAME}.pid"
+pidfile=${pidfile:-"/run/${RC_SVCNAME}.pid"}
 command="seatd"
 command_args="-g video"
