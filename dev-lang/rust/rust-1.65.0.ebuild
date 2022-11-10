@@ -22,8 +22,7 @@ else
 	KEYWORDS="~amd64 ~arm ~arm64 ~mips ~ppc64 ~riscv ~sparc ~x86"
 fi
 
-#RUST_STAGE0_VERSION=${PV}
-RUST_STAGE0_VERSION="1.$(($(ver_cut 2) - 1)).0"
+RUST_STAGE0_VERSION=${PV}
 
 DESCRIPTION="Systems programming language from Mozilla"
 HOMEPAGE="https://www.rust-lang.org/"
@@ -189,6 +188,8 @@ bootstrap_rust_version_check() {
 	rustc_version=${rustc_version#rust-}
 
 	[[ -z "${rustc_version}" ]] && die "Failed to determine rust version, check 'eselect rust' output"
+
+	RUST_STAGE0_VERSION="${rustc_version}"
 
 	if ver_test "${rustc_version}" -lt "${rustc_wanted}" ; then
 		eerror "Rust >=${rustc_wanted} is required"

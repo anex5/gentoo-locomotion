@@ -1,9 +1,9 @@
 # Copyright 2021 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=7
+EAPI=8
 
-PYTHON_COMPAT=( python3_{8..10} )
+PYTHON_COMPAT=( python3_{9..11} )
 
 MY_PN="OpenSfM"
 
@@ -25,7 +25,7 @@ else
 	S=${WORKDIR}/${MY_PN}-${PV}
 fi
 
-QA_PRESTRIPPED="usr/lib/${EPYTHON}/site-packages/${PN}/{pyfeatures,pydense,pysfm,pygeometry,pyrobust,pygeo,pymap,pybundle}.cpython-310-x86_64-linux-gnu.so"
+QA_PRESTRIPPED="usr/lib/${EPYTHON}/site-packages/${PN}/{pyfeatures,pydense,pysfm,pygeometry,pyrobust,pygeo,pymap,pybundle}.cpython-3{9,10,11}-x86_64-linux-gnu.so"
 
 LICENSE="BSD-2"
 
@@ -41,9 +41,7 @@ DEPEND="
 	dev-libs/boost[${PYTHON_USEDEP}]
 	media-libs/opencv[python,${PYTHON_USEDEP}]
 	media-libs/opengv[python,${PYTHON_USEDEP}]
-	>=sci-libs/ceres-solver-2.0.0
-	sci-libs/suitesparse
-	sci-libs/metis
+	>=sci-libs/ceres-solver-2.0.0[sparse]
 	>=dev-python/cloudpickle-0.4.0[${PYTHON_USEDEP}]
 	>=dev-python/exifread-2.1.2[${PYTHON_USEDEP}]
 	>=dev-python/joblib-0.14.1[${PYTHON_USEDEP}]
