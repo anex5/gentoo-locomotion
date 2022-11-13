@@ -57,7 +57,7 @@ src_prepare() {
 }
 
 src_configure() {
-	tc-export CC
+	tc-export CC CXX LD
 	local emesonargs=(
 		$(meson_use drun)
 		$(meson_use windowmode window)

@@ -19,6 +19,7 @@ S="${WORKDIR}/rtl8821CU-${COMMIT}"
 
 PATCHES=(
 	"${FILESDIR}/be82ca45434aeacd356a7ac65950ef89ca15e640.patch"
+	"${FILESDIR}/2432efe391d5e3c88b389d73f086b785230876f0.patch"
 )
 
 pkg_setup() {

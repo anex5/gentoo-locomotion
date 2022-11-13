@@ -1,4 +1,4 @@
-USE=""
+USE="usb udev caps dbus readline elogind -iptables policykit lm-sensors nfs idn jpeg svg bash -gtk-doc"
 
 ALSA_CARDS=""
 VIDEO_CARDS=""
