@@ -3,7 +3,7 @@
 
 EAPI=8
 
-FIREFOX_PATCHSET="firefox-102esr-patches-04j.tar.xz"
+FIREFOX_PATCHSET="firefox-102esr-patches-05j.tar.xz"
 
 LLVM_MAX_SLOT=15
 
@@ -50,8 +50,7 @@ REQUIRED_USE="debug? ( !system-av1 )
 
 REQUIRED_USE+=" screencast? ( wayland )"
 
-FF_ONLY_DEPEND="!www-client/firefox:0
-	!www-client/firefox:rapid
+FF_ONLY_DEPEND="
 	screencast? ( media-video/pipewire:= )
 	selinux? ( sec-policy/selinux-mozilla )"
 BDEPEND="${PYTHON_DEPS}
@@ -473,6 +472,11 @@ src_prepare() {
 
 	eapply "${FILESDIR}/${PN}.0-URLbar_unfuck.patch"
 
+	# Patches from hawkeye116477
+	# https://github.com/hawkeye116477/waterfox-deb-rpm-arch-AppImage/tree/master/waterfox-g-kpe/patches
+	eapply "${FILESDIR}/${PN}.0-fix-langpack-id.patch"
+	eapply "${FILESDIR}/${PN}.1-fix-version-number.patch"
+
 	# Allow user to apply any additional patches without modifing ebuild
 	eapply_user
 
@@ -586,7 +590,11 @@ src_configure() {
 	mozconfig_add_options_ac '' --enable-application=browser
 
 	# Set Gentoo defaults
-	export MOZILLA_OFFICIAL=1
+	#export MOZILLA_OFFICIAL=1
+	export MOZ_REQUIRE_SIGNING=
+	#export MOZ_INCLUDE_SOURCE_INFO=1
+	export MOZ_APP_REMOTINGNAME=${PN}
+
 
 	mozconfig_add_options_ac 'Gentoo default' \
 		--allow-addon-sideload \
@@ -621,9 +629,9 @@ src_configure() {
 		--x-libraries="${ESYSROOT}/usr/$(get_libdir)"
 
 	# Set update channel
-	local update_channel=release
-	[[ -n ${MOZ_ESR} ]] && update_channel=esr
-	mozconfig_add_options_ac '' --update-channel=${update_channel}
+	#local update_channel=release
+	#[[ -n ${MOZ_ESR} ]] && update_channel=esr
+	#mozconfig_add_options_ac '' --update-channel=${update_channel}
 
 	if ! use x86 && [[ ${CHOST} != armv*h* ]] ; then
 		mozconfig_add_options_ac '' --enable-rust-simd
@@ -880,6 +888,7 @@ src_configure() {
 	mozconfig_add_options_ac 'Waterfox' --with-app-basename=${PN/-g5}
 	mozconfig_add_options_ac 'Waterfox' --with-branding=waterfox/browser/branding
 	mozconfig_add_options_ac 'Waterfox' --with-distribution-id=org.waterfoxproject
+	mozconfig_add_options_ac 'Waterfox' "MOZ_ALLOW_LEGACY_EXTENSIONS=1"
 
 	# Show flags we will use
 	einfo "Build BINDGEN_CFLAGS:\t${BINDGEN_CFLAGS:-no value set}"

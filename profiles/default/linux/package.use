@@ -21,3 +21,4 @@ dev-lang/luajit lua_single_target_luajit
 sys-auth/seatd server
 net-wireless/wpa_supplicant ap dbus eap-sim tkip wep wps
 sys-apps/debianutils -installkernel
+app-arch/brotli static-libs

@@ -39,6 +39,7 @@ pkg_preinst() {
 	use bbswitch && doins ${FILESDIR}/bbswitch.conf
 	use video_cards_i915 && doins ${FILESDIR}/i915.conf
 	use video_cards_nouveau && doins ${FILESDIR}/nouveau.conf
+	use video_cards_nvidia && doins ${FILESDIR}/nvidia.conf
 	use video_cards_amdgpu && doins ${FILESDIR}/amdgpu.conf
 	use video_cards_radeon && doins ${FILESDIR}/radeon.conf
 	use video_cards_virtualbox && doins ${FILESDIR}/vboxvideo.conf
