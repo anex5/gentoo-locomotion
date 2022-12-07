@@ -4,31 +4,27 @@
 EAPI=8
 inherit linux-mod linux-info toolchain-funcs
 
-COMMIT="8c2226a74ae718439d56248bd2e44ccf717086d5"
+COMMIT="a9474332a84d245527977d462aa332b345837976"
 
-DESCRIPTION="Realtek RTL8811CU/RTL8821CU USB wifi adapter driver"
-HOMEPAGE="https://github.com/brektrou/rtl8821CU"
-SRC_URI="https://github.com/brektrou/rtl8821CU/archive/${COMMIT}.tar.gz -> rtl8821cu-${PV}.tar.gz"
+DESCRIPTION="Driver for it87/it86 series hardware monitoring chips."
+HOMEPAGE="https://github.com/frankcrawford/it87"
+SRC_URI="https://github.com/frankcrawford/it87/archive/${COMMIT}.tar.gz -> it87-${PV}.tar.gz"
 
 LICENSE="GPL-2"
 KEYWORDS="~x86 ~amd64"
 
 DEPEND="virtual/linux-sources"
 
-S="${WORKDIR}/rtl8821CU-${COMMIT}"
+S="${WORKDIR}/it87-${COMMIT}"
 
 RESTRICT="mirror bindist"
-
-PATCHES=(
-	"${FILESDIR}/be82ca45434aeacd356a7ac65950ef89ca15e640.patch"
-	"${FILESDIR}/2432efe391d5e3c88b389d73f086b785230876f0.patch"
-)
 
 pkg_setup() {
 	linux_config_exists
 	if use kernel_linux; then
-		MODULE_NAMES="8821cu(net/wireless)"
-		BUILD_PARAMS="KERN_DIR=${KERNEL_DIR} KSRC=${KERNEL_DIR} V=1 KBUILD_VERBOSE=1"
+		MODULE_NAMES="it87(kernel/drivers/hwmon)"
+		BUILD_TARGETS="clean modules"
+		BUILD_PARAMS="KERNEL_BUILD=${KERNEL_DIR}"
 		if linux_chkconfig_present CC_IS_CLANG; then
 	  		BUILD_PARAMS+=" CC=${CHOST}-clang"
 	  		if linux_chkconfig_present LD_IS_LLD; then
@@ -39,10 +35,17 @@ pkg_setup() {
 	    		fi
 	  		fi
 		fi
-
 		linux-mod_pkg_setup
 	else
 		die "Could not determine proper ${PN} package"
 	fi
 }
 
+pkg_postinst() {
+	linux-mod_pkg_postinst
+
+	einfo "If module it87 fails to load at boot, and a manual insertion with modprobe"
+	einfo "results in a device or resource busy error, you likely need to add"
+	einfo "'acpi_enforce_resources=lax' to your kernel boot paramaters. Grub users"
+	einfo "can do this in /etc/default/grub with the GRUB_CMDLINE_LINUX variable."
+}

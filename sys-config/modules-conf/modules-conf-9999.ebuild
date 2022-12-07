@@ -9,7 +9,7 @@ KEYWORDS="amd64 x86"
 
 LICENSE="GPL-2+"
 SLOT="0"
-IUSE="video_cards_i915 video_cards_nouveau video_cards_amdgpu video_cards_radeon video_cards_virtualbox +alsa +vfio +kvm +zswap +drm bbswitch +blacklist"
+IUSE="video_cards_i915 video_cards_nouveau video_cards_amdgpu video_cards_radeon video_cards_virtualbox +alsa +vfio +kvm +zswap +drm bbswitch +blacklist it87"
 
 S=${WORKDIR}
 
@@ -37,6 +37,7 @@ pkg_preinst() {
 	use vfio && doins ${FILESDIR}/vfio.conf
 	use zswap && doins ${FILESDIR}/zswap.conf
 	use bbswitch && doins ${FILESDIR}/bbswitch.conf
+	use it87 && doins ${FILESDIR}/it87.conf
 	use video_cards_i915 && doins ${FILESDIR}/i915.conf
 	use video_cards_nouveau && doins ${FILESDIR}/nouveau.conf
 	use video_cards_nvidia && doins ${FILESDIR}/nvidia.conf
