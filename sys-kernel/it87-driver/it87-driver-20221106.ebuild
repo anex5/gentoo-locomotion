@@ -20,25 +20,23 @@ S="${WORKDIR}/it87-${COMMIT}"
 RESTRICT="mirror bindist"
 
 pkg_setup() {
-	linux_config_exists
-	if use kernel_linux; then
-		MODULE_NAMES="it87(kernel/drivers/hwmon)"
-		BUILD_TARGETS="clean modules"
-		BUILD_PARAMS="KERNEL_BUILD=${KERNEL_DIR}"
-		if linux_chkconfig_present CC_IS_CLANG; then
-	  		BUILD_PARAMS+=" CC=${CHOST}-clang"
-	  		if linux_chkconfig_present LD_IS_LLD; then
-	    		BUILD_PARAMS+=' LD=ld.lld'
-	    		if linux_chkconfig_present LTO_CLANG_THIN; then
-	      			# kernel enables cache by default leading to sandbox violations
-	      			BUILD_PARAMS+=' ldflags-y=--thinlto-cache-dir= LDFLAGS_MODULE=--thinlto-cache-dir='
-	    		fi
-	  		fi
-		fi
-		linux-mod_pkg_setup
-	else
-		die "Could not determine proper ${PN} package"
+	if ! linux_config_exists; then
+		ewarn "Cannot check the linux kernel configuration."
 	fi
+	MODULE_NAMES="it87(kernel/drivers/hwmon)"
+	BUILD_TARGETS="clean modules"
+	BUILD_PARAMS="KERNEL_BUILD=${KERNEL_DIR}"
+	if linux_chkconfig_present CC_IS_CLANG; then
+  		BUILD_PARAMS+=" CC=${CHOST}-clang"
+  		if linux_chkconfig_present LD_IS_LLD; then
+    		BUILD_PARAMS+=' LD=ld.lld'
+    		if linux_chkconfig_present LTO_CLANG_THIN; then
+      			# kernel enables cache by default leading to sandbox violations
+      			BUILD_PARAMS+=' ldflags-y=--thinlto-cache-dir= LDFLAGS_MODULE=--thinlto-cache-dir='
+    		fi
+  		fi
+	fi
+	linux-mod_pkg_setup
 }
 
 pkg_postinst() {
