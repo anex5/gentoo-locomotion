@@ -9,7 +9,7 @@ KEYWORDS="amd64 x86"
 
 LICENSE="GPL-2+"
 SLOT="0"
-IUSE="video_cards_i915 video_cards_nouveau video_cards_amdgpu video_cards_radeon video_cards_virtualbox +alsa +vfio +kvm +zswap +drm bbswitch +blacklist it87"
+IUSE="video_cards_i915 video_cards_nouveau video_cards_nvidia video_cards_amdgpu video_cards_radeon video_cards_virtualbox +alsa +vfio +kvm +zswap +drm bbswitch +blacklist it87"
 
 S=${WORKDIR}
 
