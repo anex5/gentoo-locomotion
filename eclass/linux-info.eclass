@@ -309,7 +309,7 @@ linux_config_qa_check() {
 # It returns true if .config exists in a build directory otherwise false
 linux_config_src_exists() {
 	export _LINUX_CONFIG_EXISTS_DONE=1
-	use kernel_linux && [[ -n ${KV_OUT_DIR} && -s ${KV_OUT_DIR}/.config ]]
+	use kernel_linux && [[ -n ${KV_OUT_DIR:-$KERNEL_DIR} && -s ${KV_OUT_DIR:-$KERNEL_DIR}/.config ]]
 }
 
 # @FUNCTION: linux_config_bin_exists
@@ -339,8 +339,8 @@ linux_config_exists() {
 linux_config_path() {
 	if linux_config_src_exists; then
 		echo "${KV_OUT_DIR:-$KERNEL_DIR}/.config"
-	#elif linux_config_bin_exists; then
-#		echo "/proc/config.gz"
+	elif linux_config_bin_exists; then
+		echo "/proc/config.gz"
 	else
 		return 1
 	fi

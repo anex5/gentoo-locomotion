@@ -4,31 +4,27 @@
 EAPI=8
 inherit linux-mod linux-info toolchain-funcs
 
-COMMIT="8c2226a74ae718439d56248bd2e44ccf717086d5"
+COMMIT="476020109b3841421af289a7b78c7a25b0c45fac"
 
-DESCRIPTION="Realtek RTL8811CU/RTL8821CU USB wifi adapter driver"
-HOMEPAGE="https://github.com/brektrou/rtl8821CU"
-SRC_URI="https://github.com/brektrou/rtl8821CU/archive/${COMMIT}.tar.gz -> rtl8821cu-${PV}.tar.gz"
+DESCRIPTION="Realtek 8189es module for Linux kernel"
+HOMEPAGE="https://github.com/jwrdegoede/rtl8189ES_linux"
+SRC_URI="https://github.com/jwrdegoede/rtl8189ES_linux/archive/${COMMIT}.tar.gz -> ${PN}-${PV}.tar.gz"
 
 LICENSE="GPL-2"
-KEYWORDS="~x86 ~amd64"
+KEYWORDS="~x86 ~amd64 ~arm ~aarch64"
 
 DEPEND="virtual/linux-sources"
 
-S="${WORKDIR}/rtl8821CU-${COMMIT}"
+S="${WORKDIR}/rtl8189ES_linux-${COMMIT}"
 
 RESTRICT="mirror bindist"
-
-PATCHES=(
-	"${FILESDIR}/be82ca45434aeacd356a7ac65950ef89ca15e640.patch"
-	"${FILESDIR}/2432efe391d5e3c88b389d73f086b785230876f0.patch"
-)
 
 pkg_setup() {
 	linux_config_exists
 	if use kernel_linux; then
-		MODULE_NAMES="8821cu(net/wireless)"
-		BUILD_PARAMS="KERN_DIR=${KERNEL_DIR} KSRC=${KERNEL_DIR} V=1 KBUILD_VERBOSE=1"
+		BUILD_TARGETS="clean modules"
+		MODULE_NAMES="8189fs(net/wireless)"
+		BUILD_PARAMS="KVER=${KV_FULL} KSRC=${KERNEL_DIR} V=1"
 		if linux_chkconfig_present CC_IS_CLANG; then
 	  		BUILD_PARAMS+=" CC=${CHOST}-clang"
 	  		if linux_chkconfig_present LD_IS_LLD; then
@@ -39,7 +35,6 @@ pkg_setup() {
 	    		fi
 	  		fi
 		fi
-
 		linux-mod_pkg_setup
 	else
 		die "Could not determine proper ${PN} package"
