@@ -18,9 +18,10 @@ index de7b7374af31..eebbe616e9b6 100644
 -        // we use the LLD shipped with the Rust toolchain by default
 -        linker: Some("rust-lld".into()),
 +        linker: Some("lld".into()),
-         lld_flavor: LldFlavor::Wasm,
-         linker_is_gnu: false,
- 
+         linker_flavor: LinkerFlavor::WasmLld(Cc::No),
+
+         pre_link_args,
+
 -- 
 2.35.1
 
