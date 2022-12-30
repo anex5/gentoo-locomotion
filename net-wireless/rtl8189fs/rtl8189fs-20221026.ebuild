@@ -19,25 +19,21 @@ S="${WORKDIR}/rtl8189ES_linux-${COMMIT}"
 
 RESTRICT="mirror bindist"
 
+MODULE_NAMES="8189fs(net/wireless)"
+
 pkg_setup() {
-	linux_config_exists
-	if use kernel_linux; then
-		BUILD_TARGETS="clean modules"
-		MODULE_NAMES="8189fs(net/wireless)"
-		BUILD_PARAMS="KVER=${KV_FULL} KSRC=${KERNEL_DIR} V=1"
-		if linux_chkconfig_present CC_IS_CLANG; then
-	  		BUILD_PARAMS+=" CC=${CHOST}-clang"
-	  		if linux_chkconfig_present LD_IS_LLD; then
-	    		BUILD_PARAMS+=' LD=ld.lld'
-	    		if linux_chkconfig_present LTO_CLANG_THIN; then
-	      			# kernel enables cache by default leading to sandbox violations
-	      			BUILD_PARAMS+=' ldflags-y=--thinlto-cache-dir= LDFLAGS_MODULE=--thinlto-cache-dir='
-	    		fi
-	  		fi
-		fi
-		linux-mod_pkg_setup
-	else
-		die "Could not determine proper ${PN} package"
+	linux-mod_pkg_setup
+	BUILD_TARGETS="clean modules"
+	BUILD_PARAMS="KVER=${KV_FULL} KSRC=${KERNEL_DIR}"
+	if linux_chkconfig_present CC_IS_CLANG; then
+  		BUILD_PARAMS+=" CC=${CHOST}-clang"
+  		if linux_chkconfig_present LD_IS_LLD; then
+    		BUILD_PARAMS+=' LD=ld.lld'
+    		if linux_chkconfig_present LTO_CLANG_THIN; then
+      			# kernel enables cache by default leading to sandbox violations
+      			BUILD_PARAMS+=' ldflags-y=--thinlto-cache-dir= LDFLAGS_MODULE=--thinlto-cache-dir='
+    		fi
+  		fi
 	fi
 }
 

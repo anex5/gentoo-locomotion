@@ -19,10 +19,11 @@ S="${WORKDIR}/8821cu-20210118-${COMMIT}"
 
 RESTRICT="mirror bindist"
 
+MODULE_NAMES="8821cu(net/wireless)"
+
 pkg_setup() {
-	linux_config_exists
-	MODULE_NAMES="8821cu(net/wireless)"
-	#BUILD_PARAMS="M=${S} -C ${KERNEL_DIR}"
+	linux-mod_pkg_setup
+	BUILD_PARAMS="KVER=${KV_FULL}"
 	BUILD_TARGETS="all"
 	if linux_chkconfig_present CC_IS_CLANG; then
   		BUILD_PARAMS+=" CC=${CHOST}-clang"
@@ -34,6 +35,5 @@ pkg_setup() {
     		fi
   		fi
 	fi
-	linux-mod_pkg_setup
 }
 
