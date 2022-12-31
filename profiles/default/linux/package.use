@@ -22,3 +22,9 @@ sys-auth/seatd server
 net-wireless/wpa_supplicant ap dbus eap-sim tkip wep wps
 sys-apps/debianutils -installkernel
 app-arch/brotli static-libs
+app-alternatives/bzip2 -reference
+app-alternatives/gzip -reference
+app-alternatives/cpio -gnu
+app-alternatives/tar -gnu
+media-libs/libsndfile minimal
+

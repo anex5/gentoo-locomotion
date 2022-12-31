@@ -37,6 +37,9 @@ BDEPEND="
 	nls? ( sys-devel/gettext )
 	verify-sig? ( sec-keys/openpgp-keys-tar )
 "
+PDEPEND="
+	app-alternatives/tar
+"
 
 src_configure() {
 	local myeconfargs=(
@@ -47,6 +50,11 @@ src_configure() {
 		$(use_enable nls)
 		$(use_with selinux)
 		$(use_with xattr xattrs)
+		# autoconf looks for gtar before tar (in configure scripts), hence
+		# in Prefix it is important that it is there, otherwise, a gtar from
+		# the host system (FreeBSD, Solaris, Darwin) will be found instead
+		# of the Prefix provided (GNU) tar
+		--program-prefix=g
 	)
 	use lbzip2 && myeconfargs+=(--with-bzip2=lbzip2)
 	use pigz && myeconfargs+=(--with-gzip=pigz)
@@ -63,20 +71,27 @@ src_install() {
 	exeinto /etc
 	doexe "${FILESDIR}"/rmt
 
-	# autoconf looks for gtar before tar (in configure scripts), hence
-	# in Prefix it is important that it is there, otherwise, a gtar from
-	# the host system (FreeBSD, Solaris, Darwin) will be found instead
-	# of the Prefix provided (GNU) tar
-	if use prefix ; then
-		dosym tar /bin/gtar
-	fi
-
-	mv "${ED}"/usr/sbin/backup{,-tar} || die
-	mv "${ED}"/usr/sbin/restore{,-tar} || die
+	mv "${ED}"/usr/sbin/{gbackup,backup-tar} || die
+	mv "${ED}"/usr/sbin/{grestore,restore-tar} || die
+	mv "${ED}"/usr/sbin/{g,}backup.sh || die
+	mv "${ED}"/usr/sbin/{g,}dump-remind || die
 
 	if use minimal ; then
 		find "${ED}"/etc "${ED}"/*bin/ "${ED}"/usr/*bin/ \
 			-type f -a '!' '(' -name tar -o -name tar ')' \
 			-delete || die
+	fi
+
+	if ! use minimal; then
+		dosym grmt /usr/sbin/rmt
+	fi
+	dosym grmt.8 /usr/share/man/man8/rmt.8
+}
+
+pkg_postinst() {
+	# ensure to preserve the symlink before app-alternatives/tar
+	# is installed
+	if [[ ! -h ${EROOT}/bin/tar ]]; then
+		ln -s gtar "${EROOT}/bin/tar" || die
 	fi
 }
