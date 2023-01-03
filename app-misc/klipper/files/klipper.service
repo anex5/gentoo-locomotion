@@ -1,13 +1,17 @@
-[Unit]
-Description=3d-Printer firmware, which combines the power of a general purpose computer with one or more micro-controllers
+Unit]
+Description=3D printer firmware with motion planning on the host
 After=network.target
 
 [Install]
 WantedBy=multi-user.target
 
 [Service]
+Type=simple
 User=klipper
-RuntimeDirectory=klipper
-ExecStart=/opt/klipper/klippy/klippy.py /etc/klipper/printer.cfg \
+RemainAfterExit=no
+Environment=PYTHONUNBUFFERED=1
+Restart=always
+RestartSec=10
+ExecStart=/usr/libexec/klipper/klippy /etc/klipper/printer.cfg \
   --api-server=/run/klipper/klipper.sock \
   --logfile=/var/log/klipper/klipper.log

@@ -1,4 +1,4 @@
-CONFIG_PROTECT="/opt/klipper/.config /etc/klipper/printer.cfg"
+CONFIG_PROTECT="/usr/libexec/klipper/.config /etc/klipper/printer.cfg"
 
 KLIPPER_CONFIG="/etc/klipper/printer.cfg"
 KLIPPER_LOG="/var/log/klipper/klipper.log"

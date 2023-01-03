@@ -14,14 +14,14 @@ if [[ ${PV} = *9999 ]]; then
 	EGIT_BRANCH="master"
 	KEYWORDS=""
 else
-	SRC_URI="https://github.com/Klipper3d/${PN}/archive/v${PV}.tar.gz -> ${P}.tar.gz"
-	KEYWORDS="~amd64 ~x86 ~arm ~arm64 ~mips"
+	SRC_URI="https://github.com/Klipper3d/${PN}/archive/v${PV}.tar.gz -> ${P}.tar.gz
+	dict? ( https://github.com/Klipper3d/klipper/files/7491378/klipper-dict-20211106.tar.gz )"
+	KEYWORDS="~amd64 ~x86 ~arm ~arm64"
 fi
 
 LICENSE="GPL-3"
 SLOT="0"
-KEYWORDS=""
-IUSE="doc examples systemd"
+IUSE="dict doc +examples firmware systemd"
 
 DEPEND="
 	acct-group/klipper
@@ -30,11 +30,18 @@ DEPEND="
 RDEPEND="
 	${DEPEND}
 	${PYTHON_DEPS}
-	sys-libs/ncurses:0=
 	virtual/libusb:1
+	firmware? (
+		sys-libs/ncurses:0=
+		cross-arm-none-eabi/binutils
+		cross-arm-none-eabi/gcc
+		cross-arm-none-eabi/newlib
+	)
 	$(python_gen_cond_dep '
+		dev-python/numpy
 		>=dev-python/jinja-2.10.1[${PYTHON_USEDEP}]
 		>=dev-python/pyserial-3.4[${PYTHON_USEDEP}]
+		>=dev-python/markupsafe-1.1.1[${PYTHON_USEDEP}]
 		dev-python/virtualenv[${PYTHON_USEDEP}]
 		virtual/python-cffi[${PYTHON_USEDEP}]
 		virtual/python-greenlet[${PYTHON_USEDEP}]
@@ -57,6 +64,18 @@ set_config_yes_no() {
 	set_config "$1" "$2" YES NO "${@:3}"
 }
 
+pkg_pretend() {
+	if use firmware; then
+		if ! has_version -b cross-arm-none-eabi/newlib; then
+			ewarn
+			ewarn "  create a cross-compiler for your printer board, for example MKS robin E3D board uses following toolchain:"
+			ewarn "    crossdev -t arm-none-eabi --lenv 'USE=nano' --genv 'EXTRA_ECONF=\"--with-multilib-list=rmprofile\"' --without-headers"
+			ewarn
+			die
+		fi
+	fi
+}
+
 src_compile() {
 	sed -i -r -e "s/(\!\/usr\/bin\/env )python2/\1${EPYTHON}/" klippy/klippy.py || die
 	${EPYTHON} -m compileall klippy
@@ -73,32 +92,49 @@ src_install() {
 		doins -r config/*
 	fi
 
-	insinto "/opt/${PN}"
-	doins -r Makefile klippy lib src
-
 	# currently only these are python3 compatible or have missing dependencies
 	local python_scripts=( \
 		buildcommands.py \
-		calibrate_shaper.py \
+		canbus_query.py \
+		checkstack.py \
+		dump_mcu.py \
+		graph_temp_sensor.py \
+		logextract.py \
+		make_version.py \
+		stepstats.py \
 		update_chitu.py \
 		update_mks_robin.py \
+		whconsole.py \
 	)
 
 	# UPSTREAM-ISSUE https://github.com/KevinOConnor/klipper/issues/3689
 	for f in ${python_scripts[@]}; do
-		sed -i -r -e "s/(\!\/usr\/bin\/env )python2/\1${EPYTHON}/" "scripts/${f}" || die
+		sed -i -r -e "s/(\!\/usr\/bin\/env )python.*$/\1${EPYTHON}/" "scripts/${f}" || die
 	done
+	sed -i -e '1i #!/usr/bin/env python' scripts/test_klippy.py || die
+	python_fix_shebang scripts/*.py
 
-	insinto "/opt/${PN}/scripts"
+	insinto "/usr/share/${PN}"
 	insopts -m0755
-	pushd scripts >/dev/null || die
-	python_fix_shebang ${python_scripts[@]}
-	doins -r ${python_scripts[@]} flash-*.sh check-gcc.sh
-	popd >/dev/null || die
+	doins -r scripts
 
-	chmod 0755 "${D}/opt/${PN}/klippy/klippy.py"
+	insinto "/usr/$(get_libdir)/${PN}"
+	insopts -m0755
+	doins -r klippy lib
+	if use firmware; then
+		doins -r src Makefile
+		insinto /usr/$(get_libdir)/${PN}/scripts
+		doins scripts/buildcommands.py scripts/check-gcc.sh scripts/make_version.py
+	fi
+	dodir /usr/libexec/${PN}
+	dosym "/usr/$(get_libdir)/${PN}/klippy" "/usr/libexec/${PN}/klippy"
+	#${EPYTHON} scripts/make_version.py GENTOOLINUX > "/usr/$(get_libdir)/${PN}/klippy/.version"
 
-	use systemd && systemd_newunit "${FILESDIR}/${PN}.service" "${PN}.service" || newinitd "${FILESDIR}/${PN}.initd" ${PN}
+	if use systemd; then
+		systemd_newunit "${FILESDIR}/${PN}.service" "${PN}.service"
+	else
+		newinitd "${FILESDIR}/${PN}.initd" "${PN}"
+	fi
 
 	dodir /etc/${PN}
 	keepdir /etc/${PN}
@@ -109,7 +145,7 @@ src_install() {
 	dodir /var/log/${PN}
 	keepdir /var/log/${PN}
 
-	fowners -R ${PN}:${PN} /opt/${PN} /var/spool/${PN}/ /etc/${PN} /var/log/${PN}
+	fowners -R ${PN}:${PN} /usr/$(get_libdir)/${PN} /usr/share/${PN} /var/spool/${PN} /etc/${PN} /var/log/${PN}
 
 	use systemd || set_config /etc/rc.conf rc_env_allow "KLIPPER_CONFIG KLIPPER_LOG KLIPPER_SOCKET"
 
@@ -117,28 +153,27 @@ src_install() {
 }
 
 pkg_postinst() {
-	echo
-	elog "Next steps:"
-	elog "  create a cross-compiler for your printer board, for example MKS robin E3D board uses following toolchain:"
-	elog "    crossdev -t arm-none-eabi --lenv 'USE=nano' --genv 'EXTRA_ECONF=\"--with-multilib-list=rmprofile\"' --without-headers"
-	elog
-	elog "  Use following command to configure your printer board firmware:"
-	elog "    cd /opt/klipper"
-	elog "    make ARCH=\${ARCH} CROSS_PREFIX=\${ARCH}-none-eabi- menuconfig"
-	elog
-	elog "  to build the firmware: "
-	elog "    make ARCH=\${ARCH} CROSS_PREFIX=\${ARCH}-none-eabi- -j\$(nproc)"
-	elog
-	elog "  Use official klipper documentation for flash instructions."
+	if use firmware; then
+		elog
+		elog "  Use following command to configure your printer board firmware:"
+		elog "    cd /usr/$(get_libdir)/klipper"
+		elog "    make ARCH=\${ARCH} CROSS_PREFIX=\${ARCH}-none-eabi- menuconfig"
+		elog
+		elog "  to build the firmware: "
+		elog "    make ARCH=\${ARCH} CROSS_PREFIX=\${ARCH}-none-eabi- -j\$(nproc)"
+		elog
+		elog "  Use official klipper documentation for flash instructions."
+	fi
+
 	elog
 	elog "  Provide a valid printer.cfg in /etc/klipper, which should be writeable by the user 'klipper'"
 	elog
-	elog "  Afterwards run the klipper service with:"
-	elog "    /etc/init.d/klipper start"
+	elog "  Run the klipper service with:"
+	elog "    rc-service klipper start"
 	elog "  or with systemd service"
 	elog "    systemctl enable klipper.service"
 	elog
 	elog "  To use the virtual_sdcard feature of klipper the path"
 	elog "  /var/spool/klipper/virtual_sdcard/ should be used in printer.cfg."
-	echo
+	elog
 }

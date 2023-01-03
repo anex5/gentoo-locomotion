@@ -13,9 +13,11 @@ group=${group:-${RC_SVCNAME}}
 : ${klipper_socket:=${KLIPPER_SOCKET:-/run/${RC_SVCNAME}/${RC_SVCNAME}.sock}}
 : ${klipper_log:=${KLIPPER_LOG:-/var/log/${RC_SVCNAME}/${RC_SVCNAME}.log}}
 
-command="/opt/${RC_SVCNAME}/klippy/klippy.py"
+command="/usr/libexec/${RC_SVCNAME}/klippy/klippy.py"
 command_args="${command_args:-${klipper_config} --api-server=${klipper_socket} --logfile=${klipper_log}}"
 command_background="true"
+
+retry="TERM/25/KILL/5"
 
 start_pre() {
 	# We need to test if runtime directories exists, since script will fail if it does not
