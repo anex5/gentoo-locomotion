@@ -57,7 +57,7 @@ SANE_BACKENDS="*"
 
 DISTDIR="/var/cache/portage/distfiles"
 EMERGE_DEFAULT_OPTS="${EMERGE_DEFAULT_OPTS} --autounmask --binpkg-changed-deps=n --binpkg-respect-use=y --quiet-build=y --ask --tree --keep-going --autounmask-write=y --verbose --verbose-conflicts --backtrack=33"
-FEATURES="parallel-install -news userpriv -gpg-keepalive -binpkg-signing"
+FEATURES="parallel-install -collision-protect -news userpriv -gpg-keepalive -binpkg-signing"
 INPUT_DEVICES="${INPUT_DEVICES} evdev mutouch synaptics"
 INSTALL_MASK="/etc/systemd /lib*/systemd/*/*.service /usr/lib*/systemd/*/*.service /etc/shorewall*/* -/etc/shorewall*/shorewall*.conf"
 LCD_DEVICES="*"

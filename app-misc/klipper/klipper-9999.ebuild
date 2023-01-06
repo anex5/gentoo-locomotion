@@ -114,17 +114,11 @@ src_install() {
 	sed -i -e '1i #!/usr/bin/env python' scripts/test_klippy.py || die
 	python_fix_shebang scripts/*.py
 
-	insinto "/usr/share/${PN}"
-	insopts -m0755
-	doins -r scripts
-
 	insinto "/usr/$(get_libdir)/${PN}"
 	insopts -m0755
-	doins -r klippy lib
+	doins -r klippy lib scripts
 	if use firmware; then
 		doins -r src Makefile
-		insinto /usr/$(get_libdir)/${PN}/scripts
-		doins scripts/buildcommands.py scripts/check-gcc.sh scripts/make_version.py
 	fi
 	dodir /usr/libexec/${PN}
 	dosym "/usr/$(get_libdir)/${PN}/klippy" "/usr/libexec/${PN}/klippy"
@@ -145,7 +139,7 @@ src_install() {
 	dodir /var/log/${PN}
 	keepdir /var/log/${PN}
 
-	fowners -R ${PN}:${PN} /usr/$(get_libdir)/${PN} /usr/share/${PN} /var/spool/${PN} /etc/${PN} /var/log/${PN}
+	fowners -R ${PN}:${PN} /usr/$(get_libdir)/${PN} /var/spool/${PN} /etc/${PN} /var/log/${PN}
 
 	use systemd || set_config /etc/rc.conf rc_env_allow "KLIPPER_CONFIG KLIPPER_LOG KLIPPER_SOCKET"
 
