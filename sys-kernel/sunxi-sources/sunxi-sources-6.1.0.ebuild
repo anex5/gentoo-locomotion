@@ -37,6 +37,10 @@ UNIPATCH_EXCLUDE="
 	3000
 	4567"
 
+#PATCHES=(
+#	"${FILESDIR}/v6.1-samitolvanen-linux-lto-v9.patch"
+#)
+
 pkg_setup() {
 	ewarn ""
 	ewarn "${PN} is *not* supported by the Gentoo Kernel Project in any way."

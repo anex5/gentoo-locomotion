@@ -6,4 +6,4 @@ sys-apps/portage -native-extensions
 dev-lang/python -bluetooth
 sys-devel/gcc libssp
 dev-python/pydantic -native-extensions
-media-video/ffmpeg dav1d encode gnutls gpl iconv network postproc svg threads zlib alsa amr amrenc codec2 fdk gme gmp gsm libass libdrm librtmp libv4l libxml2 lzma modplug openssl opus rav1e snappy srt ssh svt-av1 theora truetype twolame v4l vidstab vpx webp x264 x265
+media-video/ffmpeg dav1d encode gnutls gpl iconv network postproc -svg threads zlib alsa amr amrenc -codec2 -rav1e fdk gme gmp gsm libass libdrm librtmp libv4l libxml2 lzma modplug openssl opus snappy srt ssh svt-av1 theora truetype twolame v4l vidstab vpx webp x264 x265

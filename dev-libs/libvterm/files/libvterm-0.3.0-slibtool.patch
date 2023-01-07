@@ -1,0 +1,33 @@
+From: orbea <orbea@riseup.net>
+Date: Wed, 20 Jul 2022 07:45:38 -0700
+Subject: [PATCH] build: Add a minimal configures script
+
+When building libvterm with slibtool using the rlibtool symlink the
+build will fail when the generated libtool is not found. This file is
+required with rlibtool so that the build can determine if the build
+should be shared, static or both.
+
+This can be solved by adding a minimal configure script.
+
+The build steps are now:
+
+autoreconf -fi
+./configure
+make
+make install
+
+Gentoo Bug: https://bugs.gentoo.org/779034
+
+diff --git a/Makefile b/Makefile
+index 3330703..8a170c7 100644
+--- a/Makefile
++++ b/Makefile
+@@ -70,7 +71,7 @@ src/encoding.lo: $(INCFILES)
+ 
+ bin/%: bin/%.c $(LIBRARY)
+ 	@echo CC $<
+-	@$(LIBTOOL) --mode=link --tag=CC $(CC) $(CFLAGS) -o $@ $< -lvterm $(LDFLAGS)
++	@$(LIBTOOL) --mode=link --tag=CC $(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+ 
+ t/harness.lo: t/harness.c $(HFILES)
+ 	@echo CC $<

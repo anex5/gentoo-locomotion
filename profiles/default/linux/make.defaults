@@ -1,4 +1,4 @@
-USE="usb udev caps dbus readline elogind -iptables policykit lm-sensors nfs idn jpeg svg bash -gtk-doc lbzip2 pigz libarchive"
+USE="usb udev caps dbus readline elogind -iptables policykit lm-sensors nfs idn jpeg svg bash -gtk-doc lbzip2 pigz libarchive -pulseaudio"
 
 ALSA_CARDS=""
 VIDEO_CARDS=""

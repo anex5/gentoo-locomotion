@@ -3,7 +3,7 @@
 
 FEATURES="sandbox sfperms strict noman nodoc noinfo"
 
-USE="nptl unicode -berkdb -man -X -xwayland wayland gles2 egl gbm"
+USE="nptl unicode -berkdb -man -X -xwayland wayland gles2 egl gbm -i3 -river -dwl sway-xkb"
 
 CPU_FLAGS_ARM="edsp neon thumb vfp vfpv3 vfpv4 vfp-d32 v4 v5 v6 v7 thumb2"
 
