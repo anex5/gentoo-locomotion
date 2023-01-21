@@ -98,6 +98,10 @@ src_install() {
 		canbus_query.py \
 		checkstack.py \
 		dump_mcu.py \
+		graph_accelerometer.py \
+		flash_usb.py \
+		check_whitespace.py \
+		calibrate_shaper.py	\
 		graph_temp_sensor.py \
 		logextract.py \
 		make_version.py \
@@ -136,10 +140,8 @@ src_install() {
 	dodir /var/spool/${PN}/virtual_sdcard
 	keepdir /var/spool/${PN}/virtual_sdcard
 
-	dodir /var/log/${PN}
-	keepdir /var/log/${PN}
-
-	fowners -R ${PN}:${PN} /usr/$(get_libdir)/${PN} /var/spool/${PN} /etc/${PN} /var/log/${PN}
+	fperms 0755 /var/spool/${PN}/virtual_sdcard
+	fowners -R ${PN}:${PN} /usr/$(get_libdir)/${PN} /var/spool/${PN} /etc/${PN}
 
 	use systemd || set_config /etc/rc.conf rc_env_allow "KLIPPER_CONFIG KLIPPER_LOG KLIPPER_SOCKET"
 

@@ -11,7 +11,7 @@ group=${group:-${RC_SVCNAME}}
 
 : ${klipper_config:=${KLIPPER_CONFIG:-/etc/klipper/printer.cfg}}
 : ${klipper_socket:=${KLIPPER_SOCKET:-/run/${RC_SVCNAME}/${RC_SVCNAME}.sock}}
-: ${klipper_log:=${KLIPPER_LOG:-/var/log/${RC_SVCNAME}/${RC_SVCNAME}.log}}
+: ${klipper_log:=${KLIPPER_LOG:-/tmp/klippy.log}}
 
 command="/usr/libexec/${RC_SVCNAME}/klippy/klippy.py"
 command_args="${command_args:-${klipper_config} --api-server=${klipper_socket} --logfile=${klipper_log}}"
