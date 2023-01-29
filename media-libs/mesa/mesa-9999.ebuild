@@ -1,9 +1,9 @@
-# Copyright 1999-2022 Gentoo Authors
+# Copyright 1999-2023 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{8..11} )
+PYTHON_COMPAT=( python3_{9..11} )
 
 inherit llvm meson-multilib python-any-r1 linux-info
 
@@ -24,27 +24,26 @@ LICENSE="MIT"
 SLOT="0"
 RESTRICT="!test? ( test )"
 
-RADEON_CARDS="r300 r600 radeon radeonsi"
+RADEON_CARDS="r300 r600 radeon amdgpu"
 VIDEO_CARDS="${RADEON_CARDS} d3d12 freedreno intel lima nouveau panfrost v3d vc4 virgl vivante vmware"
 for card in ${VIDEO_CARDS}; do
 	IUSE_VIDEO_CARDS+=" video_cards_${card}"
 done
 
 IUSE="${IUSE_VIDEO_CARDS}
-	cpu_flags_x86_sse2 d3d9 debug gles1 +gles2 +llvm
+	cpu_flags_x86_sse2 egl gbm d3d9 debug gles1 +gles2 +llvm
 	lm-sensors opencl osmesa +proprietary-codecs selinux
 	test unwind vaapi valgrind vdpau vulkan
-	vulkan-overlay wayland +X xa xvmc zink +zstd"
+	vulkan-overlay wayland +X xa zink +zstd"
 
 REQUIRED_USE="
-	d3d9?   ( || ( video_cards_intel video_cards_r300 video_cards_r600 video_cards_radeonsi video_cards_nouveau video_cards_vmware ) )
-	vulkan? ( video_cards_radeonsi? ( llvm ) )
+	d3d9?   ( || ( video_cards_intel video_cards_r300 video_cards_r600 video_cards_amdgpu video_cards_nouveau video_cards_vmware ) )
+	vulkan? ( video_cards_amdgpu? ( llvm ) )
 	vulkan-overlay? ( vulkan )
 	video_cards_radeon? ( x86? ( llvm ) amd64? ( llvm ) )
 	video_cards_r300?   ( x86? ( llvm ) amd64? ( llvm ) )
-	video_cards_radeonsi?   ( llvm )
+	video_cards_amdgpu?   ( llvm )
 	xa? ( X )
-	xvmc? ( X )
 	zink? ( vulkan )
 "
 
@@ -55,7 +54,7 @@ RDEPEND="
 	>=sys-libs/zlib-1.2.8[${MULTILIB_USEDEP}]
 	unwind? ( sys-libs/libunwind[${MULTILIB_USEDEP}] )
 	llvm? (
-		video_cards_radeonsi? (
+		video_cards_amdgpu? (
 			virtual/libelf:0=[${MULTILIB_USEDEP}]
 		)
 		video_cards_r600? (
@@ -72,16 +71,12 @@ RDEPEND="
 				virtual/libelf:0=[${MULTILIB_USEDEP}]
 			)
 	vaapi? (
-		>=x11-libs/libva-1.7.3:=[${MULTILIB_USEDEP}]
+		>=media-libs/libva-1.7.3:=[${MULTILIB_USEDEP}]
 	)
 	vdpau? ( >=x11-libs/libvdpau-1.1:=[${MULTILIB_USEDEP}] )
-	xvmc? ( >=x11-libs/libXvMC-1.0.8:=[${MULTILIB_USEDEP}] )
 	selinux? ( sys-libs/libselinux[${MULTILIB_USEDEP}] )
-	wayland? (
-		>=dev-libs/wayland-1.18.0:=[${MULTILIB_USEDEP}]
-	)
-	${LIBDRM_DEPSTRING}[video_cards_freedreno?,video_cards_intel?,video_cards_nouveau?,video_cards_vc4?,video_cards_vivante?,video_cards_vmware?,${MULTILIB_USEDEP}]
-	vulkan-overlay? ( dev-util/glslang:0=[${MULTILIB_USEDEP}] )
+	wayland? ( >=dev-libs/wayland-1.18.0:=[${MULTILIB_USEDEP}] )
+	${LIBDRM_DEPSTRING}[video_cards_amdgpu?,video_cards_freedreno?,video_cards_intel?,video_cards_radeon?,video_cards_nouveau?,video_cards_vc4?,video_cards_vivante?,video_cards_vmware?,${MULTILIB_USEDEP}]
 	X? (
 		>=x11-libs/libX11-1.6.2:=[${MULTILIB_USEDEP}]
 		>=x11-libs/libxshmfence-1.1:=[${MULTILIB_USEDEP}]
@@ -99,7 +94,7 @@ for card in ${RADEON_CARDS}; do
 	"
 done
 RDEPEND="${RDEPEND}
-	video_cards_radeonsi? ( ${LIBDRM_DEPSTRING}[video_cards_amdgpu] )
+	video_cards_amdgpu? ( ${LIBDRM_DEPSTRING}[video_cards_amdgpu] )
 "
 
 # Please keep the LLVM dependency block separate. Since LLVM is slotted,
@@ -110,11 +105,13 @@ RDEPEND="${RDEPEND}
 # 1. List all the working slots (with min versions) in ||, newest first.
 # 2. Update the := to specify *max* version, e.g. < 10.
 # 3. Specify LLVM_MAX_SLOT, e.g. 9.
-LLVM_MAX_SLOT="15"
+LLVM_MAX_SLOT="16"
 LLVM_DEPSTR="
 	|| (
+		sys-devel/llvm:16[${MULTILIB_USEDEP}]
 		sys-devel/llvm:15[${MULTILIB_USEDEP}]
 		sys-devel/llvm:14[${MULTILIB_USEDEP}]
+		sys-devel/llvm:13[${MULTILIB_USEDEP}]
 	)
 	<sys-devel/llvm-$((LLVM_MAX_SLOT + 1)):=[${MULTILIB_USEDEP}]
 "
@@ -128,12 +125,12 @@ RDEPEND="${RDEPEND}
 				${CLANG_DEPSTR_AMDGPU}
 			)
 			!video_cards_r600? (
-				video_cards_radeonsi? (
+				video_cards_amdgpu? (
 					${CLANG_DEPSTR_AMDGPU}
 				)
 			)
 			!video_cards_r600? (
-				!video_cards_radeonsi? (
+				!video_cards_amdgpu? (
 					video_cards_radeon? (
 						${CLANG_DEPSTR_AMDGPU}
 					)
@@ -141,7 +138,7 @@ RDEPEND="${RDEPEND}
 			)
 			!video_cards_r600? (
 				!video_cards_radeon? (
-					!video_cards_radeonsi? (
+					!video_cards_amdgpu? (
 						${CLANG_DEPSTR}
 					)
 				)
@@ -152,12 +149,12 @@ RDEPEND="${RDEPEND}
 				${LLVM_DEPSTR_AMDGPU}
 			)
 			!video_cards_r600? (
-				video_cards_radeonsi? (
+				video_cards_amdgpu? (
 					${LLVM_DEPSTR_AMDGPU}
 				)
 			)
 			!video_cards_r600? (
-				!video_cards_radeonsi? (
+				!video_cards_amdgpu? (
 					video_cards_radeon? (
 						${LLVM_DEPSTR_AMDGPU}
 					)
@@ -165,7 +162,7 @@ RDEPEND="${RDEPEND}
 			)
 			!video_cards_r600? (
 				!video_cards_radeon? (
-					!video_cards_radeonsi? (
+					!video_cards_amdgpu? (
 						${LLVM_DEPSTR}
 					)
 				)
@@ -186,13 +183,11 @@ DEPEND="${RDEPEND}
 "
 BDEPEND="
 	${PYTHON_DEPS}
-	opencl? (
-		>=sys-devel/gcc-4.6
-	)
 	sys-devel/bison
 	sys-devel/flex
 	virtual/pkgconfig
 	$(python_gen_any_dep ">=dev-python/mako-0.8.0[\${PYTHON_USEDEP}]")
+	vulkan? ( dev-util/glslang )
 	wayland? ( dev-util/wayland-scanner )
 "
 
@@ -211,7 +206,7 @@ x86? (
 
 llvm_check_deps() {
 	local flags=${MULTILIB_USEDEP}
-	if use video_cards_r600 || use video_cards_radeon || use video_cards_radeonsi
+	if use video_cards_r600 || use video_cards_radeon || use video_cards_amdgpu
 	then
 		flags+=",llvm_targets_AMDGPU(-)"
 	fi
@@ -227,15 +222,15 @@ pkg_pretend() {
 		if ! use video_cards_d3d12 &&
 		   ! use video_cards_freedreno &&
 		   ! use video_cards_intel &&
-		   ! use video_cards_radeonsi &&
+		   ! use video_cards_amdgpu &&
 		   ! use video_cards_v3d; then
-			ewarn "Ignoring USE=vulkan     since VIDEO_CARDS does not contain d3d12, freedreno, intel, radeonsi, or v3d"
+			ewarn "Ignoring USE=vulkan     since VIDEO_CARDS does not contain d3d12, freedreno, intel, amdgpu, or v3d"
 		fi
 	fi
 
 	if use opencl; then
 		if ! use video_cards_r600 &&
-		   ! use video_cards_radeonsi; then
+		   ! use video_cards_amdgpu; then
 			ewarn "Ignoring USE=opencl     since VIDEO_CARDS does not contain r600 or radeonsi"
 		fi
 	fi
@@ -243,9 +238,9 @@ pkg_pretend() {
 	if use vaapi; then
 		if ! use video_cards_d3d12 &&
 		   ! use video_cards_r600 &&
-		   ! use video_cards_radeonsi &&
+		   ! use video_cards_amdgpu &&
 		   ! use video_cards_nouveau; then
-			ewarn "Ignoring USE=vaapi      since VIDEO_CARDS does not contain d3d12, r600, radeonsi, or nouveau"
+			ewarn "Ignoring USE=vaapi      since VIDEO_CARDS does not contain d3d12, r600, amdgpu, or nouveau"
 		fi
 	fi
 
@@ -253,9 +248,9 @@ pkg_pretend() {
 		if ! use video_cards_d3d12 &&
 		   ! use video_cards_r300 &&
 		   ! use video_cards_r600 &&
-		   ! use video_cards_radeonsi &&
+		   ! use video_cards_amdgpu &&
 		   ! use video_cards_nouveau; then
-			ewarn "Ignoring USE=vdpau      since VIDEO_CARDS does not contain d3d12, r300, r600, radeonsi, or nouveau"
+			ewarn "Ignoring USE=vdpau      since VIDEO_CARDS does not contain d3d12, r300, r600, amdgpu, or nouveau"
 		fi
 	fi
 
@@ -264,13 +259,6 @@ pkg_pretend() {
 		   ! use video_cards_nouveau &&
 		   ! use video_cards_vmware; then
 			ewarn "Ignoring USE=xa         since VIDEO_CARDS does not contain freedreno, nouveau, or vmware"
-		fi
-	fi
-
-	if use xvmc; then
-		if ! use video_cards_r600 &&
-		   ! use video_cards_nouveau; then
-			ewarn "Ignoring USE=xvmc       since VIDEO_CARDS does not contain r600 or nouveau"
 		fi
 	fi
 
@@ -295,7 +283,7 @@ pkg_setup() {
 	fi
 
 	if use video_cards_intel ||
-	   use video_cards_radeonsi; then
+	   use video_cards_amdgpu; then
 		if kernel_is -ge 5 11 3; then
 			CONFIG_CHECK="~KCMP"
 		elif kernel_is -ge 5 11; then
@@ -325,7 +313,7 @@ multilib_src_configure() {
 	if use video_cards_intel ||
 	   use video_cards_r300 ||
 	   use video_cards_r600 ||
-	   use video_cards_radeonsi ||
+	   use video_cards_amdgpu ||
 	   use video_cards_nouveau ||
 	   use video_cards_vmware; then
 		emesonargs+=($(meson_use d3d9 gallium-nine))
@@ -335,7 +323,7 @@ multilib_src_configure() {
 
 	if use video_cards_d3d12 ||
 	   use video_cards_r600 ||
-	   use video_cards_radeonsi ||
+	   use video_cards_amdgpu ||
 	   use video_cards_nouveau; then
 		emesonargs+=($(meson_feature vaapi gallium-va))
 		use vaapi && emesonargs+=( -Dva-libs-path="${EPREFIX}"/usr/$(get_libdir)/va/drivers )
@@ -350,7 +338,7 @@ multilib_src_configure() {
 	if use video_cards_d3d12 ||
 	   use video_cards_r300 ||
 	   use video_cards_r600 ||
-	   use video_cards_radeonsi ||
+	   use video_cards_amdgpu ||
 	   use video_cards_nouveau; then
 		emesonargs+=($(meson_feature vdpau gallium-vdpau))
 	else
@@ -363,13 +351,6 @@ multilib_src_configure() {
 		emesonargs+=($(meson_feature xa gallium-xa))
 	else
 		emesonargs+=(-Dgallium-xa=disabled)
-	fi
-
-	if use video_cards_r600 ||
-	   use video_cards_nouveau; then
-		emesonargs+=($(meson_feature xvmc gallium-xvmc))
-	else
-		emesonargs+=(-Dgallium-xvmc=disabled)
 	fi
 
 	if use video_cards_freedreno ||
@@ -397,7 +378,8 @@ multilib_src_configure() {
 
 	gallium_enable video_cards_r300 r300
 	gallium_enable video_cards_r600 r600
-	gallium_enable video_cards_radeonsi radeonsi
+	gallium_enable video_cards_amdgpu radeonsi
+
 	if ! use video_cards_r300 && \
 		! use video_cards_r600; then
 		gallium_enable video_cards_radeon r300 r600
@@ -412,7 +394,7 @@ multilib_src_configure() {
 		vulkan_enable video_cards_freedreno freedreno
 		vulkan_enable video_cards_intel intel
 		vulkan_enable video_cards_d3d12 microsoft-experimental
-		vulkan_enable video_cards_radeonsi amd
+		vulkan_enable video_cards_amdgpu amd
 		vulkan_enable video_cards_v3d broadcom
 	fi
 
@@ -426,14 +408,23 @@ multilib_src_configure() {
 	use vulkan-overlay && vulkan_layers+=",overlay"
 	emesonargs+=(-Dvulkan-layers=${vulkan_layers#,})
 
+	# In LLVM 16, we've switched to building LLVM with EH/RTTI disabled
+	# to match upstream defaults.  Mesa requires being built the same way.
+	# https://bugs.gentoo.org/883955
+	if [[ ${LLVM_SLOT} -ge 16 ]]; then
+		emesonargs+=(
+			-Dcpp_rtti=false
+		)
+	fi
+
 	emesonargs+=(
 		$(meson_use test build-tests)
 		-Dglx=$(usex X dri disabled)
 		-Dshared-glapi=enabled
 		-Ddri3=enabled
-		-Degl=enabled
-		-Dgbm=enabled
 		-Dglvnd=true
+		-Degl=$(usex egl enabled disabled)
+		-Dgbm=$(usex gbm enabled disabled)
 		$(meson_feature gles1)
 		$(meson_feature gles2)
 		$(meson_feature llvm)
