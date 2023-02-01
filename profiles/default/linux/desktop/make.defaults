@@ -1,0 +1,1 @@
+USE="elogind lm-sensors idn nls -icu jpeg webp tiff png svg otf ttf wayland lcms harfbuzz"

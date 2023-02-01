@@ -1,0 +1,14 @@
+media-libs/libwebp -tiff
+gnome-base/librsvg -vala
+media-fonts/unifont -utils
+app-arch/cabextract -extras
+media-libs/libpng apng
+sys-apps/systemd-utils -udev tmpfiles
+gui-wm/sway wallpapers tray
+gui-apps/swaybg gdk-pixbuf
+media-video/mpv lua_single_target_luajit -xv
+dev-lang/luajit lua_single_target_luajit
+sys-auth/seatd server
+app-arch/brotli static-libs
+media-libs/libsndfile minimal
+media-fonts/nerd-fonts X jetbrainsmono terminus hack

@@ -1,0 +1,48 @@
+# Copyright 1999-2023 Gentoo Authors
+# Distributed under the terms of the GNU General Public License v2
+
+# This file describes the packages needed to build a stage1 based on this
+# profile.  Packages in this file are built in order.
+
+gui-wm/sway
+sys-auth/elogind
+sys-auth/seatd
+gui-apps/swayidle
+gui-apps/swaylock
+gui-apps/yambar
+gui-apps/wf-recorder
+gui-apps/wl-clipboard
+gui-apps/wlr-randr
+gui-apps/foot
+dev-python/pynvim
+app-editors/neovim
+x11-themes/gentoo-xcursors
+media-gfx/swayimg
+media-gfx/exiv2
+media-gfx/graphicsmagick
+media-video/libva-utils
+media-video/mpv
+media-video/pipewire
+media-fonts/antonio
+media-fonts/cantarell
+media-fonts/corefonts
+media-fonts/croscorefonts
+media-fonts/dejavu
+media-fonts/droid
+media-fonts/fontawesome
+media-fonts/freefonts
+media-fonts/hack
+media-fonts/jetbrains-mono
+media-fonts/libertine
+media-fonts/monoid
+media-fonts/mulish
+media-fonts/nerd-fonts
+media-fonts/open-sans
+media-fonts/paratype
+media-fonts/roboto
+media-fonts/symbola
+media-fonts/terminus-font
+media-fonts/ubuntu-font-family
+media-fonts/unifont
+media-fonts/vollkorn
+sys-fs/udisks

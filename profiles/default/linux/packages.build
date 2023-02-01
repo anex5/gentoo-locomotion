@@ -1,19 +1,21 @@
-# Copyright 1999-2022 Gentoo Authors
+# Copyright 1999-2023 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 # This file describes the packages needed to build a stage1 based on this
 # profile.  Packages in this file are built in order.
 
+app-eselect/eselect-lua
+app-eselect/eselect-python
+app-eselect/eselect-repository
+app-admin/doas
 app-admin/eselect
-app-arch/bzip2
-app-arch/gzip
 app-arch/xz-utils
+
 app-shells/bash:0
 net-misc/rsync
 net-misc/wget
-sys-devel/autoconf
-sys-devel/automake
-sys-devel/libtool
+app-misc/tmux
+dev-vcs/git
 sys-apps/baselayout
 sys-apps/makedev
 sys-apps/coreutils
@@ -27,14 +29,23 @@ sys-apps/net-tools
 sys-apps/portage
 sys-apps/sed
 sys-apps/shadow
-sys-devel/binutils
-sys-devel/bison
-sys-devel/flex
-sys-devel/gcc
 sys-devel/gettext
 sys-devel/gnuconfig
 sys-devel/make
 sys-devel/patch
+sys-power/acpi
+sys-power/acpid
+sys-power/cpupower
+sys-power/powertop
+sys-power/uhubctl
+sys-process/acct
+sys-process/atop
+sys-process/cronie
+sys-process/htop
+sys-process/iotop
+sys-process/lsof
+sys-process/nmon
+sys-process/watchpid
 virtual/editor
 virtual/libc
 virtual/os-headers

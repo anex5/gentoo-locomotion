@@ -7,7 +7,7 @@ inherit font check-reqs
 
 DESCRIPTION="Nerd Fonts is a project that patches developer targeted fonts with glyphs"
 HOMEPAGE="https://github.com/ryanoasis/nerd-fonts"
-COMMON_URI="https://github.com/ryanoasis/${PN}/releases/download/v${PV}"
+COMMON_URI="https://github.com/ryanoasis/${PN}/archive/${PV/_rc/-RC}"
 
 FONTS=(
 	3270
@@ -41,6 +41,7 @@ FONTS=(
 	JetBrainsMono
 	Lekton
 	LiberationMono
+	Lilex
 	Meslo
 	Monofur
 	Monoid
@@ -93,6 +94,7 @@ SRC_URI="
 	iosevka?                ( "${COMMON_URI}/Iosevka.zip" )
 	jetbrainsmono?          ( "${COMMON_URI}/JetBrainsMono.zip" )
 	lekton?                 ( "${COMMON_URI}/Lekton.zip" )
+	lilex?					( "${COMMON_URI}/Lilex.zip" )
 	liberationmono?         ( "${COMMON_URI}/LiberationMono.zip" )
 	meslo?                  ( "${COMMON_URI}/Meslo.zip" )
 	monofur?                ( "${COMMON_URI}/Monofur.zip" )
@@ -125,7 +127,7 @@ LICENSE="MIT
 		Vic-Fieger-License
 		UbuntuFontLicense-1.0"
 SLOT="0"
-KEYWORDS="amd64 ~x86"
+KEYWORDS="*"
 
 DEPEND="app-arch/unzip"
 RDEPEND="media-libs/fontconfig"

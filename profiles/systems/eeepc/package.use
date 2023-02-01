@@ -5,4 +5,4 @@ dev-lang/python -bluetooth
 sys-devel/gcc libssp
 dev-python/pydantic -native-extensions
 app-arch/gzip pic
-
+media-libs/mesa d3d9 -opencl -llvm
