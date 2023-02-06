@@ -11,7 +11,7 @@ SRC_URI="http://www.leonerd.org.uk/code/${PN}/${P}.tar.gz"
 LICENSE="MIT"
 SLOT="0"
 KEYWORDS="amd64 arm arm64 ~riscv x86 ~x64-macos"
-IUSE="demos pgo static-libs"
+IUSE="demos man pgo static-libs"
 
 RDEPEND="dev-libs/unibilium:="
 BDEPEND="
@@ -25,6 +25,11 @@ DEPEND="
 src_prepare() {
 	default
 
+	sed -e 's/LIBTOOL ?= libtool/LIBTOOL ?= slibtool/' \
+		-e 's|PREFIX=/usr/local|PREFIX=/usr|' \
+		-e "s|-rpath \$\(LIBDIR\)|-rpath ${EROOT}/usr/$(get_libdir)|" \
+		-i Makefile || die
+
 	if ! use demos; then
 		sed -e '/^all:/s:$(DEMOS)::' -i Makefile || die
 	fi
@@ -37,9 +42,7 @@ _emake() {
 		"CC=$(tc-getCC)"
 		"LIBDIR=/usr/$(get_libdir)"
 		"INCDIR=/usr/include"
-		"LIBTOOL=slibtool"
 	)
-	#"LDFLAGS=-L${EROOT}/usr/$(get_libdir) $(get-abi-cflags ${ABI})"
 	tc-export_build_env
 	emake "${myemakeargs[@]}" "$@"
 }
@@ -49,7 +52,8 @@ src_compile() {
 }
 
 src_install() {
-	_emake DESTDIR="${D}" install
+	_emake DESTDIR="${D}" install-lib install-inc
+	use man && _emake DESTDIR="${D}" install-man
 
 	use static-libs || rm "${ED}"/usr/$(get_libdir)/${PN}.a || die
 }

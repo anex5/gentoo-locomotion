@@ -12,3 +12,5 @@ sys-auth/seatd server
 app-arch/brotli static-libs
 media-libs/libsndfile minimal
 media-fonts/nerd-fonts X jetbrainsmono terminus hack
+gui-apps/yambar i3 sway-xkb
+media-video/pipewire pipewire-alsa sound-server

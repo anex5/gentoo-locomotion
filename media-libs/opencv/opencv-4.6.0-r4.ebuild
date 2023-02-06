@@ -1,10 +1,10 @@
-# Copyright 1999-2022 Gentoo Authors
+# Copyright 1999-2023 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{8..11} )
-inherit flag-o-matic java-pkg-opt-2 java-ant-2 cmake-multilib python-r1 toolchain-funcs
+PYTHON_COMPAT=( python3_{9..11} )
+inherit flag-o-matic java-pkg-opt-2 java-ant-2 cmake-multilib python-r1 toolchain-funcs cuda
 
 DESCRIPTION="A collection of algorithms and sample code for various computer vision problems"
 HOMEPAGE="https://opencv.org"
@@ -142,7 +142,7 @@ RDEPEND="
 	)
 	tesseract? ( app-text/tesseract[opencl=,${MULTILIB_USEDEP}] )
 	threads? ( dev-cpp/tbb:=[${MULTILIB_USEDEP}] )
-	tiff? ( media-libs/tiff:0[${MULTILIB_USEDEP}] )
+	tiff? ( media-libs/tiff:=[${MULTILIB_USEDEP}] )
 	v4l? ( >=media-libs/libv4l-0.8.3[${MULTILIB_USEDEP}] )
 	vaapi? ( media-libs/libva[${MULTILIB_USEDEP}] )
 	vtk? ( sci-libs/vtk[rendering] )
@@ -292,6 +292,8 @@ PATCHES=(
 	"${FILESDIR}"/${PN}-4.1.2-opencl-license.patch
 	"${FILESDIR}"/${PN}-4.4.0-disable-native-cpuflag-detect.patch
 	"${FILESDIR}"/${PN}-4.5.0-link-with-cblas-for-lapack.patch
+	"${FILESDIR}"/${P}-fix-build-examples.patch # bug 830163, pending upstream PR #22245
+	"${FILESDIR}"/${P}-fix-ffmpeg-5.patch
 )
 
 pkg_pretend() {
@@ -304,6 +306,9 @@ pkg_setup() {
 }
 
 src_prepare() {
+	# https://bugs.gentoo.org/838274
+	replace-flags -O3 -O2
+
 	cmake_src_prepare
 
 	# remove bundled stuff
@@ -425,6 +430,7 @@ multilib_src_configure() {
 		-DWITH_CUDNN=$(usex dnncuda)
 		-DOPENCV_DNN_CUDA=$(usex dnncuda)
 		-DCUDA_FAST_MATH=$(multilib_native_usex cuda)
+		-DCUDA_HOST_COMPILER="$(cuda_gccdir)"
 		-DCUDA_NVCC_FLAGS=$(multilib_native_usex cuda "-Xcompiler;-fno-lto;${NVCCFLAGS}" '')
 		-DCUDA_ARCH_BIN=\"${CUDA_ARCH}\"
 		-DCUDA_ARCH_PTX=\"${CUDA_ARCH}\"
@@ -469,7 +475,6 @@ multilib_src_configure() {
 		-DENABLE_SOLUTION_FOLDERS=OFF
 		-DENABLE_PROFILING=OFF
 		-DENABLE_COVERAGE=OFF
-
 		-DHAVE_opencv_java=$(multilib_native_usex java YES NO)
 		-DENABLE_NOISY_WARNINGS=OFF
 		-DOPENCV_WARNINGS_ARE_ERRORS=OFF
