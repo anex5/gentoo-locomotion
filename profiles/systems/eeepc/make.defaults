@@ -3,7 +3,7 @@
 
 FEATURES="sandbox sfperms strict noman nodoc noinfo"
 
-USE="nptl unicode -berkdb -man -X -xwayland wayland gles2 egl gbm -introspection"
+USE="-berkdb -man"
 
 SYMLINK_LIB="no"
 

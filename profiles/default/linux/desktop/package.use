@@ -6,11 +6,13 @@ media-libs/libpng apng
 sys-apps/systemd-utils -udev tmpfiles
 gui-wm/sway wallpapers tray
 gui-apps/swaybg gdk-pixbuf
-media-video/mpv lua_single_target_luajit -xv
 dev-lang/luajit lua_single_target_luajit
 sys-auth/seatd server
 app-arch/brotli static-libs
 media-libs/libsndfile minimal
 media-fonts/nerd-fonts X jetbrainsmono terminus hack
-gui-apps/yambar i3 sway-xkb
+gui-apps/yambar backlight battery clock cpu disk-io -dwl foreign-toplevel i3 label memory mpd network removables -river script sway-xkb -pulseaudio -xkb -xwindow 
+app-misc/nnn pcre readline 8contexts colemak -emoji gitstatus -icons namefirst -nerdfonts qsort restorepreview
 media-video/pipewire pipewire-alsa sound-server
+media-video/ffmpeg dav1d encode gnutls gpl iconv network postproc -svg threads zlib alsa amr amrenc -codec2 -rav1e fdk gme gmp gsm libass libdrm librtmp libv4l libxml2 lzma modplug openssl opus snappy srt ssh svt-av1 theora truetype twolame v4l vidstab vpx webp x264 x265
+media-video/mpv lua_single_target_luajit -xv -libplacebo
