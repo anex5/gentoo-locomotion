@@ -1,4 +1,4 @@
-USE="usb udev caps dbus readline -iptables policykit nfs idn -gtk-doc lbzip2 pigz libarchive -pulseaudio alsa"
+USE="brotli usb udev caps dbus readline -iptables python policykit nfs idn -doc -man -gtk-doc lbzip2 pigz libarchive -pulseaudio alsa"
 
 ALSA_CARDS=""
 VIDEO_CARDS=""

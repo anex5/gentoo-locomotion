@@ -1,16 +1,17 @@
-sys-apps/openrc sysv-utils
-dev-lang/python -bluetooth
-dev-libs/glib -elf
-sys-libs/glibc -gd
-dev-libs/libical -glib
-sys-devel/gcc -fortran lto graphite jit openmp ssp libssp custom-cflags
-dev-lang/perl minimal ithreads
-sys-apps/systemd-utils -udev tmpfiles
-dev-python/urllib3 -brotli
-net-wireless/wpa_supplicant ap dbus eap-sim tkip wep wps
-sys-apps/debianutils -installkernel
 app-arch/brotli static-libs
 app-alternatives/bzip2 -reference
 app-alternatives/gzip -reference
 app-alternatives/cpio -gnu
-app-alternatives/tar -gnu
+app-alternatives/tar -gnu 
+dev-libs/glib -elf
+sys-libs/glibc -gd
+dev-libs/libical -glib
+dev-lang/python -bluetooth
+dev-lang/perl minimal ithreads
+dev-python/urllib3 -brotli
+dev-vcs/git -perl
+net-wireless/wpa_supplicant ap dbus eap-sim tkip wep wps
+sys-apps/debianutils -installkernel
+sys-apps/openrc sysv-utils
+sys-apps/systemd-utils -udev tmpfiles
+sys-devel/gcc -fortran lto graphite jit openmp ssp libssp custom-cflags
