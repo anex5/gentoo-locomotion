@@ -53,6 +53,7 @@ S=${WORKDIR}/${PN}-${MY_PV}
 
 src_prepare() {
 	use man || sed -i -e "/subdir('doc')/d" -e '/install_man(/{:1;/)/!{N;b1};d}' meson.build || die
+	use test || sed -i -e '/test(/{:1;/))/!{N;b1};d}' meson.build || die
 	default
 }
 

@@ -10,7 +10,7 @@ FIREFOX_PATCHSET="firefox-102esr-patches-07j.tar.xz"
 
 LLVM_MAX_SLOT=15
 
-PYTHON_COMPAT=( python3_{8..11} )
+PYTHON_COMPAT=( python3_{9..11} )
 PYTHON_REQ_USE="ncurses,sqlite,ssl"
 
 WANT_AUTOCONF="2.1"
@@ -109,6 +109,12 @@ COMMON_DEPEND="
 	)
 	jack? ( virtual/jack )
 	libproxy? ( net-libs/libproxy )
+	pulseaudio? (
+		|| (
+			media-sound/pulseaudio
+			>=media-sound/apulse-0.1.12-r4
+		)
+	)
 	screencast? ( media-video/pipewire:= )
 	selinux? ( sec-policy/selinux-mozilla )
 	sndio? ( >=media-sound/sndio-1.8.0-r1 )
@@ -122,7 +128,7 @@ COMMON_DEPEND="
 	)
 	system-icu? ( >=dev-libs/icu-71.1:= )
 	system-jpeg? ( >=media-libs/libjpeg-turbo-1.2.1 )
-	system-libevent? ( >=dev-libs/libevent-2.1.12:0=[threads] )
+	system-libevent? ( >=dev-libs/libevent-2.1.12:0=[threads(+)] )
 	system-libvpx? ( >=media-libs/libvpx-1.8.2:0=[postproc] )
 	system-png? ( >=media-libs/libpng-1.6.35:0=[apng] )
 	system-webp? ( >=media-libs/libwebp-1.1.0:0= )
@@ -141,23 +147,13 @@ COMMON_DEPEND="
 
 RDEPEND="${COMMON_DEPEND}
 	jack? ( virtual/jack )
-	openh264? ( media-libs/openh264:*[plugin] )
-	pulseaudio? (
-		|| (
-			media-sound/pulseaudio
-			>=media-sound/apulse-0.1.12-r4
-		)
-	)"
+	openh264? ( media-libs/openh264:*[plugin] )"
 
 DEPEND="${COMMON_DEPEND}
+	x11-base/xorg-proto
 	x11-libs/libICE
 	x11-libs/libSM
-	pulseaudio? (
-		|| (
-			media-sound/pulseaudio
-			>=media-sound/apulse-0.1.12-r4[sdk]
-		)
-	)"
+"
 
 RESTRICT="mirror"
 
@@ -577,8 +573,6 @@ src_prepare() {
 	mkdir -p "${BUILD_DIR}" || die
 
 	xdg_environment_reset
-
-	default
 }
 
 src_configure() {
