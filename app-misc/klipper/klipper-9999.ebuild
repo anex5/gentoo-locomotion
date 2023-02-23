@@ -68,8 +68,8 @@ pkg_pretend() {
 	if use firmware; then
 		if ! has_version -b cross-arm-none-eabi/newlib; then
 			ewarn
-			ewarn "  create a cross-compiler for your printer board, for example MKS robin E3D board uses following toolchain:"
-			ewarn "    crossdev -t arm-none-eabi --lenv 'USE=nano' --genv 'EXTRA_ECONF=\"--with-multilib-list=rmprofile\"' --without-headers"
+			ewarn "  create a cross-compiler to build a firmware for your printer board, for example:"
+			ewarn "    crossdev -t arm-none-eabi --lenv 'USE=nano' --without-headers"
 			ewarn
 			die
 		fi
