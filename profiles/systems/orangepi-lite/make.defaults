@@ -1,7 +1,7 @@
 # Copyright 1999-2022 Gentoo Foundation.
 # Distributed under the terms of the GNU General Public License v2
 
-FEATURES="sandbox sfperms strict noman nodoc noinfo"
+FEATURES="sandbox sfperms strict -collision-protect -news noauto noman nodoc noinfo"
 
 USE="-berkdb -man"
 
