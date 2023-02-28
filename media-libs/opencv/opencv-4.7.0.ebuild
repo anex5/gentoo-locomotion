@@ -292,7 +292,7 @@ PATCHES=(
 	"${FILESDIR}"/${PN}-4.1.2-opencl-license.patch
 	"${FILESDIR}"/${PN}-4.4.0-disable-native-cpuflag-detect.patch
 	"${FILESDIR}"/${PN}-4.5.0-link-with-cblas-for-lapack.patch
-	"${FILESDIR}"/${P}-fix-build-examples.patch # bug 830163, pending upstream PR #22245
+	"${FILESDIR}"/${PN}-4.6.0-fix-build-examples.patch # bug 830163, pending upstream PR #22245
 )
 
 pkg_pretend() {
@@ -321,7 +321,7 @@ src_prepare() {
 
 	if use contrib; then
 		cd "${WORKDIR}/${PN}_contrib-${PV}" || die
-		eapply "${FILESDIR}"/e182fc8675a167044b129a3bdf3c4ad2d3399f68.patch
+		#eapply "${FILESDIR}"/e182fc8675a167044b129a3bdf3c4ad2d3399f68.patch
 		if use contribxfeatures2d; then
 			mv "${WORKDIR}"/*.i "${WORKDIR}/${PN}_contrib-${PV}"/modules/xfeatures2d/src/ || die
 		fi
