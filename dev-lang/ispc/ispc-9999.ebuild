@@ -4,35 +4,33 @@
 EAPI=8
 
 PYTHON_COMPAT=( python3_{9..11} )
-
-inherit cmake toolchain-funcs python-any-r1
+LLVM_MAX_SLOT=15
+inherit cmake toolchain-funcs python-any-r1 llvm
 
 DESCRIPTION="Intel SPMD Program Compiler"
-HOMEPAGE="https://ispc.github.com/"
+HOMEPAGE="https://ispc.github.io/"
 
-if [[ ${PV} = *9999 ]]; then
+if [[ ${PV} == 9999 ]]; then
 	inherit git-r3
 	EGIT_REPO_URI="https://github.com/ispc/ispc.git"
-	KEYWORDS=""
+	EGIT_BRANCH="main"
 else
 	SRC_URI="https://github.com/${PN}/${PN}/archive/v${PV}.tar.gz -> ${P}.tar.gz"
-	KEYWORDS="~amd64 ~x86"
+	KEYWORDS="amd64 ~arm ~arm64 ~ppc64 ~x86"
 fi
 
 LICENSE="BSD BSD-2 UoI-NCSA"
 SLOT="0"
 IUSE="examples doc sanitize test"
+RESTRICT="mirror"
 
 RDEPEND="
-	sys-devel/clang:=
-	sys-devel/llvm:=
+	<sys-devel/clang-$((${LLVM_MAX_SLOT} + 1)):=
 	sys-libs/ncurses:0=
-	sys-libs/zlib:=
 "
 
 DEPEND="
 	${RDEPEND}
-	${PYTHON_DEPS}
 	doc? (
 		app-doc/doxygen[dot(+)]
 		media-fonts/freefont
@@ -42,14 +40,23 @@ DEPEND="
 BDEPEND="
 	sys-devel/bison
 	sys-devel/flex
+	${PYTHON_DEPS}
 "
 
 PATCHES=(
-	"${FILESDIR}/${PN}-1.14.0-cmake-gentoo-release.patch"
-	"${FILESDIR}/${PN}-1.18.0-llvm-15.patch"
+	#"${FILESDIR}"/${PN}-1.14.0-cmake-gentoo-release.patch
+	"${FILESDIR}"/0001-Fix-QA-Issues.patch
+	"${FILESDIR}"/0002-cmake-don-t-build-for-32-bit-targets.patch
+	"${FILESDIR}"/0001-CMakeLists.txt-link-with-libclang-cpp-library-instea.patch
+	"${FILESDIR}"/${PN}-1.19.0-curses-cmake.patch
 )
 
 DOCS=( README.md "${S}"/docs/{ReleaseNotes.txt,faq.rst,ispc.rst,perf.rst,perfguide.rst} )
+
+pkg_setup() {
+	llvm_pkg_setup
+	python-any-r1_pkg_setup
+}
 
 src_prepare() {
 	# drop -Werror
@@ -60,28 +67,27 @@ src_prepare() {
 		sed -e 's|/usr/local/bin/dot|/usr/bin/dot|' -i "${S}"/doxygen.cfg || die
 	fi
 
-	if use amd64; then
+	#if use amd64; then
 		# On amd64 systems, build system enables x86/i686 build too.
 		# This ebuild doesn't even have multilib support, nor need it.
 		# https://bugs.gentoo.org/730062
-		einfo "Removing auto-x86 build on amd64"
-		sed -i -e 's:set(target_arch "i686"):return():' cmake/GenerateBuiltins.cmake || die
-	fi
+#		einfo "Removing auto-x86 build on amd64"
+#		sed -i -e 's:set(target_arch "i686"):return():' cmake/GenerateBuiltins.cmake || die
+#	fi
 
 	cmake_src_prepare
 }
 
 src_configure() {
-	#CMAKE_BUILD_TYPE="Release"
+	CMAKE_BUILD_TYPE="Release"
 	local mycmakeargs=(
-		-DCMAKE_SKIP_RPATH=ON
 		-DARM_ENABLED=$(usex arm)
+		-DCMAKE_SKIP_RPATH=ON
 		#-DNVPTX_ENABLED=OFF
 		-DISPC_INCLUDE_EXAMPLES=$(usex examples)
 		-DISPC_INCLUDE_DPCPP_EXAMPLES=$(usex examples)
 		-DISPC_INCLUDE_TESTS=$(usex test)
 		-DISPC_INCLUDE_UTILS=ON
-		-DISPC_NO_DUMPS=ON
 		-DISPC_PREPARE_PACKAGE=OFF
 		-DISPC_STATIC_STDCXX_LINK=OFF
 		-DISPC_STATIC_LINK=OFF
@@ -89,6 +95,11 @@ src_configure() {
 		-DPython3_EXECUTABLE="${PYTHON}"
 	)
 	cmake_src_configure
+}
+
+src_test() {
+	# Inject path to prevent using system ispc
+	PATH="${BUILD_DIR}/bin:${PATH}" ${EPYTHON} run_tests.py || die "Testing failed under ${EPYTHON}"
 }
 
 src_compile(){
@@ -116,9 +127,3 @@ src_install() {
 		doins -r "${BUILD_DIR}"/examples/*
 	fi
 }
-
-src_test() {
-	# Inject path to prevent using system ispc
-	PATH="${BUILD_DIR}/bin:${PATH}" ${EPYTHON} run_tests.py || die "Testing failed under ${EPYTHON}"
-}
-
