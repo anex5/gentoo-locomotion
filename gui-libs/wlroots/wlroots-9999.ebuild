@@ -25,6 +25,7 @@ DEPEND="
 	>=dev-libs/libinput-1.14.0:0=
 	>=dev-libs/wayland-1.21.0
 	>=dev-libs/wayland-protocols-1.28
+	media-libs/libdisplay-info
 	media-libs/mesa[egl(+),vulkan?]
 	hwdata? ( sys-apps/hwdata:= )
 	seatd? ( sys-auth/seatd:= )
