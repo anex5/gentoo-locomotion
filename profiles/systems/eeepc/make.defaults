@@ -3,7 +3,7 @@
 
 FEATURES="sandbox sfperms strict noman nodoc noinfo"
 
-USE="-berkdb -man"
+USE="-berkdb -man kms"
 
 SYMLINK_LIB="no"
 

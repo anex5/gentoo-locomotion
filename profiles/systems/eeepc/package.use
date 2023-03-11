@@ -7,4 +7,5 @@ dev-python/pydantic -native-extensions
 app-arch/gzip pic
 media-libs/mesa d3d9 -opencl -llvm
 media-video/pipewire v4l
+dev-libs/libpcre pcre32
 

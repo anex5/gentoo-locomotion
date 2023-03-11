@@ -15,3 +15,5 @@ sys-apps/debianutils -installkernel
 sys-apps/openrc sysv-utils
 sys-apps/systemd-utils -udev tmpfiles
 sys-devel/gcc -fortran lto graphite jit openmp ssp libssp custom-cflags
+dev-cpp/glog gflags
+

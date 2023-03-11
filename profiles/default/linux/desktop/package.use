@@ -15,4 +15,5 @@ gui-apps/yambar backlight battery clock cpu disk-io -dwl foreign-toplevel i3 lab
 app-misc/nnn pcre readline 8contexts colemak -emoji gitstatus -icons namefirst -nerdfonts qsort restorepreview
 media-video/pipewire pipewire-alsa sound-server
 media-video/ffmpeg dav1d encode gnutls gpl iconv network postproc -svg threads zlib alsa amr amrenc -codec2 -rav1e fdk gme gmp gsm libass libdrm librtmp libv4l libxml2 lzma modplug openssl opus snappy srt ssh svt-av1 theora truetype twolame v4l vidstab vpx webp x264 x265
+media-gfx/blender -bullet -collada -cycles -ffmpeg fftw -fluid -freestyle -gltf-draco hdr -hip jemalloc lld -llvm lzma nls -oceansim -oidn opencolorio -openexr -opengl openimageio -openmp -openvdb pdf potrace pugixml -quadriflow -quicktime remesh simd smoke tbb -tiff wayland -webp -X -alembic -avi cg -clang -dds -debug -doc -dpx -embree -gmp -gold gtests -headless -icu -jack -jpeg2k -libmv -linguas_ar -linguas_bg -linguas_ca -linguas_cs -linguas_de -linguas_en linguas_ru lzo -man -nanovdb -ndof -openal -openpgl -osl -portable -pulseaudio -sdl -sndfile -test -usd -valgrind
 media-video/mpv lua_single_target_luajit -xv -libplacebo
