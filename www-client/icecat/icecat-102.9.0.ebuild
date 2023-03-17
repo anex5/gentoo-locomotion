@@ -1,4 +1,4 @@
-# Copyright 1999-2022 Gentoo Authors
+# Copyright 1999-2023 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 # Ebuild is based on the Firefox ebuilds in the main repo
@@ -6,11 +6,11 @@
 EAPI="8"
 
 # Using Gentoos firefox patches as system libraries and lto are quite nice
-FIREFOX_PATCHSET="firefox-102esr-patches-05j.tar.xz"
+FIREFOX_PATCHSET="firefox-102esr-patches-09j.tar.xz"
 
 LLVM_MAX_SLOT=15
 
-PYTHON_COMPAT=( python3_{8..11} )
+PYTHON_COMPAT=( python3_{9..11} )
 PYTHON_REQ_USE="ncurses,sqlite,ssl"
 
 WANT_AUTOCONF="2.1"
@@ -18,13 +18,12 @@ WANT_AUTOCONF="2.1"
 VIRTUALX_REQUIRED="pgo"
 
 inherit autotools check-reqs desktop flag-o-matic gnome2-utils linux-info \
-	llvm multiprocessing pax-utils python-any-r1 toolchain-funcs \
+	llvm multiprocessing optfeature pax-utils python-any-r1 toolchain-funcs \
 	virtualx xdg xdg-utils
 
 PATCH_URIS=(
 	https://dev.gentoo.org/~{juippis,whissi,slashbeast}/mozilla/patchsets/${FIREFOX_PATCHSET}
 )
-
 SRC_URI="
 	!buildtarball? ( icecat-${PV}-gnu1.tar.bz2 )
 	${PATCH_URIS[@]}
@@ -75,14 +74,56 @@ BDEPEND="${PYTHON_DEPS}
 	buildtarball? ( ~www-client/makeicecat-"${PV}"[buildtarball] )"
 
 COMMON_DEPEND="
-	|| (
-		>=app-accessibility/at-spi2-core-2.46.0:2
-		dev-libs/atk
+	system-python-libs? (
+		${PYTHON_DEPS}
+		$(python_gen_any_dep '
+			dev-python/zstandard[${PYTHON_USEDEP}]
+			dev-python/aiohttp[${PYTHON_USEDEP}]
+			dev-python/appdirs[${PYTHON_USEDEP}]
+			dev-python/attrs[${PYTHON_USEDEP}]
+			dev-python/cbor2[${PYTHON_USEDEP}]
+			dev-python/certifi[${PYTHON_USEDEP}]
+			dev-python/chardet[${PYTHON_USEDEP}]
+			dev-python/click[${PYTHON_USEDEP}]
+			dev-python/colorama[${PYTHON_USEDEP}]
+			dev-python/cookies[${PYTHON_USEDEP}]
+			dev-python/diskcache[${PYTHON_USEDEP}]
+			dev-python/distro[${PYTHON_USEDEP}]
+			dev-python/ecdsa[${PYTHON_USEDEP}]
+			dev-python/idna[${PYTHON_USEDEP}]
+			dev-python/importlib_metadata[${PYTHON_USEDEP}]
+			dev-python/iso8601[${PYTHON_USEDEP}]
+			dev-python/jinja[${PYTHON_USEDEP}]
+			dev-python/jsmin[${PYTHON_USEDEP}]
+			dev-python/jsonschema[${PYTHON_USEDEP}]
+			dev-python/packaging[${PYTHON_USEDEP}]
+			dev-python/pathspec[${PYTHON_USEDEP}]
+			dev-python/pip[${PYTHON_USEDEP}]
+			dev-python/ply[${PYTHON_USEDEP}]
+			dev-python/pyasn1[${PYTHON_USEDEP}]
+			dev-python/pylru[${PYTHON_USEDEP}]
+			dev-python/pyparsing[${PYTHON_USEDEP}]
+			dev-python/requests[${PYTHON_USEDEP}]
+			dev-python/responses[${PYTHON_USEDEP}]
+			dev-python/rsa[${PYTHON_USEDEP}]
+			dev-python/setuptools[${PYTHON_USEDEP}]
+			dev-python/six[${PYTHON_USEDEP}]
+			dev-python/toml[${PYTHON_USEDEP}]
+			dev-python/tqdm[${PYTHON_USEDEP}]
+			dev-python/typing-extensions[${PYTHON_USEDEP}]
+			dev-python/urllib3[${PYTHON_USEDEP}]
+			dev-python/voluptuous[${PYTHON_USEDEP}]
+			dev-python/wcwidth[${PYTHON_USEDEP}]
+			dev-python/wheel[${PYTHON_USEDEP}]
+			dev-python/yarl[${PYTHON_USEDEP}]
+			dev-python/zipp[${PYTHON_USEDEP}]
+		')
 	)
+	>=app-accessibility/at-spi2-core-2.46.0:2
 	dev-libs/expat
 	dev-libs/glib:2
 	dev-libs/libffi:=
-	>=dev-libs/nss-3.79.1
+	>=dev-libs/nss-3.79.2
 	>=dev-libs/nspr-4.34
 	media-libs/alsa-lib
 	media-libs/fontconfig
@@ -112,6 +153,12 @@ COMMON_DEPEND="
 	)
 	jack? ( virtual/jack )
 	libproxy? ( net-libs/libproxy )
+	pulseaudio? (
+		|| (
+			media-sound/pulseaudio
+			>=media-sound/apulse-0.1.12-r4
+		)
+	)
 	screencast? ( media-video/pipewire:= )
 	selinux? ( sec-policy/selinux-mozilla )
 	sndio? ( >=media-sound/sndio-1.8.0-r1 )
@@ -125,7 +172,7 @@ COMMON_DEPEND="
 	)
 	system-icu? ( >=dev-libs/icu-71.1:= )
 	system-jpeg? ( >=media-libs/libjpeg-turbo-1.2.1 )
-	system-libevent? ( >=dev-libs/libevent-2.1.12:0=[threads] )
+	system-libevent? ( >=dev-libs/libevent-2.1.12:0= )
 	system-libvpx? ( >=media-libs/libvpx-1.8.2:0=[postproc] )
 	system-png? ( >=media-libs/libpng-1.6.35:0=[apng] )
 	system-webp? ( >=media-libs/libwebp-1.1.0:0= )
@@ -144,25 +191,15 @@ COMMON_DEPEND="
 
 RDEPEND="${COMMON_DEPEND}
 	jack? ( virtual/jack )
-	openh264? ( media-libs/openh264:*[plugin] )
-	pulseaudio? (
-		|| (
-			media-sound/pulseaudio
-			>=media-sound/apulse-0.1.12-r4
-		)
-	)"
+	openh264? ( media-libs/openh264:*[plugin] )"
 
 DEPEND="${COMMON_DEPEND}
+	x11-base/xorg-proto
 	x11-libs/libICE
 	x11-libs/libSM
-	pulseaudio? (
-		|| (
-			media-sound/pulseaudio
-			>=media-sound/apulse-0.1.12-r4[sdk]
-		)
-	)"
+"
 
-RESTRICT="mirror"
+RESTRICT="mirror test"
 
 S="${WORKDIR}/${PN}-${PV%_*}"
 
@@ -173,14 +210,19 @@ llvm_check_deps() {
 	fi
 
 	if use clang ; then
-		if ! has_version -b "=sys-devel/lld-${LLVM_SLOT}*" ; then
-			einfo "=sys-devel/lld-${LLVM_SLOT}* is missing! Cannot use LLVM slot ${LLVM_SLOT} ..." >&2
+		if ! has_version -b "sys-devel/lld:${LLVM_SLOT}" ; then
+			einfo "sys-devel/lld:${LLVM_SLOT} is missing! Cannot use LLVM slot ${LLVM_SLOT} ..." >&2
+			return 1
+		fi
+
+		if ! has_version -b "virtual/rust:0/llvm-${LLVM_SLOT}" ; then
+			einfo "virtual/rust:0/llvm-${LLVM_SLOT} is missing! Cannot use LLVM slot ${LLVM_SLOT} ..." >&2
 			return 1
 		fi
 
 		if use pgo ; then
-			if ! has_version -b "=sys-libs/compiler-rt-sanitizers-${LLVM_SLOT}*" ; then
-				einfo "=sys-libs/compiler-rt-sanitizers-${LLVM_SLOT}* is missing! Cannot use LLVM slot ${LLVM_SLOT} ..." >&2
+			if ! has_version -b "=sys-libs/compiler-rt-sanitizers-${LLVM_SLOT}*[profile]" ; then
+				einfo "=sys-libs/compiler-rt-sanitizers-${LLVM_SLOT}*[profile] is missing! Cannot use LLVM slot ${LLVM_SLOT} ..." >&2
 				return 1
 			fi
 		fi
@@ -567,13 +609,14 @@ src_prepare() {
 	einfo "Removing pre-built binaries ..."
 	find "${S}"/third_party -type f \( -name '*.so' -o -name '*.o' \) -print -delete || die
 
+	# Clearing crate checksums where we have applied patches
+	moz_clear_vendor_checksums bindgen
+
 	# Create build dir
 	BUILD_DIR="${WORKDIR}/${PN}_build"
 	mkdir -p "${BUILD_DIR}" || die
 
 	xdg_environment_reset
-
-	default
 }
 
 src_configure() {
@@ -585,7 +628,7 @@ src_configure() {
 	einfo "Current RUSTFLAGS:\t\t${RUSTFLAGS:-no value set}"
 
 	local have_switched_compiler=
-	if use clang && ! tc-is-clang ; then
+	if use clang; then
 		# Force clang
 		einfo "Enforcing the use of clang due to USE=clang ..."
 		if tc-is-gcc; then
@@ -867,6 +910,8 @@ src_configure() {
 
 	if use system-python-libs; then
 		export MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE="system"
+		export MACH_SYSTEM_ASSERTED_COMPATIBLE_WITH_BUILD_SITE=1
+		export MACH_SYSTEM_ASSERTED_COMPATIBLE_WITH_MACH_SITE=1
 	else
 		export MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE="none"
 	fi
@@ -1042,7 +1087,7 @@ src_install() {
 	# Install menu
 	local app_name="GNU IceCat"
 	local desktop_file="${FILESDIR}/icon/${PN}-r3.desktop"
-	local desktop_filename="${PN}.desktop"
+	local desktop_filename="${PN}-esr.desktop"
 	local exec_command="${PN}"
 	local icon="${PN}"
 	local use_wayland="false"
@@ -1138,4 +1183,8 @@ pkg_postinst() {
 	elog "Or install an addon to change your useragent."
 	elog "See: https://support.mozilla.org/en-US/kb/difficulties-opening-or-using-website-firefox-100"
 	elog
+
+	optfeature_header "Optional programs for extra features:"
+	optfeature "desktop notifications" x11-libs/libnotify
+	optfeature "fallback mouse cursor theme e.g. on WMs" gnome-base/gsettings-desktop-schemas
 }

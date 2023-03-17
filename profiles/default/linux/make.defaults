@@ -25,11 +25,11 @@ PYTHONDONTWRITEBYTECODE="1"
 # This MUST be kept in sync with the PYTHON_TARGETS below
 # Mike Gilbert <floppym@gentoo.org> (2018-05-23)
 # sys-apps/baselayout-2.5 needs split-usr enabled.
-BOOTSTRAP_USE="unicode internal-glib pkg-config split-usr xml python_targets_python3_10"
+BOOTSTRAP_USE="unicode internal-glib pkg-config split-usr xml python_targets_python3_11 python_single_target_python3_11"
 
-PYTHON_TARGETS="python3_10"
-PYTHON_SINGLE_TARGET="python3_10"
-PYTHON_ABIS="3.10"
+PYTHON_TARGETS="python3_11"
+PYTHON_SINGLE_TARGET="python3_11"
+PYTHON_ABIS="3.11"
 
 POSTGRES_TARGETS="postgres12 postgres13"
 PHP_TARGETS="php7-4 php8-0"
