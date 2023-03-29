@@ -1,0 +1,22 @@
+--- a/meson.build
++++ b/meson.build
+@@ -804,6 +804,8 @@ elif _va == 'false'
+ endif
+ if not [
+          with_gallium_d3d12_video,
++         with_gallium_lima,
++         with_gallium_panfrost,
+          with_gallium_nouveau,
+          with_gallium_r600,
+          with_gallium_radeonsi,
+--- a/src/gallium/targets/va/meson.build
++++ b/src/gallium/targets/va/meson.build
+@@ -98,6 +98,8 @@ else
+ 
+   foreach d : [[with_gallium_r600, 'r600'],
+               [with_gallium_radeonsi, 'radeonsi'],
++              [with_gallium_lima, 'lima'],
++              [with_gallium_panfrost, 'panfrost'],
+               [with_gallium_nouveau, 'nouveau'],
+               [with_gallium_virgl, 'virtio_gpu'],
+               [with_gallium_d3d12_video, 'd3d12']]

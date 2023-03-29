@@ -8,3 +8,4 @@ sys-devel/gcc libssp
 dev-python/pydantic -native-extensions
 sys-config/modules-conf 8189fs
 dev-libs/libpcre pcre32
+media-libs/mesa -llvm vaapi egl gbm

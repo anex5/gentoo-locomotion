@@ -11,7 +11,7 @@ CPU_FLAGS_X86="mmx mmxext sse sse2 sse3 ssse3"
 
 CFLAGS="-O3 -mtune=bonnell -march=bonnell -msahf -mmovbe -mfxsr -mssse3 -mcx16 -g0 -fno-stack-protector \
 --param l1-cache-size=24 --param l1-cache-line-size=64 --param l2-cache-size=512 -pipe \
---param lto-max-streaming-parallelism=1 -fgraphite-identity -floop-nest-optimize -ftree-loop-distribution -fdevirtualize-at-ltrans -fno-plt"
+-fgraphite-identity -floop-nest-optimize -ftree-loop-distribution -fdevirtualize-at-ltrans -fno-plt"
 
 CXXFLAGS="${CFLAGS}" 
 
