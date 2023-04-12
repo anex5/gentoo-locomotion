@@ -1,5 +1,5 @@
 CONFIG_PROTECT="/usr/libexec/klipper/.config /etc/klipper/printer.cfg /etc/env.d/99klipper"
 
 KLIPPER_CONFIG="/etc/klipper/printer.cfg"
-KLIPPER_LOG="/tmp/klippy.log"
+KLIPPER_LOG="/var/log/klippy.log"
 KLIPPER_SOCKET="/run/klipper/klipper.sock"

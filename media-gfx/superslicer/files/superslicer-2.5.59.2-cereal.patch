@@ -1,0 +1,48 @@
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -141,7 +141,7 @@ if (NOT WIN32)
+     set_target_properties(Slic3r PROPERTIES OUTPUT_NAME "${SLIC3R_APP_CMD}")
+ endif ()
+ 
+-target_link_libraries(Slic3r libslic3r cereal)
++target_link_libraries(Slic3r libslic3r libcereal)
+ 
+ if (APPLE)
+ #    add_compile_options(-stdlib=libc++)
+--- a/src/slic3r/CMakeLists.txt
++++ b/src/slic3r/CMakeLists.txt
+@@ -302,7 +302,7 @@ target_compile_definitions(libslic3r_gui
+ 
+ encoding_check(libslic3r_gui)
+ 
+-target_link_libraries(libslic3r_gui libslic3r avrdude cereal imgui GLEW::GLEW OpenGL::GL hidapi exif angelscript libcurl ${wxWidgets_LIBRARIES})
++target_link_libraries(libslic3r_gui libslic3r avrdude libcereal imgui GLEW::GLEW OpenGL::GL hidapi exif angelscript libcurl ${wxWidgets_LIBRARIES})
+ 
+ if (MSVC)
+     target_link_libraries(libslic3r_gui Setupapi.lib)
+--- a/src/libslic3r/CMakeLists.txt
++++ b/src/libslic3r/CMakeLists.txt
+@@ -395,7 +395,7 @@
+ target_link_libraries(libslic3r
+     libnest2d
+     admesh
+-    cereal
++    libcereal
+     libigl
+     miniz
+     boost_libs
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -446,6 +446,12 @@
+
+ # Find the Cereal serialization library
+ find_package(cereal REQUIRED)
++add_library(libcereal INTERFACE)
++if (NOT TARGET cereal::cereal)
++    target_link_libraries(libcereal INTERFACE cereal)
++else()
++    target_link_libraries(libcereal INTERFACE cereal::cereal)
++endif()
+
+ # l10n
+ set(L10N_DIR "${SLIC3R_RESOURCES_DIR}/localization")
