@@ -16,7 +16,8 @@ HOMEPAGE="https://www.opensfm.org"
 if [[ ${PV} = *9999 ]]; then
 	inherit git-r3
 	EGIT_REPO_URI="https://github.com/mapillary/${MY_PN}"
-	EGIT_SUBMODULES=( opensfm/src/third_party/pybind11 )
+	EGIT_SUBMODULES=()
+	#EGIT_SUBMODULES=( opensfm/src/third_party/pybind11 )
 	EGIT_BRANCH="main"
 	KEYWORDS=""
 else
@@ -63,13 +64,13 @@ DEPEND="
 	)
 	>=dev-python/xmltodict-0.10.2[${PYTHON_USEDEP}]
 	dev-python/wheel[${PYTHON_USEDEP}]
+	dev-python/pybind11[${PYTHON_USEDEP}]
 	"
 RDEPEND="${DEPEND}"
 
 BDEPEND="
 	>=dev-util/cmake-3.0.0
 "
-	#dev-python/pybind11[${PYTHON_USEDEP}]
 
 RESTRICT="
 	mirror
@@ -83,9 +84,8 @@ src_prepare() {
 
 	#Enable cxx14-std as CERES-2.0 req it and unbundle pybind11
 	sed -i -e "s|\(set(CMAKE_CXX_STANDARD \)11|\114|" opensfm/src/CMakeLists.txt || die
-	#	-e "s|add_subdirectory(third_party\/pybind11)|find_package (pybind11 CONFIG REQUIRED)|" opensfm/src/CMakeLists.txt || die
-	#sed -i -e "/^target_link_libraries(/,/)/s|pybind11|pybind11::headers|g" opensfm/src/{foundation,bundle,dense,features,geometry,robust,sfm,geo,map}/CMakeLists.txt || die
-
+	sed	-i -e "s|add_subdirectory(third_party\/pybind11)|find_package (pybind11 CONFIG REQUIRED)|" opensfm/src/CMakeLists.txt || die
+	sed -i -e "/^target_link_libraries(/,/)/s|pybind11|pybind11::headers|g" opensfm/src/{foundation,bundle,dense,features,geometry,robust,sfm,geo,map}/CMakeLists.txt || die
 }
 
 python_compile_all() {
