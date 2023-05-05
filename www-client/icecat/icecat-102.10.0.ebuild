@@ -32,7 +32,7 @@ SRC_URI="
 DESCRIPTION="GNU IceCat Web Browser"
 HOMEPAGE="https://www.gnu.org/software/gnuzilla/"
 
-KEYWORDS="amd64 x86"
+KEYWORDS="amd64 arm64 x86"
 
 SLOT="0"
 LICENSE="MPL-2.0 GPL-2 LGPL-2.1"
@@ -91,7 +91,7 @@ COMMON_DEPEND="
 			dev-python/distro[${PYTHON_USEDEP}]
 			dev-python/ecdsa[${PYTHON_USEDEP}]
 			dev-python/idna[${PYTHON_USEDEP}]
-			dev-python/importlib_metadata[${PYTHON_USEDEP}]
+			dev-python/importlib-metadata[${PYTHON_USEDEP}]
 			dev-python/iso8601[${PYTHON_USEDEP}]
 			dev-python/jinja[${PYTHON_USEDEP}]
 			dev-python/jsmin[${PYTHON_USEDEP}]
@@ -172,7 +172,7 @@ COMMON_DEPEND="
 	)
 	system-icu? ( >=dev-libs/icu-71.1:= )
 	system-jpeg? ( >=media-libs/libjpeg-turbo-1.2.1 )
-	system-libevent? ( >=dev-libs/libevent-2.1.12:0= )
+	system-libevent? ( >=dev-libs/libevent-2.1.12:0=[threads(+)] )
 	system-libvpx? ( >=media-libs/libvpx-1.8.2:0=[postproc] )
 	system-png? ( >=media-libs/libpng-1.6.35:0=[apng] )
 	system-webp? ( >=media-libs/libwebp-1.1.0:0= )
@@ -874,6 +874,10 @@ src_configure() {
 			einfo "Forcing -fno-tree-loop-vectorize to workaround GCC bug, see bug 758446 ..."
 			append-cxxflags -fno-tree-loop-vectorize
 		fi
+	fi
+
+	if use elibc_musl && use arm64 ; then
+		mozconfig_add_options_ac 'elf-hack is broken when using musl/arm64' --disable-elf-hack
 	fi
 
 	# Additional ARCH support

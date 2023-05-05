@@ -1,9 +1,9 @@
 # Copyright 1999-2021 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=7
+EAPI=8
 
-PYTHON_COMPAT=( python3_{7,8,9} )
+PYTHON_COMPAT=( python3_{10,11} )
 
 inherit cmake python-r1
 
@@ -27,7 +27,7 @@ IUSE="bladerf hackrf python rtlsdr plutosdr uhd"
 REQUIRED_USE="python? ( ${PYTHON_REQUIRED_USE} )"
 
 RDEPEND="python? ( ${PYTHON_DEPS} )"
-DEPEND="${RDEPEND}
+DEPEND="
 	python? ( dev-lang/swig:0 )
 "
 PDEPEND="bladerf? ( net-wireless/soapybladerf )
