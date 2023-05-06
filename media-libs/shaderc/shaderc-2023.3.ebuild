@@ -1,9 +1,9 @@
-# Copyright 1999-2021 Gentoo Authors
+# Copyright 1999-2023 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=7
+EAPI=8
 
-PYTHON_COMPAT=( python3_{7..9} )
+PYTHON_COMPAT=( python3_{10,11} )
 
 CMAKE_ECLASS=cmake
 
@@ -21,12 +21,12 @@ KEYWORDS="~amd64 ~ppc64 ~x86"
 IUSE="doc test"
 
 RDEPEND="
-	dev-util/glslang[${MULTILIB_USEDEP}]
-	dev-util/spirv-tools[${MULTILIB_USEDEP}]
+	>=dev-util/glslang-1.3.239:=[${MULTILIB_USEDEP}]
+	>=dev-util/spirv-tools-1.3.239[${MULTILIB_USEDEP}]
 "
 DEPEND="${RDEPEND}
 	${PYTHON_DEPS}
-	dev-util/spirv-headers
+	>=dev-util/spirv-headers-1.3.239
 	doc? ( dev-ruby/asciidoctor )
 	test? (
 		dev-cpp/gtest
@@ -35,11 +35,11 @@ DEPEND="${RDEPEND}
 "
 
 PATCHES=(
-		"${FILESDIR}"/${PN}-2020.4-fix-build.patch
+	"${FILESDIR}"/${PN}-2020.4-fix-build.patch
 )
 
 # https://github.com/google/shaderc/issues/470
-RESTRICT=test
+RESTRICT="test mirror"
 
 python_check_deps() {
 	if use test; then
