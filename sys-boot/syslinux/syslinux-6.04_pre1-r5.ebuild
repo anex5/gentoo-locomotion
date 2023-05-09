@@ -1,7 +1,7 @@
-# Copyright 1999-2019 Gentoo Authors
+# Copyright 1999-2023 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=7
+EAPI=8
 
 inherit git-r3 toolchain-funcs flag-o-matic
 
@@ -15,27 +15,31 @@ EGIT_SUBMODULES=()
 LICENSE="GPL-2"
 SLOT="0"
 KEYWORDS="-* amd64 x86"
-IUSE="custom-cflags"
+IUSE="custom-cflags abi_x86_32 abi_x86_64 +bios +efi"
+REQUIRED_USE="|| ( bios efi )
+	efi? ( || ( abi_x86_32 abi_x86_64 ) )"
 
+BDEPEND="
+	dev-lang/perl
+	bios? ( dev-lang/nasm )
+	efi? ( >=sys-boot/gnu-efi-3.0u )
+	app-arch/upx
+"
 RDEPEND="
 	sys-apps/util-linux
 	sys-fs/mtools
-		dev-perl/Crypt-PasswdMD5
-		dev-perl/Digest-SHA1"
+	dev-perl/Crypt-PasswdMD5
+	dev-perl/Digest-SHA1
+"
 DEPEND="${RDEPEND}
-	dev-lang/nasm
-	app-arch/upx
-	>=sys-boot/gnu-efi-3.0u
-	virtual/os-headers"
+	virtual/os-headers
+"
 
-# This ebuild is a departure from the old way of rebuilding everything in syslinux
-# This departure is necessary since hpa doesn't support the rebuilding of anything other
-# than the installers.
-
-# These are executables which come precompiled and are run by the boot loader
 QA_PREBUILT="usr/share/${PN}/*.c32"
-
-# removed all the unpack/patching stuff since we aren't rebuilding the core stuff anymore
+QA_EXECSTACK="usr/share/syslinux/*"
+QA_WX_LOAD="usr/share/syslinux/*"
+QA_PRESTRIPPED="usr/share/syslinux/.*"
+QA_FLAGS_IGNORED=".*"
 
 PATCHES=(
 	#"${FILESDIR}"/syslinux-6.04_pre1-acpi_off.patch
@@ -78,20 +82,7 @@ src_prepare() {
 			-e 's|-Os||g' \
 			-e 's|CFLAGS[[:space:]]\+=|CFLAGS +=|g' \
 			|| die "sed custom-cflags failed"
-	else
-		QA_FLAGS_IGNORED="
-			/sbin/extlinux
-			/usr/bin/memdiskfind
-			/usr/bin/gethostip
-			/usr/bin/isohybrid
-			/usr/bin/syslinux
-			"
 	fi
-	case ${ARCH} in
-		amd64)	loaderarch="efi64" ;;
-		x86)	loaderarch="efi32" ;;
-		*)	ewarn "Unsupported architecture, building installers only." ;;
-	esac
 
 	# building with ld.gold causes problems, bug #563364
 	if tc-ld-is-gold; then
@@ -103,35 +94,45 @@ src_prepare() {
 			ewarn "Continuing anyway as requested."
 		fi
 	fi
+}
+src_compile() {
+	filter-lto #863722
+
+	local DATE=$(date -u -r NEWS +%Y%m%d)
+	local HEXDATE=$(printf '0x%08x' "${DATE}")
 
 	tc-export AR CC LD OBJCOPY RANLIB
-}
+	unset CFLAGS LDFLAGS
 
-_emake() {
-	emake \
-		AR="${AR}" \
-		CC="${CC}" \
-		LD="${LD}" \
-		OBJCOPY="${OBJCOPY}" \
-		RANLIB="${RANLIB}" \
-		"$@"
-}
-
-src_compile() {
-	# build system abuses the LDFLAGS variable to pass arguments to ld
-	unset LDFLAGS
-	_emake spotless
-	if [[ ! -z ${loaderarch} ]]; then
-		_emake ${loaderarch}
+	if use bios; then
+		emake bios DATE="${DATE}" HEXDATE="${HEXDATE}"
 	fi
-	_emake bios
-	_emake installer
+	if use efi; then
+		if use abi_x86_32; then
+			emake efi32 DATE="${DATE}" HEXDATE="${HEXDATE}"
+		fi
+		if use abi_x86_64; then
+			emake efi64 DATE="${DATE}" HEXDATE="${HEXDATE}"
+		fi
+	fi
 }
 
 src_install() {
-	# parallel install fails sometimes
-	einfo "loaderarch=${loaderarch}"
-	_emake -j1 INSTALLROOT="${D}" MANDIR=/usr/share/man bios ${loaderarch} install
-	dodoc README NEWS doc/*.txt
+	local firmware=( $(usev bios) )
+	if use efi; then
+		use abi_x86_32 && firmware+=( efi32 )
+		use abi_x86_64 && firmware+=( efi64 )
+	fi
+	local args=(
+		INSTALLROOT="${ED}"
+		MANDIR='$(DATADIR)/man'
+		"${firmware[@]}"
+		install
+	)
+	emake -j1 "${args[@]}"
+	if use bios; then
+		mv "${ED}"/usr/bin/keytab-{lilo,syslinux} || die
+	fi
+	einstalldocs
+	dostrip -x /usr/share/syslinux
 }
-

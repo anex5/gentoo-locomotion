@@ -1,5 +1,5 @@
 diff --git a/cmake/modules/FindOpenVDB.cmake b/cmake/modules/FindOpenVDB.cmake
-index 4fde5fa4a..566e73a5e 100644
+index 4fde5fa..566e73a 100644
 --- a/cmake/modules/FindOpenVDB.cmake
 +++ b/cmake/modules/FindOpenVDB.cmake
 @@ -347,28 +347,10 @@ macro(just_fail msg)

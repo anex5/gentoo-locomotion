@@ -1,4 +1,4 @@
-# Copyright 1999-2022 Gentoo Authors
+# Copyright 1999-2023 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -12,12 +12,12 @@ DESCRIPTION="A mesh slicer to generate G-code for fused-filament-fabrication (3D
 HOMEPAGE="https://github.com/supermerill/SuperSlicer/"
 SRC_URI="
 	https://github.com/supermerill/SuperSlicer/archive/refs/tags/${PV}.tar.gz -> ${P}.tar.gz
-	https://github.com/slic3r/slic3r-profiles/archive/748fbdfd2ac077e4e415868e7bc963740b92aa8e.tar.gz -> ${P}-profiles.tar.gz
+	https://github.com/slic3r/slic3r-profiles/archive/f6b1b123062a77101fe350f6d2a2a57be9adc684.tar.gz -> ${P}-profiles.tar.gz
 "
 
 LICENSE="AGPL-3 Boost-1.0 GPL-2 LGPL-3 MIT"
 SLOT="0"
-KEYWORDS="amd64 ~x86"
+KEYWORDS="~amd64 ~x86"
 IUSE="test"
 
 RESTRICT="test mirror"
@@ -53,26 +53,28 @@ DEPEND="${RDEPEND}
 	media-libs/qhull[static-libs]
 "
 
+#	"${FILESDIR}/${P}-wxgtk3-wayland-fix.patch"
 PATCHES=(
-	"${FILESDIR}/${P}-openexr3.patch"
-	"${FILESDIR}/${P}-cereal.patch"
-	"${FILESDIR}/${P}-boost-1.81-std-wxString-to-std-wstring.patch"
-	"${FILESDIR}/${P}-missing-includes.patch"
-	"${FILESDIR}/${P}-dont-install-bundled-angelscript.patch"
 	"${FILESDIR}/${P}-fix-gcodeviewer-symlink.patch"
 	"${FILESDIR}/${P}-boost.patch"
 	"${FILESDIR}/${P}-uniqueptr.patch"
+	"${FILESDIR}/${P}-cereal.patch"
+	"${FILESDIR}/${P}-dont-install-angelscript.patch"
+	"${FILESDIR}/${P}-gcodeviewer-symlink-fix.patch"
+	"${FILESDIR}/${P}-missing-includes-fix.patch"
+	"${FILESDIR}/${P}-openexr3.patch"
+	"${FILESDIR}/${P}-relax-OpenCASCADE-dep.patch"
+	"${FILESDIR}/${P}-link-occtwrapper-statically.patch"
+	"${FILESDIR}/${P}-fix-dereferencing-in-std-unique_ptr-to-nullptr.patch"
+	"${FILESDIR}/${P}-fix-spiral_vase-null-pointer.patch"
 )
 
 S="${WORKDIR}/${MY_PN}-${PV}"
 
-src_prepare() {
-	#mv slic3r-profiles-*/* "${S}"/resources/profiles/ || die
+src_unpack() {
+	default
 
-	sed -i -e 's/find_package(OpenCASCADE 7.6.2 REQUIRED)/find_package(OpenCASCADE REQUIRED)/g' \
-		src/occt_wrapper/CMakeLists.txt || die
-
-	cmake_src_prepare
+	mv slic3r-profiles-*/* "${S}"/resources/profiles/ || die
 }
 
 src_configure() {

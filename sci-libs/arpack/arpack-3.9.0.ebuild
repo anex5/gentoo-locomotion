@@ -1,28 +1,25 @@
-# Copyright 1999-2022 Gentoo Authors
+# Copyright 1999-2023 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-#COMMIT="5eafea4328f1631eab28b1a20e757d1f0e21f8a6"
-PYTHON_COMPAT=( python3_{9..11} )
+PYTHON_COMPAT=( python3_{10,11} )
 
 inherit cmake flag-o-matic fortran-2 python-single-r1
 
+if [[ ${PV} == *9999 ]]; then
+	inherit git-r3
+	EGIT_REPO_URI="https://github.com/opencollab/arpack-ng"
+else
+	SRC_URI="https://github.com/opencollab/${PN}-ng/archive/${PV}.tar.gz -> ${P}.tar.gz"
+	KEYWORDS="~amd64 ~arm ~arm64 ~hppa ~ia64 ~loong ~ppc ~ppc64 ~riscv ~s390 ~sparc ~x86 ~amd64-linux ~x86-linux ~ppc-macos"
+	S="${WORKDIR}/${PN}-ng-${PV}"
+fi
+
 DESCRIPTION="Arnoldi package library to solve large scale eigenvalue problems"
-HOMEPAGE="
-	https://github.com/opencollab/arpack-ng
-"
-SRC_URI="
-	https://github.com/opencollab/${PN}-ng/archive/refs/tags/${PV}.tar.gz -> ${PF}.gh.tar.gz
-"
-
-RESTRICT="mirror"
-
-S="${WORKDIR}/${PN}-ng-${PV}"
-
+HOMEPAGE="http://www.caam.rice.edu/software/ARPACK/ https://github.com/opencollab/arpack-ng"
 LICENSE="BSD"
 SLOT="0"
-KEYWORDS="~amd64 ~arm ~arm64 ~hppa ~ia64 ~ppc ~ppc64 ~riscv ~sparc ~x86 ~amd64-linux ~x86-linux ~ppc-macos"
 IUSE="doc examples icb icbexmm -lp64 mpi python"
 
 RDEPEND="
@@ -46,6 +43,7 @@ REQUIRED_USE="
 		icbexmm
 	)
 "
+RESTRICT="mirror"
 
 src_configure() {
 	append-fflags '-fallow-argument-mismatch'
