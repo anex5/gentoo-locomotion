@@ -72,3 +72,33 @@ index 553a183..686630c 100644
  #include "wxExtensions.hpp"
  
  #include <boost/filesystem/path.hpp>
+--- a/src/libslic3r/CustomGCode.hpp
++++ b/src/libslic3r/CustomGCode.hpp
+@@ -3,6 +3,7 @@
+ 
+ #include <string>
+ #include <vector>
++#include <cstdint>
+ 
+ namespace Slic3r {
+ 
+--- a/src/libslic3r/PNGReadWrite.hpp
++++ b/src/libslic3r/PNGReadWrite.hpp
+@@ -4,6 +4,7 @@
+ #include <vector>
+ #include <string>
+ #include <istream>
++#include <cstdint>
+ 
+ namespace Slic3r { namespace png {
+ 
+--- a/src/slic3r/GUI/BitmapCache.hpp
++++ b/src/slic3r/GUI/BitmapCache.hpp
+@@ -3,6 +3,7 @@
+ 
+ #include <map>
+ #include <vector>
++#include <cstdint>
+ 
+ #include <wx/wxprec.h>
+ #ifndef WX_PRECOMP

@@ -55,9 +55,7 @@ DEPEND="${RDEPEND}
 
 #	"${FILESDIR}/${P}-wxgtk3-wayland-fix.patch"
 PATCHES=(
-	"${FILESDIR}/${P}-fix-gcodeviewer-symlink.patch"
 	"${FILESDIR}/${P}-boost.patch"
-	"${FILESDIR}/${P}-uniqueptr.patch"
 	"${FILESDIR}/${P}-cereal.patch"
 	"${FILESDIR}/${P}-dont-install-angelscript.patch"
 	"${FILESDIR}/${P}-gcodeviewer-symlink-fix.patch"
