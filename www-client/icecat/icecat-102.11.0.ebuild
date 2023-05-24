@@ -108,7 +108,7 @@ COMMON_DEPEND="
 			dev-python/rsa[${PYTHON_USEDEP}]
 			dev-python/setuptools[${PYTHON_USEDEP}]
 			dev-python/six[${PYTHON_USEDEP}]
-			dev-python/toml[${PYTHON_USEDEP}]
+			dev-python/tomli[${PYTHON_USEDEP}]
 			dev-python/tqdm[${PYTHON_USEDEP}]
 			dev-python/typing-extensions[${PYTHON_USEDEP}]
 			dev-python/urllib3[${PYTHON_USEDEP}]
