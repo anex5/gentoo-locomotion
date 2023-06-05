@@ -3,13 +3,18 @@
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{9..11} )
+PYTHON_COMPAT=( python3_{10..12} )
 
 MY_PN="OpenSfM"
 
-inherit distutils-r1
+inherit distutils-r1 cmake
 
 DISTUTILS_USE_SETUPTOOLS=no
+DISTUTILS_OPTIONAL=1
+DISTUTILS_USE_PEP517=setuptools
+DISTUTILS_SINGLE_IMPL=1
+DISTUTILS_EXT=1
+
 DESCRIPTION="Open source Structure-from-Motion pipeline"
 HOMEPAGE="https://www.opensfm.org"
 
@@ -34,7 +39,7 @@ SLOT="0"
 
 KEYWORDS="~amd64"
 
-IUSE="doc test"
+IUSE="debug doc test"
 
 REQUIRED_USE="${PYTHON_REQUIRED_USE}"
 
@@ -78,27 +83,59 @@ RESTRICT="
 "
 
 src_prepare() {
-	default
 	use doc || sed -i -e "/from sphinx\.setup_command import BuildDoc/d" -e "/\"build_doc\": BuildDoc\,/d" setup.py || die
 	sed -i -e "/\"bin\/opensfm\"\,/a		\"bin\/opensfm_main\.py\"," setup.py || die
 
-	#Enable cxx14-std as CERES-2.0 req it and unbundle pybind11
+	#Enable cxx14-std as CERES-2.0 req it
 	sed -i -e "s|\(set(CMAKE_CXX_STANDARD \)11|\114|" opensfm/src/CMakeLists.txt || die
+	#unbundle pybind11
 	sed	-i -e "s|add_subdirectory(third_party\/pybind11)|find_package (pybind11 CONFIG REQUIRED)|" opensfm/src/CMakeLists.txt || die
 	sed -i -e "/^target_link_libraries(/,/)/s|pybind11|pybind11::headers|g" opensfm/src/{foundation,bundle,dense,features,geometry,robust,sfm,geo,map}/CMakeLists.txt || die
+
+	eapply "${FILESDIR}/unbundle-pybind.patch"
+
+	CMAKE_USE_DIR="${S}/opensfm/src"
+	cmake_src_prepare
+	distutils-r1_src_prepare
+}
+
+python_prepare_all() {
+	python_setup
+	python_fix_shebang .
+	distutils-r1_python_prepare_all
+}
+
+src_configure() {
+	CMAKE_BUILD_TYPE=$(usex debug RelWithDebInfo Release)
+
+	local mycmakeargs=(
+		-DOPENSFM_BUILD_TESTS=$(usex test)
+	)
+	cmake_src_configure
+}
+
+src_compile() {
+	python_setup
+	cmake_src_compile
+	distutils-r1_src_compile
+}
+
+src_install() {
+	pushd ${PN}/src >/dev/null || die
+	distutils-r1_src_install
+	popd >/dev/null || die
 }
 
 python_compile_all() {
 	local targets=()
 	use doc && targets+=( build_doc )
+	use test && targets+=( bundle_test )
 
 	if [[ ${targets[@]} ]]; then
-		esetup.py "${targets[@]}"
+		${EPYTHON} esetup.py "${targets[@]}"
 	fi
 }
 
 python_test() {
-	esetup.py test
+	${EPYTHON} esetup.py test
 }
-
-
