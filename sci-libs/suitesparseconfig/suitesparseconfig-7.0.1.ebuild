@@ -1,41 +1,57 @@
-# Copyright 1999-2021 Gentoo Authors
+# Copyright 1999-2023 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=7
+EAPI=8
 
-inherit toolchain-funcs multilib-minimal
+inherit cmake-multilib toolchain-funcs
 
 DESCRIPTION="Common configurations for all packages in suitesparse"
 HOMEPAGE="http://faculty.cse.tamu.edu/davis/suitesparse.html"
-#SRC_URI="http://202.36.178.9/sage/${P}.tar.bz2"
 SRC_URI="https://github.com/DrTimothyAldenDavis/SuiteSparse/archive/v${PV}.tar.gz -> SuiteSparse-${PV}.tar.gz"
 
 # No licensing restrictions apply to this file or to the SuiteSparse_config directory.
 LICENSE="public-domain"
 SLOT="0"
-KEYWORDS="~alpha amd64 arm arm64 ~hppa ~ia64 ~mips ppc ppc64 sparc x86 ~amd64-linux ~x86-linux"
-IUSE="static-libs"
+KEYWORDS="amd64 arm arm64 ~hppa ~ia64 ~mips ppc ppc64 sparc x86"
+IUSE="doc debug static-libs"
 RESTRICT="mirror"
 
 S=${WORKDIR}/SuiteSparse-${PV}/SuiteSparse_config
 
-PATCHES=(
-	"${FILESDIR}/suitesparseconfig.mk.patch"
-)
-
 src_prepare() {
-	default
 	tc-export CC CXX AR RANLIB
 	multilib_copy_sources
+	cmake_src_prepare
+}
+
+multilib_src_configure() {
+	CMAKE_BUILD_TYPE=$(usex debug RelWithDebInfo Release)
+
+	local mycmakeargs=(
+		-DBLA_VENDOR=Generic
+		-DALLOW_64BIT_BLAS=ON
+	)
+	cmake_src_configure
+}
+
+src_configure() {
+	cmake-multilib_src_configure
 }
 
 multilib_src_compile() {
-	#sed -i -e '//d' Lib/Makefile || die "sed failed"
-	SUITESPARCE="$(pwd)" OPTIMIZATION="" AUTOCC=no emake library || die "make failed"
+	cmake_src_compile
+}
+
+src_compile() {
+	cmake-multilib_src_compile
 }
 
 multilib_src_install() {
-	use static-libs && ( dolib.a libsuitesparseconfig.a || die )
+	cmake_src_install
+
+	if multilib_is_native_abi; then
+		use static-libs && ( dolib.a libsuitesparseconfig.a || die )
+	fi
 }
 
 multilib_src_install_all() {
@@ -53,15 +69,10 @@ multilib_src_install_all() {
 	Libs: -L\${libdir} -lsuitesparseconfig
 	EOF
 
-	insinto /usr/include
-	doins SuiteSparse_config.h || die
-
-	dolib.so ../lib/{lib${PN}.so.$(ver_cut 1-1),lib${PN}.so.$(ver_cut 1-3),lib${PN}.so} || die
-
 	insinto /usr/$(get_libdir)/pkgconfig
 	doins "${T}"/suitesparseconfig.pc
 
-	einstalldocs
+	use doc && einstalldocs
 
 	if ! use static-libs; then
 		find "${ED}" -name "*.a" -delete || die

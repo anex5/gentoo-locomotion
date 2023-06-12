@@ -1,11 +1,11 @@
-# Copyright 1999-2021 Gentoo Authors
+# Copyright 1999-2023 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=7
+EAPI=8
 
-inherit multilib-minimal toolchain-funcs
+inherit cmake-multilib toolchain-funcs cuda
 
-MY_PV=5.10.1
+MY_PV="7.0.1"
 
 DESCRIPTION="Sparse Cholesky factorization and update/downdate library"
 HOMEPAGE="https://people.engr.tamu.edu/davis/suitesparse.html"
@@ -14,9 +14,8 @@ SRC_URI="https://github.com/DrTimothyAldenDavis/SuiteSparse/archive/v${MY_PV}.ta
 
 LICENSE="LGPL-2.1+ modify? ( GPL-2+ ) matrixops? ( GPL-2+ )"
 SLOT="0"
-KEYWORDS="~amd64 ~arm ~arm64 ~hppa ~ia64 ~mips ~ppc ~ppc64 ~sparc ~x86 ~amd64-linux ~x86-linux"
-#KEYWORDS=""
-IUSE="cuda doc +lapack +matrixops +modify +partition"
+KEYWORDS="~amd64 ~arm ~arm64 ~hppa ~ia64 ~mips ~ppc ~ppc64 ~sparc ~x86"
+IUSE="cuda debug doc +lapack +matrixops +modify +partition static-libs"
 
 BDEPEND="virtual/pkgconfig
 	doc? ( virtual/latex-base )"
@@ -25,7 +24,7 @@ DEPEND="
 	sci-libs/amd
 	sci-libs/colamd
 	cuda? (
-		dev-util/nvidia-cuda-toolkit
+		dev-util/nvidia-cuda-toolkit:=
 	)
 	lapack? ( virtual/lapack )
 	partition? (
@@ -39,41 +38,43 @@ DEPEND="
 RDEPEND="${DEPEND}"
 RESTRICT="mirror"
 
-S=${WORKDIR}/SuiteSparse-${MY_PV}
-
-PATCHES=(
-	"${FILESDIR}/suitesparseconfig.mk.patch"
-    "${FILESDIR}/fix_typos.patch"
-    "${FILESDIR}/fix_feenableexcept.patch"
-)
+#S=${WORKDIR}/SuiteSparse-${MY_PV}
+S=${WORKDIR}/SuiteSparse-${MY_PV}/${PN^^}
 
 src_prepare() {
-	default
-	tc-export CC CXX F77 FC AR RANLIB
+	tc-export CC CXX AR RANLIB
 	#use cuda && eapply "${FILESDIR}/cuda.patch"
-	S=${WORKDIR}/SuiteSparse-${MY_PV}/${PN^^}
 	multilib_copy_sources
+	cmake_src_prepare
+}
+
+multilib_src_configure() {
+	CMAKE_BUILD_TYPE=$(usex debug RelWithDebInfo Release)
+
+	local mycmakeargs=(
+		-DNSTATIC=$(usex !static-libs)
+		-DGPU_BLAS=$(usex cuda)
+		-DNPARTITION=$(usex !partition)
+		-DNMODIFY=$(usex !modify)
+		-DNMATRIXOPS=$(usex !matrixops)
+	)
+	cmake_src_configure
+}
+
+src_configure() {
+	cmake-multilib_src_configure
 }
 
 multilib_src_compile() {
-	local cconfig=""
-	use cuda && cconfig+="-DGPU_BLAS "
-	use partition || cconfig+="-DNPARTITION "
-	use modify || cconfig+="-DNMODIFY "
-	use matrixops || cconfig+="-DNMATRIXOPS "
-	if use lapack; then
-		blas_libs="$($(tc-getPKG_CONFIG) --libs blas)"
-		lapack_libs=$($(tc-getPKG_CONFIG) --libs lapack)
-	fi
+	cmake_src_compile
+}
 
-	OPTIMIZATION="" SUITESPARSE=$(pwd) \
-	#CHOLMOD_CONFIG="$cconfig" \
-	BLAS="$blas_libs" LAPACK="$lapack_libs" \
-	emake library || die "make failed"
+src_compile() {
+	cmake-multilib_src_compile
 }
 
 multilib_src_install() {
-	dolib.so ../lib/{lib${PN}.so.$(ver_cut 1-1),lib${PN}.so.$(ver_cut 1-3),lib${PN}.so} || die
+	cmake_src_install
 }
 
 multilib_src_install_all() {
@@ -97,11 +98,11 @@ multilib_src_install_all() {
 	insinto /usr/$(get_libdir)/pkgconfig
 	doins "${T}"/cholmod.pc
 
-	insinto /usr/include
-	doins Include/{${PN}_supernodal.h,${PN}_partition.h,${PN}_modify.h,${PN}_matrixops.h,${PN}_io64.h,${PN}_function.h,${PN}_core.h,${PN}_config.h,${PN}_cholesky.h,${PN}_check.h,${PN}_camd.h,${PN}_blas.h,${PN}.h} || die
-
 	use doc && einstalldocs
 
 	# no static archives
+	use !static-libs &&	find "${ED}" -name "*.a" -delete || die
+
+	# strip .la files
 	find "${D}" -name '*.la' -delete || die
 }

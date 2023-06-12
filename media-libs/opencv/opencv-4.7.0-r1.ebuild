@@ -3,7 +3,7 @@
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{9..11} )
+PYTHON_COMPAT=( python3_{10..12} )
 inherit flag-o-matic java-pkg-opt-2 java-ant-2 cmake-multilib python-r1 toolchain-funcs cuda
 
 DESCRIPTION="A collection of algorithms and sample code for various computer vision problems"
@@ -21,7 +21,7 @@ SRC_URI="https://github.com/${PN}/${PN}/archive/${PV}.tar.gz -> ${P}.tar.gz
 LICENSE="Apache-2.0"
 SLOT="0/${PV}" # subslot = libopencv* soname version
 KEYWORDS="~amd64 ~arm ~arm64 ~loong ~ppc ~ppc64 ~riscv ~x86"
-IUSE="contrib contribcvv contribdnn contribfreetype contribhdf contribovis contribsfm contribxfeatures2d cuda debug dnncuda dnnsamples download +eigen examples +features2d ffmpeg gdal gflags glog gphoto2 gstreamer gtk3 ieee1394 jpeg jpeg2k lapack lto opencl openexr opengl openmp opencvapps png +python qt5 tesseract testprograms threads tiff vaapi v4l vtk vulkan webp xine -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70 -sm_75 -sm_86"
+IUSE="contrib contribcvv contribdnn contribfreetype contribhdf contribovis contribsfm contribxfeatures2d cuda debug cudnn dnnsamples download +eigen examples +features2d ffmpeg gdal gflags glog gphoto2 gstreamer gtk3 ieee1394 jpeg jpeg2k lapack lto opencl openexr opengl openmp opencvapps png +python qt5 tesseract testprograms threads tiff vaapi v4l vtk vulkan webp xine -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70 -sm_75 -sm_86"
 
 # The following lines are shamelessly stolen from ffmpeg-9999.ebuild with modifications
 ARM_CPU_FEATURES=(
@@ -75,7 +75,7 @@ REQUIRED_USE="
 	contribovis? ( contrib )
 	contribsfm? ( contrib eigen gflags glog )
 	contribxfeatures2d? ( contrib download )
-	dnncuda? ( cuda || ( sm_61 sm_70 sm_75 sm_86 ) )
+	cudnn? ( cuda || ( sm_61 sm_70 sm_75 sm_86 ) )
 	examples? ( contribdnn )
 	java? ( python )
 	opengl? ( qt5 )
@@ -92,6 +92,7 @@ RDEPEND="
 	dev-libs/protobuf:=[${MULTILIB_USEDEP}]
 	sys-libs/zlib[${MULTILIB_USEDEP}]
 	cuda? ( dev-util/nvidia-cuda-toolkit:0= )
+	cudnn? ( dev-libs/cudnn:0= )
 	contribhdf? ( sci-libs/hdf5:= )
 	contribfreetype? (
 		media-libs/freetype:2[${MULTILIB_USEDEP}]
@@ -426,8 +427,8 @@ multilib_src_configure() {
 		-DWITH_NVCUVID=OFF
 	#	-DWITH_NVCUVID=$(usex cuda)
 		-DCUDA_NPP_LIBRARY_ROOT_DIR=$(usex cuda "${EPREFIX}/opt/cuda" "")
-		-DWITH_CUDNN=$(usex dnncuda)
-		-DOPENCV_DNN_CUDA=$(usex dnncuda)
+		-DWITH_CUDNN=$(usex cudnn)
+		-DOPENCV_DNN_CUDA=$(usex cudnn)
 		-DCUDA_FAST_MATH=$(multilib_native_usex cuda)
 		-DCUDA_HOST_COMPILER="$(cuda_gccdir)"
 		-DCUDA_NVCC_FLAGS=$(multilib_native_usex cuda "-Xcompiler;-fno-lto;${NVCCFLAGS}" '')
