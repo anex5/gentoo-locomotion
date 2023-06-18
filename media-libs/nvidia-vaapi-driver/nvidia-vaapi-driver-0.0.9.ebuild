@@ -5,26 +5,51 @@ EAPI=8
 
 inherit meson
 
+NV_VER="535.04.03"
+COMMIT_HASH="0a007660d10919491703462fb3fa479d192a685d"
+
 DESCRIPTION="A VA-API implemention using NVIDIA's NVDEC, specifically designed to be used by Firefox"
 HOMEPAGE="https://github.com/elFarto/nvidia-vaapi-driver"
-SRC_URI="https://github.com/elFarto/nvidia-vaapi-driver/archive/refs/tags/v${PV}.tar.gz -> ${P}.tar.gz"
+#SRC_URI="https://github.com/elFarto/nvidia-vaapi-driver/archive/refs/tags/v${PV}.tar.gz -> ${P}.tar.gz"
+SRC_URI="
+	https://github.com/elFarto/nvidia-vaapi-driver/archive/0a007660d10919491703462fb3fa479d192a685d.tar.gz -> ${P}.tar.gz
+	https://github.com/NVIDIA/open-gpu-kernel-modules/archive/refs/tags/${NV_VER}.tar.gz -> open-gpu-kernel-modules-${NV_VER}.tar.gz
+"
 
 LICENSE="MIT"
 SLOT="0"
 KEYWORDS="~amd64"
-IUSE=""
+IUSE="+direct"
 
-DEPEND="x11-drivers/nvidia-drivers
+RDEPEND="
+	x11-drivers/nvidia-drivers
+	media-libs/libva
+"
+BDEPEND="
+	dev-util/meson
 	media-libs/nv-codec-headers
-	media-libs/libva"
-RDEPEND="x11-drivers/nvidia-drivers
-	media-libs/gst-plugins-bad[egl]
-	media-libs/libva"
-BDEPEND="dev-util/meson"
+	media-video/ffmpeg[nvenc]
+"
 
-RESRICT="mirror test"
+RESTRICT="mirror"
 
 PATCHES=( "${FILESDIR}/${PN}-0.0.8-install-path.patch" )
+
+S=${WORKDIR}/${PN}-${COMMIT_HASH}
+
+src_prepare() {
+    default
+    cp ${FILESDIR}/99nvidia-vaapi ${S}/99nvidia-vaapi
+    if use direct; then
+        echo "Enabeling direct access.."
+        "./${S}/extract_headers.sh" "${WORKDIR}/open-gpu-kernel-modules-${NV_VER}"
+    fi
+}
+
+src_install() {
+    meson_src_install
+    #dosym /usr/lib64/dri/nvidia_drv_video.so /usr/lib64/va/drivers/nvidia_drv_video.so
+}
 
 pkg_postinst() {
 	ewarn "This library requires special configuration! See "

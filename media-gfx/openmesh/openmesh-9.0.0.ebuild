@@ -1,23 +1,23 @@
-# Copyright 1999-2019 Gentoo Authors
+# Copyright 1999-2023 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=7
+EAPI=8
 
 inherit cmake
 
 MY_PN="OpenMesh"
-MY_PV="${PV/_rc/-RC}"
-S="${WORKDIR}/${MY_PN}-${MY_PV}"
+MY_PV=$(ver_cut 1-2)
+S="${WORKDIR}/${MY_PN}-${PV}"
 
 DESCRIPTION="A generic data structure to represent and manipulate polygonal meshes"
 HOMEPAGE="https://www.openmesh.org/"
-SRC_URI="https://openmesh.org/media/Releases/${MY_PV/-RC/RC}/${MY_PN}-${MY_PV}.tar.bz2"
+SRC_URI="https://openmesh.org/media/Releases/${MY_PV/-RC/RC}/${MY_PN}-${MY_PV}.tar.gz"
 
 LICENSE="BSD"
 SLOT="0"
 KEYWORDS="~amd64 ~ia64 ~x86"
 IUSE="doc qt5 static-libs test"
-RESTRICT="!test? ( test )"
+RESTRICT="!test? ( test ) mirror"
 
 RDEPEND="
 	qt5? (
@@ -45,11 +45,11 @@ src_prepare() {
 	sed -i -e "s|libdata\/|$(get_libdir)\/|" CMakeLists.txt
 
 	sed -i \
-		-e "s|\(set (ACG_PROJECT_LIBDIR \"\).*|\1$(get_libdir)/\")|" \
+		-e "s|\(set (VCI_PROJECT_LIBDIR \"\).*|\1$(get_libdir)/\")|" \
 		-e "s|\(BUILD_WITH_INSTALL_RPATH \)1|\1 0|" \
 		-e "s|\(SKIP_BUILD_RPATH\) 0|\1 1|" \
 		-e '/^ *INSTALL_RPATH/d' \
-		cmake/ACGCommon.cmake || die
+		cmake-library/VCI/VCICommon.cmake || die
 
 	if ! use static-libs; then
 		sed -i "s|\(SHARED\)ANDSTATIC|\1|" \

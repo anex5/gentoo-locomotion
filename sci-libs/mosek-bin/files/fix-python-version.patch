@@ -1,0 +1,11 @@
+--- a/mosek/10.0/tools/platform/linux64x86/python/3/setup.py
++++ b/mosek/10.0/tools/platform/linux64x86/python/3/setup.py
+@@ -15,7 +15,7 @@ class InstallationError(Exception): pass
+ major,minor,_,_,_ = sys.version_info
+ setupdir = pathlib.Path(__file__).resolve().parent
+ 
+-python_versions = [(3, 6), (3, 7), (3, 8), (3, 9), (3, 10)]
++python_versions = [(3, 6), (3, 7), (3, 8), (3, 9), (3, 10), (3, 11)]
+ if (major,minor) not in python_versions: raise InstallationError("Unsupported python version")
+ if platform.system() != "Linux" or platform.architecture()[0] != "64bit" or platform.machine() not in ["AMD64","x86_64"]: raise InstallationError("Invalid system/platform/architecture")
+ 

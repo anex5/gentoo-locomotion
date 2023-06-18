@@ -1,8 +1,8 @@
-# Copyright 2021 Gentoo Authors
+# Copyright 1999-2023 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=7
-PYTHON_COMPAT=( python3_{7..9} )
+EAPI=8
+PYTHON_COMPAT=( python3_{10..11} )
 
 MY_PN=${PN/-bin/}
 MY_PV=$(ver_rs 1-2 '_' $(ver_cut 1-2))
@@ -11,18 +11,22 @@ inherit distutils-r1
 
 DESCRIPTION="A commercial solver for mathematical optimization problems."
 HOMEPAGE="http://mosek.com/"
-SRC_URI="https://download.mosek.com/stable/${PV}/mosektoolslinux64x86.tar.bz2"
+SRC_URI="https://download.mosek.com/stable/${PV}/mosektoolslinux64x86.tar.bz2 -> ${P}.tar.bz2"
 
 LICENSE="MOSEK"
-SLOT="$(ver-cut 1-1)"
+SLOT="$(ver_cut 1-1)"
 KEYWORDS="amd64"
-IUSE="python doc"
+IUSE="python debug doc"
 
 RESTRICT="mirror"
 
 S="${WORKDIR}"
 
 DISTUTILS_USE_SETUPTOOLS=no
+DISTUTILS_OPTIONAL=1
+DISTUTILS_USE_PEP517=setuptools
+DISTUTILS_SINGLE_IMPL=1
+DISTUTILS_EXT=1
 
 RDEPEND="
 	>=dev-python/numpy-1.11.0[${PYTHON_USEDEP}]
@@ -32,7 +36,21 @@ DEPEND="${RDEPEND}
 	dev-python/setuptools[${PYTHON_USEDEP}]
 "
 
-QA_PREBUILT="opt/${MY_PN}/usr/lib/{libcilkrts.so.5,libmosek64.so,libmosekxx$MY_PV.so} opt/${MY_PN}/usr/bin/mosek"
+QA_PREBUILT="opt/${MY_PN}/usr/lib/{libmosek64.so,libmosekxx$MY_PV.so} opt/${MY_PN}/usr/bin/mosek"
+
+PATCHES=(
+	${FILESDIR}/fix-python-version.patch
+)
+
+src_prepare() {
+	default
+	distutils-r1_src_prepare
+}
+
+python_prepare_all() {
+	python_setup
+	distutils-r1_python_prepare_all
+}
 
 src_compile(){
 	if use python ; then
@@ -49,7 +67,7 @@ src_install (){
 	insinto "/opt/${MY_PN}/usr/lib"
 	cd "${S}/mosek/$(ver_cut 1-2)/tools/platform/linux64x86/bin"
 
-	doins "libcilkrts.so.5"
+	#doins "libcilkrts.so.$(ver_cut 1-2)"
 	doins "libmosek64.so.$(ver_cut 1-2)"
 	doins "libmosekxx${MY_PV}.so"
 	dosym "libmosek64.so.$(ver_cut 1-2)" "/opt/${MY_PN}/usr/lib/libmosek64.so"
