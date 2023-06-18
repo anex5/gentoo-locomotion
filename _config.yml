@@ -1,7 +1,7 @@
-theme: minima
-minima:
+theme: minimal
+minimal:
   skin: dark
-show_excerpts: true
-show_downloads: false
-tmezone: Europe/Moscow
+show_excerpts: false
+show_downloads: true
+timezone: Europe/Moscow
 google_analytics: G-LH7GRNBZM5
