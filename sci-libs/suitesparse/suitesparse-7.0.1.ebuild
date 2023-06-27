@@ -23,5 +23,5 @@ RDEPEND="
 	sci-libs/cxsparse
 	sci-libs/klu[doc?]
 	sci-libs/ldl[doc?]
-	sci-libs/spqr[doc?,partition?,tbb?]
+	sci-libs/spqr[doc?,tbb?]
 	sci-libs/umfpack[doc?,cholmod]"

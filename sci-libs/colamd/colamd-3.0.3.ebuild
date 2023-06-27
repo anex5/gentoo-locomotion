@@ -3,58 +3,45 @@
 
 EAPI=8
 
-inherit cmake-multilib toolchain-funcs
+inherit cmake-multilib
 
-MY_PV="7.0.1"
-
-DESCRIPTION="Library to order a sparse matrix prior to Cholesky factorization"
-HOMEPAGE="http://faculty.cse.tamu.edu/davis/suitesparse.html"
-SRC_URI="https://github.com/DrTimothyAldenDavis/SuiteSparse/archive/v${MY_PV}.tar.gz -> SuiteSparse-${MY_PV}.tar.gz"
+Sparse_PV="7.0.1"
+Sparse_P="SuiteSparse-${Sparse_PV}"
+DESCRIPTION="Column approximate minimum degree ordering algorithm"
+HOMEPAGE="https://people.engr.tamu.edu/davis/suitesparse.html"
+SRC_URI="https://github.com/DrTimothyAldenDavis/SuiteSparse/archive/refs/tags/v${Sparse_PV}.tar.gz -> ${Sparse_P}.gh.tar.gz"
 
 LICENSE="BSD"
 SLOT="0"
-KEYWORDS="~alpha ~amd64 ~arm ~arm64 ~hppa ~ia64 ~mips ~ppc ~ppc64 ~sparc ~x86"
-IUSE="debug doc fortran static-libs"
+KEYWORDS="~alpha ~amd64 ~arm ~arm64 ~hppa ~ia64 ~loong ~mips ~ppc ~ppc64 ~riscv ~s390 ~sparc ~x86 ~amd64-linux ~x86-linux"
+IUSE="debug doc static-libs test"
+RESTRICT="!test? ( test ) mirror"
 
-S=${WORKDIR}/SuiteSparse-${MY_PV}/${PN^^}
+DEPEND=">=sci-libs/suitesparseconfig-${Sparse_PV}"
+REPEND="${DEPEND}"
 
 BDEPEND="
 	virtual/pkgconfig
 	doc? ( virtual/latex-base )
 "
-DEPEND=">=sci-libs/suitesparseconfig-${MY_PV}"
-REPEND="${DEPEND}"
-RESTRICT="mirror"
-
-src_prepare() {
-	tc-export CC CXX AR RANLIB
-	multilib_copy_sources
-	cmake_src_prepare
-}
+S="${WORKDIR}/${Sparse_P}/${PN^^}"
 
 multilib_src_configure() {
 	CMAKE_BUILD_TYPE=$(usex debug RelWithDebInfo Release)
 
 	local mycmakeargs=(
 		-DNSTATIC=$(usex !static-libs)
+		-DDEMO=$(usex test)
 	)
 	cmake_src_configure
 }
 
-src_configure() {
-	cmake-multilib_src_configure
-}
-
-multilib_src_compile() {
-	cmake_src_compile
-}
-
-src_compile() {
-	cmake-multilib_src_compile
-}
-
-multilib_src_install() {
-	cmake_src_install
+multilib_src_test() {
+	# Run demo files
+	./colamd_example > colamd_example.out || die "failed to run test colamd_example"
+	diff "${S}"/Demo/colamd_example.out colamd_example.out || die "failed testing colamd_example"
+	./colamd_l_example > colamd_l_example.out || die "failed to run test colamd_l_example"
+	diff "${S}"/Demo/colamd_l_example.out colamd_l_example.out || die "failed testing colamd_l_example"
 }
 
 multilib_src_install_all() {

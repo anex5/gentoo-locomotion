@@ -3,57 +3,71 @@
 
 EAPI=8
 
-inherit cmake-multilib toolchain-funcs
+FORTRAN_NEEDED="fortran"
+inherit cmake-multilib fortran-2
 
-MY_PV="7.0.1"
-
+Sparse_PV="7.0.1"
+Sparse_P="SuiteSparse-${Sparse_PV}"
 DESCRIPTION="Library to order a sparse matrix prior to Cholesky factorization"
-HOMEPAGE="http://faculty.cse.tamu.edu/davis/suitesparse.html"
-SRC_URI="https://github.com/DrTimothyAldenDavis/SuiteSparse/archive/v${MY_PV}.tar.gz -> SuiteSparse-${MY_PV}.tar.gz"
+HOMEPAGE="https://people.engr.tamu.edu/davis/suitesparse.html"
+SRC_URI="https://github.com/DrTimothyAldenDavis/SuiteSparse/archive/refs/tags/v${Sparse_PV}.tar.gz -> ${Sparse_P}.gh.tar.gz"
 
 LICENSE="BSD"
-SLOT="0"
-KEYWORDS="~alpha ~amd64 ~arm ~arm64 ~hppa ~ia64 ~mips ~ppc ~ppc64 ~sparc ~x86"
-IUSE="debug doc fortran static-libs"
+SLOT="0/3"
+KEYWORDS="~alpha ~amd64 ~arm ~arm64 ~hppa ~ia64 ~loong ~mips ~ppc ~ppc64 ~riscv ~s390 ~sparc ~x86 ~amd64-linux ~x86-linux"
+IUSE="debug doc fortran static-libs test"
+RESTRICT="!test? ( test ) mirror"
 
-S=${WORKDIR}/SuiteSparse-${MY_PV}/${PN^^}
-
-BDEPEND="virtual/pkgconfig
+BDEPEND="
+	virtual/pkgconfig
 	doc? ( virtual/latex-base )
-	fortran? ( virtual/fortran )"
+"
 DEPEND=">=sci-libs/suitesparseconfig-${MY_PV}"
 REPEND="${DEPEND}"
-RESTRICT="mirror"
 
-src_prepare() {
-	tc-export CC CXX F77 FC AR RANLIB
-	multilib_copy_sources
-	cmake_src_prepare
-}
+S="${WORKDIR}/${Sparse_P}/${PN^^}"
 
 multilib_src_configure() {
 	CMAKE_BUILD_TYPE=$(usex debug RelWithDebInfo Release)
 
 	local mycmakeargs=(
-		-DNSTATIC=$(usex !static-libs)
-		-DNFORTRAN=$(usex !fortran)
+		-DNSTATIC=$(usex static-libs OFF ON)
+		-DNFORTRAN=$(usex fortran OFF ON)
+		-DDEMO=$(usex test)
 	)
 	cmake_src_configure
 }
 
-src_configure() {
-	cmake-multilib_src_configure
-}
-
-multilib_src_compile() {
-	cmake_src_compile
-}
-
-src_compile() {
-	cmake-multilib_src_compile
+multilib_src_test() {
+	# Run demo files
+	local demofiles=(
+		amd_demo
+		amd_l_demo
+		amd_demo2
+		amd_simple
+	)
+	if use fortran; then
+		demofiles+=(
+			amd_f77simple
+			amd_f77demo
+		)
+	fi
+	for i in ${demofiles[@]}; do
+		./"${i}" > "${i}.out" || die "failed to run test ${i}"
+		diff "${S}/Demo/${i}.out" "${i}.out" || die "failed testing ${i}"
+	done
+	einfo "All tests passed"
 }
 
 multilib_src_install() {
+	if use doc; then
+		pushd "${S}/Doc"
+		emake clean
+		rm -rf *.pdf
+		emake
+		popd
+		DOCS="${S}/Doc/*.pdf"
+	fi
 	cmake_src_install
 }
 
