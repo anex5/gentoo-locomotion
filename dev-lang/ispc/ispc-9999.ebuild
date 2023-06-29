@@ -3,8 +3,8 @@
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{9..11} )
-LLVM_MAX_SLOT=16
+PYTHON_COMPAT=( python3_{10..12} )
+LLVM_MAX_SLOT=15
 inherit cmake toolchain-funcs python-any-r1 llvm
 
 DESCRIPTION="Intel SPMD Program Compiler"
@@ -13,6 +13,7 @@ HOMEPAGE="https://ispc.github.io/"
 if [[ ${PV} == 9999 ]]; then
 	inherit git-r3
 	EGIT_REPO_URI="https://github.com/ispc/ispc.git"
+	EGIT_SUBMODULES=()
 	EGIT_BRANCH="main"
 else
 	SRC_URI="https://github.com/${PN}/${PN}/archive/v${PV}.tar.gz -> ${P}.tar.gz"
@@ -66,14 +67,6 @@ src_prepare() {
 	if use doc; then
 		sed -e 's|/usr/local/bin/dot|/usr/bin/dot|' -i "${S}"/doxygen.cfg || die
 	fi
-
-	#if use amd64; then
-		# On amd64 systems, build system enables x86/i686 build too.
-		# This ebuild doesn't even have multilib support, nor need it.
-		# https://bugs.gentoo.org/730062
-#		einfo "Removing auto-x86 build on amd64"
-#		sed -i -e 's:set(target_arch "i686"):return():' cmake/GenerateBuiltins.cmake || die
-#	fi
 
 	cmake_src_prepare
 }

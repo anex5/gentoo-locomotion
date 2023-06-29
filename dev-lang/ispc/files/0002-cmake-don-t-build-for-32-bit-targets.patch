@@ -50,15 +50,6 @@ index fa228247..7adc7e52 100644
          foreach (os_name "windows" "linux" "freebsd" "macos" "android" "ios" "ps4" "web")
              foreach (arch "x86" "arm" "wasm32")
                  builtin_to_cpp(${bit} ${os_name} ${arch} "${supported_archs}" "${supported_oses}" res${bit}${os_name}${arch})
-@@ -428,7 +428,7 @@ function (generate_common_builtins resultList)
-         endforeach()
-     endforeach()
-     if (XE_ENABLED)
--        foreach (bit 32 64)
-+        foreach (bit 64)
-             builtin_xe_to_cpp(${bit} res_xe_${bit})
-             list(APPEND tmpList ${res_xe_${bit}} )
-             if(MSVC)
 -- 
 2.17.1
 
