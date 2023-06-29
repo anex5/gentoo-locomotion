@@ -72,24 +72,28 @@ multilib_src_install() {
 }
 
 multilib_src_install_all() {
-	cat >> "${T}"/amd.pc <<- EOF
+	cat >> "${T}"/${PN}.pc <<- EOF
 	prefix=${EPREFIX}/usr
 	exec_prefix=\${prefix}
 	libdir=\${exec_prefix}/$(get_libdir)
 	includedir=\${prefix}/include
 
-	Name: AMD
+	Name: ${PN^^}
 	Description: Approximate Minimum Degree ordering
 	Version: ${PV}
 	URL: http://www.cise.ufl.edu/research/sparse/amd/
-	Libs: -L\${libdir} -lamd
+	Libs: -L\${libdir} -l${PN} -l${PN}_info
 	Libs.private: -lm
 	Cflags: -I\${includedir}
 	Requires: suitesparseconfig
 	EOF
 
 	insinto /usr/$(get_libdir)/pkgconfig
-	doins "${T}"/amd.pc
+	doins "${T}"/${PN}.pc
+
+	insinto /usr/include
+	doins Include/amd.h || die
+	doins Include/amd_internal.h || die
 
 	use doc && einstalldocs
 
