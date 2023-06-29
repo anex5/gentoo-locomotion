@@ -22,7 +22,6 @@ if [[ ${PV} = *9999 ]]; then
 	inherit git-r3
 	EGIT_REPO_URI="https://github.com/mapillary/${MY_PN}"
 	EGIT_SUBMODULES=()
-	#EGIT_SUBMODULES=( opensfm/src/third_party/pybind11 )
 	EGIT_BRANCH="main"
 	KEYWORDS=""
 else
@@ -31,7 +30,7 @@ else
 	S=${WORKDIR}/${MY_PN}-${PV}
 fi
 
-QA_PRESTRIPPED="usr/lib/${EPYTHON}/site-packages/${PN}/{pyfeatures,pydense,pysfm,pygeometry,pyrobust,pygeo,pymap,pybundle}.cpython-3{9,10,11}-x86_64-linux-gnu.so"
+QA_PRESTRIPPED="usr/lib/python.*/site-packages/opensfm/.*.so"
 
 LICENSE="BSD-2"
 
@@ -69,12 +68,14 @@ DEPEND="
 	)
 	>=dev-python/xmltodict-0.10.2[${PYTHON_USEDEP}]
 	dev-python/wheel[${PYTHON_USEDEP}]
-	dev-python/pybind11[${PYTHON_USEDEP}]
 	"
 RDEPEND="${DEPEND}"
 
 BDEPEND="
+	dev-python/pybind11[${PYTHON_USEDEP}]
+	dev-python/cython[${PYTHON_USEDEP}]
 	>=dev-util/cmake-3.0.0
+	dev-cpp/glog[gflags]
 "
 
 RESTRICT="

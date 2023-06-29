@@ -6,72 +6,97 @@ EAPI=8
 inherit cuda cmake-multilib toolchain-funcs
 
 Sparse_PV="7.0.1"
-
+Sparse_P="SuiteSparse-${Sparse_PV}"
 DESCRIPTION="Sparse Cholesky factorization and update/downdate library"
 HOMEPAGE="https://people.engr.tamu.edu/davis/suitesparse.html"
-SRC_URI="https://github.com/DrTimothyAldenDavis/SuiteSparse/archive/v${Sparse_PV}.tar.gz -> SuiteSparse-${Sparse_PV}.gh.tar.gz"
+SRC_URI="https://github.com/DrTimothyAldenDavis/SuiteSparse/archive/v${Sparse_PV}.tar.gz -> ${Sparse_P}.gh.tar.gz"
 
 LICENSE="LGPL-2.1+ modify? ( GPL-2+ ) matrixops? ( GPL-2+ )"
-SLOT="0"
-KEYWORDS="~amd64 ~arm ~arm64 ~hppa ~ia64 ~mips ~ppc ~ppc64 ~sparc ~x86"
-IUSE="cuda debug doc +lapack +matrixops +modify +partition static-libs"
+SLOT="0/4"
+KEYWORDS="~amd64 ~arm ~arm64 ~hppa ~ia64 ~loong ~mips ~ppc ~ppc64 ~riscv ~s390 ~sparc ~x86 ~amd64-linux ~x86-linux"
+IUSE="+cholesky cuda debug doc openmp +matrixops +modify +partition +supernodal test static-libs"
+RESTRICT="!test? ( test )"
 
-BDEPEND="virtual/pkgconfig
-	doc? ( virtual/latex-base )"
-
-DEPEND="
-	sci-libs/amd
-	sci-libs/colamd
-	cuda? (
-		dev-util/nvidia-cuda-toolkit:=
-	)
-	lapack? ( virtual/lapack )
+DEPEND=">=sci-libs/suitesparseconfig-${Sparse_PV}
+	>=sci-libs/amd-3.0.3
+	>=sci-libs/colamd-3.0.3
+	supernodal? ( virtual/lapack )
 	partition? (
-		sci-libs/camd
-		sci-libs/ccolamd
-		|| (
-			>=sci-libs/metis-5.1.0
-			sci-libs/parmetis
-		)
+		>=sci-libs/camd-3.0.3
+		>=sci-libs/ccolamd-3.0.3
+	)
+	cuda? (
+		dev-util/nvidia-cuda-toolkit
+		x11-drivers/nvidia-drivers
 	)"
 RDEPEND="${DEPEND}"
+BDEPEND="doc? ( virtual/latex-base )"
+
+REQUIRED_USE="supernodal? ( cholesky )
+	modify? ( cholesky )
+	test? ( cholesky matrixops supernodal )"
+
+S="${WORKDIR}/${Sparse_P}/${PN^^}"
+
 RESTRICT="mirror"
 
-S=${WORKDIR}/SuiteSparse-${Sparse_PV}/${PN^^}
+pkg_pretend() {
+	[[ ${MERGE_TYPE} != binary ]] && use openmp && tc-check-openmp
+}
+
+pkg_setup() {
+	[[ ${MERGE_TYPE} != binary ]] && use openmp && tc-check-openmp
+}
 
 src_prepare() {
-	tc-export CC CXX AR RANLIB
 	use cuda && cuda_src_prepare
 	multilib_copy_sources
 	cmake_src_prepare
 }
 
 multilib_src_configure() {
+	# Not that "N" prefixed options are negative options
+	# so they need to be turned OFF if you want that option.
+	# Fortran is turned off as it is only used to compile (untested) demo programs.
 	CMAKE_BUILD_TYPE=$(usex debug RelWithDebInfo Release)
-
 	local mycmakeargs=(
 		-DNSTATIC=$(usex !static-libs)
-		-DSUITESPARSE_CUDA=$(usex cuda)
-		-DNPARTITION=$(usex !partition)
-		-DNMODIFY=$(usex !modify)
-		-DNMATRIXOPS=$(usex !matrixops)
+		-DENABLE_CUDA=$(usex cuda)
+		-DNOPENMP=$(usex openmp OFF ON)
+		-DNFORTRAN=ON
+		-DNCHOLESKY=$(usex cholesky OFF ON)
+		-DNMATRIXOPS=$(usex matrixops OFF ON)
+		-DNMODIFY=$(usex modify OFF ON)
+		-DNPARTITION=$(usex partition OFF ON)
+		-DNSUPERNODAL=$(usex supernodal OFF ON)
+		-DDEMO=$(usex test)
 	)
 	cmake_src_configure
 }
 
-src_configure() {
-	cmake-multilib_src_configure
-}
-
-multilib_src_compile() {
-	cmake_src_compile
-}
-
-src_compile() {
-	cmake-multilib_src_compile
+multilib_src_test() {
+	# Run demo files
+	./cholmod_demo   < "${S}"/Demo/Matrix/bcsstk01.tri || die "failed testing"
+	./cholmod_l_demo < "${S}"/Demo/Matrix/bcsstk01.tri || die "failed testing"
+	./cholmod_demo   < "${S}"/Demo/Matrix/lp_afiro.tri || die "failed testing"
+	./cholmod_l_demo < "${S}"/Demo/Matrix/lp_afiro.tri || die "failed testing"
+	./cholmod_demo   < "${S}"/Demo/Matrix/can___24.mtx || die "failed testing"
+	./cholmod_l_demo < "${S}"/Demo/Matrix/can___24.mtx || die "failed testing"
+	./cholmod_demo   < "${S}"/Demo/Matrix/c.tri || die "failed testing"
+	./cholmod_l_demo < "${S}"/Demo/Matrix/c.tri || die "failed testing"
+	./cholmod_simple < "${S}"/Demo/Matrix/c.tri || die "failed testing"
+	./cholmod_simple < "${S}"/Demo/Matrix/can___24.mtx || die "failed testing"
+	./cholmod_simple < "${S}"/Demo/Matrix/bcsstk01.tri || die "failed testing"
 }
 
 multilib_src_install() {
+	if use doc; then
+		pushd "${S}/Doc"
+		rm -rf *.pdf
+		emake
+		popd
+		DOCS="${S}/Doc/*.pdf"
+	fi
 	cmake_src_install
 }
 
@@ -95,8 +120,6 @@ multilib_src_install_all() {
 
 	insinto /usr/$(get_libdir)/pkgconfig
 	doins "${T}"/cholmod.pc
-
-	use doc && einstalldocs
 
 	# no static archives
 	use !static-libs &&	find "${ED}" -name "*.a" -delete || die

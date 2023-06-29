@@ -3,21 +3,14 @@
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{9..11} )
+PYTHON_COMPAT=( python3_{10..12} )
 
 inherit git-r3 cmake python-r1
 
-if [[ ${PV} == 9999 ]]; then
-	EGIT_REPO_URI="https://github.com/laurentkneip/opengv"
-	EGIT_BRANCH="master"
-	EGIT_SUBMODULES=()
-	KEYWORDS=""
-else
-	EGIT_REPO_URI="https://github.com/laurentkneip/opengv"
-	EGIT_BRANCH="master"
-	EGIT_SUBMODULES=()
-	KEYWORDS="~amd64 ~x86"
-fi
+EGIT_REPO_URI="https://github.com/laurentkneip/opengv"
+EGIT_BRANCH="master"
+EGIT_SUBMODULES=()
+KEYWORDS="~amd64 ~x86"
 
 DESCRIPTION="Library for solving calibrated central and non-central geometric vision problems"
 HOMEPAGE="http://laurentkneip.github.io/opengv"
@@ -37,7 +30,7 @@ DEPEND="
 		dev-libs/boost[${PYTHON_USEDEP}]
 	')
 "
-RDEPEND=""
+RDEPEND="${DEPEND}"
 BDEPEND="
 	dev-python/pybind11[${PYTHON_USEDEP}]
 	>=dev-util/cmake-3.0.0
