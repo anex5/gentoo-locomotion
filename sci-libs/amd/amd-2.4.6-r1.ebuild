@@ -62,7 +62,7 @@ multilib_src_install_all() {
 	Description: Approximate Minimum Degree ordering
 	Version: ${PV}
 	URL: http://www.cise.ufl.edu/research/sparse/amd/
-	Libs: -L\${libdir} -lamd -lamd_info
+	Libs: -L\${libdir} -lamd
 	Libs.private: -lm
 	Cflags: -I\${includedir}
 	Requires: suitesparseconfig

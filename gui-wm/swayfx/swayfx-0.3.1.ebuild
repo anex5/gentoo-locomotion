@@ -5,15 +5,15 @@ EAPI=8
 
 inherit meson optfeature
 
-DESCRIPTION="i3-compatible Wayland window manager"
-HOMEPAGE="https://swaywm.org"
+DESCRIPTION="SwayFX: Sway, but with eye candy!"
+HOMEPAGE="https://github.com/WillPower3309/swayfx"
 
 if [[ ${PV} == 9999 ]]; then
 	inherit git-r3
-	EGIT_REPO_URI="https://github.com/swaywm/${PN}.git"
+	EGIT_REPO_URI="https://github.com/WillPower3309/swayfx"
 else
 	MY_PV=${PV/_rc/-rc}
-	SRC_URI="https://github.com/swaywm/${PN}/archive/${MY_PV}.tar.gz -> ${P}.tar.gz"
+	SRC_URI="https://github.com/WillPower3309/swayfx/archive/${MY_PV}.tar.gz -> ${P}.tar.gz"
 	KEYWORDS="~amd64 ~arm64 ~arm ~loong ~ppc64 ~riscv ~x86"
 	S="${WORKDIR}/${PN}-${MY_PV}"
 fi
@@ -63,6 +63,7 @@ RDEPEND="
 		gui-apps/wl-clipboard
 		x11-libs/libnotify
 	)
+	!!gui-wm/sway
 	${DEPEND}
 "
 BDEPEND="
@@ -76,6 +77,8 @@ else
 	BDEPEND+="man? ( >=app-text/scdoc-1.9.3 )"
 fi
 REQUIRED_USE="tray? ( swaybar )"
+
+RESTRICT="mirror"
 
 src_configure() {
 	local emesonargs=(
