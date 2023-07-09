@@ -1,10 +1,10 @@
-# Copyright 2019 Gentoo Authors
+# Copyright 1999-2023 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{8..10} )
-DISTUTILS_USE_SETUPTOOLS=manual
+PYTHON_COMPAT=( python3_{10..12} )
+DISTUTILS_USE_PEP517=setuptools
 
 inherit distutils-r1
 
@@ -16,24 +16,18 @@ if [[ ${PV} == "9999" ]]; then
 	EGIT_REPO_URI="https://github.com/getpatchwork/${PN}"
 else
 	SRC_URI="https://github.com/getpatchwork/${PN}/archive/${PV}.tar.gz -> ${P}.tar.gz"
-	KEYWORDS="~amd64"
+	KEYWORDS="~amd64 ~x86 ~arm ~arm64"
 	RESTRICT="mirror "
 fi
 
 LICENSE="LGPL-2"
 SLOT="0"
-KEYWORDS="~amd64 ~x86"
 IUSE=""
-RESTRICT+="test"
+RESTRICT+="!test ( test )"
 
-RDEPEND="
-	dev-python/setuptools[${PYTHON_USEDEP}]
-	dev-python/pbr[${PYTHON_USEDEP}]
-	dev-python/pip[${PYTHON_USEDEP}]
-"
-BDEPEND="
-"
+REQUIRED_USE="${PYTHON_REQUIRED_USE}"
 
-src_configure() {
-	export PBR_VERSION=${PV}
-}
+RDEPEND="${PYTHON_DEPS}
+	dev-python/importlib-metadata[${PYTHON_USEDEP}]
+	>=dev-python/pbr-5.7.0[${PYTHON_USEDEP}]
+"
