@@ -8,7 +8,7 @@ EAPI="8"
 # Using Gentoos firefox patches as system libraries and lto are quite nice
 FIREFOX_PATCHSET="firefox-102esr-patches-10j.tar.xz"
 
-LLVM_MAX_SLOT=16
+LLVM_MAX_SLOT=15
 
 PYTHON_COMPAT=( python3_{9..11} )
 PYTHON_REQ_USE="ncurses,sqlite,ssl"
@@ -793,7 +793,7 @@ src_configure() {
 	fi
 
 	# LTO flag was handled via configure
-	filter-flags '-flto*'
+	filter-lto
 
 	mozconfig_use_enable debug
 	if use debug ; then
