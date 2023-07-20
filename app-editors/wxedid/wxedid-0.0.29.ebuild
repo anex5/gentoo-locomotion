@@ -3,8 +3,8 @@
 
 EAPI=8
 
-WX_GTK_VER=3.0-gtk3
-inherit toolchain-funcs wxwidgets
+WX_GTK_VER=3.2-gtk3
+inherit toolchain-funcs wxwidgets desktop
 
 DESCRIPTION="wxWidgets-based EDID (Extended Display Identification Data) editor"
 HOMEPAGE="https://wxedid.sourceforge.io"
@@ -17,26 +17,24 @@ IUSE=""
 RESTRICT="mirror"
 
 BDEPEND="
-	x11-libs/wxGTK:${WX_GTK_VER}[X]"
+	x11-libs/wxGTK:${WX_GTK_VER}
+"
 
-QA_PRESTRIPPED="/usr/bin/wxedid"
+QA_PRESTRIPPED="usr/bin/wxedid"
 
 S="${WORKDIR}/${PN}-${PV}"
 
 PATCHES=(
-#	"${FILESDIR}"/${P}-syslibs.patch
-#	"${FILESDIR}"/${P}-desktop.patch
+	"${FILESDIR}"/${PN}_xdg_cfg.patch
 )
 
-pkg_pretend() {
-	[[ ${MERGE_TYPE} != binary ]] && tc-check-openmp
-}
-
 pkg_setup() {
-	[[ ${MERGE_TYPE} != binary ]] && tc-check-openmp
+	setup-wxwidgets
 }
 
-src_prepare() {
-	setup-wxwidgets
+src_install() {
 	default
+	insinto /usr/share/applications
+	domenu "${FILESDIR}/net.sourceforge.wxEDID.desktop"
+	doicon -s scalable "${FILESDIR}/net.sourceforge.wxEDID.svg"
 }

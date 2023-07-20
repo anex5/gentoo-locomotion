@@ -1,0 +1,21 @@
+diff --color -ruN wxedid-0.0.29/src/wxEDID_App.cpp wxedid-0.0.29_xdg_cfg/src/wxEDID_App.cpp
+--- wxedid-0.0.29/src/wxEDID_App.cpp	2023-05-21 11:00:00.000000000 +0100
++++ wxedid-0.0.29_xdg_cfg/src/wxEDID_App.cpp	2023-07-05 11:09:41.937646151 +0100
+@@ -77,7 +77,7 @@
+    wxFile     cfg_file;
+    wxFileName cfg_fname;
+ 
+-   cfg_fname.SetPath( wxGetHomeDir() );
++   cfg_fname.SetPath( wxGetenv("XDG_CONFIG_HOME") );
+    cfg_fname.SetName( ".wxEDID_cfg" );
+    cfg_str = cfg_fname.GetFullPath();
+ 
+@@ -115,7 +115,7 @@
+    config.b_dta_grid_details = false;
+    config.b_blk_name_dynamic = true;
+ 
+-   cfg_fname.SetPath( wxGetHomeDir() );
++   cfg_fname.SetPath( wxGetenv("XDG_CONFIG_HOME") );
+    cfg_fname.SetName( ".wxEDID_cfg" );
+    cfg_str = cfg_fname.GetFullPath();
+ 
