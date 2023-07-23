@@ -3,7 +3,7 @@
 
 EAPI=8
 
-WX_GTK_VER="3.0-gtk3"
+WX_GTK_VER="3.2-gtk3"
 MY_PN="SuperSlicer"
 SLICER_PROFILES_COMMIT="f6b1b123062a77101fe350f6d2a2a57be9adc684"
 
@@ -47,8 +47,7 @@ RDEPEND="
 	sys-libs/zlib:=
 	virtual/glu
 	virtual/opengl
-	x11-libs/gtk+:3
-	x11-libs/wxGTK:${WX_GTK_VER}[X,opengl]
+	x11-libs/wxGTK:${WX_GTK_VER}[gui,opengl]
 "
 DEPEND="${RDEPEND}
 	media-libs/qhull[static-libs]

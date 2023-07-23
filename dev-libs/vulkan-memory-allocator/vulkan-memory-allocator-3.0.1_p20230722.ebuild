@@ -5,7 +5,7 @@ EAPI=8
 
 inherit cmake
 
-COMMIT_HASH="0aa3989b8f382f185fdf646cc83a1d16fa31d6ab"
+COMMIT_HASH="6eb62e1515072827db992c2befd80b71b2d04329"
 
 DESCRIPTION="Easy to integrate Vulkan memory allocation library"
 HOMEPAGE="https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator"
@@ -15,9 +15,21 @@ LICENSE="MIT"
 SLOT="0"
 KEYWORDS="~amd64"
 
+IUSE="doc"
+
+BDEPEND="doc? ( dev-python/sphinx )"
 RDEPEND="media-libs/vulkan-loader"
 
 RESTRICT="mirror"
 
 S="${WORKDIR}/VulkanMemoryAllocator-${COMMIT_HASH}"
 
+CMAKE_BUILD_TYPE=Release
+
+src_configure() {
+	local mycmakeargs=(
+		-DVMA_BUILD_DOCUMENTATION="$(usex doc)"
+		-DVMA_BUILD_SAMPLES=OFF
+	)
+	cmake_src_configure
+}

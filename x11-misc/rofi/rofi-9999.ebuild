@@ -18,13 +18,12 @@ if [[ ${PV} = *9999 ]]; then
 	KEYWORDS=""
 else
 	SRC_URI="https://github.com/lbonn/rofi/releases/download/${MY_PV}/${PN}-${MY_PV}.tar.xz"
-	KEYWORDS="~amd64 ~x86"
+	KEYWORDS="~amd64 ~x86 ~arm ~arm64"
 	S=${WORKDIR}/${PN}-${MY_PV}
 fi
 
 LICENSE="MIT"
 SLOT="0"
-KEYWORDS="amd64 arm64 x86"
 IUSE="X wayland +drun test +windowmode man"
 RESTRICT="!test? ( test )"
 
