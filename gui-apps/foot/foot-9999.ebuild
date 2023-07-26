@@ -7,13 +7,22 @@ inherit meson xdg systemd
 
 DESCRIPTION="Fast, lightweight and minimalistic Wayland terminal emulator"
 HOMEPAGE="https://codeberg.org/dnkl/foot"
-SRC_URI="https://codeberg.org/dnkl/foot/archive/${PV}.tar.gz -> ${P}.tar.gz"
+
+if [[ ${PV} == *9999* ]]; then
+	inherit git-r3
+	EGIT_REPO_URI="https://codeberg.org/dnkl/foot.git"
+	KEYWORDS="-*"
+else
+	SRC_URI="https://codeberg.org/dnkl/foot/archive/v${PV}.tar.gz -> ${P}.tar.gz"
+	S="${WORKDIR}"/${PN}-${MY_PV}
+	KEYWORDS="~amd64 ~arm64 ~arm ~x86"
+fi
 S="${WORKDIR}/${PN}"
 
 LICENSE="MIT"
 SLOT="0"
-KEYWORDS="~amd64 ~arm64 ~arm ~x86"
-IUSE="+grapheme-clustering ime man test themes"
+IUSE="+grapheme-clustering ime man systemd test themes"
+RESTRICT="mirror"
 
 COMMON_DEPEND="
 	dev-libs/wayland
@@ -21,6 +30,7 @@ COMMON_DEPEND="
 	media-libs/fontconfig
 	x11-libs/libxkbcommon
 	x11-libs/pixman
+	systemd? ( sys-apps/systemd:= )
 	grapheme-clustering? (
 		dev-libs/libutf8proc:=
 		media-libs/fcft[harfbuzz]
@@ -53,8 +63,8 @@ src_configure() {
 	local emesonargs=(
 		$(meson_feature grapheme-clustering)
 		$(meson_feature man docs)
-		-Dthemes=$(usex themes true false)
-		-Dime=$(usex ime true false)
+		$(meson_use themes)
+		$(meson_use ime)
 		-Dterminfo=disabled
 	)
 	meson_src_configure
@@ -69,5 +79,5 @@ src_install() {
 	# foot unconditionally installs CHANGELOG.md, README.md and LICENSE.
 	# we handle this via DOCS and dodoc instead.
 	use man && $( rm -r "${ED}/usr/share/doc/${PN}" || die )
-	systemd_douserunit foot-server@.service "${S}"/foot-server@.socket
+	use systemd && systemd_douserunit foot-server@.service "${S}"/foot-server@.socket
 }

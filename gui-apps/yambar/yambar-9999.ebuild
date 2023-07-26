@@ -62,6 +62,8 @@ BDEPEND="
 	)
 "
 
+RESTRICT="mirror test"
+
 src_prepare() {
 	default
 	use man || $( sed -i "/subdir('doc')/d" meson.build || die "Sed failed..." )
@@ -100,5 +102,5 @@ src_configure() {
 
 src_install() {
 	meson_src_install
-	use man && rm -rf "${D}/usr/share/doc/${PN}"
+	rm -rf "${D}/usr/share/doc/${PN}"
 }

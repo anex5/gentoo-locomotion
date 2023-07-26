@@ -1,8 +1,8 @@
 app-arch/brotli static-libs
 app-alternatives/bzip2 -reference
 app-alternatives/gzip -reference
-app-alternatives/cpio -gnu
-app-alternatives/tar -gnu 
+app-alternatives/cpio gnu
+app-alternatives/tar gnu 
 dev-libs/glib -elf
 sys-libs/glibc -gd
 dev-libs/libical -glib
@@ -13,7 +13,7 @@ dev-vcs/git -perl
 net-wireless/wpa_supplicant ap dbus eap-sim tkip wep wps
 sys-apps/debianutils -installkernel
 sys-apps/openrc sysv-utils
-sys-apps/systemd-utils -udev tmpfiles
+sys-apps/systemd-utils udev
 sys-devel/gcc -fortran lto graphite jit openmp ssp libssp custom-cflags
 dev-cpp/glog gflags
 

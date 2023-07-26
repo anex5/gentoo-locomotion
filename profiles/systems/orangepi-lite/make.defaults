@@ -3,7 +3,7 @@
 
 FEATURES="sandbox sfperms strict -collision-protect -news noauto noman nodoc noinfo"
 
-USE="-berkdb -man vaapi"
+USE="-berkdb -man vaapi -nvme"
 
 CPU_FLAGS_ARM="edsp neon thumb vfp vfpv3 vfpv4 vfp-d32 v4 v5 v6 v7 thumb2"
 

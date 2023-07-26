@@ -3,7 +3,6 @@ gnome-base/librsvg -vala
 media-fonts/unifont -utils
 app-arch/cabextract -extras
 media-libs/libpng apng
-sys-apps/systemd-utils -udev tmpfiles
 gui-wm/sway wallpapers tray
 gui-apps/swaybg gdk-pixbuf
 dev-lang/luajit lua_single_target_luajit

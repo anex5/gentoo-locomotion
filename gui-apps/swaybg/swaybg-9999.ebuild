@@ -18,7 +18,7 @@ fi
 
 LICENSE="MIT"
 SLOT="0"
-IUSE="gdk-pixbuf +man"
+IUSE="gdk-pixbuf man"
 
 DEPEND="
 	dev-libs/wayland
