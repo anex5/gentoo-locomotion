@@ -19,6 +19,8 @@ RDEPEND="${DEPEND}
 	>=x11-drivers/nvidia-drivers-460.27[${MULTILIB_USEDEP}]
 "
 
+RESTRICT="mirror"
+
 src_prepare() {
 	multilib_copy_sources
 	default

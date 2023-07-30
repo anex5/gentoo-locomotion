@@ -5,14 +5,14 @@ EAPI=8
 
 inherit meson
 
-NV_VER="535.04.03"
-COMMIT_HASH="0a007660d10919491703462fb3fa479d192a685d"
+NV_VER="535.86.05"
+COMMIT_HASH="2e2c3a145691fcfe86d603f707c951e0c8b41438"
 
 DESCRIPTION="A VA-API implemention using NVIDIA's NVDEC, specifically designed to be used by Firefox"
 HOMEPAGE="https://github.com/elFarto/nvidia-vaapi-driver"
 #SRC_URI="https://github.com/elFarto/nvidia-vaapi-driver/archive/refs/tags/v${PV}.tar.gz -> ${P}.tar.gz"
 SRC_URI="
-	https://github.com/elFarto/nvidia-vaapi-driver/archive/0a007660d10919491703462fb3fa479d192a685d.tar.gz -> ${P}.tar.gz
+	https://github.com/elFarto/nvidia-vaapi-driver/archive/${COMMIT_HASH}.tar.gz -> ${P}.tar.gz
 	https://github.com/NVIDIA/open-gpu-kernel-modules/archive/refs/tags/${NV_VER}.tar.gz -> open-gpu-kernel-modules-${NV_VER}.tar.gz
 "
 
@@ -33,7 +33,7 @@ BDEPEND="
 
 RESTRICT="mirror"
 
-PATCHES=( "${FILESDIR}/${PN}-0.0.8-install-path.patch" )
+#PATCHES=( "${FILESDIR}/${PN}-0.0.8-install-path.patch" )
 
 S=${WORKDIR}/${PN}-${COMMIT_HASH}
 

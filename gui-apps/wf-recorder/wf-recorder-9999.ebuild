@@ -12,8 +12,10 @@ if [[ ${PV} == 9999 ]]; then
 	inherit git-r3
 	EGIT_REPO_URI="https://github.com/ammen99/wf-recorder.git"
 else
-	SRC_URI="https://github.com/ammen99/wf-recorder/releases/download/v${PV}/${P}.tar.xz"
+	COMMIT="a40f9ad9f09fa142092c67e19f8679246b7ad8af"
+	SRC_URI="https://github.com/ammen99/wf-recorder/archive/${COMMIT}.tar.gz -> ${P}-${COMMIT}.tar.gz"
 	KEYWORDS="~amd64 ~arm ~arm64 ~x86"
+	S=${WORKDIR}/${PN}-${COMMIT}
 fi
 
 IUSE="debug pulseaudio"
