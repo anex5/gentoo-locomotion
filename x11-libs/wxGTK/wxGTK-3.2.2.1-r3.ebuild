@@ -141,6 +141,9 @@ multilib_src_configure() {
 		--libdir='${prefix}'/$(get_libdir)
 	)
 
+	# Switch to wxGLCanvas GLX instead of EGL, resolves many OpenGL issues.
+	myeconfargs+=( "--disable-glcanvasegl" )
+
 	# debug in >=2.9
 	# there is no longer separate debug libraries (gtk2ud)
 	# wxDEBUG_LEVEL=1 is the default and we will leave it enabled

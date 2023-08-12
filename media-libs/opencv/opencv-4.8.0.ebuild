@@ -21,7 +21,9 @@ SRC_URI="https://github.com/${PN}/${PN}/archive/${PV}.tar.gz -> ${P}.tar.gz
 LICENSE="Apache-2.0"
 SLOT="0/${PV}" # subslot = libopencv* soname version
 KEYWORDS="~amd64 ~arm ~arm64 ~loong ~ppc ~ppc64 ~riscv ~x86"
-IUSE="contrib contribcvv contribdnn contribfreetype contribhdf contribovis contribsfm contribxfeatures2d cuda debug cudnn dnnsamples download +eigen examples +features2d ffmpeg gdal gflags glog gphoto2 gstreamer gtk3 ieee1394 jpeg jpeg2k lapack lto opencl openexr opengl openmp opencvapps png +python qt5 tesseract testprograms threads tiff vaapi v4l vtk vulkan webp xine -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70 -sm_75 -sm_86"
+IUSE="avif contrib contribcvv contribdnn contribfreetype contribhdf contribovis contribsfm contribxfeatures2d cuda debug cudnn dnnsamples download +eigen flatbuffers \
+	examples +features2d ffmpeg gdal gflags glog gphoto2 gstreamer gtk3 ieee1394 jpeg jpeg2k lapack lto onnx opencl openexr opengl openmp opencvapps png +python \
+	qt5 tesseract testprograms threads tiff vaapi v4l vtk vulkan wayland webp xine -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70 -sm_75 -sm_86"
 
 # The following lines are shamelessly stolen from ffmpeg-9999.ebuild with modifications
 ARM_CPU_FEATURES=(
@@ -69,7 +71,7 @@ REQUIRED_USE="
 	gflags? ( contrib )
 	glog? ( contrib )
 	contribcvv? ( contrib qt5 )
-	contribdnn? ( contrib )
+	contribdnn? ( contrib flatbuffers )
 	contribfreetype? ( contrib )
 	contribhdf? ( contrib )
 	contribovis? ( contrib )
@@ -81,7 +83,9 @@ REQUIRED_USE="
 	opengl? ( qt5 )
 	python? ( ${PYTHON_REQUIRED_USE} )
 	tesseract? ( contrib )
-	?? ( gtk3 qt5 )"
+	onnx? ( flatbuffers )
+
+	?? ( gtk3 qt5 wayland )"
 
 # The following logic is intrinsic in the build system, but we do not enforce
 # it on the useflags since this just blocks emerging pointlessly:
@@ -91,6 +95,7 @@ RDEPEND="
 	app-arch/bzip2[${MULTILIB_USEDEP}]
 	dev-libs/protobuf:=[${MULTILIB_USEDEP}]
 	sys-libs/zlib[${MULTILIB_USEDEP}]
+	avif? ( media-libs/libavif:= )
 	cuda? ( dev-util/nvidia-cuda-toolkit:0= )
 	cudnn? ( dev-libs/cudnn:0= )
 	contribhdf? ( sci-libs/hdf5:= )
@@ -100,6 +105,7 @@ RDEPEND="
 	)
 	contribovis? ( dev-games/ogre:0/1.12 )
 	ffmpeg? ( media-video/ffmpeg:0=[${MULTILIB_USEDEP}] )
+	flatbuffers? ( >=dev-libs/flatbuffers-23.5.9:= )
 	gdal? ( sci-libs/gdal:= )
 	gflags? ( dev-cpp/gflags:=[${MULTILIB_USEDEP}] )
 	glog? ( dev-cpp/glog:=[${MULTILIB_USEDEP}] )
@@ -123,6 +129,7 @@ RDEPEND="
 		virtual/cblas
 		>=virtual/lapack-3.10
 	)
+ 	onnx? ( >=sci-libs/onnxruntime-1.12.0 )
 	opencl? ( virtual/opencl[${MULTILIB_USEDEP}] )
 	openexr? ( media-libs/openexr:=[${MULTILIB_USEDEP}] )
 	opengl? (
@@ -147,6 +154,7 @@ RDEPEND="
 	v4l? ( >=media-libs/libv4l-0.8.3[${MULTILIB_USEDEP}] )
 	vaapi? ( media-libs/libva[${MULTILIB_USEDEP}] )
 	vtk? ( sci-libs/vtk[rendering] )
+	wayland? ( >=dev-libs/wayland-1.18.0[${MULTILIB_USEDEP}] )
 	webp? ( media-libs/libwebp:=[${MULTILIB_USEDEP}] )
 	xine? ( media-libs/xine-lib )"
 DEPEND="${RDEPEND}
@@ -293,7 +301,7 @@ PATCHES=(
 	"${FILESDIR}"/${PN}-4.1.2-opencl-license.patch
 	"${FILESDIR}"/${PN}-4.4.0-disable-native-cpuflag-detect.patch
 	"${FILESDIR}"/${PN}-4.5.0-link-with-cblas-for-lapack.patch
-	"${FILESDIR}"/${PN}-4.6.0-fix-build-examples.patch # bug 830163, pending upstream PR #22245
+	#"${FILESDIR}"/${PN}-4.6.0-fix-build-examples.patch # bug 830163, pending upstream PR #22245
 )
 
 pkg_pretend() {
@@ -383,11 +391,14 @@ multilib_src_configure() {
 		-DWITH_OPENNI=OFF	# Not packaged
 		-DWITH_OPENNI2=OFF	# Not packaged
 		-DWITH_PNG=$(usex png)
+		-DWITH_AVIF=$(usex avif)
+		-DWITH_FLATBUFFERS=$(usex flatbuffers)
 		-DWITH_GDCM=OFF
 		-DWITH_PVAPI=OFF
 		-DWITH_GIGEAPI=OFF
 		-DWITH_ARAVIS=OFF
 		-DWITH_QT=$(multilib_native_usex qt5 5 OFF)
+		-DWITH_WAYLAND=$(usex wayland)
 		-DWITH_WIN32UI=OFF		# Windows only
 	#	-DWITH_QUICKTIME=OFF
 	#	-DWITH_QTKIT=OFF
@@ -404,6 +415,7 @@ multilib_src_configure() {
 		-DWITH_XIMEA=OFF	# Windows only
 		-DWITH_XINE=$(multilib_native_usex xine)
 		-DWITH_CLP=OFF
+		-DWITH_ONNX=$(usex onnx)
 		-DWITH_OPENCL=$(usex opencl)
 		-DWITH_OPENCL_SVM=OFF
 		-DWITH_OPENCLAMDFFT=$(usex opencl)
@@ -463,6 +475,8 @@ multilib_src_configure() {
 		-DINSTALL_TO_MANGLED_PATHS=OFF
 		-DOPENCV_GENERATE_PKGCONFIG=ON
 		-DOPENCV_ENABLE_NONFREE=ON
+		-DOPENCV_README_FILE=OFF
+		-DOPENCV_LICENSE_FILE=OFF
 		# opencv uses both ${CMAKE_INSTALL_LIBDIR} and ${LIB_SUFFIX}
 		# to set its destination libdir
 		-DLIB_SUFFIX=

@@ -7,7 +7,7 @@ WX_GTK_VER="3.2-gtk3"
 MY_PN="SuperSlicer"
 SLICER_PROFILES_COMMIT="f6b1b123062a77101fe350f6d2a2a57be9adc684"
 
-inherit cmake wxwidgets xdg flag-o-matic
+inherit cmake wxwidgets xdg flag-o-matic toolchain-funcs
 
 DESCRIPTION="A mesh slicer to generate G-code for fused-filament-fabrication (3D printers)"
 HOMEPAGE="https://github.com/supermerill/SuperSlicer/"
@@ -19,7 +19,7 @@ SRC_URI="
 LICENSE="AGPL-3 Boost-1.0 GPL-2 LGPL-3 MIT"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
-IUSE="test"
+IUSE="gui step test"
 
 RESTRICT="test mirror"
 
@@ -47,13 +47,12 @@ RDEPEND="
 	sys-libs/zlib:=
 	virtual/glu
 	virtual/opengl
-	x11-libs/wxGTK:${WX_GTK_VER}[gui,opengl]
+	x11-libs/wxGTK:${WX_GTK_VER}[gui?,opengl]
 "
 DEPEND="${RDEPEND}
 	media-libs/qhull[static-libs]
 "
 
-#	"${FILESDIR}/${P}-wxgtk3-wayland-fix.patch"
 PATCHES=(
 	"${FILESDIR}/${P}-boost.patch"
 	"${FILESDIR}/${P}-cereal.patch"
@@ -61,6 +60,7 @@ PATCHES=(
 	"${FILESDIR}/${P}-gcodeviewer-symlink-fix.patch"
 	"${FILESDIR}/${P}-missing-includes-fix.patch"
 	"${FILESDIR}/${P}-openexr3.patch"
+	"${FILESDIR}/${P}-wxgtk3-wayland-fix.patch"
 	"${FILESDIR}/${P}-relax-OpenCASCADE-dep.patch"
 	"${FILESDIR}/${P}-link-occtwrapper-statically.patch"
 	"${FILESDIR}/${P}-fix-dereferencing-in-std-unique_ptr-to-nullptr.patch"
@@ -84,15 +84,18 @@ src_configure() {
 
 	local mycmakeargs=(
 		-DOPENVDB_FIND_MODULE_PATH="/usr/$(get_libdir)/cmake/OpenVDB"
-
 		-DSLIC3R_BUILD_TESTS=$(usex test)
+		-DSLIC3R_ENABLE_FORMAT_STEP=$(usex step)
 		-DSLIC3R_FHS=ON
 		-DSLIC3R_GTK=3
-		-DSLIC3R_GUI=ON
+		-DSLIC3R_GUI=$(usex gui)
 		-DSLIC3R_PCH=OFF
 		-DSLIC3R_STATIC=OFF
-		-DSLIC3R_WX_STABLE=ON
+		-DSLIC3R_WX_STABLE=OFF
 		-Wno-dev
+	)
+	tc-is-cross-compiler && mycmakeargs+=(
+		-DIS_CROSS_COMPILE=ON
 	)
 
 	cmake_src_configure
