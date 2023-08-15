@@ -60,11 +60,11 @@ PATCHES=(
 	"${FILESDIR}/${P}-gcodeviewer-symlink-fix.patch"
 	"${FILESDIR}/${P}-missing-includes-fix.patch"
 	"${FILESDIR}/${P}-openexr3.patch"
-	"${FILESDIR}/${P}-wxgtk3-wayland-fix.patch"
+	#"${FILESDIR}/${P}-wxgtk3-wayland-fix.patch"
 	"${FILESDIR}/${P}-relax-OpenCASCADE-dep.patch"
-	"${FILESDIR}/${P}-link-occtwrapper-statically.patch"
 	"${FILESDIR}/${P}-fix-dereferencing-in-std-unique_ptr-to-nullptr.patch"
 	"${FILESDIR}/${P}-fix-spiral_vase-null-pointer.patch"
+	"${FILESDIR}/${P}-wxGTK-disable-asserts.patch"
 )
 
 S="${WORKDIR}/${MY_PN}-${PV}"
@@ -73,6 +73,11 @@ src_unpack() {
 	default
 
 	mv slic3r-profiles-*/* "${S}"/resources/profiles/ || die
+}
+
+src_prepare() {
+	use step && eapply "${FILESDIR}/${P}-link-occtwrapper-statically.patch"
+	cmake_src_prepare
 }
 
 src_configure() {
@@ -91,7 +96,7 @@ src_configure() {
 		-DSLIC3R_GUI=$(usex gui)
 		-DSLIC3R_PCH=OFF
 		-DSLIC3R_STATIC=OFF
-		-DSLIC3R_WX_STABLE=OFF
+		-DSLIC3R_WX_STABLE=ON
 		-Wno-dev
 	)
 	tc-is-cross-compiler && mycmakeargs+=(
