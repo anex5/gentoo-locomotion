@@ -10,8 +10,8 @@ inherit python-any-r1
 DESCRIPTION="Script for creating GNU Icecat tarball"
 HOMEPAGE="https://www.gnu.org/software/gnuzilla/"
 
-COMMIT="8c8a8ecc9322b0954e3d51f661866dbde1e6b1c3"
-COMPARE_LOCALES_PV="9.0.0"
+COMMIT="ac19d793c76732f9e5623e25fbf31287255a4ae7"
+COMPARE_LOCALES_PV="9.0.1"
 SRC_URI="
 	https://git.savannah.gnu.org/cgit/gnuzilla.git/snapshot/gnuzilla-${COMMIT}.tar.gz
 	https://archive.mozilla.org/pub/firefox/releases/${PV}esr/source/firefox-${PV}esr.source.tar.xz

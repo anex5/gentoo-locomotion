@@ -22,7 +22,7 @@ inherit autotools check-reqs desktop flag-o-matic gnome2-utils linux-info \
 	virtualx xdg xdg-utils
 
 PATCH_URIS=(
-	https://dev.gentoo.org/~{juippis,whissi,slashbeast}/mozilla/patchsets/${FIREFOX_PATCHSET}
+	https://dev.gentoo.org/~juippis/mozilla/patchsets/${FIREFOX_PATCHSET}
 )
 SRC_URI="
 	!buildtarball? ( icecat-${PV}-gnu1.tar.bz2 )
@@ -37,10 +37,10 @@ KEYWORDS="amd64 arm64 x86"
 SLOT="0"
 LICENSE="MPL-2.0 GPL-2 LGPL-2.1"
 
-IUSE="+clang cpu_flags_arm_neon dbus debug +buildtarball hardened hwaccel"
-IUSE+=" jack libproxy lto +openh264 pgo pulseaudio sndio selinux"
-IUSE+=" +system-av1 +system-harfbuzz +system-icu +system-jpeg +system-libevent +system-libvpx system-png system-python-libs +system-webp"
-IUSE+=" wayland wifi"
+IUSE="atk +clang cpu_flags_arm_neon dbus debug +buildtarball hardened hwaccel "
+IUSE+="jack libproxy lto +openh264 perl pgo pulseaudio sndio selinux "
+IUSE+="+system-av1 +system-harfbuzz +system-icu +system-jpeg +system-libevent +system-libvpx system-png system-python-libs +system-webp "
+IUSE+="wayland wifi"
 
 # Firefox-only IUSE
 IUSE+=" geckodriver screencast"
@@ -119,7 +119,7 @@ COMMON_DEPEND="
 			dev-python/zipp[${PYTHON_USEDEP}]
 		')
 	)
-	>=app-accessibility/at-spi2-core-2.46.0:2
+	atk? ( >=app-accessibility/at-spi2-core-2.46.0:2 )
 	dev-libs/expat
 	dev-libs/glib:2
 	dev-libs/libffi:=
@@ -571,6 +571,14 @@ src_unpack() {
 }
 
 src_prepare() {
+	use elibc_musl && eapply "${FILESDIR}/icecat-musl-sandbox.patch"
+	use atk || eapply "${FILESDIR}/icecat-no-atk.patch"
+	use dbus || eapply "${FILESDIR}/icecat-no-dbus.patch"
+	use perl || eapply "${FILESDIR}/icecat-no-perl.patch"
+	eapply "${FILESDIR}/icecat-no-fribidi.patch"
+
+	# has_version -r ">=media-video/ffmpeg-6.0" && eapply "${FILESDIR}/icecat-110-ffmpeg-6.0-fix.patch"
+
 	if use lto; then
 		rm -v "${WORKDIR}"/firefox-patches/*-LTO-Only-enable-LTO-*.patch || die
 	fi
@@ -1120,8 +1128,6 @@ src_install() {
 	# Update wrapper
 	sed -i \
 		-e "s:@PREFIX@:${EPREFIX}/usr:" \
-		-e "s:@MOZ_FIVE_HOME@:${MOZILLA_FIVE_HOME}:" \
-		-e "s:@APULSELIB_DIR@:${apulselib}:" \
 		-e "s:@DEFAULT_WAYLAND@:${use_wayland}:" \
 		"${ED}/usr/bin/${PN}" \
 		|| die
