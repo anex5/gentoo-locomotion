@@ -10,7 +10,7 @@ inherit git-r3 cmake python-r1
 EGIT_REPO_URI="https://github.com/laurentkneip/opengv"
 EGIT_BRANCH="master"
 EGIT_SUBMODULES=()
-KEYWORDS="~amd64 ~x86"
+KEYWORDS="~amd64 ~x86 ~arm"
 
 DESCRIPTION="Library for solving calibrated central and non-central geometric vision problems"
 HOMEPAGE="http://laurentkneip.github.io/opengv"
@@ -18,8 +18,8 @@ HOMEPAGE="http://laurentkneip.github.io/opengv"
 #PATCHES=( "${FILESDIR}/.patch" )
 
 SLOT="0"
-LICENSE="MPL-2"
-IUSE="python test"
+LICENSE="APL"
+IUSE="pic python test"
 
 REQUIRED_USE="${PYTHON_REQUIRED_USE}"
 
@@ -41,6 +41,8 @@ src_configure() {
 	sed -i -e "s|\(set(CMAKE_CXX_STANDARD \)11|\114|" \
 		-e "s|add_subdirectory(pybind11)|find_package (pybind11 CONFIG REQUIRED)|" python/CMakeLists.txt || die
 	local mycmakeargs=(
+		-DBUILD_SHARED_LIBS=ON
+		-DBUILD_POSITION_INDEPENDENT_CODE=$(usex pic ON OFF)
 		-DBUILD_PYTHON=$(usex python ON OFF)
 		-DBUILD_TESTS=$(usex test ON OFF)
 	)

@@ -1,7 +1,7 @@
-# Copyright 2021 Gentoo Authors
+# Copyright 1999-2023 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=7
+EAPI=8
 
 inherit toolchain-funcs
 
@@ -12,6 +12,7 @@ SRC_URI="https://github.com/stefanct/${PN}/archive/refs/heads/master.tar.gz -> $
 LICENSE="GPL-3"
 SLOT="0"
 KEYWORDS="amd64 x86"
+IUSE="doc"
 RESTRICT="mirror"
 DEPEND=">=dev-libs/libusb-1.0.0"
 
@@ -30,7 +31,7 @@ src_compile() {
 
 src_install() {
 	insinto /usr/bin
-	dobin ch341eeprom
-	dodoc
+	dobin "${S}"/ch341eeprom
+	use doc && dodoc
 }
 

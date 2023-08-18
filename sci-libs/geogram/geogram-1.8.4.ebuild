@@ -1,13 +1,13 @@
-# Copyright 2009-2020 Gentoo Foundation
+# Copyright 1999-2023 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=7
+EAPI=8
 
 inherit cmake toolchain-funcs
 
 DESCRIPTION="Geometric algorithms, includes a simple yet efficient Mesh data structure."
 HOMEPAGE="https://gforge.inria.fr/projects/geogram/"
-SRC_URI="https://github.com/alicevision/${PN}/archive/v${PV/_*}.tar.gz -> ${PN}_${PV/_*}.tar.gz"
+SRC_URI="https://github.com/BrunoLevy/${PN}/archive/v${PV/_*}.tar.gz -> ${PN}_${PV/_*}.tar.gz"
 KEYWORDS="~amd64 ~x86"
 
 SLOT="0"

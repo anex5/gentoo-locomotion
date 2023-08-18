@@ -1,15 +1,14 @@
-# Copyright 1999-2020 Gentoo Foundation
+# Copyright 1999-2023 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=7
+EAPI=8
 
 DESCRIPTION="Gfxboot themes for Gentoo Linux"
 HOMEPAGE="https://www.github.com/anex5"
 
 EGIT_REPO_URI="https://www.github.com/anex5/gfxboot-themes-aur.git"
-GIT_ECLASS="git-r3"
 
-inherit ${GIT_ECLASS}
+inherit git-r3
 
 LICENSE="Apache-2.0"
 SLOT="0"
@@ -23,7 +22,7 @@ BDEPEND="media-gfx/gfxboot
 RDEPEND="${DEPEND}"
 
 src_compile() {
-		fperms 0755 po/bin/{rm_text,po2txt,fixpot,change_text,add_text}
+		chmod 0755 po/bin/{rm_text,po2txt,fixpot,change_text,add_text} || die
 		emake -j1
 }
 

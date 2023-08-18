@@ -1,7 +1,7 @@
-# Copyright 1999-2019 Gentoo Authors
+# Copyright 1999-2023 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=7
+EAPI=8
 
 inherit git-r3 toolchain-funcs
 
@@ -34,6 +34,7 @@ DEPEND="${RDEPEND}
 
 # These are executables which come precompiled and are run by the boot loader
 QA_PREBUILT="usr/share/${PN}/*.c32"
+QA_PRESTRIPPED="usr/share/syslinux/efi64/ldlinux.e64"
 
 # removed all the unpack/patching stuff since we aren't rebuilding the core stuff anymore
 

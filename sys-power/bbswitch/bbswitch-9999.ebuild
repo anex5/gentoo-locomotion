@@ -1,7 +1,7 @@
-# Copyright 1999-2017 Gentoo Foundation
+# Copyright 1999-2023 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=7
+EAPI=8
 
 inherit linux-mod
 
@@ -31,10 +31,24 @@ RDEPEND=""
 MODULE_NAMES="bbswitch(acpi)"
 
 pkg_setup() {
-	linux-mod_pkg_setup
-
+	if ! linux_config_exists; then
+		ewarn "Cannot check the linux kernel configuration."
+	fi
 	BUILD_TARGETS="default"
 	BUILD_PARAMS="KVERSION=${KV_FULL}"
+
+	if linux_chkconfig_present CC_IS_CLANG; then
+  		BUILD_PARAMS+=" CC=${CHOST}-clang"
+  		if linux_chkconfig_present LD_IS_LLD; then
+    		BUILD_PARAMS+=' LD=ld.lld'
+    		if linux_chkconfig_present LTO_CLANG_THIN; then
+      			# kernel enables cache by default leading to sandbox violations
+      			BUILD_PARAMS+=' ldflags-y=--thinlto-cache-dir= LDFLAGS_MODULE=--thinlto-cache-dir='
+    		fi
+  		fi
+	fi
+
+	linux-mod_pkg_setup
 }
 
 src_prepare() {
@@ -45,10 +59,9 @@ src_prepare() {
 }
 
 src_install() {
-	einstalldocs
-
 	insinto /etc/modprobe.d
 	newins "${FILESDIR}"/bbswitch.modprobe bbswitch.conf
+	dodoc NEWS README.md
 
 	linux-mod_src_install
 }

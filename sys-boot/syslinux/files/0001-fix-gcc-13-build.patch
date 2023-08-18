@@ -1,0 +1,9 @@
+--- a/com32/lib/syslinux/debug.c
++++ b/com32/lib/syslinux/debug.c
+@@ -1,5 +1,6 @@
+ #include <linux/list.h>
+ #include <string.h>
++#include <stdio.h>
+ #include <stdbool.h>
+ 
+ #ifdef DYNAMIC_DEBUG

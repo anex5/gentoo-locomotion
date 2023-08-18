@@ -1,25 +1,27 @@
-# Copyright 1999-2020 Gentoo Foundation
+# Copyright 1999-2023 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=7
+EAPI=8
 
-inherit eutils git-r3 toolchain-funcs systemd
+inherit toolchain-funcs systemd
 
 DESCRIPTION="WSD/LLMNR Discovery/Name Service Daemon"
 HOMEPAGE="https://github.com/kochinc/wsdd2"
 
-EGIT_REPO_URI="https://github.com/kochinc/${PN}"
-EGIT_COMMIT="9b1911358e1929632b15e4fe8527fddc42dc139d"
+SRC_URI="https://github.com/kochinc/${PN}/archive/refs/heads/master.tar.gz -> ${P}.tar.gz"
 
 LICENSE="GPL-3"
 SLOT="0"
 IUSE="systemd man"
 KEYWORDS="~amd64 ~arm ~x86 ~mips"
+RESTRICT="mirror"
+
+S="${WORKDIR}/${PN}-master"
 
 DEPEND=""
 
 src_compile() {
-	emake CC="$(tc-getCC)" ${PN}
+	emake CC="$(tc-getCC)" CFLAGS="${CFLAGS}" ${PN}
 }
 
 src_install() {

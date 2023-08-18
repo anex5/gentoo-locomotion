@@ -1,25 +1,25 @@
-# Copyright 1999-2020 Gentoo Foundation
+# Copyright 1999-2023 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=7
+EAPI=8
 
-inherit eutils git-r3 toolchain-funcs
+inherit toolchain-funcs
 
 DESCRIPTION="Kernel mode EOIP (Ethernet Over IP) tunnel management utility."
 HOMEPAGE="https://github.com/ndmsystems/eoip-ctl/blob/1.0-1/README.md"
 
-EGIT_REPO_URI="https://github.com/ndmsystems/eoip-ctl"
-EGIT_COMMIT="ca35a5efd64c6eb512ca870f9eb86318cdcd7019"
+SRC_URI="https://github.com/ndmsystems/eoip-ctl/archive/refs/heads/master.tar.gz -> ${P}.tar.gz"
 
 LICENSE="GPL-2"
 SLOT="0"
 IUSE=""
 KEYWORDS="~amd64 ~arm ~x86 ~mips"
+RESTRICT="mirror"
 
-DEPEND=""
+S="${WORKDIR}/${PN}-master"
 
 src_compile() {
-	emake CC="$(tc-getCC)"
+	emake CC="$(tc-getCC)" CFLAGS="${CFLAGS}"
 }
 
 src_install() {
