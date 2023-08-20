@@ -1,4 +1,4 @@
-# Copyright 1999-2022 Gentoo Authors
+# Copyright 1999-2023 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -20,7 +20,7 @@ fi
 
 LICENSE="MIT"
 SLOT="0"
-IUSE="grimshot +man +swaybar +swaynag tray wallpapers X"
+IUSE="zsh-completion bash-completion fish-completion grimshot +man +swaybar +swaynag tray wallpapers X"
 
 DEPEND="
 	>=dev-libs/json-c-0.13:0=
@@ -89,9 +89,9 @@ src_configure() {
 		$(meson_use swaynag)
 		$(meson_use swaybar)
 		$(meson_use wallpapers default-wallpaper)
-		-Dfish-completions=true
-		-Dzsh-completions=true
-		-Dbash-completions=true
+		$(meson_use zsh-completion zsh-completions)
+		$(meson_use bash-completion bash-completions)
+		$(meson_use fish-completion fish-completions)
 	)
 
 	meson_src_configure

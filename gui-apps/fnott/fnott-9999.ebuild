@@ -1,9 +1,9 @@
-# Copyright 2022 Gentoo Authors
+# Copyright 1999-2023 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-inherit meson
+inherit meson toolchain-funcs
 
 DESCRIPTION="Keyboard driven and lightweight Wayland notification daemon."
 HOMEPAGE="https://codeberg.org/dnkl/fnott"
@@ -14,9 +14,10 @@ if [[ "${PV}" == "9999" ]]; then
 else
 	SRC_URI="https://codeberg.org/dnkl/fnott/archive/${PV}.tar.gz -> ${P}.tar.gz"
 	S="${WORKDIR}/${PN}"
-	KEYWORDS="~amd64"
+	KEYWORDS="~amd64 ~x86 ~arm ~arm64"
 fi
 
+IUSE="zsh-completion man test"
 RESTRICT="mirror"
 LICENSE="MIT ZLIB"
 SLOT="0"
@@ -29,15 +30,24 @@ DEPEND="
 	media-libs/fcft
 	media-libs/freetype
 	media-libs/fontconfig
+	media-libs/nanosvg
 "
 RDEPEND="${DEPEND}
 "
 BDEPEND="
 	dev-util/wayland-scanner
 	dev-libs/wayland-protocols
-	app-text/scdoc
+	man? ( app-text/scdoc )
 	dev-libs/tllist
 "
+
+src_prepare() {
+	default
+
+	tc-is-cross-compiler && ( sed "/wscanner\./s@native\: true@native\: false@" -i meson.build || die "Sed failed..." )
+	use man || ( sed "/subdir('doc')/d" -i meson.build || die "Sed failed..." )
+	use zsh-completion || ( sed "/subdir('completions')/d" -i meson.build || die "Sed failed..." )
+}
 
 src_install() {
 	local DOCS=( CHANGELOG.md README.md LICENSE )

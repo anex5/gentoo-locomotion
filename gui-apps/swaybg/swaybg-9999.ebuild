@@ -1,9 +1,9 @@
-# Copyright 1999-2022 Gentoo Authors
+# Copyright 1999-2023 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-inherit meson
+inherit meson toolchain-funcs
 
 DESCRIPTION="A wallpaper utility for Wayland"
 HOMEPAGE="https://github.com/swaywm/swaybg"
@@ -35,6 +35,12 @@ BDEPEND="
 	virtual/pkgconfig
 	man? ( app-text/scdoc )
 "
+
+src_prepare() {
+	default
+
+	tc-is-cross-compiler && ( sed "/find_program(wayland_scanner/s@native\: true@native\: false@" -i meson.build || die "Sed failed..." )
+}
 
 src_configure() {
 	local emesonargs=(

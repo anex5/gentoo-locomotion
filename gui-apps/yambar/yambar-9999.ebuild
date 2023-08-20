@@ -19,7 +19,7 @@ DESCRIPTION="Simplistic and highly configurable status panel for X and Wayland"
 HOMEPAGE="https://codeberg.org/dnkl/yambar"
 LICENSE="MIT"
 SLOT="0"
-IUSE="core +alsa +backlight +battery +clock +cpu +disk-io +dwl +foreign-toplevel man +memory +mpd +i3 +label +network +pipewire +pulseaudio +removables +river +script sway-xkb wayland X xkb xwindow"
+IUSE="+core alsa +backlight +battery +clock +cpu +disk-io dwl +foreign-toplevel man +memory +mpd i3 +label +network pipewire pulseaudio +removables river +script sway-xkb wayland X xkb xwindow"
 REQUIRED_USE="
 	|| ( wayland X )
 	sway-xkb? ( wayland )
@@ -66,6 +66,8 @@ RESTRICT="mirror test"
 
 src_prepare() {
 	default
+
+	tc-is-cross-compiler && ( sed "/find_program(wayland_scanner/s@native\: true@native\: false@" -i meson.build || die "Sed failed..." )
 	use man || $( sed -i "/subdir('doc')/d" meson.build || die "Sed failed..." )
 }
 

@@ -1,9 +1,9 @@
-# Copyright 2020-2022 Gentoo Authors
+# Copyright 2020-2023 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{8..11} )
+PYTHON_COMPAT=( python3_{10..12} )
 inherit meson python-any-r1
 
 DESCRIPTION="Simple library for font loading and glyph rasterization"
@@ -67,17 +67,21 @@ src_prepare() {
 		meson.build || die "Failed changing UnicodeData.txt to system's copy"
 	sed -i "s;unicode/emoji-data.txt;${EPREFIX}/usr/share/unicode-data/emoji/emoji-data.txt;" \
 		meson.build || die "Failed changing emoji-data.txt to system's copy"
+
+	if use examples; then
+		tc-is-cross-compiler && ( sed "/wscanner\./s@native\: true@native\: false@" -i meson.build || die "Sed failed..." )
+	fi
 }
 
 src_configure() {
 	local emesonargs=(
 		$(meson_feature harfbuzz grapheme-shaping)
 		$(meson_feature libutf8proc run-shaping)
+		$(meson_feature man docs)
 		$(meson_use examples)
 		$(use test && meson_use harfbuzz test-text-shaping)
 		# bundled, tiny, I believe this means we should always include it
 		-Dsvg-backend=nanosvg
-		-Ddocs=$(usex man enabled disabled)
 	)
 
 	meson_src_configure
@@ -87,7 +91,7 @@ src_install() {
 	local DOCS=( CHANGELOG.md README.md )
 	meson_src_install
 
-	use man && $( rm -r "${ED}"/usr/share/doc/${PN} || die )
+	rm -r "${ED}"/usr/share/doc/${PF}
 
 	use examples && newbin "${BUILD_DIR}/example/example" fcft-example
 }

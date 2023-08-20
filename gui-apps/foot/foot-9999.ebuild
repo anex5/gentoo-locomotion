@@ -1,9 +1,9 @@
-# Copyright 1999-2022 Gentoo Authors
+# Copyright 1999-2023 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-inherit meson xdg systemd
+inherit meson xdg systemd toolchain-funcs
 
 DESCRIPTION="Fast, lightweight and minimalistic Wayland terminal emulator"
 HOMEPAGE="https://codeberg.org/dnkl/foot"
@@ -38,7 +38,7 @@ COMMON_DEPEND="
 "
 DEPEND="
 	${COMMON_DEPEND}
-	dev-libs/tllist
+	>=dev-libs/tllist-1.1.0
 	dev-libs/wayland-protocols
 "
 RDEPEND="
@@ -57,12 +57,14 @@ src_prepare() {
 	default
 	# disable the systemd dep, we install the unit file manually
 	sed -i "s/systemd', required: false)$/', required: false)/" "${S}"/meson.build || die
+	tc-is-cross-compiler && ( sed "/find_program(wayland_scanner/s@native\: true@native\: false@" -i meson.build || die "Sed failed..." )
 }
 
 src_configure() {
 	local emesonargs=(
-		$(meson_feature grapheme-clustering)
 		$(meson_feature man docs)
+		$(meson_feature grapheme-clustering)
+		$(meson_use test tests)
 		$(meson_use themes)
 		$(meson_use ime)
 		-Dterminfo=disabled
@@ -78,6 +80,6 @@ src_install() {
 
 	# foot unconditionally installs CHANGELOG.md, README.md and LICENSE.
 	# we handle this via DOCS and dodoc instead.
-	use man && $( rm -r "${ED}/usr/share/doc/${PN}" || die )
+	rm -r "${ED}/usr/share/doc/${PN}" || die "Sed failed..."
 	use systemd && systemd_douserunit foot-server@.service "${S}"/foot-server@.socket
 }
