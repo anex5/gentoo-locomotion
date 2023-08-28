@@ -3,7 +3,8 @@
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{10..12} )
+# No 3.12 yet for bug #912987
+PYTHON_COMPAT=( python3_{10..11} )
 inherit flag-o-matic java-pkg-opt-2 java-ant-2 cmake-multilib python-r1 toolchain-funcs cuda
 
 DESCRIPTION="A collection of algorithms and sample code for various computer vision problems"
@@ -85,7 +86,7 @@ REQUIRED_USE="
 	tesseract? ( contrib )
 	onnx? ( flatbuffers )
 
-	?? ( gtk3 qt5 wayland )"
+	?? ( gtk3 qt5 vtk wayland )"
 
 # The following logic is intrinsic in the build system, but we do not enforce
 # it on the useflags since this just blocks emerging pointlessly:
@@ -293,7 +294,7 @@ MULTILIB_WRAPPED_HEADERS=(
 	/usr/include/opencv4/opencv2/viz/widgets.hpp
 )
 
-RESTRICT="mirror"
+#RESTRICT="mirror"
 
 PATCHES=(
 	"${FILESDIR}"/${PN}-3.4.0-disable-download.patch
@@ -301,7 +302,8 @@ PATCHES=(
 	"${FILESDIR}"/${PN}-4.1.2-opencl-license.patch
 	"${FILESDIR}"/${PN}-4.4.0-disable-native-cpuflag-detect.patch
 	"${FILESDIR}"/${PN}-4.5.0-link-with-cblas-for-lapack.patch
-	#"${FILESDIR}"/${PN}-4.6.0-fix-build-examples.patch # bug 830163, pending upstream PR #22245
+	"${FILESDIR}"/${PN}-4.8.0-fix-protobuf.patch
+	"${FILESDIR}"/${PN}-4.8.0-fix-flatbuffer.patch
 )
 
 pkg_pretend() {
@@ -330,7 +332,6 @@ src_prepare() {
 
 	if use contrib; then
 		cd "${WORKDIR}/${PN}_contrib-${PV}" || die
-		#eapply "${FILESDIR}"/e182fc8675a167044b129a3bdf3c4ad2d3399f68.patch
 		if use contribxfeatures2d; then
 			mv "${WORKDIR}"/*.i "${WORKDIR}/${PN}_contrib-${PV}"/modules/xfeatures2d/src/ || die
 		fi
@@ -362,10 +363,14 @@ multilib_src_configure() {
 
 	# please dont sort here, order is the same as in CMakeLists.txt
 	GLOBALCMAKEARGS=(
+		# for protobuf
+		-DCMAKE_CXX_STANDARD=14
+
 	# Optional 3rd party components
 	# ===================================================
 		-DENABLE_DOWNLOAD=$(usex download)
 		-DWITH_QUIRC=OFF # Do not have dependencies
+		-DWITH_FLATBUFFERS=$(usex flatbuffers)
 		-DWITH_1394=$(usex ieee1394)
 	#	-DWITH_AVFOUNDATION=OFF # IOS
 		-DWITH_VTK=$(multilib_native_usex vtk)
@@ -392,7 +397,6 @@ multilib_src_configure() {
 		-DWITH_OPENNI2=OFF	# Not packaged
 		-DWITH_PNG=$(usex png)
 		-DWITH_AVIF=$(usex avif)
-		-DWITH_FLATBUFFERS=$(usex flatbuffers)
 		-DWITH_GDCM=OFF
 		-DWITH_PVAPI=OFF
 		-DWITH_GIGEAPI=OFF
@@ -475,8 +479,8 @@ multilib_src_configure() {
 		-DINSTALL_TO_MANGLED_PATHS=OFF
 		-DOPENCV_GENERATE_PKGCONFIG=ON
 		-DOPENCV_ENABLE_NONFREE=ON
-		-DOPENCV_README_FILE=OFF
-		-DOPENCV_LICENSE_FILE=OFF
+		#-DOPENCV_README_FILE=OFF
+		#-DOPENCV_LICENSE_FILE=OFF
 		# opencv uses both ${CMAKE_INSTALL_LIBDIR} and ${LIB_SUFFIX}
 		# to set its destination libdir
 		-DLIB_SUFFIX=
@@ -504,8 +508,10 @@ multilib_src_configure() {
 	# ===================================================
 	# Not building protobuf but update files bug #631418
 	# ===================================================
+		-DWITH_PROTOBUF=ON
 		-DBUILD_PROTOBUF=OFF
 		-DPROTOBUF_UPDATE_FILES=ON
+		-Dprotobuf_MODULE_COMPATIBLE=ON
 	# ===================================================
 	# things we want to be hard enabled not worth useflag
 	# ===================================================

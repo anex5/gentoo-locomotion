@@ -1,4 +1,4 @@
-# Copyright 1999-2022 Gentoo Authors
+# Copyright 1999-2023 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -19,7 +19,7 @@ DESCRIPTION="Simplistic and highly configurable status panel for X and Wayland"
 HOMEPAGE="https://codeberg.org/dnkl/yambar"
 LICENSE="MIT"
 SLOT="0"
-IUSE="+core alsa +backlight +battery +clock +cpu +disk-io dwl +foreign-toplevel man +memory +mpd i3 +label +network pipewire pulseaudio +removables river +script sway-xkb wayland X xkb xwindow"
+IUSE="alsa +backlight +battery +clock +cpu +disk-io dwl +foreign-toplevel man +memory +mpd i3 +label +network pipewire pulseaudio +removables river +script +shared-plugins sway-xkb wayland X xkb xwindow"
 REQUIRED_USE="
 	|| ( wayland X )
 	sway-xkb? ( wayland )
@@ -75,7 +75,7 @@ src_configure() {
 	local emesonargs=(
 		$(meson_feature wayland backend-wayland)
 		$(meson_feature X backend-x11)
-		$(meson_use core core-plugins-as-shared-libraries)
+		$(meson_use shared-plugins core-plugins-as-shared-libraries)
 		$(meson_feature alsa plugin-alsa)
 		$(meson_feature backlight plugin-backlight)
 		$(meson_feature battery plugin-battery)
@@ -104,5 +104,9 @@ src_configure() {
 
 src_install() {
 	meson_src_install
+	if use shared-plugins; then
+		echo "LDPATH=${EPREFIX}/usr/$(get_libdir)/${PN}/" > 99yambar || die
+		doenvd 99yambar
+	fi
 	rm -rf "${D}/usr/share/doc/${PN}"
 }
