@@ -85,8 +85,8 @@ REQUIRED_USE="
 	python? ( ${PYTHON_REQUIRED_USE} )
 	tesseract? ( contrib )
 	onnx? ( flatbuffers )
-
-	?? ( gtk3 qt5 vtk wayland )"
+	?? ( opengl vulkan )
+	?? ( gtk3 qt5 vtk )"
 
 # The following logic is intrinsic in the build system, but we do not enforce
 # it on the useflags since this just blocks emerging pointlessly:

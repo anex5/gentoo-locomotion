@@ -30,7 +30,6 @@ DEPEND="
 	media-libs/fcft
 	media-libs/freetype
 	media-libs/fontconfig
-	media-libs/nanosvg
 "
 RDEPEND="${DEPEND}
 "
