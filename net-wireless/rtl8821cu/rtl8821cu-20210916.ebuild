@@ -4,11 +4,11 @@
 EAPI=8
 inherit linux-mod linux-info toolchain-funcs
 
-COMMIT="81da785e6b348aa2f27d89566e1e58783a1169df"
+COMMIT="9e2772540f66a69170f43864a6560d0d190d97b1"
 
 DESCRIPTION="Realtek RTL8811CU/RTL8821CU USB wifi adapter driver"
 HOMEPAGE="https://github.com/morrownr/8821cu-20210916"
-SRC_URI="https://github.com/morrownr/8821cu-${PV}/archive/${COMMIT}.tar.gz -> rtl8821cu-${PV}.tar.gz"
+SRC_URI="https://github.com/morrownr/8821cu-${PV}/archive/${COMMIT}.tar.gz -> rtl8821cu-${PV}-${COMMIT}.tar.gz"
 
 LICENSE="GPL-2"
 KEYWORDS="~x86 ~amd64"

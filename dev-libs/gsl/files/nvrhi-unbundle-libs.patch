@@ -1,0 +1,39 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -55,7 +55,7 @@ endif()
+ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+ 
+ if (NVRHI_WITH_VULKAN)
+-    add_subdirectory(thirdparty/Vulkan-Headers)
++    find_package(VulkanHeaders REQUIRED)
+ endif()
+ 
+ if (NVRHI_WITH_RTXMU)
+@@ -66,14 +66,15 @@ if (NVRHI_WITH_RTXMU)
+     option(RTXMU_WITH_VULKAN "" ${NVRHI_WITH_VULKAN})
+     option(RTXMU_WITH_D3D12 "" ${NVRHI_WITH_DX12})
+ 
+-    add_subdirectory(rtxmu)
++    find_package(rtxmu REQUIRED)
+ endif()
+ 
+ if (NVRHI_WITH_SHADER_COMPILER)
+     option(CXXOPTS_BUILD_EXAMPLES OFF)
+     option(CXXOPTS_BUILD_TESTS OFF)
+     option(CXXOPTS_ENABLE_INSTALL OFF)
+-    add_subdirectory(thirdparty/cxxopts)
++    find_package(cxxopts REQUIRED)
++    include_directories(${CXXOPTS_INCLUDE_DIRS})
+ 
+     add_subdirectory(tools/shaderCompiler)
+ endif()
+@@ -309,7 +310,7 @@ if (NVRHI_WITH_VULKAN)
+         target_link_libraries(${nvrhi_vulkan_target} rtxmu)
+     endif()
+ 
+-    target_link_libraries(${nvrhi_vulkan_target} Vulkan-Headers)
++    target_link_libraries(${nvrhi_vulkan_target} INTERFACE Vulkan::Headers)
+ 
+ endif()
+ 
+
