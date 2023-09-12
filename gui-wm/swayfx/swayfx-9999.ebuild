@@ -46,14 +46,14 @@ DEPEND="
 	)
 "
 # x11-libs/xcb-util-wm needed for xcb-iccm
-if [[ ${PV} == 9999 ]]; then
-	DEPEND+="~gui-libs/wlroots-9999:=[X?]"
-else
+#if [[ ${PV} == 9999 ]]; then
+#	DEPEND+="~gui-libs/wlroots-9999:=[X?]"
+#else
 	DEPEND+="
 		>=gui-libs/wlroots-0.16:=[X?]
 		<gui-libs/wlroots-0.17:=[X?]
 	"
-fi
+#fi
 RDEPEND="
 	x11-misc/xkeyboard-config
 	grimshot? (

@@ -5,7 +5,7 @@ EAPI=8
 
 inherit meson toolchain-funcs xdg-utils
 
-MY_PV="${PV}+wayland1"
+MY_PV="${PV}+wayland2"
 
 DESCRIPTION="A window switcher, run dialog and dmenu replacement (fork with Wayland support)"
 HOMEPAGE="https://github.com/lbonn/rofi"
