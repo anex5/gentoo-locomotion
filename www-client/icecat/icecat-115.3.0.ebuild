@@ -168,7 +168,7 @@ COMMON_DEPEND="
 	media-video/ffmpeg
 	sys-libs/zlib
 	virtual/freedesktop-icon-theme
-	x11-libs/cairo[wayland?,X?]
+	x11-libs/cairo
 	x11-libs/gdk-pixbuf
 	x11-libs/pango
 	x11-libs/pixman
