@@ -17,9 +17,8 @@ WANT_AUTOCONF="2.1"
 
 VIRTUALX_REQUIRED="pgo"
 
-inherit autotools check-reqs desktop flag-o-matic gnome2-utils linux-info \
-	llvm multiprocessing optfeature pax-utils python-any-r1 toolchain-funcs \
-	virtualx xdg xdg-utils
+inherit autotools check-reqs desktop flag-o-matic gnome2-utils linux-info llvm multiprocessing \
+	optfeature pax-utils python-any-r1 toolchain-funcs virtualx xdg xdg-utils
 
 PATCH_URIS=(
 	https://dev.gentoo.org/~juippis/mozilla/patchsets/${FIREFOX_PATCHSET}
@@ -45,7 +44,8 @@ IUSE+="wayland wifi X"
 # Firefox-only IUSE
 IUSE+=" geckodriver screencast"
 
-REQUIRED_USE="debug? ( !system-av1 )
+REQUIRED_USE="|| ( X wayland )
+	debug? ( !system-av1 )
 	pgo? ( lto )
 	wayland? ( dbus )
 	wifi? ( dbus )"
@@ -64,7 +64,7 @@ BDEPEND="${PYTHON_DEPS}
 					sys-devel/mold
 				)
 				virtual/rust:0/llvm-17
-				pgo? ( =sys-libs/compiler-rt-sanitizers-16*[profile] )
+				pgo? ( =sys-libs/compiler-rt-sanitizers-17*[profile] )
 			)
 		)
 		(
@@ -475,6 +475,63 @@ mozconfig_use_with() {
 
 	local flag=$(use_with "${@}")
 	mozconfig_add_options_ac "$(use ${1} && echo +${1} || echo -${1})" "${flag}"
+}
+
+# This is a straight copypaste from toolchain-funcs.eclass's 'tc-ld-is-lld', and is temporarily
+# placed here until toolchain-funcs.eclass gets an official support for mold linker.
+# Please see:
+# https://github.com/gentoo/gentoo/pull/28366 ||
+# https://github.com/gentoo/gentoo/pull/28355
+tc-ld-is-mold() {
+	local out
+
+	# Ensure ld output is in English.
+	local -x LC_ALL=C
+
+	# First check the linker directly.
+	out=$($(tc-getLD "$@") --version 2>&1)
+	if [[ ${out} == *"mold"* ]] ; then
+		return 0
+	fi
+
+	# Then see if they're selecting mold via compiler flags.
+	# Note: We're assuming they're using LDFLAGS to hold the
+	# options and not CFLAGS/CXXFLAGS.
+	local base="${T}/test-tc-linker"
+	cat <<-EOF > "${base}.c"
+	int main() { return 0; }
+	EOF
+	out=$($(tc-getCC "$@") ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} -Wl,--version "${base}.c" -o "${base}" 2>&1)
+	rm -f "${base}"*
+	if [[ ${out} == *"mold"* ]] ; then
+		return 0
+	fi
+
+	# No mold here!
+	return 1
+}
+
+virtwl() {
+	debug-print-function ${FUNCNAME} "$@"
+
+	[[ $# -lt 1 ]] && die "${FUNCNAME} needs at least one argument"
+	[[ -n $XDG_RUNTIME_DIR ]] || die "${FUNCNAME} needs XDG_RUNTIME_DIR to be set; try xdg_environment_reset"
+	tinywl -h >/dev/null || die 'tinywl -h failed'
+
+	# TODO: don't run addpredict in utility function. WLR_RENDERER=pixman doesn't work
+	addpredict /dev/dri
+	local VIRTWL VIRTWL_PID
+	coproc VIRTWL { WLR_BACKENDS=headless exec tinywl -s 'echo $WAYLAND_DISPLAY; read _; kill $PPID'; }
+	local -x WAYLAND_DISPLAY
+	read WAYLAND_DISPLAY <&${VIRTWL[0]}
+
+	debug-print "${FUNCNAME}: $@"
+	"$@"
+	local r=$?
+
+	[[ -n $VIRTWL_PID ]] || die "tinywl exited unexpectedly"
+	exec {VIRTWL[0]}<&- {VIRTWL[1]}>&-
+	return $r
 }
 
 pkg_pretend() {
@@ -1248,11 +1305,11 @@ src_install() {
 	# Update wrapper
 	sed -i \
 		-e "s:@PREFIX@:${EPREFIX}/usr:" \
-		-e "s:@MOZ_FIVE_HOME@:${MOZILLA_FIVE_HOME}:" \
-		-e "s:@APULSELIB_DIR@:${apulselib}:" \
 		-e "s:@DEFAULT_WAYLAND@:${use_wayland}:" \
 		"${ED}/usr/bin/${PN}" \
 		|| die
+
+	readme.gentoo_create_doc
 }
 
 pkg_preinst() {
@@ -1308,12 +1365,8 @@ pkg_postinst() {
 		ewarn "explained in https://bugs.gentoo.org/835078#c5 if Firefox crashes."
 	fi
 
-	elog
-	elog "Unfortunately Firefox-100.0 breaks compatibility with some sites using "
-	elog "useragent checks. To temporarily fix this, enter about:config and modify "
-	elog "network.http.useragent.forceVersion preference to \"99\"."
-	elog "Or install an addon to change your useragent."
-	elog "See: https://support.mozilla.org/en-US/kb/difficulties-opening-or-using-website-firefox-100"
+	readme.gentoo_print_elog
+
 	elog
 
 	optfeature_header "Optional programs for extra features:"

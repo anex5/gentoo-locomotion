@@ -4,7 +4,7 @@
 EAPI=8
 
 PYTHON_COMPAT=( python3_{10..12} )
-LLVM_MAX_SLOT=16
+LLVM_MAX_SLOT=17
 inherit cmake toolchain-funcs python-any-r1 llvm
 
 DESCRIPTION="Intel SPMD Program Compiler"
@@ -18,6 +18,7 @@ if [[ ${PV} == 9999 ]]; then
 else
 	SRC_URI="https://github.com/${PN}/${PN}/archive/v${PV}.tar.gz -> ${P}.tar.gz"
 	KEYWORDS="amd64 ~arm ~arm64 ~ppc64 ~x86"
+	PATCHES=( "${FILESDIR}"/${PN}-1.19.0-curses-cmake.patch )
 fi
 
 LICENSE="BSD BSD-2 UoI-NCSA"
@@ -44,12 +45,11 @@ BDEPEND="
 	${PYTHON_DEPS}
 "
 
-PATCHES=(
+PATCHES+=(
 	#"${FILESDIR}"/${PN}-1.14.0-cmake-gentoo-release.patch
 	"${FILESDIR}"/0001-Fix-QA-Issues.patch
 	"${FILESDIR}"/0002-cmake-don-t-build-for-32-bit-targets.patch
 	"${FILESDIR}"/0001-CMakeLists.txt-link-with-libclang-cpp-library-instea.patch
-	"${FILESDIR}"/${PN}-1.19.0-curses-cmake.patch
 )
 
 DOCS=( README.md "${S}"/docs/{ReleaseNotes.txt,faq.rst,ispc.rst,perf.rst,perfguide.rst} )
