@@ -79,9 +79,9 @@ PDEPEND="
 	binutils-plugin? ( >=sys-devel/llvmgold-${LLVM_MAJOR} )
 "
 
-LLVM_COMPONENTS=( "llvm" "bolt" "cmake" "third-party" )
+LLVM_COMPONENTS=( "llvm" "cmake" "third-party" )
 LLVM_MANPAGES=0
-LLVM_PATCHSET=${PV}
+#LLVM_PATCHSET=${PV}
 LLVM_USE_TARGETS="provide"
 llvm.org_set_globals
 
@@ -370,7 +370,7 @@ multilib_src_configure() {
 		-DLLVM_INCLUDE_BENCHMARKS=OFF
 		-DLLVM_INCLUDE_TESTS=$(usex test)
 		-DLLVM_BUILD_TESTS=$(usex test)
-		-DLLVM_INSTALL_GTEST=OFF
+		-DLLVM_INSTALL_GTEST=$(usex test)
 
 		-DLLVM_ENABLE_DUMP=$(usex dump)
 		-DLLVM_ENABLE_FFI=$(usex libffi)

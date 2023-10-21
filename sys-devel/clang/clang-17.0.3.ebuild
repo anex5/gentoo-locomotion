@@ -219,11 +219,6 @@ ewarn "To avoid long linking delays, close programs that produce unexpectedly"
 ewarn "high disk activity (web browsers) and possibly switch to -j1."
 ewarn
 
-	# Keep in sync with
-	# https://github.com/llvm/llvm-project/blob/main/clang/CMakeLists.txt#L969
-	export UOPTS_BOLT_OPTIMIZATIONS=${UOPTS_BOLT_OPTIMIZATIONS:-"-reorder-blocks=ext-tsp -reorder-functions=hfsort+ -split-functions -split-all-cold -split-eh -dyno-stats -icf=1 -use-gnu-stack"}
-	uopts_setup
-
 # See https://bugs.gentoo.org/767700
 einfo
 einfo "To remove the hard USE mask for llvm_targets_*, do:"
@@ -536,6 +531,7 @@ get_distribution_components() {
 }
 
 multilib_src_configure() {
+	use debug && CMAKE_BUILD_TYPES="Debug" || CMAKE_BUILD_TYPES="Release"
 	local mycmakeargs=(
 		-DDEFAULT_SYSROOT=$(usex prefix-guest "" "${EPREFIX}")
 		-DCMAKE_INSTALL_PREFIX="${EPREFIX}/usr/lib/llvm/${LLVM_MAJOR}"
@@ -549,6 +545,7 @@ multilib_src_configure() {
 		-DCLANG_LINK_CLANG_DYLIB=ON
 		-DLLVM_DISTRIBUTION_COMPONENTS=$(get_distribution_components)
 		-DCLANG_INCLUDE_TESTS=$(usex test)
+		-DLLVM_INCLUDE_TESTS=$(usex test)
 
 		-DLLVM_TARGETS_TO_BUILD="${LLVM_TARGETS// /;}"
 
