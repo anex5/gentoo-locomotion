@@ -531,7 +531,7 @@ get_distribution_components() {
 }
 
 multilib_src_configure() {
-	use debug && CMAKE_BUILD_TYPES="Debug" || CMAKE_BUILD_TYPES="Release"
+	use debug && CMAKE_BUILD_TYPE="Debug" || CMAKE_BUILD_TYPE="Release"
 	local mycmakeargs=(
 		-DDEFAULT_SYSROOT=$(usex prefix-guest "" "${EPREFIX}")
 		-DCMAKE_INSTALL_PREFIX="${EPREFIX}/usr/lib/llvm/${LLVM_MAJOR}"

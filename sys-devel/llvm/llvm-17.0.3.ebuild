@@ -343,7 +343,7 @@ get_distribution_components() {
 }
 
 multilib_src_configure() {
-	use debug && CMAKE_BUILD_TYPES="Debug" || CMAKE_BUILD_TYPES="Release"
+	use debug && CMAKE_BUILD_TYPE="Debug" || CMAKE_BUILD_TYPE="Release"
 	local ffi_cflags ffi_ldflags
 	if use libffi; then
 		ffi_cflags=$($(tc-getPKG_CONFIG) --cflags-only-I libffi)
