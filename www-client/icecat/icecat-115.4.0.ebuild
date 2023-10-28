@@ -17,7 +17,7 @@ WANT_AUTOCONF="2.1"
 VIRTUALX_REQUIRED="manual"
 
 inherit autotools check-reqs desktop flag-o-matic gnome2-utils linux-info llvm multiprocessing \
-	 multilib-minimal rust-toolchain optfeature pax-utils python-any-r1 toolchain-funcs virtualx xdg
+	 multilib-minimal readme.gentoo-r1 rust-toolchain optfeature pax-utils python-any-r1 toolchain-funcs virtualx xdg
 
 PATCH_URIS=(
 	https://dev.gentoo.org/~juippis/mozilla/patchsets/${FIREFOX_PATCHSET}
@@ -45,8 +45,8 @@ CODEC_IUSE="
 "
 IUSE+="
 ${CODEC_IUSE}
-alsa atk buildtarball cpu_flags_arm_neon cups +dbus debug ffvpx hardened hwaccel jack
--jemalloc libcanberra libnotify libproxy libsecret lto mold +openh264 pgo
+alsa atk buildtarball clang cpu_flags_arm_neon cups +dbus debug ffvpx hardened hwaccel
+jack -jemalloc libcanberra libnotify libproxy libsecret lld lto mold +openh264 pgo
 pulseaudio sndio selinux speech +system-av1 +system-ffmpeg +system-harfbuzz
 +system-icu +system-jpeg +system-libevent +system-libvpx +system-png
 +system-python-libs +system-webp vaapi wayland +webrtc wifi webspeech X
@@ -399,6 +399,9 @@ BDEPEND+="
 	mold? (
 		sys-devel/mold
 	)
+	lld? (
+		sys-devel/lld
+	)
 	pgo? (
 		X? (
 			sys-devel/gettext
@@ -428,7 +431,7 @@ llvm_check_deps() {
 		return 1
 	fi
 
-	if tc-is-clang && ! tc-ld-is-mold ; then
+	if use clang && ! use mold ; then
 		if ! has_version -b "sys-devel/lld:${LLVM_SLOT}" ; then
 			einfo "sys-devel/lld:${LLVM_SLOT} is missing! Cannot use LLVM slot ${LLVM_SLOT} ..." >&2
 			return 1
@@ -448,80 +451,6 @@ llvm_check_deps() {
 	fi
 
 	einfo "Using LLVM slot ${LLVM_SLOT} to build" >&2
-}
-
-_is_lld() {
-	if has_version "sys-devel/clang-common[default-lld]" ; then
-		return 0
-	elif is-flagq '-fuse-ld=lld' ; then
-		return 0
-	fi
-	return 1
-}
-
-check-linker_get_lto_type() {
-	local s=$(clang-major-version)
-	if ! is-flagq '-flto*' ; then
-		echo "none"
-	elif ( tc-is-clang || tc-is-gcc ) \
-		&& is-flagq '-flto' \
-		&& test-flags '-flto' \
-		&& test-flag-CCLD '-fuse-ld=mold' ; then
-		echo "moldlto"
-	elif tc-is-clang \
-		&& _is_lld \
-		&& is-flagq '-flto=thin' \
-		&& test-flags '-flto=thin' \
-		&& test-flag-CCLD '-fuse-ld=lld' ; then
-		echo "thinlto"
-	elif tc-is-clang \
-		&& is-flagq '-fuse-ld=gold' \
-		&& is-flagq '-flto=full' \
-		&& test-flags '-flto=full' \
-		&& test-flag-CCLD '-fuse-ld=gold' ; then
-		echo "goldlto"
-	elif tc-is-gcc \
-		&& is-flagq '-fuse-ld=gold' \
-		&& is-flagq '-flto' \
-		&& test-flags '-flto' \
-		&& test-flag-CCLD '-fuse-ld=gold' ; then
-		echo "goldlto"
-	elif tc-is-clang \
-		&& is-flagq '-fuse-ld=bfd' \
-		&& is-flagq '-flto=full' \
-		&& test-flags '-flto=full' ; then
-		echo "bfdlto"
-	elif tc-is-gcc \
-		&& is-flagq '-fuse-ld=bfd' \
-		&& is-flagq '-flto' ; then
-		echo "bfdlto"
-	elif tc-is-clang \
-		&& has_version "sys-devel/lld" \
-		&& has_version "sys-devel/clang-common[default-lld]" \
-		&& test-flags '-flto=thin' ; then
-		echo "thinlto"
-	elif tc-is-clang \
-		&& has_version "sys-devel/lld" \
-		&& test-flags '-flto=thin' \
-		&& test-flag-CCLD '-fuse-ld=lld' ; then
-		echo "thinlto"
-	elif tc-is-clang \
-		&& has_version "sys-devel/binutils[gold,plugins]" \
-		&& has_version "sys-devel/llvm:${s}[binutils-plugin]" \
-		&& has_version ">=sys-devel/llvmgold-${s}" \
-		&& test-flags '-flto=full' \
-		&& test-flag-CCLD '-fuse-ld=gold' ; then
-		echo "goldlto"
-	elif tc-is-clang \
-		&& has_version "sys-devel/binutils[gold,plugins]" \
-		&& has_version "sys-devel/llvm:${s}[gold]" \
-		&& has_version ">=sys-devel/llvmgold-${s}" \
-		&& test-flags '-flto=full' \
-		&& test-flag-CCLD '-fuse-ld=gold' ; then
-		echo "goldlto"
-	else
-		echo "none"
-	fi
 }
 
 MOZ_LANGS=(
@@ -729,39 +658,6 @@ mozconfig_use_with() {
 	mozconfig_add_options_ac "$(use ${1} && echo +${1} || echo -${1})" "${flag}"
 }
 
-# This is a straight copypaste from toolchain-funcs.eclass's 'tc-ld-is-lld', and is temporarily
-# placed here until toolchain-funcs.eclass gets an official support for mold linker.
-# Please see:
-# https://github.com/gentoo/gentoo/pull/28366 ||
-# https://github.com/gentoo/gentoo/pull/28355
-tc-ld-is-mold() {
-	local out
-
-	# Ensure ld output is in English.
-	local -x LC_ALL=C
-
-	# First check the linker directly.
-	out=$($(tc-getLD "$@") --version 2>&1)
-	if [[ ${out} == *"mold"* ]] ; then
-		return 0
-	fi
-
-	# Then see if they're selecting mold via compiler flags.
-	# Note: We're assuming they're using LDFLAGS to hold the
-	# options and not CFLAGS/CXXFLAGS.
-	local base="${T}/test-tc-linker"
-	cat <<-EOF > "${base}.c"
-	int main() { return 0; }
-	EOF
-	out=$($(tc-getCC "$@") ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} -Wl,--version "${base}.c" -o "${base}" 2>&1)
-	rm -f "${base}"*
-	if [[ ${out} == *"mold"* ]] ; then
-		return 0
-	fi
-
-	# No mold here!
-	return 1
-}
 
 virtwl() {
 	debug-print-function ${FUNCNAME} "$@"
@@ -836,7 +732,7 @@ pkg_setup() {
 
 		llvm_pkg_setup
 
-		if tc-is-clang && is-flagq '-flto*' && tc-ld-is-lld ; then
+		if use clang && use pgo && use lld ; then
 			has_version "sys-devel/lld:$(clang-major-version)" \
 				|| die "Clang PGO requires LLD."
 			local lld_pv=$(ld.lld --version 2>/dev/null \
@@ -952,34 +848,10 @@ pkg_setup() {
 
 	linux-info_pkg_setup
 
-
-	local jobs=$(echo "${MAKEOPTS}" \
-		| grep -P -o -e "(-j|--jobs=)\s*[0-9]+" \
-		| sed -r -e "s#(-j|--jobs=)\s*##g")
-	local cores=$(nproc)
-	if (( ${jobs} > $((${cores}/2)) )) ; then
-		ewarn
-		ewarn "IceCat may lock up or freeze the computer if the N value in"
-		ewarn "MAKEOPTS=\"-jN\" is greater than \$(nproc)/2"
-		ewarn
-	fi
-
 	if ! use pulseaudio ; then
 		ewarn
 		ewarn "Microphone support may be disabled when USE=-pulseaudio."
 		ewarn
-	fi
-
-	if [[ "${EBUILD_MAINTAINER_MODE}" == "1" ]] ; then
-		local overlay_path=${MY_OVERLAY_DIR:-"${ESYSROOT}/usr/local/oiledmachine-overlay"}
-		if [[ ! -e "${overlay_path}" ]] ; then
-			eerror
-			eerror "You need to change MY_OVERLAY_DIR as a per-package envvar to the base"
-			eerror "path of your overlay or local repo.  The base path should contain all"
-			eerror "the overlay's categories."
-			eerror
-			die
-		fi
 	fi
 
 	local a
@@ -1335,7 +1207,7 @@ _src_configure() {
 	einfo
 
 	local have_switched_compiler=
-	if tc-is-clang ; then
+	if use clang ; then
 	# Force clang
 	einfo
 	einfo "Switching to clang"
@@ -1388,8 +1260,8 @@ _src_configure() {
 	fi
 
 	if [[ -n "${have_switched_compiler}" ]] ; then
-	# Because we switched active compiler, we have to ensure that no
-	# unsupported flags are set.
+		# Because we switched active compiler, we have to ensure that no
+		# unsupported flags are set.
 		strip-unsupported-flags
 	fi
 
@@ -1572,91 +1444,49 @@ _src_configure() {
 		mozconfig_add_options_ac '+x11' --enable-default-toolkit=cairo-gtk3
 	fi
 
-	if ! use mold && is-flagq '-fuse-ld=mold' ; then
-		eerror
-		eerror "-fuse-ld=mold requires the mold USE flag."
-		eerror
-		die
-	fi
-
-	einfo "PGO/LTO requires per-package -flto in {C,CXX,LD}FLAGS"
 	if use lto ; then
-		LTO_TYPE=$(check-linker_get_lto_type)
-	fi
-
-	if use pgo || [[ "${LTO_TYPE}" =~ ("bfdlto"|"moldlto"|"thinlto") ]]
-	then
-		# Mold for gcc works for non-lto but for lto it is likely WIP.
-		if tc-is-clang && [[ "${LTO_TYPE}" == "moldlto" ]] ; then
-			mozconfig_add_options_ac \
-				"forcing ld=mold" \
-				--enable-linker=mold
-
-			mozconfig_add_options_ac \
-				'+lto' \
-				--enable-lto=cross
-
-		elif tc-is-clang && [[ "${LTO_TYPE}" == "thinlto" ]] ; then
+		if use clang ; then
 			# Upstream only supports lld or mold when using clang.
-			mozconfig_add_options_ac \
-				"forcing ld=lld" \
-				--enable-linker=lld
+			if use mold ; then
+				mozconfig_add_options_ac "using ld=mold due to system selection" --enable-linker=mold
+			else
+				mozconfig_add_options_ac "forcing ld=lld due to USE=clang and USE=lto" --enable-linker=lld
+			fi
 
-			mozconfig_add_options_ac \
-				'+lto' \
-				--enable-lto=cross
+			mozconfig_add_options_ac '+lto' --enable-lto=cross
+
 		else
-			# ThinLTO is currently broken, see bmo#1644409
+			# ThinLTO is currently broken, see bmo#1644409.
 			# mold does not support gcc+lto combination.
-			mozconfig_add_options_ac \
-				'+lto' \
-				--enable-lto=full
-			mozconfig_add_options_ac \
-				"linker is set to bfd" \
-				--enable-linker=bfd
+			mozconfig_add_options_ac '+lto' --enable-lto=full
+			mozconfig_add_options_ac "linker is set to bfd" --enable-linker=bfd
 		fi
 
 		if use pgo ; then
 			mozconfig_add_options_ac '+pgo' MOZ_PGO=1
 
-			if tc-is-clang ; then
+			if use clang ; then
 				# Used in build/pgo/profileserver.py
 				export LLVM_PROFDATA="llvm-profdata"
 			fi
 		fi
 	else
-		if is-flagq '-fuse-ld=mold' || use mold ; then
-			mozconfig_add_options_ac \
-				"forcing ld=mold" \
-				--enable-linker=mold
-		elif tc-is-clang && has_version "sys-devel/lld:$(clang-major-version)" ; then
-			# This is upstream's default
-			mozconfig_add_options_ac \
-				"forcing ld=lld" \
-				--enable-linker=lld
+		# Avoid auto-magic on linker
+		if use clang ; then
+			# lld is upstream's default
+			if use mold ; then
+				mozconfig_add_options_ac "using ld=mold due to system selection" --enable-linker=mold
+			else
+				mozconfig_add_options_ac "forcing ld=lld due to USE=clang" --enable-linker=lld
+			fi
 		else
-			mozconfig_add_options_ac \
-				"linker is set to bfd" \
-				--enable-linker=bfd
+			if use mold ; then
+				mozconfig_add_options_ac "using ld=mold due to system selection" --enable-linker=mold
+			else
+				mozconfig_add_options_ac "linker is set to bfd due to USE=-clang" --enable-linker=bfd
+			fi
 		fi
 	fi
-
-	if tc-ld-is-mold ; then
-		# Increase ulimit with mold+lto, bugs #892641, #907485
-		if ! ulimit -n 16384 1>/dev/null 2>&1 ; then
-		ewarn
-		ewarn "Unable to modify ulimits - building with mold+lto might fail due to low"
-		ewarn "ulimit -n resources."
-		ewarn
-		ewarn "Please see bugs #892641 & #907485."
-		ewarn
-		else
-			ulimit -n 16384
-		fi
-	fi
-
-	# Linker flags are set from above.
-	filter-flags '-fuse-ld=*'
 
 	# LTO flag was handled via configure
 	filter-lto
@@ -1664,8 +1494,6 @@ _src_configure() {
 	# Filter ldflags after linker switch
 	strip-unsupported-flags
 
-	# Default upstream Oflag is -O0 in script, but -bin's default is -O3,
-	# but dav1d's FPS + image quality is only acceptable at >= -O2.
 	mozconfig_use_enable debug
 	if use debug ; then
 		mozconfig_add_options_ac \
@@ -1904,7 +1732,7 @@ _src_compile() {
 	local s=$(_get_s)
 	cd "${s}" || die
 
-	if tc-ld-is-mold && use lto; then
+	if use mold && use lto; then
 		# increase ulimit with mold+lto, bugs #892641, #907485
 		if ! ulimit -n 16384 1>/dev/null 2>&1 ; then
 		ewarn "Unable to modify ulimits - building with mold+lto might fail due to low"
