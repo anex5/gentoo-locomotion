@@ -13,7 +13,7 @@ if [[ ${PV} == *9999* ]]; then
 	EGIT_REPO_URI="https://codeberg.org/dnkl/foot.git"
 	KEYWORDS="-*"
 else
-	SRC_URI="https://codeberg.org/dnkl/foot/archive/v${PV}.tar.gz -> ${P}.tar.gz"
+	SRC_URI="https://codeberg.org/dnkl/foot/archive/${PV}.tar.gz -> ${P}.tar.gz"
 	S="${WORKDIR}"/${PN}-${MY_PV}
 	KEYWORDS="~amd64 ~arm64 ~arm ~x86"
 fi
@@ -22,7 +22,10 @@ S="${WORKDIR}/${PN}"
 LICENSE="MIT"
 SLOT="0"
 IUSE="+grapheme-clustering ime man systemd test themes"
-RESTRICT="mirror"
+RESTRICT="
+	!test? ( test )
+	mirror
+"
 
 COMMON_DEPEND="
 	dev-libs/wayland
@@ -39,7 +42,7 @@ COMMON_DEPEND="
 DEPEND="
 	${COMMON_DEPEND}
 	>=dev-libs/tllist-1.1.0
-	dev-libs/wayland-protocols
+	>=dev-libs/wayland-protocols-1.32
 "
 RDEPEND="
 	${COMMON_DEPEND}
@@ -80,6 +83,6 @@ src_install() {
 
 	# foot unconditionally installs CHANGELOG.md, README.md and LICENSE.
 	# we handle this via DOCS and dodoc instead.
-	rm -r "${ED}/usr/share/doc/${PN}" || die "Sed failed..."
+	rm -r "${ED}/usr/share/doc/${PN}"
 	use systemd && systemd_douserunit foot-server@.service "${S}"/foot-server@.socket
 }

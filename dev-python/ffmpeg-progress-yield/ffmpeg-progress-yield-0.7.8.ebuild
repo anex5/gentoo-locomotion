@@ -4,7 +4,7 @@
 EAPI=8
 
 DISTUTILS_USE_PEP517=setuptools
-PYTHON_COMPAT=( python3_{10,11} )
+PYTHON_COMPAT=( python3_{10..12} )
 inherit distutils-r1
 
 DESCRIPTION="Run an ffmpeg command with its progress yielded"
@@ -18,7 +18,6 @@ KEYWORDS="~amd64"
 RDEPEND="
 	>=dev-python/tqdm-4.38.0[${PYTHON_USEDEP}]
 	>=dev-python/colorama-0.4.3[${PYTHON_USEDEP}]
-	>=media-video/ffmpeg-4.1.0
-"
+	>=media-video/ffmpeg-4.4444"
 
 RESTRICT="mirror"

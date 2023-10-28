@@ -2,7 +2,7 @@
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
-PYTHON_COMPAT=( python3_{10,11} )
+PYTHON_COMPAT=( python3_{10..12} )
 
 inherit distutils-r1
 
@@ -18,7 +18,7 @@ IUSE=""
 RDEPEND="
 	dev-python/tqdm[${PYTHON_USEDEP}]
 	dev-python/ffmpeg-progress-yield[${PYTHON_USEDEP}]
-	>=media-video/ffmpeg-4.2:=
+	>=media-video/ffmpeg-4.4:=
 "
 
 DEPEND="${RDEPEND}

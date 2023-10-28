@@ -10,7 +10,7 @@ inherit python-any-r1
 DESCRIPTION="Script for creating GNU Icecat tarball"
 HOMEPAGE="https://www.gnu.org/software/gnuzilla/"
 
-COMMIT="1b0f0ba84716023657dd7dff72cb408e35380a60"
+COMMIT="5b2ce0c4cefc73f996f260edfac368ecc3d86b24"
 COMPARE_LOCALES_PV="9.0.1"
 SRC_URI="
 	https://git.savannah.gnu.org/cgit/gnuzilla.git/snapshot/gnuzilla-${COMMIT}.tar.gz

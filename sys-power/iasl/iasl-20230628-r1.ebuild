@@ -6,12 +6,14 @@ EAPI=8
 inherit edos2unix toolchain-funcs
 
 MY_PN=acpica-unix
-MY_PV=${PV:4:2}_${PV:6:2}_${PV:2:2}
+#MY_PV=${PV:4:2}_${PV:6:2}_${PV:2:2}
+MY_PV="a97db76b5f1cd79b8a0f0dfdffca34ca60f8d735"
 MY_P="${MY_PN}-${PV}"
 
 DESCRIPTION="Intel ACPI Source Language (ASL) compiler"
 HOMEPAGE="https://www.acpica.org"
-SRC_URI="https://github.com/acpica/acpica/archive/refs/tags/R${MY_PV}.tar.gz -> ${MY_P}.tar.gz"
+#SRC_URI="https://github.com/acpica/acpica/archive/refs/tags/R${MY_PV}.tar.gz -> ${MY_P}.tar.gz"
+SRC_URI="https://github.com/acpica/acpica/archive/${MY_PV}.tar.gz -> ${MY_P}.tar.gz"
 
 LICENSE="iASL"
 SLOT="0"
@@ -23,7 +25,8 @@ BDEPEND="
 	sys-devel/bison
 	sys-devel/flex"
 
-S="${WORKDIR}/acpica-R${MY_PV}"
+#S="${WORKDIR}/acpica-R${MY_PV}"
+S="${WORKDIR}/acpica-${MY_PV}"
 
 PATCHES=( "${FILESDIR}"/${PN}-20230331-Makefile.patch )
 
