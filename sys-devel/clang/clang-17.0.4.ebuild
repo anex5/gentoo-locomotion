@@ -19,10 +19,10 @@ LICENSE="Apache-2.0-with-LLVM-exceptions UoI-NCSA MIT"
 SLOT="${LLVM_MAJOR}/${LLVM_SOABI}"
 KEYWORDS="~amd64 ~arm ~arm64 ~loong ~ppc ~ppc64 ~riscv ~sparc ~x86 ~amd64-linux ~x64-macos"
 
-IUSE+="debug doc +extra ieee-long-double +pie static-analyzer test xml \
+IUSE="debug doc +extra ieee-long-double +pie static-analyzer test xml \
 default-fortify-source-2 default-fortify-source-3 default-full-relro \
 default-partial-relro default-ssp-buffer-size-4 \
-default-stack-clash-protection cet hardened hardened-compat ssp r9"
+default-stack-clash-protection cet hardened hardened-compat rocm ssp"
 REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	amd64? (
 		llvm_targets_X86
@@ -93,6 +93,9 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}
 RDEPEND+="
 	${PYTHON_DEPS}
 	>=sys-devel/clang-common-${PV}
+	rocm? (
+		dev-libs/rocm-device-libs:5.7
+	)
 	static-analyzer? (
 		dev-lang/perl:*
 	)
@@ -119,8 +122,8 @@ BDEPEND="
 	)
 "
 PDEPEND="
-	~sys-devel/clang-runtime-${PV}
 	sys-devel/clang-toolchain-symlinks:${LLVM_MAJOR}
+	~sys-devel/clang-runtime-${PV}
 "
 RESTRICT="
 	!test? (
@@ -234,6 +237,11 @@ einfo
 einfo "However, some packages still need some or all of these.  Some are"
 einfo "mentioned in bug #767700."
 einfo
+
+einfo
+einfo "See the metadata.xml for details about using the PGO/BOLT optimizer"
+einfo "script (optimize.sh)"
+einfo
 }
 
 src_unpack() {
@@ -272,27 +280,27 @@ ewarn
 			"${FILESDIR}/clang-14.0.0.9999-set-_FORTIFY_SOURCE-to-3-by-default.patch"
 		)
 		hardened_features+="_FORITIFY_SOURCE=3, "
-ewarn
-ewarn "The _FORITIFY_SOURCE=3 is in testing."
-ewarn
+		ewarn
+		ewarn "The _FORITIFY_SOURCE=3 is in testing."
+		ewarn
 	fi
 	if use default-full-relro ; then
 		patches_hardened+=(
 			"${FILESDIR}/clang-12.0.1-enable-full-relro-by-default.patch"
 		)
 		hardened_features+="Full RELRO, "
-ewarn
-ewarn "The Full RELRO is in testing."
-ewarn
+		ewarn
+		ewarn "The Full RELRO is in testing."
+		ewarn
 	fi
 	if use default-partial-relro ; then
 		patches_hardened+=(
 			"${FILESDIR}/clang-12.0.1-enable-partial-relro-by-default.patch"
 		)
 		hardened_features+="Partial RELRO, "
-ewarn
-ewarn "The Partial RELRO is in testing."
-ewarn
+		ewarn
+		ewarn "The Partial RELRO is in testing."
+		ewarn
 	fi
 	if use default-stack-clash-protection ; then
 		if use x86 || use amd64 ; then
@@ -301,10 +309,10 @@ ewarn
 			)
 			hardened_features+="SCP, "
 		elif use arm64 ; then
-ewarn
-ewarn "arm64 -fstack-clash-protection is not default ON.  The feature is still"
-ewarn "in development."
-ewarn
+			ewarn
+			ewarn "arm64 -fstack-clash-protection is not default ON.  The feature is still"
+			ewarn "in development."
+			ewarn
 		fi
 	fi
 	if use hardened || use hardened-compat ; then
@@ -317,9 +325,9 @@ ewarn
 			"${FILESDIR}/clang-17.0.0.9999-enable-cf-protection-full-by-default.patch"
 		)
 		hardened_features+="CET, "
-ewarn
-ewarn "The CET as default is in testing."
-ewarn
+		ewarn
+		ewarn "The CET as default is in testing."
+		ewarn
 	fi
 	patches_hardened+=(
 		"${FILESDIR}/clang-14.0.0.9999-cross-dso-cfi-link-with-shared.patch"
@@ -332,6 +340,32 @@ ewarn
 		sed -i -e "s|__HARDENED_FEATURES__|${hardened_features}|g" \
 			lib/Driver/Driver.cpp || die
 	fi
+}
+
+fix_rocm_paths() {
+	eapply "${FILESDIR}/clang-17.0.0.9999-rocm-path-changes.patch"
+	sed \
+		-i \
+		-e "s|@LIBDIR@|$(get_libdir)|g" \
+		-e "s|@EPREFIX_LLVM_PATH@|${EPREFIX}/usr/lib/llvm/${PV%%.*}|g" \
+		"lib/Driver/ToolChains/AMDGPU.cpp" \
+		|| die
+
+	if use rocm ; then
+		local rocm_slot="5.7"
+		sed \
+			-i \
+			-e "s|@ROCM_PATH@|/usr/$(get_libdir)/rocm/${rocm_slot}|g" \
+			-e "s|@EPREFIX_ROCM_PATH@|${EPREFIX}/usr/$(get_libdir)/rocm/${rocm_slot}|g" \
+			-e "s|@ESYSROOT_ROCM_PATH@|${ESYSROOT}/usr/$(get_libdir)/rocm/${rocm_slot}|g" \
+			"lib/Driver/ToolChains/AMDGPU.cpp" \
+			|| die
+	fi
+	sed \
+		-i \
+		-e "s|@ESYSROOT_ROCM_PATH@|${ESYSROOT}/usr/$(get_libdir)/rocm/${rocm_slot}|g" \
+		"tools/amdgpu-arch/CMakeLists.txt" \
+		|| die
 }
 
 src_prepare() {
@@ -359,13 +393,7 @@ src_prepare() {
 			|| die
 	fi
 
-	#eapply "${FILESDIR}/clang-16.0.6-rocm-path-changes.patch"
-	sed \
-		-i \
-		-e "s|@LIBDIR@|$(get_libdir)|g" \
-		"lib/Driver/ToolChains/AMDGPU.cpp" \
-		|| die
-
+	fix_rocm_paths
 }
 
 check_distribution_components() {
@@ -530,7 +558,105 @@ get_distribution_components() {
 	printf "%s${sep}" "${out[@]}"
 }
 
+_gcc_fullversion() {
+	gcc --version | head -n 1 | grep -o -E -e "[0-9_p.]+" | head -n 1
+}
+
 multilib_src_configure() {
+
+	# TODO:  Add GCC-10 and below checks to add exceptions to -O* flag downgrading.
+	# Leave a note if you know the commit that fixes the internal compiler error below.
+	if tc-is-gcc && ( \
+		( ver_test $(_gcc_fullversion) -lt 11.2.1_p20220112 ) \
+	)
+	then
+		# Build time bug with gcc 10.3.0, 11.2.0:
+		# internal compiler error: maximum number of LRA assignment passes is achieved (30)
+
+		# Apply if using GCC
+		ewarn
+		ewarn "Detected <=sys-devel/gcc-11.2.1_p20220112.  Downgrading to -Os to avoid"
+		ewarn "bug.  Re-emerge >=sys-devel/gcc-11.2.1_p20220112 for a more optimized"
+		ewarn "build with >= -O2."
+		ewarn
+		replace-flags '-O3' '-Os'
+		replace-flags '-O2' '-Os'
+	fi
+
+	# LLVM can have very high memory consumption while linking,
+	# exhausting the limit on 32-bit linker executable
+	use x86 && local -x LDFLAGS="${LDFLAGS} -Wl,--no-keep-memory"
+
+	# LLVM_ENABLE_ASSERTIONS=NO does not guarantee this for us, #614844
+	use debug || local -x CPPFLAGS="${CPPFLAGS} -DNDEBUG"
+
+	# Fix longer than usual build times when building webkit-gtk.
+	# Bump to next fastest build setting.
+	replace-flags -O0 -O1
+
+	# Fix longer than usual build times when building rocm ebuilds in sci-libs.
+	# -O3 may cause random segfaults during build like in rocSPARSE.
+	replace-flags -O1 -O2
+	replace-flags -Oz -O2
+	replace-flags -Os -O2
+	replace-flags -O3 -O2
+	replace-flags -Ofast -O2
+	replace-flags -O4 -O2
+
+	# For PGO
+	if tc-is-gcc ; then
+# error: number of counters in profile data for function '...' does not match its profile data (counter 'arcs', expected 7 and have 13) [-Werror=coverage-mismatch]
+# The PGO profiles are isolated.  The Code is the same.
+		append-flags -Wno-error=coverage-mismatch
+	fi
+
+	filter-flags -m32 -m64 -mx32 -m31 '-mabi=*'
+	[[ ${CHOST} =~ "risc" ]] && filter-flags '-march=*'
+	export CFLAGS="$(get_abi_CFLAGS ${ABI}) ${CFLAGS}"
+	export CXXFLAGS="$(get_abi_CFLAGS ${ABI}) ${CXXFLAGS}"
+
+	# [Err 8]: control flow integrity check for type '.*' failed during non-virtual call (vtable address 0x[0-9a-z]+)
+	# [Err 5]: runtime error: control flow integrity check for type '.*' failed during cast to unrelated type (vtable address 0x[0-9a-z]+)
+	# sys-devel/clang no-cfi-nvcall.conf no-cfi-cast.conf # Build time failures: [Err 8] with llvm header, [Err 5] with gcc header
+	if tc-is-clang ; then
+		if is-flagq "-fsanitize=*cfi" ; then
+			ewarn
+			ewarn "Using -fsanitize=cfi without"
+			ewarn "-fno-sanitize=cfi-nvcall,cfi-derived-cast,cfi-unrelated-cast"
+			ewarn "may break build."
+			ewarn
+		fi
+		if is-flagq "-fsanitize=*cfi-nvcall" ; then
+			ewarn
+			ewarn "Using -fsanitize=cfi-nvcall may break build."
+			ewarn
+		fi
+		if is-flagq "-fsanitize=*cfi-derived-cast" ; then
+			ewarn
+			ewarn "Using -fsanitize=cfi-derived-cast may break build."
+			ewarn
+		fi
+		if is-flagq "-fsanitize=*cfi-unrelated-cast" ; then
+			ewarn
+			ewarn "Using -fsanitize=cfi-unrelated-cast may break build."
+			ewarn
+		fi
+	fi
+
+	einfo
+	einfo "*FLAGS for ${ABI}:"
+	einfo
+	einfo "  CFLAGS=${CFLAGS}"
+	einfo "  CXXFLAGS=${CXXFLAGS}"
+	einfo "  LDFLAGS=${LDFLAGS}"
+	einfo "  PATH=${PATH}"
+	if tc-is-cross-compiler ; then
+		einfo "  IS_CROSS_COMPILE=True"
+	else
+		einfo "  IS_CROSS_COMPILE=False"
+	fi
+	einfo
+
 	use debug && CMAKE_BUILD_TYPE="Debug" || CMAKE_BUILD_TYPE="Release"
 	local mycmakeargs=(
 		-DDEFAULT_SYSROOT=$(usex prefix-guest "" "${EPREFIX}")
@@ -632,12 +758,13 @@ multilib_src_configure() {
 		)
 	fi
 
-	# LLVM can have very high memory consumption while linking,
-	# exhausting the limit on 32-bit linker executable
-	use x86 && local -x LDFLAGS="${LDFLAGS} -Wl,--no-keep-memory"
 
-	# LLVM_ENABLE_ASSERTIONS=NO does not guarantee this for us, #614844
-	use debug || local -x CPPFLAGS="${CPPFLAGS} -DNDEBUG"
+	mycmakeargs+=(
+		-DCMAKE_C_COMPILER="${CC}"
+		-DCMAKE_CXX_COMPILER="${CXX}"
+		-DCMAKE_ASM_COMPILER="${CC}"
+	)
+
 	cmake_src_configure
 
 	multilib_is_native_abi && check_distribution_components

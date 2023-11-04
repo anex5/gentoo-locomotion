@@ -22,9 +22,10 @@ SRC_URI="https://github.com/${PN}/${PN}/archive/${PV}.tar.gz -> ${P}.tar.gz
 LICENSE="Apache-2.0"
 SLOT="0/${PV}" # subslot = libopencv* soname version
 KEYWORDS="~amd64 ~arm ~arm64 ~loong ~ppc ~ppc64 ~riscv ~x86"
+CUDA_TARGETS_COMPAT=( sm_30 sm_35 sm_50 sm_52 sm_61 sm_70 sm_75 sm_86 )
 IUSE="avif contrib contribcvv contribdnn contribfreetype contribhdf contribovis contribsfm contribxfeatures2d cuda debug cudnn dnnsamples download +eigen flatbuffers \
 	examples +features2d ffmpeg gdal gflags glog gphoto2 gstreamer gtk3 ieee1394 jpeg jpeg2k lapack lto onnx opencl openexr opengl openmp opencvapps png +python \
-	qt5 tesseract testprograms threads tiff vaapi v4l vtk vulkan wayland webp xine -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70 -sm_75 -sm_86"
+	qt5 tesseract testprograms threads tiff vaapi v4l vtk vulkan wayland webp xine ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_}"
 
 # The following lines are shamelessly stolen from ffmpeg-9999.ebuild with modifications
 ARM_CPU_FEATURES=(
@@ -66,7 +67,9 @@ REQUIRED_USE="
 	cpu_flags_x86_f16c? ( cpu_flags_x86_avx )
 	cuda? ( contrib
 		tesseract? ( opencl )
-		|| ( sm_30 sm_35 sm_50 sm_52 sm_61 sm_70 sm_75 sm_86 )
+		|| (
+			${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_}
+		)
 	)
 	dnnsamples? ( examples )
 	gflags? ( contrib )
@@ -78,7 +81,7 @@ REQUIRED_USE="
 	contribovis? ( contrib )
 	contribsfm? ( contrib eigen gflags glog )
 	contribxfeatures2d? ( contrib download )
-	cudnn? ( cuda || ( sm_61 sm_70 sm_75 sm_86 ) )
+	cudnn? ( cuda || ( cuda_targets_sm_61 cuda_targets_sm_70 cuda_targets_sm_75 cuda_targets_sm_86 ) )
 	examples? ( contribdnn )
 	java? ( python )
 	opengl? ( qt5 )
@@ -353,12 +356,8 @@ src_prepare() {
 multilib_src_configure() {
 	use debug && CMAKE_BUILD_TYPE="Debug" || CMAKE_BUILD_TYPE="Release"
 
-	local CUDA_ARCH=""
-	if use cuda; then
-		for CA in 30 35 50 52 61 70 75 86; do
-			use sm_${CA} && CUDA_ARCH+="${CA},"
-		done
-		CUDA_ARCH=${CUDA_ARCH::-1}
+	if use opencl ; then
+		append-cppflags -DCL_TARGET_OPENCL_VERSION=120
 	fi
 
 	# please dont sort here, order is the same as in CMakeLists.txt
@@ -448,8 +447,8 @@ multilib_src_configure() {
 		-DCUDA_FAST_MATH=$(multilib_native_usex cuda)
 		-DCUDA_HOST_COMPILER="$(cuda_gccdir)"
 		-DCUDA_NVCC_FLAGS=$(multilib_native_usex cuda "-Xcompiler;-fno-lto;${NVCCFLAGS}" '')
-		-DCUDA_ARCH_BIN=\"${CUDA_ARCH}\"
-		-DCUDA_ARCH_PTX=\"${CUDA_ARCH}\"
+		-DCUDA_ARCH_BIN="${CUDA_TARGETS_COMPAT[@]}"
+		-DCUDA_ARCH_PTX="${CUDA_TARGETS_COMPAT[@]}"
 	# ===================================================
 	# OpenCV build components
 	# ===================================================

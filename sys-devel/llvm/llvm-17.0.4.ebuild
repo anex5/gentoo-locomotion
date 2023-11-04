@@ -5,8 +5,8 @@ EAPI=8
 
 PYTHON_COMPAT=( python3_{10..12} )
 
-inherit cmake llvm.org multilib-minimal pax-utils python-any-r1
-inherit toolchain-funcs
+inherit cmake llvm.org multilib-minimal pax-utils python-any-r1 toolchain-funcs
+inherit flag-o-matic git-r3 ninja-utils
 
 DESCRIPTION="Low Level Virtual Machine"
 HOMEPAGE="https://llvm.org/"
@@ -26,6 +26,42 @@ IUSE="
 "
 RESTRICT="!test? ( test )"
 
+REQUIRED_USE="
+	amd64? (
+		llvm_targets_X86
+	)
+	arm? (
+		llvm_targets_ARM
+	)
+	arm64? (
+		llvm_targets_AArch64
+	)
+	loong? (
+		llvm_targets_LoongArch
+	)
+	m68k? (
+		llvm_targets_M68k
+	)
+	mips? (
+		llvm_targets_Mips
+	)
+	ppc? (
+		llvm_targets_PowerPC
+	)
+	ppc64? (
+		llvm_targets_PowerPC
+	)
+	riscv? (
+		llvm_targets_RISCV
+	)
+	sparc? (
+		llvm_targets_Sparc
+	)
+	x86? (
+
+	llvm_targets_X86
+	)
+"
 RDEPEND="
 	sys-libs/zlib:0=[${MULTILIB_USEDEP}]
 	binutils-plugin? (
@@ -53,19 +89,15 @@ BDEPEND="
 	dev-lang/perl
 	>=dev-util/cmake-3.16
 	sys-devel/gnuconfig
-	doc? (
-		$(python_gen_any_dep '
-			dev-python/recommonmark[${PYTHON_USEDEP}]
-			dev-python/sphinx[${PYTHON_USEDEP}]
-		')
-	)
 	kernel_Darwin? (
 		<sys-libs/libcxx-${LLVM_VERSION}.9999
 		>=sys-devel/binutils-apple-5.1
 	)
-	libffi? (
-		>=dev-util/pkgconf-1.3.7[${MULTILIB_USEDEP},pkg-config(+)]
-	)
+	doc? ( $(python_gen_any_dep '
+		dev-python/recommonmark[${PYTHON_USEDEP}]
+		dev-python/sphinx[${PYTHON_USEDEP}]
+	') )
+	libffi? ( virtual/pkgconfig )
 "
 # There are no file collisions between these versions but having :0
 # installed means llvm-config there will take precedence.
@@ -78,12 +110,64 @@ PDEPEND="
 	sys-devel/llvm-toolchain-symlinks:${LLVM_MAJOR}
 	binutils-plugin? ( >=sys-devel/llvmgold-${LLVM_MAJOR} )
 "
-
+PATCHES=(
+	"${FILESDIR}/llvm-14.0.0.9999-stop-triple-spam.patch"
+)
 LLVM_COMPONENTS=( "llvm" "cmake" "third-party" )
 LLVM_MANPAGES=0
 #LLVM_PATCHSET=${PV}
 LLVM_USE_TARGETS="provide"
 llvm.org_set_globals
+
+pkg_setup() {
+	python_setup
+	ewarn
+	ewarn "To avoid long linking delays, close programs that produce unexpectedly"
+	ewarn "high disk activity (web browsers) and possibly switch to -j1."
+	ewarn
+
+	# See https://bugs.gentoo.org/767700
+	einfo
+	einfo "To remove the hard USE mask for llvm_targets_*, do:"
+	einfo
+	local t
+	for t in ${ALL_LLVM_TARGET_FLAGS[@]} ; do
+		echo "echo \"${CATEGORY}/${PN} -${t}\" >> ${EROOT}/etc/portage/profile/package.use.force"
+	done
+	for t in ${ALL_LLVM_EXPERIMENTAL_TARGETS[@]/#/llvm_targets_} ; do
+		echo "echo \"${CATEGORY}/${PN} -${t}\" >> ${EROOT}/etc/portage/profile/package.use.mask"
+	done
+	einfo
+	einfo "However, some packages still need some or all of these.  Some are"
+	einfo "mentioned in bug #767700."
+	einfo
+
+	if ! use llvm_targets_AMDGPU ; then
+		ewarn
+		ewarn "There is a high rebuild cost if llvm_targets_AMDGPU is not enabled now"
+		ewarn "before building sys-libs/libomp[offload,llvm_targets_AMDGPU]."
+		ewarn "Plus, the libomp does not do proper USE flag checks for this flag."
+		ewarn
+	fi
+	if ! use llvm_targets_NVPTX ; then
+		ewarn
+		ewarn "There is a high rebuild cost if llvm_targets_NVPTX is not enabled now"
+		ewarn "before building sys-libs/libomp[cuda,offload,llvm_targets_NVPTX]."
+		ewarn "Plus, the libomp ebuild does not do proper USE flag checks for this"
+		ewarn "flag."
+		ewarn
+	fi
+	if ! use llvm_targets_WebAssembly ; then
+		ewarn
+		ewarn "There is a high rebuild cost if llvm_targets_WebAssembly is not enabled"
+		ewarn "now before building dev-util/emscripten."
+		ewarn
+	fi
+
+	einfo
+	einfo "See sys-devel/clang/metadata.xml for details on PGO optimization."
+	einfo
+}
 
 python_check_deps() {
 	use doc || return 0
@@ -92,35 +176,6 @@ python_check_deps() {
 	python_has_version -b "dev-python/sphinx[${PYTHON_USEDEP}]"
 }
 
-check_uptodate() {
-	local prod_targets=(
-		$(sed -n -e '/set(LLVM_ALL_TARGETS/,/)/p' CMakeLists.txt \
-			| tail -n +2 | head -n -1)
-	)
-	local all_targets=(
-		lib/Target/*/
-	)
-	all_targets=( "${all_targets[@]#lib/Target/}" )
-	all_targets=( "${all_targets[@]%/}" )
-
-	local exp_targets=() i
-	for i in "${all_targets[@]}"; do
-		has "${i}" "${prod_targets[@]}" || exp_targets+=( "${i}" )
-	done
-
-	if [[ ${exp_targets[*]} != ${ALL_LLVM_EXPERIMENTAL_TARGETS[*]} ]]; then
-		eqawarn "ALL_LLVM_EXPERIMENTAL_TARGETS is outdated!"
-		eqawarn "    Have: ${ALL_LLVM_EXPERIMENTAL_TARGETS[*]}"
-		eqawarn "Expected: ${exp_targets[*]}"
-		eqawarn
-	fi
-
-	if [[ ${prod_targets[*]} != ${ALL_LLVM_PRODUCTION_TARGETS[*]} ]]; then
-		eqawarn "ALL_LLVM_PRODUCTION_TARGETS is outdated!"
-		eqawarn "    Have: ${ALL_LLVM_PRODUCTION_TARGETS[*]}"
-		eqawarn "Expected: ${prod_targets[*]}"
-	fi
-}
 
 check_distribution_components() {
 	if [[ ${CMAKE_MAKEFILE_GENERATOR} == ninja ]]; then
@@ -185,6 +240,10 @@ check_distribution_components() {
 	fi
 }
 
+src_unpack() {
+	llvm.org_src_unpack
+}
+
 src_prepare() {
 	# disable use of SDK on OSX, bug #568758
 	sed -i -e 's/xcrun/false/' utils/lit/lit/util.py || die
@@ -192,8 +251,6 @@ src_prepare() {
 	# Update config.guess to support more systems
 	cp "${BROOT}/usr/share/gnuconfig/config.guess" cmake/ || die
 
-	# Verify that the ebuild is up-to-date
-	check_uptodate
 
 	llvm.org_src_prepare
 }
@@ -350,6 +407,52 @@ multilib_src_configure() {
 		ffi_ldflags=$($(tc-getPKG_CONFIG) --libs-only-L libffi)
 	fi
 
+	# workaround BMI bug in gcc-7 (fixed in 7.4)
+	# https://bugs.gentoo.org/649880
+	# apply only to x86, https://bugs.gentoo.org/650506
+	if tc-is-gcc && [[ ${MULTILIB_ABI_FLAG} == abi_x86* ]] &&
+			[[ $(gcc-major-version) -eq 7 && $(gcc-minor-version) -lt 4 ]]
+	then
+		local CFLAGS="${CFLAGS} -mno-bmi"
+		local CXXFLAGS="${CXXFLAGS} -mno-bmi"
+	fi
+
+	# LLVM can have very high memory consumption while linking,
+	# exhausting the limit on 32-bit linker executable
+	use x86 && local -x LDFLAGS="${LDFLAGS} -Wl,--no-keep-memory"
+
+	# LLVM_ENABLE_ASSERTIONS=NO does not guarantee this for us, #614844
+	use debug || local -x CPPFLAGS="${CPPFLAGS} -DNDEBUG"
+
+	# Fix longer than usual build times when building webkit-gtk.
+	# Bump to next fastest build setting.
+	replace-flags -O0 -O1
+
+	# Fix longer than usual build times when building rocm ebuilds in sci-libs.
+	# -O3 may cause random segfaults/ICE.
+	replace-flags -O1 -O2
+	replace-flags -Oz -O2
+	replace-flags -Os -O2
+	replace-flags -O3 -O2
+	replace-flags -Ofast -O2
+	replace-flags -O4 -O2
+
+	# For PGO
+	if tc-is-gcc ; then
+# error: number of counters in profile data for function '...' does not match its profile data (counter 'arcs', expected 7 and have 13) [-Werror=coverage-mismatch]
+# The PGO profiles are isolated.  The Code is the same.
+		append-flags -Wno-error=coverage-mismatch
+	fi
+
+	filter-flags -m32 -m64 -mx32 -m31 '-mabi=*'
+	[[ ${CHOST} =~ "risc" ]] && filter-flags '-march=*'
+	export CFLAGS="$(get_abi_CFLAGS ${ABI}) ${CFLAGS}"
+	export CXXFLAGS="$(get_abi_CFLAGS ${ABI}) ${CXXFLAGS}"
+	einfo
+	einfo "CFLAGS=${CFLAGS}"
+	einfo "CXXFLAGS=${CXXFLAGS}"
+	einfo
+
 	local libdir=$(get_libdir)
 	local mycmakeargs=(
 		# disable appending VCS revision to the version to improve
@@ -399,12 +502,14 @@ multilib_src_configure() {
 		-DOCAMLFIND=NO
 	)
 
-	local suffix=
-	if [[ -n ${EGIT_VERSION} && ${EGIT_BRANCH} != release/* ]]; then
-		# the ABI of the main branch is not stable, so let's include
-		# the commit id in the SOVERSION to contain the breakage
-		suffix+="git${EGIT_VERSION::8}"
-	fi
+	# On the MacOS prefix, the distro doesn't split sys-libs/ncurses to
+	# libtinfo and libncurses, but llvm tries to use libtinfo before
+	# libncurses, and ends up using libtinfo (actually, libncurses.dylib)
+	# from system instead of prefix.
+	use kernel_Darwin && mycmakeargs+=(
+		-DTerminfo_LIBRARIES=-lncurses
+	)
+
 	if [[ $(tc-get-cxx-stdlib) == libc++ ]]; then
 		# Smart hack: alter version suffix -> SOVERSION when linking
 		# against libc++. This way we won't end up mixing LLVM libc++
@@ -445,29 +550,12 @@ multilib_src_configure() {
 		)
 	fi
 
-	# On Macos prefix, Gentoo doesn't split sys-libs/ncurses to libtinfo and
-	# libncurses, but llvm tries to use libtinfo before libncurses, and ends up
-	# using libtinfo (actually, libncurses.dylib) from system instead of prefix
-	use kernel_Darwin && mycmakeargs+=(
-		-DTerminfo_LIBRARIES=-lncurses
+	mycmakeargs+=(
+		-DCMAKE_C_COMPILER="${CC}"
+		-DCMAKE_CXX_COMPILER="${CXX}"
+		-DCMAKE_ASM_COMPILER="${CC}"
 	)
 
-	# workaround BMI bug in gcc-7 (fixed in 7.4)
-	# https://bugs.gentoo.org/649880
-	# apply only to x86, https://bugs.gentoo.org/650506
-	if tc-is-gcc && [[ ${MULTILIB_ABI_FLAG} == abi_x86* ]] &&
-			[[ $(gcc-major-version) -eq 7 && $(gcc-minor-version) -lt 4 ]]
-	then
-		local CFLAGS="${CFLAGS} -mno-bmi"
-		local CXXFLAGS="${CXXFLAGS} -mno-bmi"
-	fi
-
-	# LLVM can have very high memory consumption while linking,
-	# exhausting the limit on 32-bit linker executable
-	use x86 && local -x LDFLAGS="${LDFLAGS} -Wl,--no-keep-memory"
-
-	# LLVM_ENABLE_ASSERTIONS=NO does not guarantee this for us, #614844
-	use debug || local -x CPPFLAGS="${CPPFLAGS} -DNDEBUG"
 	cmake_src_configure
 
 	grep -q -E "^CMAKE_PROJECT_VERSION_MAJOR(:.*)?=${LLVM_MAJOR}$" \
