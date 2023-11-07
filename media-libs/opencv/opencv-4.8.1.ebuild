@@ -22,12 +22,11 @@ SRC_URI="https://github.com/${PN}/${PN}/archive/${PV}.tar.gz -> ${P}.tar.gz
 LICENSE="Apache-2.0"
 SLOT="0/${PV}" # subslot = libopencv* soname version
 KEYWORDS="~amd64 ~arm ~arm64 ~loong ~ppc ~ppc64 ~riscv ~x86"
-CUDA_TARGETS_COMPAT=( sm_30 sm_35 sm_50 sm_52 sm_61 sm_70 sm_75 sm_86 )
+CUDA_TARGETS_COMPAT=( sm_30 sm_35 sm_50 sm_52 sm_61 sm_70 sm_75 sm_86 sm_87 sm_89 sm_90 )
 IUSE="avif contrib contribcvv contribdnn contribfreetype contribhdf contribovis contribsfm contribxfeatures2d cuda debug cudnn dnnsamples download +eigen flatbuffers \
 	examples +features2d ffmpeg gdal gflags glog gphoto2 gstreamer gtk3 ieee1394 jpeg jpeg2k lapack lto onnx opencl openexr opengl openmp opencvapps png +python \
 	qt5 tesseract testprograms threads tiff vaapi v4l vtk vulkan wayland webp xine ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_}"
 
-# The following lines are shamelessly stolen from ffmpeg-9999.ebuild with modifications
 ARM_CPU_FEATURES=(
 	cpu_flags_arm_neon:NEON
 	cpu_flags_arm_vfpv3:VFPV3
@@ -297,7 +296,7 @@ MULTILIB_WRAPPED_HEADERS=(
 	/usr/include/opencv4/opencv2/viz/widgets.hpp
 )
 
-#RESTRICT="mirror"
+RESTRICT="mirror"
 
 PATCHES=(
 	"${FILESDIR}"/${PN}-3.4.0-disable-download.patch
@@ -316,6 +315,21 @@ pkg_pretend() {
 pkg_setup() {
 	[[ ${MERGE_TYPE} != binary ]] && use openmp && tc-check-openmp
 	java-pkg-opt-2_pkg_setup
+	if use cuda ; then
+		if [[ -z "${CUDA_TOOLKIT_ROOT_DIR}" ]] ; then
+			ewarn
+			ewarn "CUDA_TOOLKIT_ROOT_DIR should be set as a per-package environmental variable"
+			ewarn
+			export CUDA_TOOLKIT_ROOT_DIR="/opt/cuda"
+		else
+			if [[ ! -d "${CUDA_TOOLKIT_ROOT_DIR}/lib64" ]] ; then
+				eerror
+				eerror "${CUDA_TOOLKIT_ROOT_DIR}/lib64 is unreachable.  Fix CUDA_TOOLKIT_ROOT_DIR"
+				eerror
+				die
+			fi
+		fi
+	fi
 }
 
 src_prepare() {
@@ -358,6 +372,12 @@ multilib_src_configure() {
 
 	if use opencl ; then
 		append-cppflags -DCL_TARGET_OPENCL_VERSION=120
+	fi
+
+	if use cuda ; then
+		for CT in ${CUDA_TARGETS_COMPAT[@]}; do
+			use ${CT/#/cuda_targets_} && CUDA_TARGETS+="${CT#sm_*},"
+		done
 	fi
 
 	# please dont sort here, order is the same as in CMakeLists.txt
@@ -447,8 +467,8 @@ multilib_src_configure() {
 		-DCUDA_FAST_MATH=$(multilib_native_usex cuda)
 		-DCUDA_HOST_COMPILER="$(cuda_gccdir)"
 		-DCUDA_NVCC_FLAGS=$(multilib_native_usex cuda "-Xcompiler;-fno-lto;${NVCCFLAGS}" '')
-		-DCUDA_ARCH_BIN="${CUDA_TARGETS_COMPAT[@]}"
-		-DCUDA_ARCH_PTX="${CUDA_TARGETS_COMPAT[@]}"
+		-DCUDA_ARCH_BIN="${CUDA_TARGETS%%,}"
+		-DCUDA_ARCH_PTX="${CUDA_TARGETS%%,}"
 	# ===================================================
 	# OpenCV build components
 	# ===================================================
@@ -534,6 +554,7 @@ multilib_src_configure() {
 		-DCPU_BASELINE=${CPU_BASELINE}
 		-DCPU_DISPATCH=
 	)
+
 
 	# ===================================================
 	# OpenCV Contrib Modules
