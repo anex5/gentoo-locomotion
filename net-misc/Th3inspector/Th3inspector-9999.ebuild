@@ -3,7 +3,7 @@
 
 EAPI=8
 
-inherit eutils git-r3
+inherit git-r3 edos2unix
 
 DESCRIPTION="All in one tool for Information Gathering"
 HOMEPAGE="https://fb.me/mohamed.riahi.official.account"
@@ -32,20 +32,15 @@ src_prepare() {
 
 	# Allow user patches to be applied without modifying the ebuild
 	eapply_user
+
+	edos2unix $(find ${S} -type 'f')
 }
 
 src_install() {
-	rmdir -r /usr/share/Th3inspector
 	dodir /usr/share/Th3inspector
 	insinto /usr/share/Th3inspector
 	doins Th3inspector.pl
-	fperms 0700 /usr/share/Th3inspector/Th3inspector.pl
+	fperms 0755 /usr/share/Th3inspector/Th3inspector.pl
+	dosym /usr/share/Th3inspector/Th3inspector.pl /usr/bin/Th3inspector
 }
 
-pkg_postinst() {
-	if [ -f "/usr/share/Th3inspector/Th3inspector.pl" ]; then
-		elog "You can execute tool by typing /usr/share/Th3inspector/Th3inspector.pl"
-	else
-		elog "Tool Cannot Be Installed On Your System! Use It As Portable !"
-	fi
-}
