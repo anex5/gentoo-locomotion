@@ -17,7 +17,7 @@ WANT_AUTOCONF="2.1"
 VIRTUALX_REQUIRED="manual"
 
 inherit autotools check-reqs desktop flag-o-matic gnome2-utils linux-info llvm multiprocessing \
-	 multilib-minimal readme.gentoo-r1 rust-toolchain optfeature pax-utils python-any-r1 toolchain-funcs virtualx xdg
+	 multilib-minimal rust-toolchain optfeature pax-utils python-any-r1 toolchain-funcs virtualx xdg
 
 PATCH_URIS=(
 	https://dev.gentoo.org/~juippis/mozilla/patchsets/${FIREFOX_PATCHSET}
@@ -1923,7 +1923,6 @@ _src_install() {
 		-e "s:@DEFAULT_WAYLAND@:${use_wayland}:" \
 		"${ED}/usr/bin/${PN}" \
 		|| die
-	readme.gentoo_create_doc
 }
 
 src_install() {
@@ -1979,7 +1978,6 @@ pkg_postinst() {
 		ewarn "explained in https://bugs.gentoo.org/835078#c5 if Firefox crashes."
 	fi
 
-	readme.gentoo_print_elog
 
 	optfeature_header "Optional programs for extra features:"
 	optfeature "desktop notifications" x11-libs/libnotify
