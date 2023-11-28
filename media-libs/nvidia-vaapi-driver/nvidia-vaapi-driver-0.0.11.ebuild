@@ -28,7 +28,7 @@ RDEPEND="
 BDEPEND="
 	dev-util/meson
 	>=media-libs/nv-codec-headers-12.1.14:=
-	>=media-video/ffmpeg-6.1.0:=[nvenc]
+	>=media-video/ffmpeg-6.1:=[nvenc]
 "
 
 RESTRICT="mirror"
