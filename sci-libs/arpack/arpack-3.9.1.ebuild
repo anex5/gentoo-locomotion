@@ -3,7 +3,7 @@
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{10,11} )
+PYTHON_COMPAT=( python3_{10..12} )
 
 inherit cmake flag-o-matic fortran-2 python-single-r1
 
@@ -26,7 +26,7 @@ RDEPEND="
 	virtual/blas
 	virtual/lapack
 	icbexmm? ( dev-cpp/eigen )
-	mpi? ( virtual/mpi[fortran] )
+	mpi? ( virtual/mpi )
 	icb? ( virtual/mpi[cxx] )
 	python? (
 		${PYTHON_DEPS}
