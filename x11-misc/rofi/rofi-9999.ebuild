@@ -49,7 +49,6 @@ RDEPEND="
 	wayland? (
 		>=dev-libs/wayland-protocols-1.17
 		>=dev-libs/wayland-1.17.0
-
 	)
 "
 DEPEND="
