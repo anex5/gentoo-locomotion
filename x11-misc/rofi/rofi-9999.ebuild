@@ -13,7 +13,7 @@ HOMEPAGE="https://github.com/lbonn/rofi"
 if [[ ${PV} = *9999 ]]; then
 	inherit git-r3
 	EGIT_REPO_URI="https://github.com/lbonn/rofi"
-	EGIT_SUBMODULES=()
+	#EGIT_SUBMODULES=()
 	EGIT_BRANCH="wayland"
 	KEYWORDS=""
 else
@@ -24,7 +24,7 @@ fi
 
 LICENSE="MIT"
 SLOT="0"
-IUSE="X wayland +drun test +windowmode man"
+IUSE="X wayland +drun +imdkit test +windowmode man"
 RESTRICT="!test? ( test )"
 
 BDEPEND="
@@ -34,10 +34,9 @@ BDEPEND="
 "
 RDEPEND="
 	dev-libs/glib:2
-	x11-libs/cairo[X?,xcb(+)]
 	x11-libs/gdk-pixbuf:2
+	x11-libs/cairo[X?]
 	X? (
-		x11-libs/libxcb:=
 		x11-libs/startup-notification
 		x11-libs/xcb-util
 		x11-libs/xcb-util-cursor
@@ -73,6 +72,7 @@ src_configure() {
 		$(meson_feature X xcb)
 		$(meson_feature wayland)
 		$(meson_feature test check)
+		$(meson_use imdkit imdkit)
 	)
 
 	meson_src_configure
