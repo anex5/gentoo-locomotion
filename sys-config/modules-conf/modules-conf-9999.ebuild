@@ -9,7 +9,7 @@ KEYWORDS="*"
 
 LICENSE="GPL-2+"
 SLOT="0"
-IUSE="video_cards_i915 video_cards_nouveau video_cards_nvidia video_cards_amdgpu video_cards_radeon video_cards_virtualbox +alsa +vfio +kvm +zswap +drm bbswitch +blacklist it87 8189fs"
+IUSE="video_cards_i915 video_cards_nouveau video_cards_nvidia video_cards_amdgpu video_cards_radeon video_cards_virtualbox +alsa +vfio +kvm +zswap +drm bbswitch +blacklist it87 rtl"
 
 S=${WORKDIR}
 
@@ -31,7 +31,7 @@ src_install() {
 
 pkg_preinst() {
 	insinto /etc/modprobe.d
-	use 8189fs && doins ${FILESDIR}/8189fs.conf
+	use rtl && doins ${FILESDIR}/rtl.conf
 	use alsa && doins ${FILESDIR}/alsa-base.conf
 	use drm && doins ${FILESDIR}/drm_kms_helper.conf
 	use kvm && doins ${FILESDIR}/kvm.conf
