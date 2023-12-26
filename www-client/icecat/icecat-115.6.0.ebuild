@@ -4,7 +4,7 @@
 EAPI=8
 
 # Using Gentoos firefox patches as system libraries and lto are quite nice
-FIREFOX_PATCHSET="firefox-${PV%%.*}esr-patches-07.tar.xz"
+FIREFOX_PATCHSET="firefox-${PV%%.*}esr-patches-08.tar.xz"
 
 LLVM_MAX_SLOT=17
 LLVM_SLOTS=( 17 16 )
@@ -915,6 +915,16 @@ src_prepare() {
 		rm -v "${WORKDIR}"/firefox-patches/*ppc64*.patch || die
 	fi
 
+	if use x86 && use elibc_glibc ; then
+		rm -v "${WORKDIR}"/firefox-patches/*-musl-non-lfs64-api-on-audio_thread_priority-crate.patch || die
+	fi
+
+	# Workaround for bgo#917599
+	if has_version ">=dev-libs/icu-74.1" && use system-icu ; then
+		eapply "${WORKDIR}"/firefox-patches/0029-bmo-1862601-system-icu-74.patch
+	fi
+	rm -v "${WORKDIR}"/firefox-patches/0029-bmo-1862601-system-icu-74.patch || die
+
 	eapply "${WORKDIR}/firefox-patches"
 	eapply "${FILESDIR}/extra-patches/firefox-106.0.2-disallow-store-data-races.patch"
 
@@ -1260,8 +1270,8 @@ _src_configure() {
 	fi
 
 	if [[ -n "${have_switched_compiler}" ]] ; then
-		# Because we switched active compiler, we have to ensure that no
-		# unsupported flags are set.
+		# Because we switched active compiler, we have to ensure
+		# that no unsupported flags are set
 		strip-unsupported-flags
 	fi
 
