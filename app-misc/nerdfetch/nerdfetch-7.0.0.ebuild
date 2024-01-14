@@ -12,7 +12,7 @@ LICENSE="GPL-3"
 SLOT="0"
 KEYWORDS="~amd64"
 
-RDEPEND="media-fonts/nerdfonts"
+RDEPEND="media-fonts/nerd-fonts"
 
 RESTRICT="mirror"
 
