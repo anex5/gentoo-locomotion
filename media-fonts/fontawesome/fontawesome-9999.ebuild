@@ -14,13 +14,13 @@ if [[ ${PV} == 9999 ]]; then
 	KEYWORDS=""
 else
 	SRC_URI="https://github.com/FortAwesome/${MY_PN}/archive/${PV}.tar.gz -> ${P}.tar.gz"
-	KEYWORDS="~amd64 ~arm ~arm64 ~loong ~ppc64 ~riscv ~x86"
+	KEYWORDS="*"
 	S="${WORKDIR}/${MY_PN}-${PV}"
 fi
 
 RESTRICT="mirror"
 LICENSE="CC-BY-4.0 OFL-1.1"
-SLOT="0/5"
+SLOT="0/6"
 IUSE="+otf ttf"
 
 REQUIRED_USE="|| ( otf ttf )"
