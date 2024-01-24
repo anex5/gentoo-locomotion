@@ -7,7 +7,7 @@ PYTHON_COMPAT=( python3_{10..12} )
 
 MY_PN="OpenSfM"
 
-inherit distutils-r1 cmake
+inherit distutils-r1 cmake git-r3
 
 DISTUTILS_USE_SETUPTOOLS=no
 DISTUTILS_OPTIONAL=1
@@ -18,19 +18,12 @@ DISTUTILS_EXT=1
 DESCRIPTION="Open source Structure-from-Motion pipeline"
 HOMEPAGE="https://www.opensfm.org"
 
-if [[ ${PV} = *9999 ]]; then
-	inherit git-r3
-	EGIT_REPO_URI="https://github.com/mapillary/${MY_PN}"
-	EGIT_SUBMODULES=()
-	EGIT_BRANCH="main"
-	KEYWORDS=""
-else
-	SRC_URI="https://github.com/mapillary/${MY_PN}/archive/v${PV}/${P}.tar.gz -> ${P}.tar.gz"
-	KEYWORDS="~amd64 ~x86"
-	S=${WORKDIR}/${MY_PN}-${PV}
-fi
+EGIT_REPO_URI="https://github.com/mapillary/${MY_PN}"
+EGIT_SUBMODULES=()
+EGIT_BRANCH="main"
+KEYWORDS=""
 
-QA_PRESTRIPPED="usr/lib/python.*/site-packages/opensfm/.*.so"
+QA_PRESTRIPPED="usr/lib/python.*/site-packages/opensfm/.*"
 
 LICENSE="BSD-2"
 
@@ -74,7 +67,7 @@ RDEPEND="${DEPEND}"
 BDEPEND="
 	dev-python/pybind11[${PYTHON_USEDEP}]
 	dev-python/cython[${PYTHON_USEDEP}]
-	>=dev-util/cmake-3.0.0
+	>=dev-build/cmake-3.0.0
 	dev-cpp/glog[gflags]
 "
 
@@ -85,19 +78,23 @@ RESTRICT="
 
 src_prepare() {
 	use doc || sed -i -e "/from sphinx\.setup_command import BuildDoc/d" -e "/\"build_doc\": BuildDoc\,/d" setup.py || die
-	sed -i -e "/\"bin\/opensfm\"\,/a		\"bin\/opensfm_main\.py\"," setup.py || die
+	sed -e '/"bin\/opensfm"\,/a		"bin\/opensfm_main\.py",' -i setup.py || die
 
-	#Enable cxx14-std as CERES-2.0 req it
-	sed -i -e "s|\(set(CMAKE_CXX_STANDARD \)11|\114|" opensfm/src/CMakeLists.txt || die
+	#Enable cxx17 as CERES-2.0 req it
+	sed -e "s|\(set(CMAKE_CXX_STANDARD \)14|\117|" -i opensfm/src/CMakeLists.txt || die
 	#unbundle pybind11
-	sed	-i -e "s|add_subdirectory(third_party\/pybind11)|find_package (pybind11 CONFIG REQUIRED)|" opensfm/src/CMakeLists.txt || die
-	sed -i -e "/^target_link_libraries(/,/)/s|pybind11|pybind11::headers|g" opensfm/src/{foundation,bundle,dense,features,geometry,robust,sfm,geo,map}/CMakeLists.txt || die
+	sed	-e "s|add_subdirectory(third_party\/pybind11)|find_package (pybind11 CONFIG REQUIRED)|" -i opensfm/src/CMakeLists.txt || die
+	sed -e "/^target_link_libraries(/,/)/s|pybind11|pybind11::module pybind11::thin_lto|g" -i opensfm/src/{foundation,bundle,dense,features,geometry,robust,sfm,geo,map}/CMakeLists.txt || die
+
+	# Build C extension with gentoo cmake eclass
+	sed -e "/^configure_c_extension()$/d" -i setup.py || die
+	sed -e "/^build_c_extension()$/d" -i setup.py || die
 
 	eapply "${FILESDIR}/unbundle-pybind.patch"
 
 	CMAKE_USE_DIR="${S}/opensfm/src"
 	cmake_src_prepare
-	distutils-r1_src_prepare
+	python_prepare_all
 }
 
 python_prepare_all() {
@@ -108,11 +105,15 @@ python_prepare_all() {
 
 src_configure() {
 	CMAKE_BUILD_TYPE=$(usex debug RelWithDebInfo Release)
+	CMAKE_CXX_STANDARD=17
+	CMAKE_CXX_STANDARD_REQUIRED=ON
+	CMAKE_SKIP_RPATH=ON
 
 	local mycmakeargs=(
 		-DOPENSFM_BUILD_TESTS=$(usex test)
 	)
 	cmake_src_configure
+	distutils-r1_src_configure
 }
 
 src_compile() {
