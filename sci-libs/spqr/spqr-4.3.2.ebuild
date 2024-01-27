@@ -5,22 +5,22 @@ EAPI=8
 
 inherit cmake-multilib toolchain-funcs
 
-Sparse_PV="7.0.1"
+Sparse_PV="7.6.0"
 Sparse_P="SuiteSparse-${Sparse_PV}"
 DESCRIPTION="Multithreaded multifrontal sparse QR factorization library"
 HOMEPAGE="https://people.engr.tamu.edu/davis/suitesparse.html"
 SRC_URI="https://github.com/DrTimothyAldenDavis/SuiteSparse/archive/refs/tags/v${Sparse_PV}.tar.gz -> ${Sparse_P}.gh.tar.gz"
 
 LICENSE="GPL-2+"
-SLOT="0/3"
+SLOT="0/4"
 KEYWORDS="~amd64 ~arm ~arm64 ~hppa ~ia64 ~loong ~ppc ~ppc64 ~riscv ~sparc ~x86 ~amd64-linux ~x86-linux"
-IUSE="doc openmp test"
+IUSE="cuda debug doc openmp static-libs test"
 RESTRICT="!test? ( test ) mirror"
 
-DEPEND=">=sci-libs/suitesparseconfig-${Sparse_PV}
-	>=sci-libs/amd-3.0.3
-	>=sci-libs/colamd-3.0.3
-	>=sci-libs/cholmod-4.0.3
+DEPEND=">=sci-libs/suitesparseconfig-${Sparse_PV}[openmp?,cuda?]
+	>=sci-libs/amd-3.3.1
+	>=sci-libs/colamd-3.3.1
+	>=sci-libs/cholmod-5.2.0
 	virtual/blas"
 RDEPEND="${DEPEND}"
 BDEPEND="doc? ( virtual/latex-base )"
@@ -36,10 +36,12 @@ pkg_setup() {
 }
 
 multilib_src_configure() {
+	CMAKE_BUILD_TYPE=$(usex debug RelWithDebInfo Release)
+
 	local mycmakeargs=(
-		-DNSTATIC=ON
-		-DNOPENMP=$(usex openmp OFF ON)
-		-DDEMO=$(usex test)
+		-DBUILD_STATIC_LIBS=$(usex static-libs)
+		-DSPQR_USE_CUDA=$(usex cuda)
+		-DSUITESPARSE_DEMOS=$(usex test)
 	)
 	cmake_src_configure
 }

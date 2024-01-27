@@ -39,7 +39,7 @@ DEPEND="
 	dev-libs/boost[${PYTHON_USEDEP}]
 	media-libs/opencv[python,${PYTHON_USEDEP}]
 	media-libs/opengv[python,${PYTHON_USEDEP}]
-	>=sci-libs/ceres-solver-2.0.0[sparse]
+	>=sci-libs/ceres-solver-2.2.0[sparse]
 	>=dev-python/cloudpickle-0.4.0[${PYTHON_USEDEP}]
 	>=dev-python/exifread-2.1.2[${PYTHON_USEDEP}]
 	>=dev-python/joblib-0.14.1[${PYTHON_USEDEP}]
@@ -84,7 +84,7 @@ src_prepare() {
 	sed -e "s|\(set(CMAKE_CXX_STANDARD \)14|\117|" -i opensfm/src/CMakeLists.txt || die
 	#unbundle pybind11
 	sed	-e "s|add_subdirectory(third_party\/pybind11)|find_package (pybind11 CONFIG REQUIRED)|" -i opensfm/src/CMakeLists.txt || die
-	sed -e "/^target_link_libraries(/,/)/s|pybind11|pybind11::module pybind11::thin_lto|g" -i opensfm/src/{foundation,bundle,dense,features,geometry,robust,sfm,geo,map}/CMakeLists.txt || die
+	sed -e "/^target_link_libraries(/,/)/s|pybind11|pybind11::headers|g" -i opensfm/src/{foundation,bundle,dense,features,geometry,robust,sfm,geo,map}/CMakeLists.txt || die
 
 	# Build C extension with gentoo cmake eclass
 	sed -e "/^configure_c_extension()$/d" -i setup.py || die

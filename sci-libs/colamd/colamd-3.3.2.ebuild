@@ -5,7 +5,7 @@ EAPI=8
 
 inherit cmake-multilib
 
-Sparse_PV="7.0.1"
+Sparse_PV="7.6.0"
 Sparse_P="SuiteSparse-${Sparse_PV}"
 DESCRIPTION="Column approximate minimum degree ordering algorithm"
 HOMEPAGE="https://people.engr.tamu.edu/davis/suitesparse.html"
@@ -30,8 +30,8 @@ multilib_src_configure() {
 	CMAKE_BUILD_TYPE=$(usex debug RelWithDebInfo Release)
 
 	local mycmakeargs=(
-		-DNSTATIC=$(usex !static-libs)
-		-DDEMO=$(usex test)
+		-DBUILD_STATIC_LIBS=$(usex static-libs)
+		-DSUITESPARSE_DEMOS=$(usex test)
 	)
 	cmake_src_configure
 }
@@ -45,25 +45,6 @@ multilib_src_test() {
 }
 
 multilib_src_install_all() {
-	cat >> "${T}"/${PN}.pc <<- EOF
-	prefix=${EPREFIX}/usr
-	exec_prefix=\${prefix}
-	libdir=\${exec_prefix}/$(get_libdir)
-	includedir=\${prefix}/include
-
-	Name: COLAMD
-	Description: Column Approximate Minimum Degree ordering
-	Version: ${PV}
-	URL: http://www.cise.ufl.edu/research/sparse/amd/
-	Libs: -L\${libdir} -lcolamd
-	Libs.private: -lm
-	Cflags: -I\${includedir}
-	Requires: suitesparseconfig
-	EOF
-
-	insinto /usr/$(get_libdir)/pkgconfig
-	doins "${T}"/${PN}.pc
-
 	use doc && einstalldocs
 
 	use !static-libs &&	find "${ED}" -name "*.a" -delete || die

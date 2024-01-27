@@ -13,7 +13,7 @@ SRC_URI="https://github.com/DrTimothyAldenDavis/SuiteSparse/archive/v${PV}.tar.g
 LICENSE="public-domain"
 SLOT="0"
 KEYWORDS="amd64 arm arm64 ~hppa ~ia64 ~mips ppc ppc64 sparc x86"
-IUSE="doc debug static-libs"
+IUSE="doc debug openmp cuda static-libs"
 RESTRICT="mirror"
 
 S=${WORKDIR}/SuiteSparse-${PV}/SuiteSparse_config
@@ -29,7 +29,10 @@ multilib_src_configure() {
 
 	local mycmakeargs=(
 		-DBLA_VENDOR=Generic
-		-DALLOW_64BIT_BLAS=ON
+		-DBUILD_SHARED_LIBS=ON
+		-DBUILD_STATIC_LIBS=$(use static-libs)
+		-DSUITESPARSE_CONFIG_USE_OPENMP=$(usex openmp)
+		-DSUITESPARSE_HAS_CUDA=$(usex cuda)
 	)
 	cmake_src_configure
 }

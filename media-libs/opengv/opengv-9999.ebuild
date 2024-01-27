@@ -33,12 +33,12 @@ DEPEND="
 RDEPEND="${DEPEND}"
 BDEPEND="
 	dev-python/pybind11[${PYTHON_USEDEP}]
-	>=dev-util/cmake-3.0.0
+	>=dev-build/cmake-3.0.0
 "
 
 src_configure() {
 	CMAKE_BUILD_TYPE=Release
-	sed -i -e "s|\(set(CMAKE_CXX_STANDARD \)11|\114|" \
+	sed -i -e "s|\(set(CMAKE_CXX_STANDARD \)11|\117|" \
 		-e "s|add_subdirectory(pybind11)|find_package (pybind11 CONFIG REQUIRED)|" python/CMakeLists.txt || die
 	local mycmakeargs=(
 		-DBUILD_SHARED_LIBS=ON

@@ -5,7 +5,7 @@ EAPI=8
 
 inherit cuda cmake-multilib toolchain-funcs
 
-Sparse_PV="7.0.1"
+Sparse_PV="7.6.0"
 Sparse_P="SuiteSparse-${Sparse_PV}"
 DESCRIPTION="Sparse Cholesky factorization and update/downdate library"
 HOMEPAGE="https://people.engr.tamu.edu/davis/suitesparse.html"
@@ -14,16 +14,16 @@ SRC_URI="https://github.com/DrTimothyAldenDavis/SuiteSparse/archive/v${Sparse_PV
 LICENSE="LGPL-2.1+ modify? ( GPL-2+ ) matrixops? ( GPL-2+ )"
 SLOT="0/4"
 KEYWORDS="~amd64 ~arm ~arm64 ~hppa ~ia64 ~loong ~mips ~ppc ~ppc64 ~riscv ~s390 ~sparc ~x86 ~amd64-linux ~x86-linux"
-IUSE="+cholesky cuda debug doc openmp +matrixops +modify +partition +supernodal test static-libs"
+IUSE="+cholesky cuda camd +check debug doc fortran openmp +matrixops +modify +partition +supernodal test static-libs"
 RESTRICT="!test? ( test )"
 
 DEPEND=">=sci-libs/suitesparseconfig-${Sparse_PV}
-	>=sci-libs/amd-3.0.3
-	>=sci-libs/colamd-3.0.3
+	>=sci-libs/amd-3.3.1
+	>=sci-libs/colamd-3.3.1
 	supernodal? ( virtual/lapack )
 	partition? (
-		>=sci-libs/camd-3.0.3
-		>=sci-libs/ccolamd-3.0.3
+		>=sci-libs/camd-3.3.1
+		>=sci-libs/ccolamd-3.3.1
 	)
 	cuda? (
 		dev-util/nvidia-cuda-toolkit
@@ -34,6 +34,7 @@ BDEPEND="doc? ( virtual/latex-base )"
 
 REQUIRED_USE="supernodal? ( cholesky )
 	modify? ( cholesky )
+	matrixops? ( check )
 	test? ( cholesky matrixops supernodal )"
 
 S="${WORKDIR}/${Sparse_P}/${PN^^}"
@@ -60,16 +61,18 @@ multilib_src_configure() {
 	# Fortran is turned off as it is only used to compile (untested) demo programs.
 	CMAKE_BUILD_TYPE=$(usex debug RelWithDebInfo Release)
 	local mycmakeargs=(
-		-DNSTATIC=$(usex !static-libs)
-		-DENABLE_CUDA=$(usex cuda)
-		-DNOPENMP=$(usex openmp OFF ON)
-		-DNFORTRAN=ON
-		-DNCHOLESKY=$(usex cholesky OFF ON)
-		-DNMATRIXOPS=$(usex matrixops OFF ON)
-		-DNMODIFY=$(usex modify OFF ON)
-		-DNPARTITION=$(usex partition OFF ON)
-		-DNSUPERNODAL=$(usex supernodal OFF ON)
-		-DDEMO=$(usex test)
+		-DBUILD_STATIC_LIBS=$(usex static-libs)
+		-DCHOLMOD_USE_CUDA=$(usex cuda)
+		-DCHOLMOD_USE_OPENMP=$(usex openmp)
+		-DSUITESPARSE_HAS_FORTRAN=$(usex fortran)
+		-DCHOLMOD_CAMD=$(usex camd)
+		-DCHOLMOD_CHECK=$(usex check)
+		-DCHOLMOD_CHOLESKY=$(usex cholesky)
+		-DCHOLMOD_MATRIXOPS=$(usex matrixops)
+		-DCHOLMOD_MODIFY=$(usex modify)
+		-DCHOLMOD_PARTITION=$(usex partition)
+		-DCHOLMOD_SUPERNODAL=$(usex supernodal)
+		-DSUITESPARSE_DEMOS=$(usex test)
 	)
 	cmake_src_configure
 }
