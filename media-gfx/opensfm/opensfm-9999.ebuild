@@ -1,4 +1,4 @@
-# Copyright 1999-2023 Gentoo Foundation
+# Copyright 1999-2024 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -7,7 +7,7 @@ PYTHON_COMPAT=( python3_{10..12} )
 
 MY_PN="OpenSfM"
 
-inherit distutils-r1 cmake git-r3
+inherit distutils-r1 cmake
 
 DISTUTILS_USE_SETUPTOOLS=no
 DISTUTILS_OPTIONAL=1
@@ -18,10 +18,19 @@ DISTUTILS_EXT=1
 DESCRIPTION="Open source Structure-from-Motion pipeline"
 HOMEPAGE="https://www.opensfm.org"
 
-EGIT_REPO_URI="https://github.com/mapillary/${MY_PN}"
-EGIT_SUBMODULES=()
-EGIT_BRANCH="main"
-KEYWORDS=""
+if [[ ${PV} = *9999 ]]; then
+	inherit git-r3
+	EGIT_REPO_URI="https://github.com/mapillary/${MY_PN}"
+	EGIT_SUBMODULES=()
+	EGIT_BRANCH="main"
+	KEYWORDS=""
+	CERES_PV=2.2.0
+else
+	SRC_URI="https://github.com/mapillary/${MY_PN}/archive/v${PV}/${P}.tar.gz -> ${P}.tar.gz"
+	KEYWORDS="~amd64 ~x86 ~arm64 ~arm"
+	CERES_PV=2.1.0
+	S=${WORKDIR}/${MY_PN}-${PV}
+fi
 
 QA_PRESTRIPPED="usr/lib/python.*/site-packages/opensfm/.*"
 
@@ -29,17 +38,24 @@ LICENSE="BSD-2"
 
 SLOT="0"
 
-KEYWORDS="~amd64"
-
-IUSE="debug doc test"
+IUSE="debug doc test lto"
 
 REQUIRED_USE="${PYTHON_REQUIRED_USE}"
 
 DEPEND="
 	dev-libs/boost[${PYTHON_USEDEP}]
-	media-libs/opencv[python,${PYTHON_USEDEP}]
+	media-libs/opencv:=[python,${PYTHON_USEDEP}]
 	media-libs/opengv[python,${PYTHON_USEDEP}]
-	>=sci-libs/ceres-solver-2.2.0[sparse]
+	<=sci-libs/ceres-solver-${CERES_PV}:=[sparse]
+	>=sci-libs/suitesparseconfig-7.6.0:=
+	>=sci-libs/amd-3.3.1:=
+	>=sci-libs/camd-3.3.1:=
+	>=sci-libs/colamd-3.3.1:=
+	>=sci-libs/ccolamd-3.3.1:=
+	>=sci-libs/cholmod-5.2.0:=
+	>=sci-libs/cxsparse-4.3.1:=
+	>=sci-libs/spqr-4.3.2:=
+	>=sci-libs/metis-5.2.1:=
 	>=dev-python/cloudpickle-0.4.0[${PYTHON_USEDEP}]
 	>=dev-python/exifread-2.1.2[${PYTHON_USEDEP}]
 	>=dev-python/joblib-0.14.1[${PYTHON_USEDEP}]
@@ -77,20 +93,28 @@ RESTRICT="
 "
 
 src_prepare() {
-	use doc || sed -i -e "/from sphinx\.setup_command import BuildDoc/d" -e "/\"build_doc\": BuildDoc\,/d" setup.py || die
-	sed -e '/"bin\/opensfm"\,/a		"bin\/opensfm_main\.py",' -i setup.py || die
+	use doc || sed -i -e "/from sphinx\.setup_command import BuildDoc/d" -e "/\"build_doc\": BuildDoc\,/d" setup.py || die "Sed failed"
+	sed -e '/"bin\/opensfm"\,/a		"bin\/opensfm_main\.py",' -i setup.py || die "Sed failed"
 
-	#Enable cxx17 as CERES-2.0 req it
-	sed -e "s|\(set(CMAKE_CXX_STANDARD \)14|\117|" -i opensfm/src/CMakeLists.txt || die
-	#unbundle pybind11
-	sed	-e "s|add_subdirectory(third_party\/pybind11)|find_package (pybind11 CONFIG REQUIRED)|" -i opensfm/src/CMakeLists.txt || die
-	sed -e "/^target_link_libraries(/,/)/s|pybind11|pybind11::headers|g" -i opensfm/src/{foundation,bundle,dense,features,geometry,robust,sfm,geo,map}/CMakeLists.txt || die
+	if [[ ${PV} = *9999 ]]; then
+		#Enable cxx17 as CERES-2.0 req it
+		sed -e "s|\(set(CMAKE_CXX_STANDARD \)14|\117|" -i opensfm/src/CMakeLists.txt || die "Sed failed"
+		#unbundle pybind11
+		sed	-e "s|add_subdirectory(third_party\/pybind11)|find_package (pybind11 CONFIG REQUIRED)|" -i opensfm/src/CMakeLists.txt || die "Sed failed"
+		sed -e "/^target_link_libraries(/,/)/s|pybind11|pybind11::module|g" -i opensfm/src/{foundation,bundle,dense,features,geometry,robust,sfm,geo,map}/CMakeLists.txt || die "Sed failed"
+		eapply "${FILESDIR}/unbundle-pybind.patch"
+	else
+		#Enable cxx17 as CERES-2.0 req it
+		sed -e "s|\(set(CMAKE_CXX_STANDARD \)11|\114|" -i opensfm/src/CMakeLists.txt || die "Sed failed"
+		#unbundle pybind11
+		sed	-e "s|add_subdirectory(third_party\/pybind11)|find_package (pybind11 CONFIG REQUIRED)|" -i opensfm/src/CMakeLists.txt || die "Sed failed"
+		sed -e "/^target_link_libraries(/,/)/s|pybind11|pybind11::module|g" -i opensfm/src/{dense,features,foundation,geometry,robust,sfm}/CMakeLists.txt || die "Sed failed"
+	fi
 
 	# Build C extension with gentoo cmake eclass
-	sed -e "/^configure_c_extension()$/d" -i setup.py || die
-	sed -e "/^build_c_extension()$/d" -i setup.py || die
+	sed -e "/^configure_c_extension()$/d" -i setup.py || die "Sed failed"
+	sed -e "/^build_c_extension()$/d" -i setup.py || die "Sed failed"
 
-	eapply "${FILESDIR}/unbundle-pybind.patch"
 
 	CMAKE_USE_DIR="${S}/opensfm/src"
 	cmake_src_prepare
@@ -108,6 +132,7 @@ src_configure() {
 	CMAKE_CXX_STANDARD=17
 	CMAKE_CXX_STANDARD_REQUIRED=ON
 	CMAKE_SKIP_RPATH=ON
+	CMAKE_INTERPROCEDURAL_OPTIMIZATION=$(usex lto)
 
 	local mycmakeargs=(
 		-DOPENSFM_BUILD_TESTS=$(usex test)
@@ -117,7 +142,6 @@ src_configure() {
 }
 
 src_compile() {
-	python_setup
 	cmake_src_compile
 	distutils-r1_src_compile
 }
