@@ -1,4 +1,4 @@
-# Copyright 1999-2023 Gentoo Foundation
+# Copyright 1999-2024 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -12,12 +12,13 @@ KEYWORDS="~amd64 ~x86"
 
 SLOT="0"
 LICENSE="BSD"
-IUSE="+exploragram +graphics +fpg +hlbfgs +tetgen +triangle +vorpaline lua debug doc"
+IUSE="debug doc exploragram graphics +fpg +hlbfgs lua +tetgen test +triangle +vorpaline"
 
 BDEPEND="
+	doc? ( >=app-doc/doxygen-1.7.0 )
+	lua? ( dev-lang/lua )
+	>=dev-build/cmake-3.16
 	virtual/pkgconfig
-	doc? (  >=app-doc/doxygen-1.7.0 )
-	>=dev-util/cmake-3.16
 "
 DEPEND="
 	media-libs/glu:=
@@ -29,15 +30,17 @@ RESTRICT="mirror"
 S=${WORKDIR}/${PN}-${PV/_*}
 
 src_prepare(){
+	use doc || sed -e '/add_subdirectory(doc)/d' -i CMakeLists.txt
 	cmake_src_prepare
 }
 
 src_configure() {
-	CMAKE_BUILD_TYPE=Release
+	CMAKE_BUILD_TYPE=$(usex debug RelWithDebInfo Release)
+	CMAKE_INSTALL_PREFIX="${EPREFIX}/usr"
+	CMAKE_C_FLAGS="-fcommon"
+
 	local mycmakeargs=(
-		-DCMAKE_INSTALL_PREFIX="${EPREFIX}/usr"
-		-DCMAKE_C_FLAGS="-fcommon"
-		-DGEOGRAM_LIB_ONLY=ON
+		-DGEOGRAM_LIB_ONLY=$(usex test)
 		-DGEOGRAM_USE_SYSTEM_GLFW3=ON
 		-DVORPALINE_PLATFORM="Linux64-gcc-dynamic"
 		-DGEOGRAM_WITH_LUA=$(usex lua ON OFF)
@@ -49,9 +52,7 @@ src_configure() {
 		-DGEOGRAM_WITH_HLBFGS=$(usex hlbfgs ON OFF)
 		-DGEOGRAM_WITH_VORPALINE=$(usex vorpaline ON OFF)
 		-DGEOGRAM_WITH_FPG=$(usex fpg ON OFF)
-		#"$(usex asan --with-asan "")"
-		#"$(usex tsan --with-tsan "")"
-		"$(usex debug --trace "")"
+		-DGEOGRAM_WITH_LEGACY_NUMERICS=OFF
 	)
 
 	cmake_src_configure

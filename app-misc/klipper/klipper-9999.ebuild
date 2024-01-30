@@ -43,8 +43,6 @@ RDEPEND="
 		>=dev-python/pyserial-3.4[${PYTHON_USEDEP}]
 		>=dev-python/markupsafe-1.1.1[${PYTHON_USEDEP}]
 		dev-python/virtualenv[${PYTHON_USEDEP}]
-		virtual/python-cffi[${PYTHON_USEDEP}]
-		virtual/python-greenlet[${PYTHON_USEDEP}]
 	')
 "
 RESTRICT="mirror"
