@@ -24,6 +24,7 @@ DEPEND=">=sci-libs/suitesparseconfig-${Sparse_PV}
 	partition? (
 		>=sci-libs/camd-3.3.1
 		>=sci-libs/ccolamd-3.3.1
+		>=sci-libs/metis-5.2.1
 	)
 	cuda? (
 		dev-util/nvidia-cuda-toolkit
@@ -35,6 +36,7 @@ BDEPEND="doc? ( virtual/latex-base )"
 REQUIRED_USE="supernodal? ( cholesky )
 	modify? ( cholesky )
 	matrixops? ( check )
+	partition? ( camd )
 	test? ( cholesky matrixops supernodal )"
 
 S="${WORKDIR}/${Sparse_P}/${PN^^}"
