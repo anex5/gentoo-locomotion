@@ -1,4 +1,4 @@
-# Copyright 1999-2023 Gentoo Authors
+# Copyright 1999-2024 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -106,28 +106,8 @@ multilib_src_install() {
 }
 
 multilib_src_install_all() {
-	cat >> "${T}"/cholmod.pc <<- EOF
-	prefix=${EPREFIX}/usr
-	exec_prefix=\${prefix}
-	libdir=\${exec_prefix}/$(get_libdir)
-	includedir=\${prefix}/include
-
-	Name: cholmod
-	Description: Supernodal sparse Cholesky factorization and update/downdate
-	Version: ${PV}
-	URL: http://www.cise.ufl.edu/research/sparse/cholmod/
-	Libs: -L\${libdir} -lcholmod
-	Libs.private: -lm -lrt  -L/opt/cuda/lib64 -lcublas
-	Cflags: -I\${includedir}
-	Requires: suitesparseconfig
-	Requires.private: blas lapack metis amd camd colamd ccolamd
-	EOF
-
-	insinto /usr/$(get_libdir)/pkgconfig
-	doins "${T}"/cholmod.pc
-
 	# no static archives
-	use !static-libs &&	find "${ED}" -name "*.a" -delete || die
+	use !static-libs &&	( find "${ED}" -name "*.a" -delete || die )
 
 	# strip .la files
 	find "${D}" -name '*.la' -delete || die

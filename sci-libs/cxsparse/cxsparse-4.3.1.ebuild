@@ -114,7 +114,7 @@ multilib_src_install() {
 multilib_src_install_all() {
 	use doc && einstalldocs
 
-	use !static-libs &&	find "${ED}" -name "*.a" -delete || die
+	use !static-libs &&	( find "${ED}" -name "*.a" -delete || die )
 
 	# strip .la files
 	find "${ED}" -name '*.la' -delete || die

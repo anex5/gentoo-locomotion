@@ -58,28 +58,9 @@ multilib_src_install() {
 }
 
 multilib_src_install_all() {
-
-	cat >> "${T}"/suitesparseconfig.pc <<- EOF
-	prefix=${EPREFIX}/usr
-	exec_prefix=\${prefix}
-	libdir=\${exec_prefix}/$(get_libdir)
-	includedir=\${prefix}/include
-
-	Name: SuiteSparse_config
-	Description: Common configurations for all packages in suitesparse
-	Version: ${PV}
-	Cflags: -I\${includedir}
-	Libs: -L\${libdir} -lsuitesparseconfig
-	EOF
-
-	insinto /usr/$(get_libdir)/pkgconfig
-	doins "${T}"/suitesparseconfig.pc
-
 	use doc && einstalldocs
 
-	if ! use static-libs; then
-		find "${ED}" -name "*.a" -delete || die
-	fi
+	use !static-libs && ( find "${ED}" -name "*.a" -delete || die )
 
 	# strip .la files
 	find "${ED}" -name '*.la' -delete || die
