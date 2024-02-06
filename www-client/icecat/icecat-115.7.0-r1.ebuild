@@ -80,9 +80,6 @@ REQUIRED_USE="
 			system-ffmpeg
 		)
 	)
-	pgo? (
-		lto
-	)
 	vaapi? (
 		wayland
 	)
@@ -150,6 +147,7 @@ GAMEPAD_BDEPEND="
 		sys-kernel/linux-headers
 	)
 "
+
 # Same as virtual/udev-217-r5 but with multilib changes.
 # Required for gamepad, or WebAuthn roaming authenticators (e.g. USB security key)
 UDEV_RDEPEND="
@@ -266,17 +264,20 @@ CDEPEND="
 	system-jpeg? (
 		>=media-libs/libjpeg-turbo-2.1.5.1[${MULTILIB_USEDEP}]
 	)
+	system-ffmpeg? (
+		>=media-video/ffmpeg-${FFMPEG_PV}[${MULTILIB_USEDEP},dav1d?,openh264?,opus?,vaapi?,vpx?]
+	)
 	system-libevent? (
-		>=dev-libs/libevent-2.1.12:0=[${MULTILIB_USEDEP},threads(+)]
+		>=dev-libs/libevent-2.1.12:=[${MULTILIB_USEDEP},threads(+)]
 	)
 	system-libvpx? (
-		>=media-libs/libvpx-1.13.0:0=[${MULTILIB_USEDEP},postproc]
+		>=media-libs/libvpx-1.13.0:=[${MULTILIB_USEDEP},postproc]
 	)
 	system-png? (
-		>=media-libs/libpng-1.6.39:0=[${MULTILIB_USEDEP},apng]
+		>=media-libs/libpng-1.6.39:=[${MULTILIB_USEDEP},apng]
 	)
 	system-webp? (
-		>=media-libs/libwebp-1.3.0:0=[${MULTILIB_USEDEP}]
+		>=media-libs/libwebp-1.3.0:=[${MULTILIB_USEDEP}]
 	)
 	wayland? (
 		>=media-libs/libepoxy-1.5.10-r1

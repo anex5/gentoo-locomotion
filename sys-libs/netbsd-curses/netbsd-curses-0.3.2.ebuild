@@ -1,0 +1,1 @@
+netbsd-curses-9999.ebuild

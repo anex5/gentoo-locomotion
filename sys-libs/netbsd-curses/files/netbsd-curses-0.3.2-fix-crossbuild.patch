@@ -1,0 +1,18 @@
+--- a/libterminfo/compile.c
++++ b/libterminfo/compile.c
+@@ -68,7 +68,6 @@ dowarn(int flags, const char *fmt, ...)
+ 	}
+ }
+ 
+-#ifdef TERMINFO_COMPAT
+ int
+ _ti_promote(TIC *tic)
+ {
+@@ -170,7 +169,6 @@ _ti_promote(TIC *tic)
+ 
+ 	return error;
+ }
+-#endif
+ 
+ char *
+ _ti_grow_tbuf(TBUF *tbuf, size_t len)

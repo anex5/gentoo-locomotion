@@ -1,0 +1,49 @@
+--- a/Makefile
++++ b/Makefile
+@@ -28,6 +28,10 @@ ARCH_OBJS = $(patsubst $(srcdir)/%,%.o,$
+ REPLACED_OBJS = $(sort $(subst /$(ARCH)/,/,$(ARCH_OBJS)))
+ ALL_OBJS = $(addprefix obj/, $(filter-out $(REPLACED_OBJS), $(sort $(BASE_OBJS) $(ARCH_OBJS))))
+ 
++LIBCOMPAT_SRCS = $(wildcard $(srcdir)/compat/time32/*32.c)
++LIBCOMPAT_OBJS = $(LIBCOMPAT_SRCS:$(srcdir)/%.c=obj/%.o)
++LIBCOMPAT_OBJ_DIRS = $(sort $(patsubst %/,%,$(dir $(LIBCOMPAT_OBJS))))
++
+ LIBC_OBJS = $(filter obj/src/%,$(ALL_OBJS)) $(filter obj/compat/%,$(ALL_OBJS))
+ LDSO_OBJS = $(filter obj/ldso/%,$(ALL_OBJS:%.o=%.lo))
+ CRT_OBJS = $(filter obj/crt/%,$(ALL_OBJS))
+@@ -64,7 +68,7 @@ ALL_INCLUDES = $(sort $(INCLUDES:$(srcdi
+ EMPTY_LIB_NAMES = m rt pthread crypt util xnet resolv dl
+ EMPTY_LIBS = $(EMPTY_LIB_NAMES:%=lib/lib%.a)
+ CRT_LIBS = $(addprefix lib/,$(notdir $(CRT_OBJS)))
+-STATIC_LIBS = lib/libc.a
++STATIC_LIBS = lib/libc.a lib/libcompat_time32.a
+ SHARED_LIBS = lib/libc.so
+ TOOL_LIBS = lib/musl-gcc.specs
+ ALL_LIBS = $(CRT_LIBS) $(STATIC_LIBS) $(SHARED_LIBS) $(EMPTY_LIBS) $(TOOL_LIBS)
+@@ -149,6 +153,9 @@ obj/%.o: $(srcdir)/%.S
+ obj/%.o: $(srcdir)/%.c $(GENH) $(IMPH)
+ 	$(CC_CMD)
+ 
++obj/%.o: $(srcdir)/%.c
++	$(CC_CMD) -pedantic -D'weak_alias(a,b)=' -c -o $@ $<
++
+ obj/%.lo: $(srcdir)/%.s
+ 	$(AS_CMD)
+ 
+@@ -167,6 +174,16 @@ lib/libc.a: $(AOBJS)
+ 	$(AR) rc $@ $(AOBJS)
+ 	$(RANLIB) $@
+ 
++lib/libcompat_time32.a: $(LIBCOMPAT_OBJS)
++	rm -f $@
++	$(AR) rc $@ $(LIBCOMPAT_OBJS)
++	$(RANLIB) $@
++
++$(LIBCOMPAT_OBJS): | $(LIBCOMPAT_OBJ_DIRS) $(srcdir)/.
++
++$(LIBCOMPAT_OBJ_DIRS):
++	mkdir -p $@
++
+ $(EMPTY_LIBS):
+ 	rm -f $@
+ 	$(AR) rc $@

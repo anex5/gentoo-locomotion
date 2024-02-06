@@ -9,7 +9,6 @@ app-eselect/eselect-python
 app-eselect/eselect-repository
 app-admin/doas
 app-admin/eselect
-app-arch/xz-utils
 
 app-shells/bash:0
 net-misc/rsync

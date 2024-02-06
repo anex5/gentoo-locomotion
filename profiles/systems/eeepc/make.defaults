@@ -7,7 +7,8 @@ FEATURES="noman nodoc noinfo"
 
 CPU_FLAGS_X86="mmx mmxext sse sse2 sse3 ssse3"
 
-CFLAGS="-O3 -mtune=bonnell -march=bonnell -msahf -mmovbe -mfxsr -mssse3 -mcx16 -g0 -fno-stack-protector \
+CFLAGS="-O3 -mtune=bonnell -march=bonnell -msahf -mmovbe -mfxsr -mssse3 -mcx16 -g0 \
+-fdata-sections -ffunction-sections -fno-unwind-tables -fno-asynchronous-unwind-tables -Wa,--noexecstack \
 --param l1-cache-size=24 --param l1-cache-line-size=64 --param l2-cache-size=512 -pipe \
 -fgraphite-identity -floop-nest-optimize -ftree-loop-distribution -fdevirtualize-at-ltrans -fno-plt"
 
