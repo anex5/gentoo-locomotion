@@ -14,7 +14,7 @@ SLOT="0"
 KEYWORDS="~amd64 ~arm ~arm64 ~hppa ~ia64 ~ppc ~ppc64 ~riscv ~sparc ~x86 ~x64-macos"
 
 BDEPEND="
-	sys-devel/slibtool
+	dev-build/slibtool
 	virtual/pkgconfig
 "
 
@@ -42,7 +42,7 @@ _emake() {
 		"CC=$(tc-getCC)"
 		"LD=$(tc-getLD)"
 		"config=release"
-		"LIBTOOL=slibtool"
+		#"LIBTOOL=slibtool"
 		"LIBDIR=${EPREFIX}/usr/$(get_libdir)"
 		"INCDIR=${EPREFIX}/usr/include"
 	)

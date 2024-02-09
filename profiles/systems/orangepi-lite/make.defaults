@@ -1,20 +1,19 @@
-# Copyright 1999-2022 Gentoo Foundation.
+# Copyright 1999-2024 Gentoo Foundation.
 # Distributed under the terms of the GNU General Public License v2
 
 FEATURES="sandbox sfperms strict -collision-protect -news noauto noman nodoc noinfo"
 
-USE="-berkdb -man vaapi -nvme"
+USE="-berkdb -man kms zram vaapi -nvme"
 
 CPU_FLAGS_ARM="edsp neon thumb vfp vfpv3 vfpv4 vfp-d32 v4 v5 v6 v7 thumb2"
 
-CFLAGS="-O3 -marm -march=armv7-a -mtune=cortex-a7 -mfpu=neon-vfpv4 -mfloat-abi=hard -funroll-loops -pipe -fno-stack-protector -fomit-frame-pointer \
+CFLAGS="-O3 -marm -march=armv7-a -mtune=cortex-a7 -mfpu=neon-vfpv4 -mfloat-abi=hard -funroll-loops -pipe -fomit-frame-pointer \
+-fdata-sections -ffunction-sections -fno-unwind-tables -fno-asynchronous-unwind-tables -Wa,--noexecstack \
 --param lto-max-streaming-parallelism=1 -fgraphite-identity -floop-nest-optimize -ftree-loop-distribution -fdevirtualize-at-ltrans -fno-plt"
-CXXFLAGS="${CFLAGS}"
-RUSTFLAGS="-C target-cpu=cortex-a7"
 
-CARGO_BUILD_JOBS=8
-MAKEOPTS="-j8 --quiet"
-NUNJAOPTS="-j8"
+CXXFLAGS="${CFLAGS}"
+
+RUSTFLAGS="-C target-cpu=cortex-a7"
 
 VIDEO_CARDS="-* lima"
 INPUT_DEVICES="-* libinput"

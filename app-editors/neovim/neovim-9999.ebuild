@@ -1,10 +1,8 @@
-# Copyright 1999-2023 Gentoo Authors
+# Copyright 1999-2024 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-# RelWithDebInfo sets -Og -g
-CMAKE_BUILD_TYPE=Release
 LUA_COMPAT=( lua5-{1..2} luajit )
 inherit cmake lua-single optfeature xdg
 
@@ -21,12 +19,11 @@ fi
 
 LICENSE="Apache-2.0 vim"
 SLOT="0"
-IUSE="doc +lto +nvimpager test"
+IUSE="debug doc lint +lto +nvimpager test"
 
-REQUIRED_USE="${LUA_REQUIRED_USE}"
 # Upstream say the test library needs LuaJIT
 # https://github.com/neovim/neovim/blob/91109ffda23d0ce61cec245b1f4ffb99e7591b62/CMakeLists.txt#L377
-REQUIRED_USE="test? ( lua_single_target_luajit )"
+REQUIRED_USE="${LUA_REQUIRED_USE} test? ( lua_single_target_luajit )"
 # TODO: Get tests running
 RESTRICT="!test? ( test ) test"
 
@@ -41,20 +38,26 @@ BDEPEND="${LUA_DEPS}
 # Check https://github.com/neovim/neovim/blob/master/third-party/CMakeLists.txt for
 # new dependency bounds and so on on bumps (obviously adjust for right branch/tag).
 DEPEND="${LUA_DEPS}
-	>=dev-lua/luv-1.44.2[${LUA_SINGLE_USEDEP}]
+	>=dev-lua/luv-1.45.0[${LUA_SINGLE_USEDEP}]
 	$(lua_gen_cond_dep '
 		dev-lua/lpeg[${LUA_USEDEP}]
 		dev-lua/mpack[${LUA_USEDEP}]
+		dev-lua/busted[${LUA_USEDEP}]
 	')
 	$(lua_gen_cond_dep '
 		dev-lua/LuaBitOp[${LUA_USEDEP}]
 	' lua5-{1,2})
-	>=dev-libs/libuv-1.44.2:=
-	>=dev-libs/libvterm-0.3
+	>=dev-libs/libuv-1.46.0:=
+	>=dev-libs/libvterm-0.3.3
 	>=dev-libs/msgpack-3.0.0:=
 	>=dev-libs/tree-sitter-0.20.8:=
 	>=dev-libs/libtermkey-0.22
 	>=dev-libs/unibilium-2.0.0:0=
+	dev-util/uncrustify
+	lint? (
+		dev-util/shellcheck
+		dev-util/stylua
+	)
 "
 RDEPEND="
 	${DEPEND}
@@ -68,7 +71,7 @@ BDEPEND+="
 
 PATCHES=(
 	"${FILESDIR}/${PN}-9999-cmake_lua_version.patch"
-	"${FILESDIR}/${PN}-9999-cmake-darwin.patch"
+	"${FILESDIR}/${P}-cmake-darwin.patch"
 )
 
 if [[ ${PV} != 9999 ]]; then
@@ -78,7 +81,11 @@ if [[ ${PV} != 9999 ]]; then
 fi
 
 src_prepare() {
-	use doc || eapply "${FILESDIR}/${PN}-9999-cmake-no-doc.patch"
+	if [[ ${PV} != 9999 ]]; then
+		use doc || eapply "${FILESDIR}/${P}-cmake-no-doc.patch"
+	else
+		use doc || ( sed -e '/file(GLOB DOCFILES CONFIGURE_DEPENDS ${PROJECT_SOURCE_DIR}/runtime/doc/*.txt)/d' -i CMakeLists.txt || die )
+	fi
 
 	# Use our system vim dir
 	sed -e "/^# define SYS_VIMRC_FILE/s|\$VIM|${EPREFIX}/etc/vim|" \
@@ -96,10 +103,16 @@ src_configure() {
 	# if we want it on (not just -flto)
 	# ... but allow turning it off.
 	# TODO: Investigate USE_BUNDLED, doesn't seem to be needed right now
+
+	CMAKE_BUILD_TYPE=$(usex debug RelWithDebInfo Release)
 	local mycmakeargs=(
 		-DENABLE_LTO=$(usex lto)
 		-DPREFER_LUA=$(usex lua_single_target_luajit no "$(lua_get_version)")
 		-DLUA_PRG="${ELUA}"
+		-DLUA_GEN_PRG="${ELUA}"
+		-DUSE_BUNDLED_BUSTED=0
+		-DCOMPILE_LUA=0
+		-DCI_LINT=$(usex lint)
 	)
 	cmake_src_configure
 }

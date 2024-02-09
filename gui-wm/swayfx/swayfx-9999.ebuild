@@ -51,7 +51,7 @@ DEPEND="
 #else
 	DEPEND+="
 		>=gui-libs/wlroots-0.16:=[X?]
-		<gui-libs/wlroots-0.17:=[X?]
+		<gui-libs/wlroots-0.18:=[X?]
 	"
 #fi
 RDEPEND="

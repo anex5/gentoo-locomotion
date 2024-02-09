@@ -1,7 +1,7 @@
 dev-libs/tllist **
-=gui-apps/yambar-9999 **
-=gui-wm/swayfx-9999 **
-=gui-libs/wlroots-9999 **
+#=gui-apps/yambar-9999 **
+#=gui-wm/swayfx-9999 **
+#=gui-libs/wlroots-9999 **
 media-libs/libdisplay-info **
 #gui-apps/swayidle **
 #gui-apps/swaylock **

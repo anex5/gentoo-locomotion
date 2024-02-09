@@ -54,7 +54,7 @@ DEPEND="${RDEPEND}"
 BDEPEND="
 	man? ( app-text/scdoc )
 	>=dev-libs/tllist-1.0.1
-	>=dev-util/meson-0.53.0
+	>=dev-build/meson-1.1.0
 	virtual/pkgconfig
 	wayland? (
 		dev-libs/wayland-protocols

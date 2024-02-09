@@ -15,7 +15,6 @@ KEYWORDS="~amd64 ~arm ~arm64 ~ppc64 ~riscv ~x86 ~x64-macos"
 
 BDEPEND="
 	dev-lang/perl
-	sys-devel/slibtool
 	virtual/pkgconfig
 "
 

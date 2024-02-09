@@ -1,4 +1,4 @@
-# Copyright 1999-2023 Gentoo Authors
+# Copyright 1999-2024 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -32,7 +32,7 @@ done
 
 IUSE="${IUSE_VIDEO_CARDS}
 	cpu_flags_x86_sse2 egl gbm d3d9 debug gles1 +gles2 +llvm
-	lm-sensors opencl osmesa +proprietary-codecs selinux
+	lm-sensors opencl opengl osmesa +proprietary-codecs selinux
 	test unwind vaapi valgrind vdpau vulkan
 	vulkan-overlay wayland +X xa zink +zstd"
 
@@ -47,7 +47,6 @@ REQUIRED_USE="
 			video_cards_vmware
 		)
 	)
-	vulkan? ( video_cards_amdgpu? ( llvm ) )
 	vulkan-overlay? ( vulkan )
 	video_cards_lavapipe? ( llvm vulkan )
 	video_cards_radeon? ( x86? ( llvm ) amd64? ( llvm ) )
@@ -55,10 +54,11 @@ REQUIRED_USE="
 	video_cards_amdgpu?   ( llvm )
 	vdpau? ( X )
 	xa? ( X )
-	zink? ( vulkan )
+	X? ( gles1? ( opengl ) gles2? ( opengl ) )
+	zink? ( vulkan || ( opengl gles1 gles2 ) )
 "
 
-LIBDRM_DEPSTRING=">=x11-libs/libdrm-2.4.110"
+LIBDRM_DEPSTRING=">=x11-libs/libdrm-2.4.119"
 RDEPEND="
 	>=dev-libs/expat-2.1.0-r3[${MULTILIB_USEDEP}]
 	>=media-libs/libglvnd-1.3.2[X?,${MULTILIB_USEDEP}]
@@ -86,14 +86,6 @@ RDEPEND="
 		>=media-libs/libva-1.7.3:=[${MULTILIB_USEDEP}]
 	)
 	vdpau? ( >=x11-libs/libvdpau-1.1:=[${MULTILIB_USEDEP}] )
-	vulkan? (
-		video_cards_intel? (
-			amd64? (
-				dev-libs/libclc[spirv(-)]
-				>=dev-util/spirv-tools-1.3.231.0
-			)
-		)
-	)
 	selinux? ( sys-libs/libselinux[${MULTILIB_USEDEP}] )
 	wayland? ( >=dev-libs/wayland-1.18.0[${MULTILIB_USEDEP}] )
 	${LIBDRM_DEPSTRING}[video_cards_freedreno?,video_cards_intel?,video_cards_nouveau?,video_cards_vc4?,video_cards_vivante?,video_cards_vmware?,${MULTILIB_USEDEP}]
@@ -123,7 +115,7 @@ RDEPEND="${RDEPEND}
 # simultaneously.
 #
 # How to use it:
-# 1. Specify LLVM_MAX_SLOT (inclusive), e.g. 16.
+# 1. Specify LLVM_MAX_SLOT (inclusive), e.g. 17.
 # 2. Specify LLVM_MIN_SLOT (inclusive), e.g. 15.
 LLVM_MAX_SLOT="17"
 LLVM_MIN_SLOT="15"
@@ -133,15 +125,6 @@ PER_SLOT_DEPSTR="
 		!opencl? ( sys-devel/llvm:@SLOT@[${LLVM_USE_DEPS}] )
 		opencl? ( sys-devel/clang:@SLOT@[${LLVM_USE_DEPS}] )
 		opencl? ( dev-util/spirv-llvm-translator:@SLOT@ )
-		vulkan? (
-			video_cards_intel? (
-				amd64? (
-					dev-util/spirv-llvm-translator:@SLOT@
-					sys-devel/clang:@SLOT@[${LLVM_USE_DEPS}]
-				)
-			)
-		)
-
 	)
 "
 LLVM_DEPSTR="
@@ -159,8 +142,8 @@ RDEPEND="${RDEPEND}
 unset LLVM_MIN_SLOT {LLVM,PER_SLOT}_DEPSTR
 
 DEPEND="${RDEPEND}
-	video_cards_d3d12? ( >=dev-util/directx-headers-1.610.0[${MULTILIB_USEDEP}] )
-	valgrind? ( dev-util/valgrind )
+	video_cards_d3d12? ( >=dev-util/directx-headers-1.611.0[${MULTILIB_USEDEP}] )
+	valgrind? ( dev-debug/valgrind )
 	wayland? ( >=dev-libs/wayland-protocols-1.30 )
 	X? (
 		x11-libs/libXrandr[${MULTILIB_USEDEP}]
@@ -168,22 +151,24 @@ DEPEND="${RDEPEND}
 	)
 "
 BDEPEND="
-	>=dev-util/meson-1.0.0
+	>=dev-build/meson-1.1.0
 	${PYTHON_DEPS}
 	opencl? (
 		>=virtual/rust-1.62.0
 		>=dev-util/bindgen-0.58.0
 	)
-	sys-devel/bison
-	sys-devel/flex
+	app-alternatives/yacc
+	app-alternatives/lex
 	virtual/pkgconfig
 	$(python_gen_any_dep ">=dev-python/mako-0.8.0[\${PYTHON_USEDEP}]")
-	llvm? (
-		vulkan? (
-			dev-util/glslang
+	vulkan? (
+		dev-util/glslang
+		llvm? (
 			video_cards_intel? (
 				amd64? (
 					$(python_gen_any_dep "dev-python/ply[\${PYTHON_USEDEP}]")
+					~dev-util/intel_clc-${PV}
+					dev-libs/libclc[spirv(-)]
 				)
 			)
 		)
@@ -202,8 +187,6 @@ x86? (
 )"
 
 PATCHES=(
-	# Workaround the CMake dependency lookup returning a different LLVM to llvm-config, bug #907965
-	"${FILESDIR}/clang_config_tool.patch"
 	"${FILESDIR}/0002-mesa-enable-vaapi-on-lima-panfrost.patch"
 )
 
@@ -416,22 +399,36 @@ multilib_src_configure() {
 	use vulkan-overlay && vulkan_layers+=",overlay"
 	emesonargs+=(-Dvulkan-layers=${vulkan_layers#,})
 
-	if use llvm && use vulkan && use video_cards_intel; then
-		PKG_CONFIG_PATH="$(get_llvm_prefix "${LLVM_MAX_SLOT}")/$(get_libdir)/pkgconfig"
+	if use llvm && use vulkan && use video_cards_intel && use amd64; then
 		emesonargs+=(-Dintel-clc=system)
 	else
 		emesonargs+=(-Dintel-clc=disabled)
 	fi
 
+	if use opengl || use gles1 || use gles2; then
+		emesonargs+=(
+			-Dglvnd=true
+		)
+	else
+		emesonargs+=(
+			-Dglvnd=false
+		)
+	fi
+
+	if use opengl && use X; then
+		emesonargs+=(-Dglx=dri)
+	else
+		emesonargs+=(-Dglx=disabled)
+	fi
+
 	emesonargs+=(
 		$(meson_use test build-tests)
-		-Dglx=$(usex X dri disabled)
 		-Dshared-glapi=enabled
 		-Ddri3=enabled
 		-Degl=$(usex egl enabled disabled)
 		-Dexpat=enabled
 		-Dgbm=$(usex gbm enabled disabled)
-		-Dglvnd=true
+		$(meson_use opengl)
 		$(meson_feature gles1)
 		$(meson_feature gles2)
 		$(meson_feature llvm)
@@ -442,7 +439,7 @@ multilib_src_configure() {
 		$(meson_feature zstd)
 		$(meson_use cpu_flags_x86_sse2 sse2)
 		-Dvalgrind=$(usex valgrind auto disabled)
-		-Dvideo-codecs=$(usex proprietary-codecs "h264dec,h264enc,h265dec,h265enc,vc1dec" "")
+		-Dvideo-codecs=$(usex proprietary-codecs "all" "all_free")
 		-Dgallium-drivers=$(driver_list "${GALLIUM_DRIVERS[*]}")
 		-Dvulkan-drivers=$(driver_list "${VULKAN_DRIVERS[*]}")
 		--buildtype $(usex debug debug plain)
