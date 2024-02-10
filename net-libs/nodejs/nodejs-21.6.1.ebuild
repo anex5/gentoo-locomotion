@@ -40,6 +40,7 @@ RESTRICT="
 "
 
 RDEPEND="
+	!net-libs/nodejs:0
 	>=app-arch/brotli-1.0.9:=
 	>=dev-libs/libuv-1.46.0:=
 	>=net-dns/c-ares-1.18.1:=
@@ -50,7 +51,7 @@ RDEPEND="
 	system-ssl? ( >=dev-libs/openssl-3.0.12:0= )
 "
 BDEPEND="${PYTHON_DEPS}
-	dev-util/ninja
+	app-alternatives/ninja
 	sys-apps/coreutils
 	virtual/pkgconfig
 	test? ( net-misc/curl )
@@ -72,6 +73,7 @@ CHECKREQS_MEMORY="8G"
 CHECKREQS_DISK_BUILD="22G"
 
 PATCHES=(
+	"${FILESDIR}"/"${PN}"-20.3.0-gcc14.patch
 	"${FILESDIR}/${PN}-12.22.5-shared_c-ares_nameser_h.patch"
 	"${FILESDIR}/${PN}-20.2.0-global-npm-config.patch"
 	"${FILESDIR}/${PN}-16.13.2-lto-update.patch"
@@ -86,7 +88,7 @@ pkg_pretend() {
 			check-reqs_pkg_pretend
 		fi
 	fi
-	(use x86 && ! use cpu_flags_x86_sse2) && \
+	( use x86 && ! use cpu_flags_x86_sse2 ) && \
 		die "Your CPU doesn't support the required SSE2 instruction."
 }
 
@@ -180,6 +182,7 @@ src_prepare() {
 
 	# We need to disable mprotect on two files when it builds Bug 694100.
 	use pax-kernel && PATCHES+=( "${FILESDIR}"/${PN}-20.6.0-paxmarking.patch )
+
 }
 
 src_configure() {
@@ -205,11 +208,9 @@ src_configure() {
 		--shared-zlib
 	)
 	use debug && myconf+=( --debug )
-	if use lto; then
-		myconf+=( --enable-lto )
-		use mold && myconf+=( --with-moldlto ); append-ldflags -fuse-ld=mold
-		use lld && myconf+=( --with-thinlto ); append-ldflags -fuse-ld=lld
-	fi
+	use lto && myconf+=( --enable-lto )
+	use mold && myconf+=( --with-moldlto )
+	use lld && myconf+=( --with-thinlto )
 	if use system-icu; then
 		myconf+=( --with-intl=system-icu )
 	elif use icu; then
