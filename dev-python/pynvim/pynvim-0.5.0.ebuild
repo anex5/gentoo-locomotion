@@ -6,7 +6,7 @@ EAPI=8
 PYTHON_COMPAT=( python3_{10..12} )
 inherit distutils-r1
 
-COMMIT_HASH="496e8eb09b46c32a873cbefbcaf799f498308c1c"
+COMMIT_HASH="5f989dfc47d98bba9f98e5ea17bfbe4c995cb0b0"
 
 DISTUTILS_USE_PEP517=setuptools
 
@@ -24,6 +24,8 @@ DEPEND="${RDEPEND}
 	test? ( app-editors/neovim )"
 
 S=${WORKDIR}/${PN}-${COMMIT_HASH}
+
+RESTRICT="mirror"
 
 distutils_enable_tests pytest
 
