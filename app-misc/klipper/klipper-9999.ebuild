@@ -14,7 +14,7 @@ if [[ ${PV} = *9999 ]]; then
 	EGIT_BRANCH="master"
 	KEYWORDS=""
 else
-	COMMIT="ecf4266cc71f52045460c4021fdd7b971f119562"
+	COMMIT="6ce6fbbce07605010c0d4fa8eaa0ebcde01e53db"
 	SRC_URI="https://github.com/Klipper3d/${PN}/archive/${COMMIT}.tar.gz -> ${P}.tar.gz
 	dict? ( https://github.com/Klipper3d/klipper/files/7491378/klipper-dict-20211106.tar.gz )"
 	KEYWORDS="~amd64 ~x86 ~arm ~arm64"
@@ -50,6 +50,11 @@ RDEPEND="
 RESTRICT="mirror"
 
 DOCS=( COPYING )
+
+PATCHES=(
+	${FILESDIR}/ecf4266cc71f52045460c4021fdd7b971f119562.patch
+	${FILESDIR}/klipper-fix-arm-firmware-build.patch
+)
 
 # set_config <file> <option name> <yes value> <no value> test
 # a value of "#" will just comment out the option
