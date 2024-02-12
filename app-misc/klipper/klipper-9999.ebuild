@@ -1,4 +1,4 @@
-# Copyright 2021 Gentoo Authors
+# Copyright 1999-2024 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -14,9 +14,11 @@ if [[ ${PV} = *9999 ]]; then
 	EGIT_BRANCH="master"
 	KEYWORDS=""
 else
-	SRC_URI="https://github.com/Klipper3d/${PN}/archive/v${PV}.tar.gz -> ${P}.tar.gz
+	COMMIT="ecf4266cc71f52045460c4021fdd7b971f119562"
+	SRC_URI="https://github.com/Klipper3d/${PN}/archive/${COMMIT}.tar.gz -> ${P}.tar.gz
 	dict? ( https://github.com/Klipper3d/klipper/files/7491378/klipper-dict-20211106.tar.gz )"
 	KEYWORDS="~amd64 ~x86 ~arm ~arm64"
+	S="${WORKDIR}/${PN}-${COMMIT}"
 fi
 
 LICENSE="GPL-3"
@@ -153,10 +155,10 @@ pkg_postinst() {
 		elog "    cd /usr/$(get_libdir)/klipper"
 		elog "    make ARCH=\${ARCH} CROSS_PREFIX=\${ARCH}-none-eabi- menuconfig"
 		elog
-		elog "  to build the firmware: "
+		elog "  Build the firmware with: "
 		elog "    make ARCH=\${ARCH} CROSS_PREFIX=\${ARCH}-none-eabi- -j\$(nproc)"
 		elog
-		elog "  Use official klipper documentation for flash instructions."
+		elog "  Use official klipper documentation to flash firmware."
 	fi
 
 	elog
