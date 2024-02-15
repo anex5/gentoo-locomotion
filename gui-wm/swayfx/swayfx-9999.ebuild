@@ -1,4 +1,4 @@
-# Copyright 1999-2023 Gentoo Authors
+# Copyright 1999-2024 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -25,11 +25,12 @@ IUSE="zsh-completion bash-completion fish-completion grimshot +man +swaybar +swa
 DEPEND="
 	>=dev-libs/json-c-0.13:0=
 	>=dev-libs/libinput-1.21.0:0=
+	virtual/libudev
 	sys-auth/seatd:=
 	dev-libs/libpcre2
 	>=dev-libs/wayland-1.20.0
 	x11-libs/cairo
-	x11-libs/libxkbcommon
+	>=x11-libs/libxkbcommon-1.5.0:0=
 	x11-libs/pango
 	x11-libs/pixman
 	media-libs/mesa[gles2,libglvnd(+)]
@@ -51,7 +52,7 @@ DEPEND="
 #else
 	DEPEND+="
 		>=gui-libs/wlroots-0.16:=[X?]
-		<gui-libs/wlroots-0.18:=[X?]
+		<gui-libs/wlroots-0.17:=[X?]
 	"
 #fi
 RDEPEND="
@@ -68,7 +69,7 @@ RDEPEND="
 "
 BDEPEND="
 	>=dev-libs/wayland-protocols-1.24
-	>=dev-util/meson-0.60.0
+	>=dev-build/meson-0.60.0
 	virtual/pkgconfig
 "
 if [[ ${PV} == 9999 ]]; then
@@ -101,7 +102,7 @@ src_install() {
 	meson_src_install
 
 	if use grimshot; then
-		doman contrib/grimshot.1
+		use man && doman contrib/grimshot.1
 		dobin contrib/grimshot
 	fi
 }
