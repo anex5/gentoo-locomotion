@@ -1,4 +1,4 @@
-# Copyright 1999-2023 Gentoo Authors
+# Copyright 1999-2024 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -6,7 +6,7 @@ EAPI=8
 inherit meson
 
 NV_VER="545.29.06"
-COMMIT_HASH="ea6d8623d3690cc2efa13e8b5711559226c46ae7"
+COMMIT_HASH="746d5510eabe949def3c79acc856393596d75cf5"
 
 DESCRIPTION="A VA-API implemention using NVIDIA's NVDEC, specifically designed to be used by Firefox"
 HOMEPAGE="https://github.com/elFarto/nvidia-vaapi-driver"
@@ -26,7 +26,7 @@ RDEPEND="
 	>=media-libs/libva-2.20
 "
 BDEPEND="
-	dev-util/meson
+	dev-build/meson
 	>=media-libs/nv-codec-headers-12.1.14:=
 	>=media-video/ffmpeg-6.1:=[nvenc]
 "
