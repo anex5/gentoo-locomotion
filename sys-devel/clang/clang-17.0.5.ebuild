@@ -1,1 +1,0 @@
-clang-17.0.6.ebuild
