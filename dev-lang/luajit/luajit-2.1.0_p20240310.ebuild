@@ -23,7 +23,7 @@ SLOT="2/${PV}"
 KEYWORDS="~amd64 ~arm ~arm64 -hppa ~mips ~ppc -riscv -sparc ~x86 ~amd64-linux ~x86-linux"
 IUSE="lua52compat static-libs"
 
-BDEPEND="${LUA_DEPS}"
+#BDEPEND="${LUA_DEPS}"
 
 RESTRICT="mirror"
 
