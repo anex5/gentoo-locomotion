@@ -49,6 +49,10 @@ MULTILIB_WRAPPED_HEADERS=(
 	/usr/include/va/va_glx.h
 )
 
+PATCHES=(
+	"${FILESDIR}/libva-2.2.0-fix-lld-linking.patch"
+)
+
 multilib_src_configure() {
 	local emesonargs=(
 		-Ddriverdir="${EPREFIX}/usr/$(get_libdir)/va/drivers"

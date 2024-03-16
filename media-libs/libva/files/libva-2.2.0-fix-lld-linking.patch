@@ -1,0 +1,49 @@
+From 6b0efda45140647c5340c205078741d5c5285687 Mon Sep 17 00:00:00 2001
+From: Dimitry Andric <dimitry@andric.com>
+Date: Mon, 25 Sep 2023 20:46:05 +0200
+Subject: [PATCH] va: fix --version-script detection for lld >= 17
+
+When building libva with lld (the llvm-project linker), version 17 or
+later, an error similar to the following is emitted when linking
+libva.so:
+
+    ld: error: va/libva.so.2.2000.0.p/va_compat.c.o: symbol
+    vaCreateSurfaces@VA_API_0.32.0 has undefined version VA_API_0.32.0
+
+The root cause is that lld 17 checks linker version scripts more
+strictly by default, and emits an error when undefined symbols or
+undefined versions are referenced.
+
+Earlier in the build, it turns out that due to these lld errors, va's
+meson.build fails to detect `--version-script` support:
+
+    Checking if "-Wl,--version-script" : links: NO
+
+This is because the small test program used by meson to check whether a
+shared library can be linked with the `libva.syms` version script is
+completely empty, and therefore the two symbols in the version script,
+`vaCreateSurfaces_0_32_0` and `vaCreateSurfaces`, are undefined.
+
+Fix the problem by providing placeholder definitions for these symbols
+in the `code` argument to meson's `cc.links()` function. This ensures
+that meson correctly detects `--version-script` support with lld version
+17 or later, and makes it possible to link the libva shared library.
+
+Signed-off-by: Dimitry Andric <dimitry@andric.com>
+---
+ va/meson.build | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/va/meson.build b/va/meson.build
+index 372ae89ff..fa402b0ca 100644
+--- a/va/meson.build
++++ b/va/meson.build
+@@ -60,7 +60,7 @@ libva_sym_arg = '-Wl,-version-script,' + '@0@/@1@'.format(meson.current_source_d
+ 
+ libva_link_args = []
+ libva_link_depends = []
+-if cc.links('', name: '-Wl,--version-script', args: ['-shared', libva_sym_arg])
++if cc.links('void vaCreateSurfaces_0_32_0(void) {} void vaCreateSurfaces() {}', name: '-Wl,--version-script', args: ['-shared', libva_sym_arg])
+   libva_link_args = libva_sym_arg
+   libva_link_depends = libva_sym
+ endif

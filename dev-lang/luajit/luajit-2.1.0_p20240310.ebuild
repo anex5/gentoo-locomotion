@@ -1,8 +1,8 @@
-# Copyright 1999-2022 Gentoo Authors
+# Copyright 1999-2024 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
-GIT_COMMIT=6c4826f12c4d33b8b978004bc681eb1eef2be977
+GIT_COMMIT=d06beb0480c5d1eb53b3343e78063950275aa281
 
 LUA_COMPAT=( lua5-{1..4} luajit)
 
@@ -20,8 +20,10 @@ SRC_URI="https://github.com/LuaJIT/LuaJIT/archive/${GIT_COMMIT}.tar.gz -> ${P}.t
 LICENSE="MIT"
 # this should probably be pkgmoved to 2.0 for sake of consistency.
 SLOT="2/${PV}"
-KEYWORDS="~amd64 ~arm ~arm64 -hppa ~ppc -riscv -sparc ~x86 ~amd64-linux ~x86-linux"
+KEYWORDS="~amd64 ~arm ~arm64 -hppa ~mips ~ppc -riscv -sparc ~x86 ~amd64-linux ~x86-linux"
 IUSE="lua52compat static-libs"
+
+BDEPEND="${LUA_DEPS}"
 
 RESTRICT="mirror"
 
@@ -49,6 +51,21 @@ get-abi-cflags() {
 	done
 }
 
+src_configure() {
+	tc-export_build_env
+
+	# You need to use a 32-bit toolchain to build for a 32-bit architecture.
+	# Some 64-bit toolchains (like amd64 and ppc64) usually have multilib
+	# enabled, allowing you to build in 32-bit with -m32. This won't work in all
+	# cases, but it will otherwise just break, so it's worth trying anyway. If
+	# you're trying to build for 64-bit from 32-bit, then you're screwed, sorry.
+	# See https://github.com/LuaJIT/LuaJIT/issues/664 for the upstream issue.
+	if tc-is-cross-compiler; then
+		BUILD_CFLAGS+="$(get-abi-cflags ${ABI})"
+		BUILD_LDFLAGS+="$(get-abi-cflags ${ABI})"
+	fi
+}
+
 _emake() {
 	emake \
 		Q= \
@@ -57,10 +74,7 @@ _emake() {
 		DESTDIR="${D}" \
 		CFLAGS="" \
 		LDFLAGS="" \
-		CCOPT="" \
-		CCOPT_x86="" \
-		HOST_LUA="${LUA}" \
-		HOST_CC="$(tc-getBUILD_CC) $(get-abi-cflags ${ABI})" \
+		HOST_CC="$(tc-getBUILD_CC)" \
 		HOST_CFLAGS="${BUILD_CPPFLAGS} ${BUILD_CFLAGS}" \
 		HOST_LDFLAGS="${BUILD_LDFLAGS}" \
 		STATIC_CC="$(tc-getCC)" \
@@ -74,17 +88,17 @@ _emake() {
 		INSTALL_LIB="${ED}/usr/$(get_libdir)" \
 		"$@"
 }
-# -L${ESYSROOT}/usr/$(get_libdir) -L${ESYSROOT}/$(get_libdir) -L${ESYSROOT}${LDPATH}
+
 src_compile() {
-	tc-export_build_env
 	_emake \
 		$(tc-is-cross-compiler && echo CROSS="${CHOST}-" ) \
+		$(tc-is-cross-compiler && echo HOST_LUA="${LUA}" ) \
 		$(usex lua52compat "XCFLAGS=-DLUAJIT_ENABLE_LUA52COMPAT" '')
 }
 
 src_install() {
 	_emake install
-	dosym luajit-2.1.0-beta3 /usr/bin/luajit
+	dosym luajit-2.1.1710088188 /usr/bin/luajit
 	pax-mark m "${ED}/usr/bin/luajit-${MY_PV}"
 
 	HTML_DOCS="doc/." einstalldocs

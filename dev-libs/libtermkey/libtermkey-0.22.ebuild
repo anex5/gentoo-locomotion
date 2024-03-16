@@ -25,7 +25,7 @@ DEPEND="
 src_prepare() {
 	default
 
-	sed -e 's/LIBTOOL ?= libtool/LIBTOOL ?= slibtool/' \
+	sed -e 's/LIBTOOL ?= libtool/LIBTOOL ?= rlibtool/' \
 		-e 's|PREFIX=/usr/local|PREFIX=/usr|' \
 		-e "s|-rpath \$\(LIBDIR\)|-rpath ${EROOT}/usr/$(get_libdir)|" \
 		-i Makefile || die

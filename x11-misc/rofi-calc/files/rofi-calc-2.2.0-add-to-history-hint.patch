@@ -1,0 +1,41 @@
+--- a/src/calc.c
++++ b/src/calc.c
+@@ -44,6 +44,7 @@ typedef struct
+     char* cmd;
+     char *hint_result;
+     char *hint_welcome;
++    char *hint_history;
+     char *last_result;
+     char *previous_input;
+     GPtrArray* history;
+@@ -82,6 +82,10 @@ typedef struct
+ #define HINT_WELCOME "-hint-welcome"
+ #define HINT_WELCOME_STR "Calculator"
+ 
++// Option to specify history hint
++#define HINT_HISTORY "-hint-history"
++#define HINT_HISTORY_STR "Add to history"
++
+ // The following keys can be specified in `CALC_COMMAND_FLAG` and
+ // will be replaced with the left-hand side and right-hand side of
+ // the equation.
+@@ -254,6 +258,10 @@ static void get_calc(Mode* sw)
+         ? g_strdup(cmd)
+         : HINT_WELCOME_STR;
+ 
++    pd->hint_history = find_arg_str(HINT_HISTORY, &cmd)
++        ? g_strdup(cmd)
++        : HINT_HISTORY_STR;
++
+     if (find_arg(NO_PERSIST_HISTORY_OPTION) == -1 && find_arg(NO_HISTORY_OPTION) == -1) {
+         // Load old history if it exists.
+         GError *error = NULL;
+@@ -501,7 +509,7 @@ static char* calc_get_display_value(cons
+ 
+     if (selected_line == 0) {
+         if (find_arg(NO_HISTORY_OPTION) == -1)
+-            return g_strdup("Add to history");
++            return g_strdup(pd->hint_history);
+         else
+             return g_strdup("");
+     }

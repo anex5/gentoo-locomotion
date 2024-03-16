@@ -56,7 +56,6 @@ multilib_src_configure() {
 		"VERBOSE=1"
 		"PREFIX=${EPREFIX}/usr"
 		"LIBDIR=${EPREFIX}/usr/$(get_libdir)"
-		"LIBTOOL=slibtool"
 		--disable-sphinx
 		--without-x
 		--with-docdir="${EPREFIX}"/usr/share/doc/${PF}

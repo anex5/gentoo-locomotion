@@ -42,7 +42,6 @@ _emake() {
 		"CC=$(tc-getCC)"
 		"LD=$(tc-getLD)"
 		"config=release"
-		#"LIBTOOL=slibtool"
 		"LIBDIR=${EPREFIX}/usr/$(get_libdir)"
 		"INCDIR=${EPREFIX}/usr/include"
 	)
