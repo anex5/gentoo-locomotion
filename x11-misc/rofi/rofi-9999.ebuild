@@ -28,7 +28,7 @@ IUSE="X wayland +drun +imdkit test +windowmode man"
 RESTRICT="!test? ( test )"
 
 BDEPEND="
-	dev-util/meson
+	dev-build/meson
 	virtual/pkgconfig
 	wayland? ( >=dev-libs/wayland-protocols-1.17 )
 "

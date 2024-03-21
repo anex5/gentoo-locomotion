@@ -24,7 +24,7 @@ if [[ ${PV} = *9999 ]]; then
 	EGIT_SUBMODULES=()
 	EGIT_BRANCH="main"
 	KEYWORDS=""
-	CERES_PV=2.2.0
+	CERES_PV=2.3.0
 else
 	SRC_URI="https://github.com/mapillary/${MY_PN}/archive/v${PV}/${P}.tar.gz -> ${P}.tar.gz"
 	KEYWORDS="~amd64 ~x86 ~arm64 ~arm"
@@ -42,10 +42,10 @@ IUSE="debug doc test lto"
 
 REQUIRED_USE="${PYTHON_REQUIRED_USE}"
 
+#media-libs/opengv[python,${PYTHON_USEDEP}]
 DEPEND="
 	dev-libs/boost[${PYTHON_USEDEP}]
 	media-libs/opencv:=[python,${PYTHON_USEDEP}]
-	media-libs/opengv[python,${PYTHON_USEDEP}]
 	<=sci-libs/ceres-solver-${CERES_PV}:=[sparse]
 	>=sci-libs/suitesparseconfig-7.6.0:=
 	>=sci-libs/amd-3.3.1:=
@@ -70,7 +70,7 @@ DEPEND="
 	dev-python/numpy[${PYTHON_USEDEP}]
 	dev-python/scipy[${PYTHON_USEDEP}]
 	dev-python/repoze-lru[${PYTHON_USEDEP}]
-	>=dev-python/fpdf2-2.1.0[${PYTHON_USEDEP}]
+	>=dev-python/fpdf2-2.4.6[${PYTHON_USEDEP}]
 	doc? (
 		>=dev-python/sphinx-3.4.3[${PYTHON_USEDEP}]
 		dev-python/six[${PYTHON_USEDEP}]
@@ -101,14 +101,16 @@ src_prepare() {
 		sed -e "s|\(set(CMAKE_CXX_STANDARD \)14|\117|" -i opensfm/src/CMakeLists.txt || die "Sed failed"
 		#unbundle pybind11
 		sed	-e "s|add_subdirectory(third_party\/pybind11)|find_package (pybind11 CONFIG REQUIRED)|" -i opensfm/src/CMakeLists.txt || die "Sed failed"
-		sed -e "/^target_link_libraries(/,/)/s|pybind11|pybind11::module|g" -i opensfm/src/{foundation,bundle,dense,features,geometry,robust,sfm,geo,map}/CMakeLists.txt || die "Sed failed"
+		sed	-e "/include_directories(third_party\/pybind11\/include)/d" -i opensfm/src/CMakeLists.txt || die "Sed failed"
+		#sed	-e "s/include_directories(third_party\/pybind11\/include)/include_directories(\/usr\/include\/pybind11)/" -i opensfm/src/CMakeLists.txt || die "Sed failed"
+		sed -e "/^target_link_libraries(/,/)/s|pybind11|pybind11::headers|g" -i opensfm/src/{bundle,dense,features,foundation,geometry,robust,sfm,geo,map}/CMakeLists.txt || die "Sed failed"
 		eapply "${FILESDIR}/unbundle-pybind.patch"
 	else
 		#Enable cxx17 as CERES-2.0 req it
 		sed -e "s|\(set(CMAKE_CXX_STANDARD \)11|\114|" -i opensfm/src/CMakeLists.txt || die "Sed failed"
 		#unbundle pybind11
 		sed	-e "s|add_subdirectory(third_party\/pybind11)|find_package (pybind11 CONFIG REQUIRED)|" -i opensfm/src/CMakeLists.txt || die "Sed failed"
-		sed -e "/^target_link_libraries(/,/)/s|pybind11|pybind11::module|g" -i opensfm/src/{dense,features,foundation,geometry,robust,sfm}/CMakeLists.txt || die "Sed failed"
+		sed -e "/^target_link_libraries(/,/)/s|pybind11|pybind11::headers|g" -i opensfm/src/{dense,features,foundation,geometry,robust,sfm}/CMakeLists.txt || die "Sed failed"
 	fi
 
 	# Build C extension with gentoo cmake eclass
@@ -131,8 +133,8 @@ src_configure() {
 	CMAKE_BUILD_TYPE=$(usex debug RelWithDebInfo Release)
 	CMAKE_CXX_STANDARD=17
 	CMAKE_CXX_STANDARD_REQUIRED=ON
-	CMAKE_SKIP_RPATH=ON
 	CMAKE_INTERPROCEDURAL_OPTIMIZATION=$(usex lto)
+	CMAKE_INSTALL_PREFIX="${EPREFIX}/usr"
 
 	local mycmakeargs=(
 		-DOPENSFM_BUILD_TESTS=$(usex test)
