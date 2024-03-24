@@ -1,10 +1,10 @@
-# Copyright 1999-2023 Gentoo Authors
+# Copyright 1999-2024 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
 PYTHON_COMPAT=( python3_{10..12} )
-LLVM_MAX_SLOT=17
+LLVM_MAX_SLOT=18
 inherit cmake toolchain-funcs python-any-r1 llvm
 
 DESCRIPTION="Intel SPMD Program Compiler"
@@ -16,9 +16,12 @@ if [[ ${PV} == 9999 ]]; then
 	EGIT_SUBMODULES=()
 	EGIT_BRANCH="main"
 else
-	SRC_URI="https://github.com/${PN}/${PN}/archive/v${PV}.tar.gz -> ${P}.tar.gz"
+	SRC_URI="https://github.com/${PN}/${PN}/archive/v${PV//_*/}.tar.gz -> ${P}.tar.gz"
 	KEYWORDS="amd64 ~arm ~arm64 ~ppc64 ~x86"
-	PATCHES=( "${FILESDIR}"/${PN}-1.19.0-curses-cmake.patch )
+	PATCHES=(
+		"${FILESDIR}/${PN}-1.23.0-backport-20240321.patch"
+	)
+	S=${WORKDIR}/${PN}-${PV//_*/}
 fi
 
 LICENSE="BSD BSD-2 UoI-NCSA"

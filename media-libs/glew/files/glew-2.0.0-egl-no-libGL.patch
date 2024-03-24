@@ -1,0 +1,38 @@
+From b1317a2faff15ba91b38c2fe5fed24e18003c198 Mon Sep 17 00:00:00 2001
+From: Andre McCurdy <armccurdy@gmail.com>
+Date: Sun, 18 Dec 2016 07:01:12 -0800
+Subject: [PATCH] linux-egl no libGL
+
+libGL is not required when building with -DGLEW_EGL
+
+Upstream-Status: Pending
+
+Signed-off-by: Andre McCurdy <armccurdy@gmail.com>
+---
+ config/Makefile.linux-clang-egl | 2 +-
+ config/Makefile.linux-egl       | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/config/Makefile.linux-clang-egl b/config/Makefile.linux-clang-egl
+index ca06419..ea8c703 100644
+--- a/config/Makefile.linux-clang-egl
++++ b/config/Makefile.linux-clang-egl
+@@ -1,4 +1,4 @@
+ include config/Makefile.linux-clang
+ 
+-LDFLAGS.GL = -lEGL -lGL
++LDFLAGS.GL = -lEGL
+ CFLAGS.EXTRA += -DGLEW_EGL
+diff --git a/config/Makefile.linux-egl b/config/Makefile.linux-egl
+index bcdc3cb..3bee77b 100644
+--- a/config/Makefile.linux-egl
++++ b/config/Makefile.linux-egl
+@@ -1,4 +1,4 @@
+ include config/Makefile.linux
+ 
+-LDFLAGS.GL = -lEGL -lGL
++LDFLAGS.GL = -lEGL
+ CFLAGS.EXTRA += -DGLEW_EGL
+-- 
+1.9.1
+

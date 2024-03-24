@@ -745,7 +745,6 @@ multilib_src_configure() {
 }
 
 multilib_src_compile() {
-	# Includes pgt_build_self
 	cmake_build distribution
 }
 

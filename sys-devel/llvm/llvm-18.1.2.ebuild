@@ -441,8 +441,8 @@ multilib_src_configure() {
 
 	# For PGO
 	if tc-is-gcc ; then
-# error: number of counters in profile data for function '...' does not match its profile data (counter 'arcs', expected 7 and have 13) [-Werror=coverage-mismatch]
-# The PGO profiles are isolated.  The Code is the same.
+		# error: number of counters in profile data for function '...' does not match its profile data (counter 'arcs', expected 7 and have 13) [-Werror=coverage-mismatch]
+		# The PGO profiles are isolated.  The Code is the same.
 		append-flags -Wno-error=coverage-mismatch
 	fi
 
