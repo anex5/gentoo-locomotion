@@ -5,8 +5,6 @@ EAPI=8
 
 inherit meson toolchain-funcs xdg-utils
 
-MY_PV="${PV}+wayland2"
-
 DESCRIPTION="A window switcher, run dialog and dmenu replacement (fork with Wayland support)"
 HOMEPAGE="https://github.com/lbonn/rofi"
 
@@ -17,6 +15,7 @@ if [[ ${PV} = *9999 ]]; then
 	EGIT_BRANCH="wayland"
 	KEYWORDS=""
 else
+	MY_PV="${PV}+wayland3"
 	SRC_URI="https://github.com/lbonn/rofi/releases/download/${MY_PV}/${PN}-${MY_PV}.tar.xz"
 	KEYWORDS="~amd64 ~x86 ~arm ~arm64"
 	S=${WORKDIR}/${PN}-${MY_PV}

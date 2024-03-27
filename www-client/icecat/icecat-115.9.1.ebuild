@@ -4,11 +4,11 @@
 EAPI=8
 
 # Using Gentoos firefox patches as system libraries and lto are quite nice
-FIREFOX_PATCHSET="firefox-${PV%%.*}esr-patches-08.tar.xz"
+FIREFOX_PATCHSET="firefox-${PV%%.*}esr-patches-09.tar.xz"
 
-LLVM_MAX_SLOT=17
-LLVM_SLOTS=( 17 16 )
-
+LLVM_MAX_SLOT=18
+LLVM_SLOTS=( 18 17 )
+PP="1"
 PYTHON_COMPAT=( python3_{10..12} )
 PYTHON_REQ_USE="ncurses,sqlite,ssl"
 
@@ -24,7 +24,7 @@ PATCH_URIS=(
 )
 
 SRC_URI="
-	!buildtarball? ( icecat-${PV}-gnu1.tar.bz2 )
+	!buildtarball? ( icecat-${PV}-${PP}gnu1.tar.bz2 )
 	${PATCH_URIS[@]}
 "
 
@@ -660,6 +660,7 @@ mozconfig_use_with() {
 }
 
 
+
 virtwl() {
 	debug-print-function ${FUNCNAME} "$@"
 
@@ -709,7 +710,7 @@ pkg_nofetch() {
 		einfo "You may find the script for building the tarball here"
 		einfo "https://git.savannah.gnu.org/cgit/gnuzilla.git/, but make sure it is the"
 		einfo "right version."
-		einfo "The output of the script should be icecat-"${PV}"-gnu1.tar.bz2"
+		einfo "The output of the script should be icecat-${PV}-${PP}gnu1.tar.bz2"
 	fi
 }
 
@@ -885,9 +886,9 @@ pkg_setup() {
 
 src_unpack() {
 	if use buildtarball; then
-		unpack /usr/src/makeicecat-"${PV}"/output/icecat-"${PV}"-gnu1.tar.bz2 || eerror "Tarball is missing, check that www-client/makeicecat has use flag buildtarball enabled."
+		unpack "/usr/src/makeicecat-${PV}/output/icecat-${PV}-${PP}gnu1.tar.bz2" || eerror "Tarball is missing, check that www-client/makeicecat has use flag buildtarball enabled."
 	else
-		unpack icecat-"${PV}"-gnu1.tar.bz2
+		unpack "icecat-${PV}-${PP}gnu1.tar.bz2"
 	fi
 	unpack "${FIREFOX_PATCHSET}"
 }
@@ -901,12 +902,12 @@ _get_s() {
 }
 
 src_prepare() {
-	use elibc_musl && eapply "${FILESDIR}"/icecat-musl-sandbox.patch
-	use atk || eapply "${FILESDIR}"/icecat-no-atk.patch
-	use dbus || eapply "${FILESDIR}"/icecat-no-dbus.patch
-	eapply "${FILESDIR}"/icecat-no-fribidi.patch
-	eapply "${FILESDIR}"/icecat-fix-clang-as.patch
-	eapply "${FILESDIR}"/icecat-system-gtests.patch
+	use elibc_musl && eapply "${FILESDIR}/icecat-musl-sandbox.patch"
+	use atk || eapply "${FILESDIR}/icecat-no-atk.patch"
+	use dbus || eapply "${FILESDIR}/icecat-no-dbus.patch"
+	eapply "${FILESDIR}/icecat-no-fribidi.patch"
+	eapply "${FILESDIR}/icecat-fix-clang-as.patch"
+	eapply "${FILESDIR}/icecat-system-gtests.patch"
 
 	if use lto; then
 		rm -v "${WORKDIR}"/firefox-patches/*-LTO-Only-enable-LTO-*.patch || die
