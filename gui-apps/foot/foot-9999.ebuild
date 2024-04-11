@@ -21,7 +21,7 @@ S="${WORKDIR}/${PN}"
 
 LICENSE="MIT"
 SLOT="0"
-IUSE="+grapheme-clustering ime man systemd test themes"
+IUSE="doc +grapheme-clustering ime systemd test themes"
 RESTRICT="
 	!test? ( test )
 	mirror
@@ -52,7 +52,7 @@ RDEPEND="
 	)
 "
 BDEPEND="
-	man? ( app-text/scdoc )
+	doc? ( app-text/scdoc )
 	dev-util/wayland-scanner
 "
 
@@ -65,7 +65,7 @@ src_prepare() {
 
 src_configure() {
 	local emesonargs=(
-		$(meson_feature man docs)
+		$(meson_feature doc docs)
 		$(meson_feature grapheme-clustering)
 		$(meson_use test tests)
 		$(meson_use themes)
@@ -83,6 +83,6 @@ src_install() {
 
 	# foot unconditionally installs CHANGELOG.md, README.md and LICENSE.
 	# we handle this via DOCS and dodoc instead.
-	rm -r "${ED}/usr/share/doc/${PN}" || die
+	use doc && ( rm -r "${ED}/usr/share/doc/${PN}" || die )
 	systemd_douserunit foot-server.service "${S}"/foot-server.socket
 }
