@@ -1,4 +1,4 @@
-# Copyright 1999-2023 Gentoo Authors
+# Copyright 1999-2024 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -17,7 +17,7 @@ else
 	KEYWORDS="~amd64 ~x86 ~arm ~arm64"
 fi
 
-IUSE="zsh-completion man test"
+IUSE="doc zsh-completion test"
 RESTRICT="mirror"
 LICENSE="MIT ZLIB"
 SLOT="0"
@@ -36,7 +36,7 @@ RDEPEND="${DEPEND}
 BDEPEND="
 	dev-util/wayland-scanner
 	dev-libs/wayland-protocols
-	man? ( app-text/scdoc )
+	doc? ( app-text/scdoc )
 	dev-libs/tllist
 "
 
@@ -44,7 +44,7 @@ src_prepare() {
 	default
 
 	tc-is-cross-compiler && ( sed "/wscanner\./s@native\: true@native\: false@" -i meson.build || die "Sed failed..." )
-	use man || ( sed "/subdir('doc')/d" -i meson.build || die "Sed failed..." )
+	use doc || ( sed "/subdir('doc')/d" -i meson.build || die "Sed failed..." )
 	use zsh-completion || ( sed "/subdir('completions')/d" -i meson.build || die "Sed failed..." )
 }
 
@@ -52,5 +52,5 @@ src_install() {
 	local DOCS=( CHANGELOG.md README.md LICENSE )
 	meson_src_install
 
-	rm -r "${ED}"/usr/share/doc/"${PN}" || die
+	use doc || ( rm -r "${ED}"/usr/share/doc/"${PN}" || die )
 }
