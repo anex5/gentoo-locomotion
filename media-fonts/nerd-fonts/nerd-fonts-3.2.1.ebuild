@@ -1,4 +1,4 @@
-# Copyright 1999-2023 Gentoo Authors
+# Copyright 1999-2024 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -39,6 +39,7 @@ FONTS=(
 	Hasklig
 	HeavyData
 	Hermit
+	iA-Writer
 	IBMPlexMono
 	Inconsolata
 	InconsolataGo
@@ -51,13 +52,13 @@ FONTS=(
 	Lekton
 	LiberationMono
 	Lilex
-	MPlus
 	MartianMono
 	Meslo
-	Monaspace
 	Monofur
 	Monoid
 	Mononoki
+	Monaspace
+	MPlus
 	NerdFontsSymbolsOnly
 	Noto
 	OpenDyslexic
@@ -65,6 +66,7 @@ FONTS=(
 	ProFont
 	ProggyClean
 	RobotoMono
+	Recursive
 	ShareTechMono
 	SourceCodePro
 	SpaceMono
@@ -72,8 +74,9 @@ FONTS=(
 	Tinos
 	Ubuntu
 	UbuntuMono
+	UbuntuSans
 	VictorMono
-	iA-Writer
+	ZedMono
 )
 
 gen_src_uri() {
@@ -109,7 +112,6 @@ IUSE_FLAGS=(${FONTS[*],,})
 IUSE="${IUSE_FLAGS[*]}"
 REQUIRED_USE="X || ( ${IUSE_FLAGS[*]} )"
 
-S="${WORKDIR}"
 FONT_CONF=(
 	"${S}"/10-nerd-font-symbols.conf
 )
