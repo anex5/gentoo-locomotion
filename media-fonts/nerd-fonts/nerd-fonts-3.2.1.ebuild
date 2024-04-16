@@ -91,14 +91,14 @@ SRC_URI="
 "
 RESTRICT="mirror"
 LICENSE="MIT
-		OFL-1.1
-		Apache-2.0
-		CC-BY-SA-4.0
-		BitstreamVera
-		BSD
-		WTFPL-2
-		Vic-Fieger-License
-		UbuntuFontLicense-1.0"
+	OFL-1.1
+	Apache-2.0
+	CC-BY-SA-4.0
+	BitstreamVera
+	BSD
+	WTFPL-2
+	Vic-Fieger-License
+	UbuntuFontLicense-1.0"
 SLOT="0"
 KEYWORDS="*"
 
@@ -112,8 +112,10 @@ IUSE_FLAGS=(${FONTS[*],,})
 IUSE="${IUSE_FLAGS[*]}"
 REQUIRED_USE="X || ( ${IUSE_FLAGS[*]} )"
 
+S="${WORKDIR}"
+
 FONT_CONF=(
-	"${S}"/10-nerd-font-symbols.conf
+	"${S}/10-nerd-font-symbols.conf"
 )
 FONT_S=${S}
 
@@ -123,7 +125,7 @@ pkg_pretend() {
 
 src_prepare() {
 	default
-	cp "${DISTDIR}/${P}-10-nerd-font-symbols.conf" 10-nerd-font-symbols.conf
+	cp "${DISTDIR}/${P}-10-nerd-font-symbols.conf" "10-nerd-font-symbols.conf"
 }
 
 src_install() {
