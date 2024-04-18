@@ -1,4 +1,4 @@
-# Copyright 1999-2022 Gentoo Authors
+# Copyright 1999-2024 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -24,7 +24,7 @@ HOMEPAGE="https://www.zsh.org/"
 
 LICENSE="ZSH gdbm? ( GPL-2 )"
 SLOT="0"
-IUSE="caps debug doc examples gdbm maildir pcre static"
+IUSE="caps debug doc examples gdbm maildir pcre static valgrind"
 
 RDEPEND="
 	>=sys-libs/ncurses-5.1:0=
@@ -34,7 +34,10 @@ RDEPEND="
 		>=dev-libs/libpcre-3.9
 		static? ( >=dev-libs/libpcre-3.9[static-libs] )
 	)
-	gdbm? ( sys-libs/gdbm:= )
+	gdbm? (
+		sys-libs/gdbm:=
+		static? ( sys-libs/gdbm:=[static-libs] )
+	)
 "
 PDEPEND="
 	examples? ( app-doc/zsh-lovers )
@@ -48,6 +51,19 @@ DEPEND="
 		virtual/latex-base
 	)"
 
+PATCHES=(
+	# Add openrc specific options for init.d completion
+	"${FILESDIR}"/${PN}-5.3-init.d-gentoo.diff
+	# Please refer gentoo bug #833981
+	"${FILESDIR}"/${PN}-5.9-musl-V09datetime-test-fix.patch
+	# bug #869539
+	"${FILESDIR}"/${PN}-5.9-clang-15-configure.patch
+	"${FILESDIR}"/${PN}-5.9-do-not-use-egrep-in-tests.patch
+	# bug #919001
+	"${FILESDIR}"/${PN}-5.9-c99.patch
+	"${FILESDIR}"/${PN}-5.9-relro.patch
+)
+
 src_prepare() {
 	if use doc; then
 		# fix zshall problem with soelim
@@ -55,9 +71,6 @@ src_prepare() {
 		mv Doc/zshall.1 Doc/zshall.1.soelim || die
 		soelim Doc/zshall.1.soelim > Doc/zshall.1 || die
 	fi
-
-	# add openrc specific options for init.d completion
-	eapply "${FILESDIR}"/${PN}-5.3-init.d-gentoo.diff
 
 	default
 
@@ -77,13 +90,14 @@ src_configure() {
 		--enable-fndir="${EPREFIX}"/usr/share/zsh/${PV%_*}/functions
 		--enable-site-fndir="${EPREFIX}"/usr/share/zsh/site-functions
 		--enable-function-subdirs
-		--enable-multibyte
 		--with-tcsetpgrp
+		--enable-multibyte
 		--with-term-lib='tinfow ncursesw'
 		$(use_enable maildir maildir-support)
 		$(use_enable pcre)
 		$(use_enable caps cap)
 		$(use_enable gdbm)
+		$(use_enable valgrind zsh-valgrind)
 	)
 
 	if use static ; then
@@ -130,6 +144,23 @@ src_compile() {
 }
 
 src_test() {
+	# Fixes tests A03quoting.ztst B03print.ztst on musl
+	# Please refer:
+	# https://www.zsh.org/mla/workers/2021/msg00805.html
+	# Test E02xtrace fails on musl, so we are removing it.
+	# Closes: https://bugs.gentoo.org/833981
+	if use elibc_musl ; then
+		unset LC_ALL
+		unset LC_COLLATE
+		unset LC_NUMERIC
+		unset LC_MESSAGES
+		unset LANG
+		rm "${S}"/Test/E02xtrace.ztst || die
+	fi
+
+	# Breaks tests if inherited from environment.
+	unset TMPPREFIX
+
 	addpredict /dev/ptmx
 	local i
 	for i in C02cond.ztst V08zpty.ztst X02zlevi.ztst Y01completion.ztst Y02compmatch.ztst Y03arguments.ztst ; do
@@ -143,7 +174,7 @@ src_install() {
 
 	insinto /etc/zsh
 	export PREFIX_QUOTE_CHAR='"' PREFIX_EXTRA_REGEX="/EUID/s,0,${EUID},"
-	newins "$(prefixify_ro "${FILESDIR}"/zprofile-4)" zprofile
+	newins "$(prefixify_ro "${FILESDIR}"/zprofile-5)" zprofile
 
 	keepdir /usr/share/zsh/site-functions
 	insinto /usr/share/zsh/${PV%_*}/functions/Prompts
@@ -178,9 +209,10 @@ src_install() {
 		docinto html
 		dodoc Doc/*.html
 		popd >/dev/null
-		docinto StartupFiles
-		dodoc StartupFiles/z*
 	fi
+
+	docinto StartupFiles
+	dodoc StartupFiles/z*
 }
 
 pkg_postinst() {

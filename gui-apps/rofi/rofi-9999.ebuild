@@ -23,18 +23,26 @@ fi
 
 LICENSE="MIT"
 SLOT="0"
-IUSE="X wayland +drun +imdkit test +windowmode man"
+IUSE="X +drun examples imdkit man test wayland +windowmode"
 RESTRICT="!test? ( test )"
 
 BDEPEND="
 	dev-build/meson
+	app-alternatives/ninja
 	virtual/pkgconfig
+	virtual/libc
+	man? (
+		>=dev-go/go-md2man-2.0.3
+		app-text/doxygen[dot]
+	)
 	wayland? ( >=dev-libs/wayland-protocols-1.17 )
 "
 RDEPEND="
 	dev-libs/glib:2
 	x11-libs/gdk-pixbuf:2
 	x11-libs/cairo[X?]
+	x11-libs/libxkbcommon[X?]
+	x11-libs/pango[X?]
 	X? (
 		x11-libs/startup-notification
 		x11-libs/xcb-util
@@ -42,24 +50,26 @@ RDEPEND="
 		x11-libs/xcb-util-wm
 		x11-misc/xkeyboard-config
 	)
-	x11-libs/libxkbcommon[X?]
-	x11-libs/pango[X?]
+	imdkit? ( x11-libs/xcb-imdkit )
 	wayland? (
 		>=dev-libs/wayland-protocols-1.17
 		>=dev-libs/wayland-1.17.0
 	)
+	!x11-misc/rofi
 "
 DEPEND="
 	${RDEPEND}
 	X? ( x11-base/xorg-proto )
-	test? ( >=dev-libs/check-0.11 )
+	test? (
+		>=dev-libs/check-0.11
+		dev-util/cppcheck
+	)
 "
 RESTRICT="mirror"
 
-
 src_prepare() {
-	use man || sed -i -e "/subdir('doc')/d" -e '/install_man(/{:1;/)/!{N;b1};d}' meson.build || die
-	use test || sed -i -e '/test(/{:1;/))/!{N;b1};d}' meson.build || die
+	use man || ( sed -i -e '/install_man(/{:1;/)/!{N;b1};d}' -e "/subdir('doc')/d" meson.build || die )
+	use test || ( sed -i -e '/test(/{:1;/))/!{N;b1};d}' meson.build || die )
 	default
 }
 
@@ -79,7 +89,13 @@ src_configure() {
 
 src_install() {
 	meson_src_install
-	use man && doman doc/*
+	use examples && ( insinto /usr/share/rofi/examples/; doins Examples/*.sh || die "Examples install failed.")
+	use man && ( doman doc/${PN}*.1 doc/${PN}*.5 || die "Manpages install failed.")
+	cp "${FILESDIR}/rofi.svg" "${D}/usr/share/icons/hicolor/scalable/apps/" || die "Rofi default icon install failed."
+}
+
+src_test() {
+	meson_src_test
 }
 
 pkg_postinst() {
