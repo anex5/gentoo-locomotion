@@ -3,7 +3,7 @@
 
 EAPI=8
 
-inherit meson optfeature
+inherit fcaps meson optfeature
 
 DESCRIPTION="SwayFX: Sway, but with eye candy!"
 HOMEPAGE="https://github.com/WillPower3309/swayfx"
@@ -21,6 +21,7 @@ fi
 LICENSE="MIT"
 SLOT="0"
 IUSE="zsh-completion bash-completion fish-completion grimshot +man +swaybar +swaynag tray wallpapers X"
+REQUIRED_USE="tray? ( swaybar )"
 
 DEPEND="
 	>=dev-libs/json-c-0.13:0=
@@ -29,6 +30,7 @@ DEPEND="
 	sys-auth/seatd:=
 	dev-libs/libpcre2
 	>=dev-libs/wayland-1.20.0
+	gui-libs/scenefx
 	x11-libs/cairo
 	>=x11-libs/libxkbcommon-1.5.0:0=
 	x11-libs/pango
@@ -46,15 +48,6 @@ DEPEND="
 		x11-libs/xcb-util-wm
 	)
 "
-# x11-libs/xcb-util-wm needed for xcb-iccm
-#if [[ ${PV} == 9999 ]]; then
-#	DEPEND+="~gui-libs/wlroots-9999:=[X?]"
-#else
-	DEPEND+="
-		>=gui-libs/wlroots-0.16:=[X?]
-		<gui-libs/wlroots-0.17:=[X?]
-	"
-#fi
 RDEPEND="
 	x11-misc/xkeyboard-config
 	grimshot? (
@@ -77,7 +70,10 @@ if [[ ${PV} == 9999 ]]; then
 else
 	BDEPEND+="man? ( >=app-text/scdoc-1.9.3 )"
 fi
-REQUIRED_USE="tray? ( swaybar )"
+
+FILECAPS=(
+	cap_sys_nice usr/bin/sway # bug 919298
+)
 
 RESTRICT="mirror"
 
@@ -108,6 +104,8 @@ src_install() {
 }
 
 pkg_postinst() {
+	fcaps_pkg_postinst
+
 	optfeature_header "There are several packages that may be useful with sway:"
 	optfeature "wallpaper utility" gui-apps/swaybg
 	optfeature "idle management utility" gui-apps/swayidle
