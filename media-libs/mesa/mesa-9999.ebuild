@@ -3,9 +3,11 @@
 
 EAPI=8
 
+LLVM_COMPAT=( {17..18} )
+LLVM_OPTIONAL=1
 PYTHON_COMPAT=( python3_{10..12} )
 
-inherit llvm meson-multilib python-any-r1 linux-info
+inherit llvm-r1 meson-multilib python-any-r1 linux-info
 
 MY_P="${P/_/-}"
 
@@ -22,7 +24,6 @@ fi
 
 LICENSE="MIT SGI-B-2.0"
 SLOT="0"
-RESTRICT="!test? ( test )"
 
 RADEON_CARDS="r300 r600 radeon amdgpu"
 VIDEO_CARDS="${RADEON_CARDS} d3d12 freedreno intel lavapipe lima nouveau panfrost v3d vc4 virgl vivante vmware"
@@ -35,7 +36,7 @@ IUSE="${IUSE_VIDEO_CARDS}
 	lm-sensors opencl opengl osmesa +proprietary-codecs selinux
 	test unwind vaapi valgrind vdpau vulkan
 	vulkan-overlay wayland +X xa zink +zstd"
-
+RESTRICT="!test? ( test )"
 REQUIRED_USE="
 	d3d9? (
 		|| (
@@ -47,6 +48,7 @@ REQUIRED_USE="
 			video_cards_vmware
 		)
 	)
+	llvm? ( ${LLVM_REQUIRED_USE} )
 	vulkan-overlay? ( vulkan )
 	video_cards_lavapipe? ( llvm vulkan )
 	video_cards_radeon? ( x86? ( llvm ) amd64? ( llvm ) )
@@ -62,9 +64,16 @@ LIBDRM_DEPSTRING=">=x11-libs/libdrm-2.4.119"
 RDEPEND="
 	>=dev-libs/expat-2.1.0-r3[${MULTILIB_USEDEP}]
 	>=media-libs/libglvnd-1.3.2[X?,${MULTILIB_USEDEP}]
-	>=sys-libs/zlib-1.2.8[${MULTILIB_USEDEP}]
+	>=sys-libs/zlib-1.2.9[${MULTILIB_USEDEP}]
 	unwind? ( sys-libs/libunwind[${MULTILIB_USEDEP}] )
 	llvm? (
+		$(llvm_gen_dep "
+			sys-devel/llvm:\${LLVM_SLOT}[${MULTILIB_USEDEP}]
+			opencl? (
+				dev-util/spirv-llvm-translator:\${LLVM_SLOT}
+				sys-devel/clang:\${LLVM_SLOT}[${MULTILIB_USEDEP}]
+			)
+		")
 		video_cards_amdgpu? (
 			virtual/libelf:0=[${MULTILIB_USEDEP}]
 		)
@@ -85,7 +94,7 @@ RDEPEND="
 	vaapi? (
 		>=media-libs/libva-1.7.3:=[${MULTILIB_USEDEP}]
 	)
-	vdpau? ( >=x11-libs/libvdpau-1.1:=[${MULTILIB_USEDEP}] )
+	vdpau? ( >=x11-libs/libvdpau-1.5:=[${MULTILIB_USEDEP}] )
 	selinux? ( sys-libs/libselinux[${MULTILIB_USEDEP}] )
 	wayland? ( >=dev-libs/wayland-1.18.0[${MULTILIB_USEDEP}] )
 	${LIBDRM_DEPSTRING}[video_cards_freedreno?,video_cards_intel?,video_cards_nouveau?,video_cards_vc4?,video_cards_vivante?,video_cards_vmware?,${MULTILIB_USEDEP}]
@@ -94,7 +103,7 @@ RDEPEND="
 		>=x11-libs/libxshmfence-1.1[${MULTILIB_USEDEP}]
 		>=x11-libs/libXext-1.3.2[${MULTILIB_USEDEP}]
 		>=x11-libs/libXxf86vm-1.1.3[${MULTILIB_USEDEP}]
-		>=x11-libs/libxcb-1.13:=[${MULTILIB_USEDEP}]
+		>=x11-libs/libxcb-1.17:=[${MULTILIB_USEDEP}]
 		x11-libs/libXfixes[${MULTILIB_USEDEP}]
 		x11-libs/xcb-util-keysyms[${MULTILIB_USEDEP}]
 	)
@@ -110,48 +119,17 @@ RDEPEND="${RDEPEND}
 	video_cards_amdgpu? ( ${LIBDRM_DEPSTRING}[video_cards_amdgpu] )
 "
 
-# Please keep the LLVM dependency block separate. Since LLVM is slotted,
-# we need to *really* make sure we're not pulling one than more slot
-# simultaneously.
-#
-# How to use it:
-# 1. Specify LLVM_MAX_SLOT (inclusive), e.g. 17.
-# 2. Specify LLVM_MIN_SLOT (inclusive), e.g. 15.
-LLVM_MAX_SLOT="17"
-LLVM_MIN_SLOT="15"
-LLVM_USE_DEPS="llvm_targets_AMDGPU(+),${MULTILIB_USEDEP}"
-PER_SLOT_DEPSTR="
-	(
-		!opencl? ( sys-devel/llvm:@SLOT@[${LLVM_USE_DEPS}] )
-		opencl? ( sys-devel/clang:@SLOT@[${LLVM_USE_DEPS}] )
-		opencl? ( dev-util/spirv-llvm-translator:@SLOT@ )
-	)
-"
-LLVM_DEPSTR="
-	|| (
-		$(for ((slot=LLVM_MAX_SLOT; slot>=LLVM_MIN_SLOT; slot--)); do
-			echo "${PER_SLOT_DEPSTR//@SLOT@/${slot}}"
-		done)
-	)
-	!opencl? ( <sys-devel/llvm-$((LLVM_MAX_SLOT + 1)):=[${LLVM_USE_DEPS}] )
-	opencl? ( <sys-devel/clang-$((LLVM_MAX_SLOT + 1)):=[${LLVM_USE_DEPS}] )
-"
-RDEPEND="${RDEPEND}
-	llvm? ( ${LLVM_DEPSTR} )
-"
-unset LLVM_MIN_SLOT {LLVM,PER_SLOT}_DEPSTR
-
 DEPEND="${RDEPEND}
-	video_cards_d3d12? ( >=dev-util/directx-headers-1.611.0[${MULTILIB_USEDEP}] )
+	video_cards_d3d12? ( >=dev-util/directx-headers-1.613.0[${MULTILIB_USEDEP}] )
 	valgrind? ( dev-debug/valgrind )
-	wayland? ( >=dev-libs/wayland-protocols-1.30 )
+	wayland? ( >=dev-libs/wayland-protocols-1.34 )
 	X? (
 		x11-libs/libXrandr[${MULTILIB_USEDEP}]
 		x11-base/xorg-proto
 	)
 "
 BDEPEND="
-	>=dev-build/meson-1.1.0
+	>=dev-build/meson-1.3.1
 	${PYTHON_DEPS}
 	opencl? (
 		>=virtual/rust-1.62.0
@@ -161,18 +139,12 @@ BDEPEND="
 	app-alternatives/lex
 	virtual/pkgconfig
 	$(python_gen_any_dep ">=dev-python/mako-0.8.0[\${PYTHON_USEDEP}]")
-	vulkan? (
-		dev-util/glslang
-		llvm? (
-			video_cards_intel? (
-				amd64? (
-					$(python_gen_any_dep "dev-python/ply[\${PYTHON_USEDEP}]")
-					~dev-util/intel_clc-${PV}
-					dev-libs/libclc[spirv(-)]
-				)
-			)
-		)
+	video_cards_intel? (
+		=dev-util/intel_clc-${PV}*
+		dev-libs/libclc[spirv(-)]
+		$(python_gen_any_dep "dev-python/ply[\${PYTHON_USEDEP}]")
 	)
+	vulkan? ( dev-util/glslang )
 	wayland? ( dev-util/wayland-scanner )
 "
 
@@ -275,9 +247,7 @@ pkg_setup() {
 		linux-info_pkg_setup
 	fi
 
-	if use llvm; then
-		llvm_pkg_setup
-	fi
+	use llvm &&	llvm_pkg_setup
 	python-any-r1_pkg_setup
 }
 
@@ -372,7 +342,7 @@ multilib_src_configure() {
 	fi
 
 	if use llvm && use opencl; then
-		PKG_CONFIG_PATH="$(get_llvm_prefix "${LLVM_MAX_SLOT}")/$(get_libdir)/pkgconfig"
+		PKG_CONFIG_PATH="$(get_llvm_prefix)/$(get_libdir)/pkgconfig"
 		# See https://gitlab.freedesktop.org/mesa/mesa/-/blob/main/docs/rusticl.rst
 		emesonargs+=(
 			$(meson_native_true gallium-rusticl)
@@ -383,7 +353,7 @@ multilib_src_configure() {
 	if use vulkan; then
 		vulkan_enable video_cards_lavapipe swrast
 		vulkan_enable video_cards_freedreno freedreno
-		vulkan_enable video_cards_intel intel intel_hasvk
+		vulkan_enable video_cards_intel intel_hasvk
 		vulkan_enable video_cards_d3d12 microsoft-experimental
 		vulkan_enable video_cards_amdgpu amd
 		vulkan_enable video_cards_v3d broadcom
@@ -421,6 +391,8 @@ multilib_src_configure() {
 		emesonargs+=(-Dglx=disabled)
 	fi
 
+	use debug && EMESON_BUILDTYPE=debug
+
 	emesonargs+=(
 		$(meson_use test build-tests)
 		-Dshared-glapi=enabled
@@ -429,6 +401,7 @@ multilib_src_configure() {
 		-Dexpat=enabled
 		-Dgbm=$(usex gbm enabled disabled)
 		$(meson_use opengl)
+		$(meson_feature opengl glvnd)
 		$(meson_feature gles1)
 		$(meson_feature gles2)
 		$(meson_feature llvm)
@@ -436,13 +409,14 @@ multilib_src_configure() {
 		$(meson_use osmesa)
 		$(meson_use selinux)
 		$(meson_feature unwind libunwind)
+		$(meson_native_use_feature video_cards_intel intel-rt)
 		$(meson_feature zstd)
 		$(meson_use cpu_flags_x86_sse2 sse2)
+		-Dintel-clc=$(usex video_cards_intel system auto)
 		-Dvalgrind=$(usex valgrind auto disabled)
 		-Dvideo-codecs=$(usex proprietary-codecs "all" "all_free")
 		-Dgallium-drivers=$(driver_list "${GALLIUM_DRIVERS[*]}")
 		-Dvulkan-drivers=$(driver_list "${VULKAN_DRIVERS[*]}")
-		--buildtype $(usex debug debug plain)
 		-Db_ndebug=$(usex debug false true)
 	)
 	meson_src_configure
