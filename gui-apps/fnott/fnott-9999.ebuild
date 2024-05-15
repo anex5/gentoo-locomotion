@@ -52,5 +52,5 @@ src_install() {
 	local DOCS=( CHANGELOG.md README.md LICENSE )
 	meson_src_install
 
-	use doc || ( rm -r "${ED}"/usr/share/doc/"${PN}" || die )
+	#use doc || ( rm -r "${ED}/usr/share/doc/${P}" || die )
 }
