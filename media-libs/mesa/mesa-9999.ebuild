@@ -7,33 +7,53 @@ LLVM_COMPAT=( {17..18} )
 LLVM_OPTIONAL=1
 PYTHON_COMPAT=( python3_{10..12} )
 
-inherit llvm-r1 meson-multilib python-any-r1 linux-info
+inherit llvm-r1 meson-multilib python-any-r1 linux-info rust-toolchain
 
 MY_P="${P/_/-}"
+
+SYN_PV=2.0.39
+PROC_MACRO2_PV=1.0.70
+QUOTE_PV=1.0.33
+UNICODE_IDENT_PV=1.0.12
+PASTE_PV=1.0.14
+
+NAK_URI="
+	https://github.com/dtolnay/syn/archive/refs/tags/${SYN_PV}.tar.gz -> syn-${SYN_PV}.tar.gz
+	https://github.com/dtolnay/proc-macro2/archive/refs/tags/${PROC_MACRO2_PV}.tar.gz -> proc-macro2-${PROC_MACRO2_PV}.tar.gz
+	https://github.com/dtolnay/quote/archive/refs/tags/${QUOTE_PV}.tar.gz -> quote-${QUOTE_PV}.tar.gz
+	https://github.com/dtolnay/unicode-ident/archive/refs/tags/${UNICODE_IDENT_PV}.tar.gz -> unicode-ident-${UNICODE_IDENT_PV}.tar.gz
+	https://github.com/dtolnay/paste/archive/refs/tags/${PASTE_PV}.tar.gz -> paste-${PASTE_PV}.tar.gz
+"
 
 DESCRIPTION="OpenGL-like graphic library for Linux"
 HOMEPAGE="https://www.mesa3d.org/ https://mesa.freedesktop.org/"
 
 if [[ ${PV} == 9999 ]]; then
 	EGIT_REPO_URI="https://gitlab.freedesktop.org/mesa/mesa.git"
+	SRC_URI="${NAK_URI}"
 	inherit git-r3
 else
-	SRC_URI="https://archive.mesa3d.org/${MY_P}.tar.xz"
+	SRC_URI="
+		https://archive.mesa3d.org/${MY_P}.tar.xz
+		${NAK_URI}
+	"
 	KEYWORDS="~alpha ~amd64 ~arm ~arm64 ~hppa ~ia64 ~loong ~mips ~ppc ~ppc64 ~riscv ~s390 ~sparc ~x86 ~amd64-linux ~x86-linux ~x64-solaris"
 fi
+S="${WORKDIR}/${MY_P}"
+EGIT_CHECKOUT_DIR=${S}
 
 LICENSE="MIT SGI-B-2.0"
 SLOT="0"
 
 RADEON_CARDS="r300 r600 radeon amdgpu"
-VIDEO_CARDS="${RADEON_CARDS} d3d12 freedreno intel lavapipe lima nouveau panfrost v3d vc4 virgl vivante vmware"
+VIDEO_CARDS="${RADEON_CARDS} d3d12 freedreno intel lavapipe lima nouveau nvk panfrost v3d vc4 virgl vivante vmware"
 for card in ${VIDEO_CARDS}; do
 	IUSE_VIDEO_CARDS+=" video_cards_${card}"
 done
 
 IUSE="${IUSE_VIDEO_CARDS}
 	cpu_flags_x86_sse2 egl gbm d3d9 debug gles1 +gles2 +llvm
-	lm-sensors opencl opengl osmesa +proprietary-codecs selinux
+	lm-sensors opencl +opengl osmesa +proprietary-codecs selinux
 	test unwind vaapi valgrind vdpau vulkan
 	vulkan-overlay wayland +X xa zink +zstd"
 RESTRICT="!test? ( test )"
@@ -68,10 +88,10 @@ RDEPEND="
 	unwind? ( sys-libs/libunwind[${MULTILIB_USEDEP}] )
 	llvm? (
 		$(llvm_gen_dep "
-			sys-devel/llvm:\${LLVM_SLOT}[${MULTILIB_USEDEP}]
+			sys-devel/llvm:\${LLVM_SLOT}[llvm_targets_AMDGPU(+),${MULTILIB_USEDEP}]
 			opencl? (
 				dev-util/spirv-llvm-translator:\${LLVM_SLOT}
-				sys-devel/clang:\${LLVM_SLOT}[${MULTILIB_USEDEP}]
+				sys-devel/clang:\${LLVM_SLOT}[llvm_targets_AMDGPU(+),${MULTILIB_USEDEP}]
 			)
 		")
 		video_cards_amdgpu? (
@@ -140,16 +160,21 @@ BDEPEND="
 	virtual/pkgconfig
 	$(python_gen_any_dep ">=dev-python/mako-0.8.0[\${PYTHON_USEDEP}]")
 	video_cards_intel? (
-		=dev-util/intel_clc-${PV}*
+		~dev-util/intel_clc-${PV}
 		dev-libs/libclc[spirv(-)]
 		$(python_gen_any_dep "dev-python/ply[\${PYTHON_USEDEP}]")
 	)
-	vulkan? ( dev-util/glslang )
+	vulkan? (
+		dev-util/glslang
+		video_cards_nvk? (
+			>=dev-util/bindgen-0.68.1
+			>=dev-util/cbindgen-0.26.0
+			>=virtual/rust-1.74.1
+			<dev-build/meson-1.4.0
+		)
+	)
 	wayland? ( dev-util/wayland-scanner )
 "
-
-S="${WORKDIR}/${MY_P}"
-EGIT_CHECKOUT_DIR=${S}
 
 QA_WX_LOAD="
 x86? (
@@ -162,12 +187,9 @@ PATCHES=(
 	"${FILESDIR}/0002-mesa-enable-vaapi-on-lima-panfrost.patch"
 )
 
-llvm_check_deps() {
-	if use opencl; then
-		has_version "sys-devel/clang:${LLVM_SLOT}[${LLVM_USE_DEPS}]" || return 1
-		has_version "dev-util/spirv-llvm-translator:${LLVM_SLOT}" || return 1
-	fi
-	has_version "sys-devel/llvm:${LLVM_SLOT}[${LLVM_USE_DEPS}]"
+src_unpack() {
+	[[ ${PV} == 9999 ]] && git-r3_src_unpack
+	unpack ${A}
 }
 
 pkg_pretend() {
@@ -247,7 +269,7 @@ pkg_setup() {
 		linux-info_pkg_setup
 	fi
 
-	use llvm &&	llvm_pkg_setup
+	use llvm && llvm-r1_pkg_setup
 	python-any-r1_pkg_setup
 }
 
@@ -255,6 +277,20 @@ src_prepare() {
 	default
 	sed -i -e "/^PLATFORM_SYMBOLS/a '__gentoo_check_ldflags__'," \
 		bin/symbols-check.py || die # bug #830728
+
+	if use video_cards_nvk; then
+		# NVK Subproject Handling
+		pushd "${S}" >/dev/null || die
+		for subpkg in proc-macro2-${PROC_MACRO2_PV} syn-${SYN_PV} quote-${QUOTE_PV} unicode-ident-${UNICODE_IDENT_PV} paste-${PASTE_PV}; do
+			# copy subprojects folder
+			cp -r ../${subpkg} subprojects || die
+			# copy meson.build
+			cp subprojects/packagefiles/${subpkg%-*}/meson.build subprojects/${subpkg} || die
+			# ovewrite subpkg version when needed
+			sed -i -e "s/directory = \S\+/directory = ${subpkg}/" subprojects/${subpkg%-*}.wrap || die
+		done
+		popd >/dev/null || die
+	fi
 }
 
 multilib_src_configure() {
@@ -353,10 +389,19 @@ multilib_src_configure() {
 	if use vulkan; then
 		vulkan_enable video_cards_lavapipe swrast
 		vulkan_enable video_cards_freedreno freedreno
-		vulkan_enable video_cards_intel intel_hasvk
+		vulkan_enable video_cards_intel intel intel_hasvk
 		vulkan_enable video_cards_d3d12 microsoft-experimental
 		vulkan_enable video_cards_amdgpu amd
 		vulkan_enable video_cards_v3d broadcom
+		if use video_cards_nvk; then
+			vulkan_enable video_cards_nvk nouveau
+			if ! multilib_is_native_abi; then
+				echo -e "[binaries]\nrust = ['rustc', '--target=$(rust_abi $CBUILD)']" > "${T}/rust_fix.ini"
+				emesonargs+=(
+					--native-file "${T}"/rust_fix.ini
+				)
+			fi
+		fi
 	fi
 
 	driver_list() {
@@ -375,16 +420,6 @@ multilib_src_configure() {
 		emesonargs+=(-Dintel-clc=disabled)
 	fi
 
-	if use opengl || use gles1 || use gles2; then
-		emesonargs+=(
-			-Dglvnd=true
-		)
-	else
-		emesonargs+=(
-			-Dglvnd=false
-		)
-	fi
-
 	if use opengl && use X; then
 		emesonargs+=(-Dglx=dri)
 	else
@@ -397,13 +432,13 @@ multilib_src_configure() {
 		$(meson_use test build-tests)
 		-Dshared-glapi=enabled
 		-Ddri3=enabled
-		-Degl=$(usex egl enabled disabled)
 		-Dexpat=enabled
-		-Dgbm=$(usex gbm enabled disabled)
 		$(meson_use opengl)
-		$(meson_feature opengl glvnd)
+		$(meson_feature gbm)
 		$(meson_feature gles1)
 		$(meson_feature gles2)
+		$(meson_feature opengl glvnd)
+		$(meson_feature egl)
 		$(meson_feature llvm)
 		$(meson_feature lm-sensors lmsensors)
 		$(meson_use osmesa)
@@ -420,6 +455,10 @@ multilib_src_configure() {
 		-Db_ndebug=$(usex debug false true)
 	)
 	meson_src_configure
+
+	if ! multilib_is_native_abi && use video_cards_nvk; then
+		sed -i -E '{N; s/(rule rust_COMPILER_FOR_BUILD\n command = rustc) --target=[a-zA-Z0-9=:-]+ (.*) -C link-arg=-m[[:digit:]]+/\1 \2/g}' build.ninja || die
+	fi
 }
 
 multilib_src_test() {
