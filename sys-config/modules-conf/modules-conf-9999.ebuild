@@ -1,4 +1,4 @@
-# Copyright 1999-2022 Gentoo Authors
+# Copyright 1999-2024 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -9,7 +9,7 @@ KEYWORDS="*"
 
 LICENSE="GPL-2+"
 SLOT="0"
-IUSE="video_cards_i915 video_cards_nouveau video_cards_nvidia video_cards_amdgpu video_cards_radeon video_cards_virtualbox +alsa +vfio +kvm +zswap +drm bbswitch +blacklist it87 rtl"
+IUSE="video_cards_i915 video_cards_nouveau video_cards_nvidia video_cards_amdgpu video_cards_radeon video_cards_virtualbox +alsa +vfio +kvm +zswap +drm bbswitch +blacklist it87 rtl xe"
 
 S=${WORKDIR}
 
@@ -31,6 +31,7 @@ src_install() {
 
 pkg_preinst() {
 	insinto /etc/modprobe.d
+	use xe && doins ${FILESDIR}/xe.conf
 	use rtl && doins ${FILESDIR}/rtl.conf
 	use alsa && doins ${FILESDIR}/alsa-base.conf
 	use drm && doins ${FILESDIR}/drm_kms_helper.conf

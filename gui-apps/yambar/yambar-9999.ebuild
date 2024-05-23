@@ -1,11 +1,11 @@
-# Copyright 1999-2023 Gentoo Authors
+# Copyright 1999-2024 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
 inherit meson
 
-if [[ ${PV} == 9999 ]]; then
+if [[ ${PV} == *9999* ]]; then
 	inherit git-r3
 	EGIT_REPO_URI="https://codeberg.org/dnkl/${PN}.git"
 	EGIT_SUBMODULES=()
@@ -19,7 +19,7 @@ DESCRIPTION="Simplistic and highly configurable status panel for X and Wayland"
 HOMEPAGE="https://codeberg.org/dnkl/yambar"
 LICENSE="MIT"
 SLOT="0"
-IUSE="alsa +backlight +battery +clock +cpu +disk-io dwl +foreign-toplevel man +memory +mpd i3 +label +network pipewire pulseaudio +removables river +script +shared-plugins sway-xkb wayland X xkb xwindow"
+IUSE="alsa backlight battery +clock +cpu debug +disk-io dwl +foreign-toplevel man +memory mpd i3 +label +network pipewire pulseaudio removables river +script +shared-plugins sway-xkb wayland X xkb xwindow"
 REQUIRED_USE="
 	|| ( wayland X )
 	sway-xkb? ( wayland )
@@ -72,6 +72,7 @@ src_prepare() {
 }
 
 src_configure() {
+	use debug && EMESON_BUILDTYPE=debug
 	local emesonargs=(
 		$(meson_feature wayland backend-wayland)
 		$(meson_feature X backend-x11)
@@ -98,6 +99,7 @@ src_configure() {
 		$(meson_feature xkb plugin-xkb)
 		$(meson_feature xwindow plugin-xwindow)
 		-Dwerror=false
+		-Db_ndebug=$(usex debug false true)
 	)
 	meson_src_configure
 }
@@ -108,5 +110,11 @@ src_install() {
 		echo "LDPATH=${EPREFIX}/usr/$(get_libdir)/${PN}/" > 99yambar || die
 		doenvd 99yambar
 	fi
-	rm -rf "${D}/usr/share/doc/${PN}"
+	rm -rf "${D}/usr/share/doc/${PN}" || die
+}
+
+pkg_postinst() {
+	ewarn "Warning: if you are upgrading from 1.8.0, please note that there are breaking changes that might affect your config.yml file."
+	ewarn "See the changelog for more information"
+	ewarn "https://codeberg.org/dnkl/yambar/releases/tag/1.9.0"
 }
