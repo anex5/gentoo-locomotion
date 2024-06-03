@@ -1,4 +1,4 @@
-LDFLAGS="-Wl,-O1 -Wl,--sort-common -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -Wl,-z,pack-relative-relocs -Wl,-fuse-ld=mold -Wl,--no-undefined -Wl,--defsym=__gentoo_check_ldflags__=0"
+LDFLAGS="-Wl,-O1 -Wl,--sort-common -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -Wl,-z,pack-relative-relocs -Wl,--no-undefined -Wl,--defsym=__gentoo_check_ldflags__=0"
 USE="brotli usb udev caps dbus -iptables python policykit nfs idn lbzip2 pigz libarchive -pulseaudio -crda alsa"
 
 ALSA_CARDS=""

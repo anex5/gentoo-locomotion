@@ -7,7 +7,7 @@ LLVM_COMPAT=( {17..18} )
 LLVM_OPTIONAL=1
 PYTHON_COMPAT=( python3_{10..12} )
 
-inherit llvm-r1 meson-multilib python-any-r1 linux-info rust-toolchain
+inherit flag-o-matic llvm-r1 meson-multilib python-any-r1 linux-info rust-toolchain toolchain-funcs
 
 MY_P="${P/_/-}"
 
@@ -74,6 +74,7 @@ REQUIRED_USE="
 	video_cards_radeon? ( x86? ( llvm ) amd64? ( llvm ) )
 	video_cards_r300?   ( x86? ( llvm ) amd64? ( llvm ) )
 	video_cards_amdgpu?   ( llvm )
+	video_cards_nvk? ( vulkan video_cards_nouveau )
 	vdpau? ( X )
 	xa? ( X )
 	X? ( gles1? ( opengl ) gles2? ( opengl ) )

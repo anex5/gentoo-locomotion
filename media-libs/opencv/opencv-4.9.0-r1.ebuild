@@ -125,7 +125,7 @@ REQUIRED_USE="
 	gflags? ( contrib )
 	glog? ( contrib )
 	contribcvv? ( contrib || ( qt5 qt6 ) )
-	contribdnn? ( contrib )
+	contribdnn? ( contrib flatbuffers )
 	contribfreetype? ( contrib )
 	contribhdf? ( contrib )
 	contribovis? ( contrib )
@@ -135,10 +135,9 @@ REQUIRED_USE="
 	opengl? ( ?? ( gtk3 || ( qt5 qt6 ) ) )
 	python? ( ${PYTHON_REQUIRED_USE} )
 	tesseract? ( contrib )
+	onnx? ( flatbuffers )
 	?? ( gtk3 || ( qt5 qt6 ) )
 	?? ( cuda gdal )
-	onnx? ( flatbuffers )
-	contribdnn? ( flatbuffers )
 	?? ( opengl vulkan )
 	test? ( || ( ffmpeg gstreamer ) jpeg png tiff features2d  )
 "
@@ -224,6 +223,7 @@ RDEPEND="
 			dev-qt/qtbase:6[gui,widgets,concurrent,opengl?]
 		)
 	)
+	quirc? ( media-libs/quirc )
 	tesseract? ( app-text/tesseract[opencl=,${MULTILIB_USEDEP}] )
 	tbb? ( dev-cpp/tbb:=[${MULTILIB_USEDEP}] )
 	tiff? ( media-libs/tiff:=[${MULTILIB_USEDEP}] )
