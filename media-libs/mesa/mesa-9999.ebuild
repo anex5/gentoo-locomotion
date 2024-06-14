@@ -3,7 +3,7 @@
 
 EAPI=8
 
-LLVM_COMPAT=( {17..18} )
+LLVM_COMPAT=( {15..18} )
 LLVM_OPTIONAL=1
 PYTHON_COMPAT=( python3_{10..12} )
 
@@ -46,7 +46,7 @@ LICENSE="MIT SGI-B-2.0"
 SLOT="0"
 
 RADEON_CARDS="r300 r600 radeon amdgpu"
-VIDEO_CARDS="${RADEON_CARDS} d3d12 freedreno intel lavapipe lima nouveau nvk panfrost v3d vc4 virgl vivante vmware"
+VIDEO_CARDS="${RADEON_CARDS} d3d12 freedreno intel lavapipe lima nouveau nvk panfrost v3d vc4 virgl vivante vmware zink"
 for card in ${VIDEO_CARDS}; do
 	IUSE_VIDEO_CARDS+=" video_cards_${card}"
 done
@@ -55,17 +55,20 @@ IUSE="${IUSE_VIDEO_CARDS}
 	cpu_flags_x86_sse2 egl gbm d3d9 debug gles1 +gles2 +llvm
 	lm-sensors opencl +opengl osmesa +proprietary-codecs selinux
 	test unwind vaapi valgrind vdpau vulkan
-	vulkan-overlay wayland +X xa zink +zstd"
+	vulkan-overlay wayland +X xa +zstd"
 RESTRICT="!test? ( test )"
 REQUIRED_USE="
 	d3d9? (
 		|| (
+			video_cards_freedreno
 			video_cards_intel
+			video_cards_nouveau
+			video_cards_panfrost
 			video_cards_r300
 			video_cards_r600
 			video_cards_amdgpu
-			video_cards_nouveau
 			video_cards_vmware
+			video_cards_zink
 		)
 	)
 	llvm? ( ${LLVM_REQUIRED_USE} )
@@ -73,12 +76,12 @@ REQUIRED_USE="
 	video_cards_lavapipe? ( llvm vulkan )
 	video_cards_radeon? ( x86? ( llvm ) amd64? ( llvm ) )
 	video_cards_r300?   ( x86? ( llvm ) amd64? ( llvm ) )
-	video_cards_amdgpu?   ( llvm )
+	video_cards_amdgpu?   ( x86? ( llvm ) amd64? ( llvm ) )
+	video_cards_zink? ( vulkan opengl )
 	video_cards_nvk? ( vulkan video_cards_nouveau )
 	vdpau? ( X )
 	xa? ( X )
 	X? ( gles1? ( opengl ) gles2? ( opengl ) )
-	zink? ( vulkan || ( opengl gles1 gles2 ) )
 "
 
 LIBDRM_DEPSTRING=">=x11-libs/libdrm-2.4.119"
@@ -116,6 +119,7 @@ RDEPEND="
 		>=media-libs/libva-1.7.3:=[${MULTILIB_USEDEP}]
 	)
 	vdpau? ( >=x11-libs/libvdpau-1.5:=[${MULTILIB_USEDEP}] )
+	video_cards_zink? ( media-libs/vulkan-loader:=[${MULTILIB_USEDEP}] )
 	selinux? ( sys-libs/libselinux[${MULTILIB_USEDEP}] )
 	wayland? ( >=dev-libs/wayland-1.18.0[${MULTILIB_USEDEP}] )
 	${LIBDRM_DEPSTRING}[video_cards_freedreno?,video_cards_intel?,video_cards_nouveau?,video_cards_vc4?,video_cards_vivante?,video_cards_vmware?,${MULTILIB_USEDEP}]
@@ -128,7 +132,6 @@ RDEPEND="
 		x11-libs/libXfixes[${MULTILIB_USEDEP}]
 		x11-libs/xcb-util-keysyms[${MULTILIB_USEDEP}]
 	)
-	zink? ( media-libs/vulkan-loader:=[${MULTILIB_USEDEP}] )
 	zstd? ( app-arch/zstd:=[${MULTILIB_USEDEP}] )
 "
 for card in ${RADEON_CARDS}; do
@@ -150,12 +153,12 @@ DEPEND="${RDEPEND}
 	)
 "
 BDEPEND="
-	>=dev-build/meson-1.3.1
 	${PYTHON_DEPS}
 	opencl? (
 		>=virtual/rust-1.62.0
 		>=dev-util/bindgen-0.58.0
 	)
+	>=dev-build/meson-1.4.1
 	app-alternatives/yacc
 	app-alternatives/lex
 	virtual/pkgconfig
@@ -171,7 +174,6 @@ BDEPEND="
 			>=dev-util/bindgen-0.68.1
 			>=dev-util/cbindgen-0.26.0
 			>=virtual/rust-1.74.1
-			<dev-build/meson-1.4.0
 		)
 	)
 	wayland? ( dev-util/wayland-scanner )
@@ -198,35 +200,44 @@ pkg_pretend() {
 		if ! use video_cards_d3d12 &&
 		   ! use video_cards_freedreno &&
 		   ! use video_cards_intel &&
+		   ! use video_cards_lavapipe &&
+		   ! use video_cards_nouveau &&
+		   ! use video_cards_nvk &&
+		   ! use video_cards_panfrost &&
+		   ! use video_cards_lima &&
 		   ! use video_cards_amdgpu &&
-		   ! use video_cards_v3d; then
-			ewarn "Ignoring USE=vulkan     since VIDEO_CARDS does not contain d3d12, freedreno, intel, amdgpu, or v3d"
+		   ! use video_cards_v3d &&
+		   ! use video_cards_virgl; then
+			ewarn "Ignoring USE=vulkan     since VIDEO_CARDS does not contain d3d12, freedreno, intel, lavapipe, nouveau, nvk, panfrost, amdgpu, v3d, or virgl"
 		fi
 	fi
 
+	# VA
 	if use vaapi; then
 		if ! use video_cards_d3d12 &&
+		   ! use video_cards_nouveau &&
 		   ! use video_cards_r600 &&
 		   ! use video_cards_lima &&
 		   ! use video_cards_panfrost &&
 		   ! use video_cards_amdgpu &&
-		   ! use video_cards_nouveau; then
-			ewarn "Ignoring USE=vaapi      since VIDEO_CARDS does not contain d3d12, r600, amdgpu, or nouveau"
+		   ! use video_cards_virgl; then
+			ewarn "Ignoring USE=vaapi      since VIDEO_CARDS does not contain d3d12, nouveau, r600, amdgpu, or virgl"
 		fi
 	fi
 
 	if use vdpau; then
 		if ! use video_cards_d3d12 &&
-		   ! use video_cards_r300 &&
+		   ! use video_cards_nouveau &&
 		   ! use video_cards_r600 &&
 		   ! use video_cards_amdgpu &&
-		   ! use video_cards_nouveau; then
-			ewarn "Ignoring USE=vdpau      since VIDEO_CARDS does not contain d3d12, r300, r600, amdgpu, or nouveau"
+		   ! use video_cards_virgl; then
+			ewarn "Ignoring USE=vdpau      since VIDEO_CARDS does not contain d3d12, nouveau, r600, amdgpu, or virgl"
 		fi
 	fi
 
 	if use xa; then
 		if ! use video_cards_freedreno &&
+		   ! use video_cards_intel &&
 		   ! use video_cards_nouveau &&
 		   ! use video_cards_vmware; then
 			ewarn "Ignoring USE=xa         since VIDEO_CARDS does not contain freedreno, nouveau, or vmware"
@@ -243,7 +254,8 @@ pkg_pretend() {
 }
 
 python_check_deps() {
-	python_has_version -b ">=dev-python/mako-0.8.0[${PYTHON_USEDEP}]" || return 1
+	python_has_version -b ">=dev-python/mako-0.8.0[${PYTHON_USEDEP}]" &&
+	python_has_version -b "dev-python/packaging[${PYTHON_USEDEP}]" || return 1
 	if use llvm && use vulkan && use video_cards_intel && use amd64; then
 		python_has_version -b "dev-python/ply[${PYTHON_USEDEP}]" || return 1
 	fi
@@ -302,23 +314,26 @@ multilib_src_configure() {
 	use wayland && platforms+=",wayland"
 	emesonargs+=(-Dplatforms=${platforms#,})
 
-	if use video_cards_intel ||
+	if use video_cards_freedreno ||
+	   use video_cards_intel || # crocus i915 iris
+	   use video_cards_nouveau ||
+	   use video_cards_panfrost ||
+	   use video_cards_lima ||
 	   use video_cards_r300 ||
 	   use video_cards_r600 ||
 	   use video_cards_amdgpu ||
-	   use video_cards_nouveau ||
-	   use video_cards_vmware; then
+	   use video_cards_vmware || # swrast
+	   use video_cards_zink; then
 		emesonargs+=($(meson_use d3d9 gallium-nine))
 	else
 		emesonargs+=(-Dgallium-nine=false)
 	fi
 
 	if use video_cards_d3d12 ||
-	   use video_cards_lima ||
-	   use video_cards_panfrost ||
+	   use video_cards_nouveau ||
 	   use video_cards_r600 ||
 	   use video_cards_amdgpu ||
-	   use video_cards_nouveau; then
+	   use video_cards_virgl; then
 		emesonargs+=($(meson_feature vaapi gallium-va))
 		use vaapi && emesonargs+=( -Dva-libs-path="${EPREFIX}"/usr/$(get_libdir)/va/drivers )
 	else
@@ -330,16 +345,17 @@ multilib_src_configure() {
 	fi
 
 	if use video_cards_d3d12 ||
-	   use video_cards_r300 ||
+	   use video_cards_nouveau ||
 	   use video_cards_r600 ||
 	   use video_cards_amdgpu ||
-	   use video_cards_nouveau; then
+	   use video_cards_virgl; then
 		emesonargs+=($(meson_feature vdpau gallium-vdpau))
 	else
 		emesonargs+=(-Dgallium-vdpau=disabled)
 	fi
 
 	if use video_cards_freedreno ||
+	   use video_cards_intel ||
 	   use video_cards_nouveau ||
 	   use video_cards_vmware; then
 		emesonargs+=($(meson_feature xa gallium-xa))
@@ -357,10 +373,10 @@ multilib_src_configure() {
 	fi
 
 	gallium_enable -- swrast
+	gallium_enable video_cards_d3d12 d3d12
 	gallium_enable video_cards_freedreno freedreno
 	gallium_enable video_cards_intel crocus i915 iris
 	gallium_enable video_cards_lima lima
-	gallium_enable video_cards_d3d12 d3d12
 	gallium_enable video_cards_nouveau nouveau
 	gallium_enable video_cards_panfrost panfrost
 	gallium_enable video_cards_v3d v3d
@@ -368,13 +384,13 @@ multilib_src_configure() {
 	gallium_enable video_cards_virgl virgl
 	gallium_enable video_cards_vivante etnaviv
 	gallium_enable video_cards_vmware svga
-	gallium_enable zink zink
+	gallium_enable video_cards_zink zink
 
 	gallium_enable video_cards_r300 r300
 	gallium_enable video_cards_r600 r600
 	gallium_enable video_cards_amdgpu radeonsi
-	if ! use video_cards_r300 && \
-		! use video_cards_r600; then
+	if ! use video_cards_r300 &&
+	   ! use video_cards_r600; then
 		gallium_enable video_cards_radeon r300 r600
 	fi
 
@@ -388,12 +404,16 @@ multilib_src_configure() {
 	fi
 
 	if use vulkan; then
-		vulkan_enable video_cards_lavapipe swrast
+		vulkan_enable video_cards_d3d12 microsoft-experimental
 		vulkan_enable video_cards_freedreno freedreno
 		vulkan_enable video_cards_intel intel intel_hasvk
-		vulkan_enable video_cards_d3d12 microsoft-experimental
+		vulkan_enable video_cards_lavapipe swrast
+		vulkan_enable video_cards_panfrost panfrost
+		vulkan_enable video_cards_panfrost lima
 		vulkan_enable video_cards_amdgpu amd
 		vulkan_enable video_cards_v3d broadcom
+		vulkan_enable video_cards_vc4 broadcom
+		vulkan_enable video_cards_virgl virtio
 		if use video_cards_nvk; then
 			vulkan_enable video_cards_nvk nouveau
 			if ! multilib_is_native_abi; then
@@ -427,6 +447,10 @@ multilib_src_configure() {
 		emesonargs+=(-Dglx=disabled)
 	fi
 
+	if [[ "${ABI}" == amd64 ]]; then
+		emesonargs+=($(meson_feature video_cards_intel intel-rt))
+	fi
+
 	use debug && EMESON_BUILDTYPE=debug
 
 	emesonargs+=(
@@ -445,7 +469,6 @@ multilib_src_configure() {
 		$(meson_use osmesa)
 		$(meson_use selinux)
 		$(meson_feature unwind libunwind)
-		$(meson_native_use_feature video_cards_intel intel-rt)
 		$(meson_feature zstd)
 		$(meson_use cpu_flags_x86_sse2 sse2)
 		-Dintel-clc=$(usex video_cards_intel system auto)
