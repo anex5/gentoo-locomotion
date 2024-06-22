@@ -1,24 +1,26 @@
-# Copyright 1999-2023 Gentoo Authors
+# Copyright 1999-2024 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
 VERIFY_SIG_OPENPGP_KEY_PATH="${BROOT}"/usr/share/openpgp-keys/tar.asc
-inherit verify-sig
+inherit multiprocessing verify-sig
 
 DESCRIPTION="Use this to make tarballs :)"
 HOMEPAGE="https://www.gnu.org/software/tar/"
-SRC_URI="mirror://gnu/tar/${P}.tar.xz
-	https://alpha.gnu.org/gnu/tar/${P}.tar.xz"
-SRC_URI+=" verify-sig? (
+SRC_URI="
+	mirror://gnu/tar/${P}.tar.xz
+	https://alpha.gnu.org/gnu/tar/${P}.tar.xz
+	verify-sig? (
 		mirror://gnu/tar/${P}.tar.xz.sig
 		https://alpha.gnu.org/gnu/tar/${P}.tar.xz.sig
-	)"
+	)
+"
 
 LICENSE="GPL-3+"
 SLOT="0"
-if [[ -z "$(ver_cut 3)" ]] || [[ "$(ver_cut 3)" -lt 90 ]] ; then
-	KEYWORDS="~alpha ~amd64 ~arm ~arm64 ~hppa ~ia64 ~loong ~m68k ~mips ~ppc ~ppc64 ~riscv ~s390 ~sparc ~x86 ~x64-cygwin ~amd64-linux ~x86-linux ~arm64-macos ~ppc-macos ~x64-macos ~sparc-solaris ~sparc64-solaris ~x64-solaris ~x86-solaris"
+if [[ -z "$(ver_cut 3)" || "$(ver_cut 3)" -lt 90 ]] ; then
+	KEYWORDS="~alpha amd64 ~arm arm64 hppa ~ia64 ~loong ~m68k ~mips ~ppc ppc64 ~riscv ~s390 sparc ~x86 ~amd64-linux ~x86-linux ~arm64-macos ~ppc-macos ~x64-macos ~x64-solaris"
 fi
 IUSE="acl +lbzip2 +pigz +pixz +plzip minimal nls selinux xattr"
 
@@ -40,10 +42,6 @@ BDEPEND="
 PDEPEND="
 	app-alternatives/tar
 "
-
-PATCHES=(
-	"${FILESDIR}"/${P}-fix-cve-2022-48303.patch
-)
 
 src_configure() {
 	# -fanalyzer doesn't make sense for us in ebuilds, as it's for static analysis
@@ -71,13 +69,21 @@ src_configure() {
 	use pixz && myeconfargs+=(--with-xz=pixz)
 	use plzip && myeconfargs+=(--with-lzip=plzip)
 
-	FORCE_UNSAFE_CONFIGURE=1 econf "${myeconfargs[@]}"
+	# Drop CONFIG_SHELL hack after 1.35: https://git.savannah.gnu.org/cgit/tar.git/commit/?id=7687bf4acc4dc4554538389383d7fb4c3e6521cd
+	CONFIG_SHELL="${BROOT}"/bin/bash FORCE_UNSAFE_CONFIGURE=1 econf "${myeconfargs[@]}"
+}
+
+src_test() {
+	# Drop after 1.35: https://git.savannah.gnu.org/cgit/tar.git/commit/?id=18f90676e4695ffcf13413e9fbb24cc0ae2ae9d5
+	local -x XZ_OPT= XZ_DEFAULTS=
+
+	emake check TESTSUITEFLAGS="--jobs=$(get_makeopts_jobs)"
 }
 
 src_install() {
 	default
 
-	# a nasty yet required piece of baggage
+	# A nasty yet required piece of baggage
 	exeinto /etc
 	doexe "${FILESDIR}"/rmt
 
@@ -99,13 +105,13 @@ src_install() {
 }
 
 pkg_postinst() {
-	# ensure to preserve the symlink before app-alternatives/tar
+	# Ensure to preserve the symlink before app-alternatives/tar
 	# is installed
 	if [[ ! -h ${EROOT}/bin/tar ]]; then
 		if [[ -e ${EROOT}/usr/bin/tar ]] ; then
 			# bug #904887
 			ewarn "${EROOT}/usr/bin/tar exists but is not a symlink."
-			ewarn "This is expected during Prefix bootstrap and unsual otherwise."
+			ewarn "This is expected during Prefix bootstrap and unusual otherwise."
 			ewarn "Moving away unexpected ${EROOT}/usr/bin/tar to .bak."
 			mv "${EROOT}/usr/bin/tar" "${EROOT}/usr/bin/tar.bak" || die
 		fi

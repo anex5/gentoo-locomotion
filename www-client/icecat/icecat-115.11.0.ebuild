@@ -8,12 +8,15 @@ FIREFOX_PATCHSET="firefox-${PV%%.*}esr-patches-09.tar.xz"
 
 LLVM_COMPAT=( 18 17 )
 PP="1"
-PYTHON_COMPAT=( python3_{10..12} )
+PYTHON_COMPAT=( python3_{10..11} )
 PYTHON_REQ_USE="ncurses,sqlite,ssl"
 
 WANT_AUTOCONF="2.1"
 
 VIRTUALX_REQUIRED="manual"
+
+MOZ_ESR=yes
+
 
 inherit autotools check-reqs desktop flag-o-matic gnome2-utils linux-info llvm-r1 multiprocessing \
 	 multilib-minimal rust-toolchain optfeature pax-utils python-any-r1 toolchain-funcs virtualx xdg
@@ -696,7 +699,7 @@ pkg_nofetch() {
 	fi
 }
 
-NABIS=0
+#NABIS=0
 pkg_setup() {
 	if [[ ${MERGE_TYPE} != binary ]] ; then
 		if use pgo ; then
@@ -824,6 +827,23 @@ pkg_setup() {
 			# If /dev/shm is not available, configure is known to fail with
 			# a traceback report referencing /usr/lib/pythonN.N/multiprocessing/synchronize.py
 			ewarn "/dev/shm is not mounted -- expect build failures!"
+		fi
+		# Google API keys (see http://www.chromium.org/developers/how-tos/api-keys)
+		# Note: These are for Gentoo Linux use ONLY. For your own distribution, please
+		# get your own set of keys.
+		if [[ -z "${MOZ_API_KEY_GOOGLE+set}" ]] ; then
+			MOZ_API_KEY_GOOGLE="AIzaSyDEAOvatFogGaPi0eTgsV_ZlEzx0ObmepsMzfAc"
+		fi
+
+		if [[ -z "${MOZ_API_KEY_LOCATION+set}" ]] ; then
+			MOZ_API_KEY_LOCATION="AIzaSyB2h2OuRgGaPicUgy5N-5hsZqiPW6sH3n_rptiQ"
+		fi
+
+		# Mozilla API keys (see https://location.services.mozilla.com/api)
+		# Note: These are for Gentoo Linux use ONLY. For your own distribution, please
+		# get your own set of keys.
+		if [[ -z "${MOZ_API_KEY_MOZILLA+set}" ]] ; then
+			MOZ_API_KEY_MOZILLA="edb3d487-3a84-46m0ap1e3-9dfd-92b5efaaa005"
 		fi
 
 		# Ensure we use C locale when building, bug #746215
@@ -955,6 +975,8 @@ src_prepare() {
 			export RUST_TARGET="x86_64-unknown-linux-musl"
 		elif use x86 ; then
 			export RUST_TARGET="i686-unknown-linux-musl"
+		elif use arm64 ; then
+			export RUST_TARGET="aarch64-unknown-linux-musl"
 		else
 			eerror
 			eerror "Unknown musl chost, please post your rustc -vV along with"
@@ -965,6 +987,11 @@ src_prepare() {
 	fi
 
 	# Make LTO respect MAKEOPTS
+	sed -i \
+		-e "s/multiprocessing.cpu_count()/$(makeopts_jobs)/" \
+		"${S}"/build/moz.configure/lto-pgo.configure \
+		|| die "sed failed to set num_cores"
+
 	# Make ICU respect MAKEOPTS
 	sed -i \
 		-e "s/multiprocessing.cpu_count()/$(makeopts_jobs)/" \
@@ -972,6 +999,11 @@ src_prepare() {
 		"${S}/intl/icu_sources_data.py" \
 		|| die "sed failed to set num_cores"
 
+	# sed-in toolchain prefix
+	sed -i \
+		-e "s/objdump/${CHOST}-objdump/" \
+		"${S}"/python/mozbuild/mozbuild/configure/check_debug_ranges.py \
+		|| die "sed failed to set toolchain prefix"
 
 	sed -i \
 		-e 's/ccache_stats = None/return None/' \
@@ -985,6 +1017,13 @@ src_prepare() {
 	# Clear cargo checksums from crates we have patched
 	# moz_clear_vendor_checksums crate
 	moz_clear_vendor_checksums audio_thread_priority
+
+	# Write API keys to disk
+	echo -n "${MOZ_API_KEY_GOOGLE//gGaPi/}" > "${S}"/api-google.key || die
+	echo -n "${MOZ_API_KEY_LOCATION//gGaPi/}" > "${S}"/api-location.key || die
+	echo -n "${MOZ_API_KEY_MOZILLA//m0ap1/}" > "${S}"/api-mozilla.key || die
+
+	xdg_environment_reset
 
 	(( ${NABIS} > 1 )) && multilib_copy_sources
 
@@ -1219,7 +1258,7 @@ _src_configure() {
 	einfo "Current CXXFLAGS:\t\t${CXXFLAGS:-no value set}"
 	einfo "Current LDFLAGS:\t\t${LDFLAGS:-no value set}"
 	einfo "Current RUSTFLAGS:\t\t${RUSTFLAGS:-no value set}"
-	einfo "Cross-compile CHOST:\t\t${CHOST}"
+	einfo "Current CHOST:\t\t${CHOST:-no value set}"
 	einfo
 
 	local have_switched_compiler=
@@ -1241,7 +1280,6 @@ _src_configure() {
 		fi
 		have_switched_compiler="yes"
 		AR="llvm-ar"
-		AS="llvm-as"
 		CC="${CHOST}-clang-${version_clang}"
 		CXX="${CHOST}-clang++-${version_clang}"
 		NM="llvm-nm"
@@ -1287,7 +1325,8 @@ _src_configure() {
 	# AS is used in a non-standard way by upstream, #bmo1654031
 	export HOST_CC="$(tc-getBUILD_CC)"
 	export HOST_CXX="$(tc-getBUILD_CXX)"
-	tc-export CC CXX LD AR NM OBJDUMP RANLIB PKG_CONFIG
+	export AS="$(tc-getCC) -c"
+	tc-export CC CXX LD AR AS NM OBJDUMP RANLIB PKG_CONFIG
 	_fix_paths
 	# Pass the correct toolchain paths through cbindgen
 	if tc-is-cross-compiler ; then
@@ -1389,9 +1428,9 @@ _src_configure() {
 	# Set update channel
 	mozconfig_add_options_ac '' --update-channel="esr"
 
-	if ! use x86 && [[ ${CHOST} != armv*h* ]] ; then
-		mozconfig_add_options_ac '' --enable-rust-simd
-	fi
+	#if ! use x86 && [[ ${CHOST} != armv*h* ]] ; then
+	#	mozconfig_add_options_ac '' --enable-rust-simd
+	#fi
 
 	# For future keywording: This is currently (97.0) only supported on:
 	# amd64, arm, arm64, and x86.
@@ -1410,9 +1449,41 @@ _src_configure() {
 		 mozconfig_add_options_ac 'Enable JIT for RISC-V 64' --enable-jit
 	fi
 
-	einfo "Building without Google API key ..."
-	einfo "Building without Location API key ..."
-	einfo "Building without Mozilla API key ..."
+	if [[ -s "${S}/api-google.key" ]] ; then
+		local key_origin="Gentoo default"
+		if [[ $(cat "${S}/api-google.key" | md5sum | awk '{ print $1 }') != 709560c02f94b41f9ad2c49207be6c54 ]] ; then
+			key_origin="User value"
+		fi
+
+		mozconfig_add_options_ac "${key_origin}" \
+			--with-google-safebrowsing-api-keyfile="${S}/api-google.key"
+	else
+		einfo "Building without Google API key ..."
+	fi
+
+	if [[ -s "${S}/api-location.key" ]] ; then
+		local key_origin="Gentoo default"
+		if [[ $(cat "${S}/api-location.key" | md5sum | awk '{ print $1 }') != ffb7895e35dedf832eb1c5d420ac7420 ]] ; then
+			key_origin="User value"
+		fi
+
+		mozconfig_add_options_ac "${key_origin}" \
+			--with-google-location-service-api-keyfile="${S}/api-location.key"
+	else
+		einfo "Building without Location API key ..."
+	fi
+
+	if [[ -s "${S}/api-mozilla.key" ]] ; then
+		local key_origin="Gentoo default"
+		if [[ $(cat "${S}/api-mozilla.key" | md5sum | awk '{ print $1 }') != 3927726e9442a8e8fa0e46ccc39caa27 ]] ; then
+			key_origin="User value"
+		fi
+
+		mozconfig_add_options_ac "${key_origin}" \
+			--with-mozilla-api-keyfile="${S}/api-mozilla.key"
+	else
+		einfo "Building without Mozilla API key ..."
+	fi
 
 	mozconfig_use_with system-av1
 	mozconfig_use_with system-harfbuzz
