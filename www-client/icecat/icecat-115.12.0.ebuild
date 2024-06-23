@@ -33,10 +33,10 @@ SRC_URI="
 DESCRIPTION="GNU IceCat Web Browser"
 HOMEPAGE="https://www.gnu.org/software/gnuzilla/"
 
-KEYWORDS="~amd64 ~arm64 ~ppc64 ~riscv ~x86"
 
-SLOT="0"
 LICENSE="MPL-2.0 GPL-2 LGPL-2.1"
+SLOT="0"
+KEYWORDS="~amd64 ~arm64 ~ppc64 ~riscv ~x86"
 
 CODEC_IUSE="
 -aac
@@ -1445,9 +1445,7 @@ _src_configure() {
 
 	# Enable JIT on riscv64 explicitly
 	# Can be removed once upstream enable it by default in the future.
-	if use riscv ; then
-		 mozconfig_add_options_ac 'Enable JIT for RISC-V 64' --enable-jit
-	fi
+	use riscv && mozconfig_add_options_ac 'Enable JIT for RISC-V 64' --enable-jit
 
 	if [[ -s "${S}/api-google.key" ]] ; then
 		local key_origin="Gentoo default"
@@ -1686,27 +1684,16 @@ _src_configure() {
 		fi
 	fi
 
-	if tc-is-clang ; then
-		# https://bugzilla.mozilla.org/show_bug.cgi?id=1482204
-		# https://bugzilla.mozilla.org/show_bug.cgi?id=1483822
-		# toolkit/moz.configure Elfhack section: target.cpu in ('arm', 'x86', 'x86_64')
-		local disable_elf_hack=
-		if use amd64 ; then
-			disable_elf_hack="yes"
-		elif use x86 ; then
-			disable_elf_hack="yes"
-		elif use arm ; then
-			disable_elf_hack="yes"
-		fi
-
-		if [[ -n ${disable_elf_hack} ]] ; then
-			mozconfig_add_options_ac 'elf-hack is broken when using Clang' --disable-elf-hack
-		fi
-	elif tc-is-gcc ; then
-		if ver_test $(gcc-fullversion) -ge 10 ; then
-			einfo "Forcing -fno-tree-loop-vectorize to workaround GCC bug, see bug 758446 ..."
-			append-cxxflags -fno-tree-loop-vectorize
-		fi
+	# With profile 23.0 elf-hack=legacy is broken with gcc.
+	# With Firefox-115esr elf-hack=relr isn't available (only in rapid).
+	# Solution: Disable build system's elf-hack completely, and add "-z,pack-relative-relocs"
+	#  manually with gcc.
+	#
+	# elf-hack configure option isn't available on ppc64/riscv, #916259, #929244, #930046.
+	if use ppc64 || use riscv ; then
+		:;
+	else
+		mozconfig_add_options_ac 'elf-hack disabled' --disable-elf-hack
 	fi
 
 	if (is_flagq_last "-O3" || is_flagq_last "-Ofast") \
@@ -1720,6 +1707,21 @@ _src_configure() {
 		ewarn "Use GCC >= 11.3 or Clang to prevent this bug."
 		ewarn
 	fi
+
+	# Additional ARCH support
+	case "${ARCH}" in
+		arm)
+			# Reduce the memory requirements for linking
+			if use clang ; then
+				# Nothing to do
+				:;
+			elif use lto ; then
+				append-ldflags -Wl,--no-keep-memory
+			else
+				append-ldflags -Wl,--no-keep-memory -Wl,--reduce-memory-overheads
+			fi
+			;;
+	esac
 
 	# Use the O(1) algorithm linker algorithm and add more swap instead.
 	ewarn
@@ -2078,5 +2080,11 @@ pkg_postinst() {
 		elog "glibc not found! You won't be able to play DRM content."
 		elog "See Gentoo bug #910309 or upstream bug #1843683."
 		elog
+	fi
+
+	if use geckodriver ; then
+		ewarn "You have enabled the 'geckodriver' USE flag. Geckodriver is now"
+		ewarn "packaged separately as net-misc/geckodriver and the use flag will be"
+		ewarn "dropped from main Firefox package by Firefox 128.0 release."
 	fi
 }
