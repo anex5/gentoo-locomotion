@@ -7,6 +7,6 @@ inherit acct-user
 
 DESCRIPTION="app-misc/klipper"
 ACCT_USER_ID="368"
-ACCT_USER_GROUPS=( dialout klipper uucp netdev tty )
+ACCT_USER_GROUPS=( dialout klipper uucp netdev plugdev tty )
 
 acct-user_add_deps
