@@ -828,6 +828,7 @@ pkg_setup() {
 			# a traceback report referencing /usr/lib/pythonN.N/multiprocessing/synchronize.py
 			ewarn "/dev/shm is not mounted -- expect build failures!"
 		fi
+
 		# Google API keys (see http://www.chromium.org/developers/how-tos/api-keys)
 		# Note: These are for Gentoo Linux use ONLY. For your own distribution, please
 		# get your own set of keys.

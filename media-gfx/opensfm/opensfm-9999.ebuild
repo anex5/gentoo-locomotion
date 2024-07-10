@@ -46,7 +46,7 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}"
 DEPEND="
 	dev-libs/boost[${PYTHON_USEDEP}]
 	media-libs/opencv:=[python,${PYTHON_USEDEP}]
-	<=sci-libs/ceres-solver-${CERES_PV}:=[sparse]
+	<=sci-libs/ceres-solver-${CERES_PV}:=
 	>=sci-libs/suitesparseconfig-7.6.0:=
 	>=sci-libs/amd-3.3.1:=
 	>=sci-libs/camd-3.3.1:=

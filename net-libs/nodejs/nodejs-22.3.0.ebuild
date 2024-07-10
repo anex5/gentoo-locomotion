@@ -54,7 +54,7 @@ RDEPEND="
 	>=net-libs/ngtcp2-1.6.0:=
 	>=sys-libs/zlib-1.3
 	corepack? ( !sys-apps/yarn )
-	system-icu? ( >=dev-libs/icu-75.1:= )
+	system-icu? ( >=dev-libs/icu-74.0:= )
 	system-ssl? ( >=dev-libs/openssl-3.0.13:0= )
 "
 BDEPEND="${PYTHON_DEPS}

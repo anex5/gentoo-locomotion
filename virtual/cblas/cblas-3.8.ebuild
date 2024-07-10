@@ -3,15 +3,15 @@
 
 EAPI="8"
 
-DESCRIPTION="Virtual for FORTRAN 77 BLAS implementation"
+DESCRIPTION="Virtual for BLAS C implementation"
 SLOT="0"
-KEYWORDS="~alpha amd64 arm arm64 ~hppa ~ia64 ~loong ~mips ~ppc ppc64 ~riscv ~s390 sparc x86 ~amd64-linux ~x86-linux ~arm64-macos ~ppc-macos ~x64-macos"
+KEYWORDS="~alpha amd64 arm arm64 hppa ~ia64 ~loong ~mips ~ppc ppc64 ~riscv ~s390 sparc x86 ~amd64-linux ~x86-linux ~arm64-macos ~ppc-macos ~x64-macos"
 IUSE="eselect-ldso"
 
 RDEPEND="
 	app-eselect/eselect-blas
 	eselect-ldso? ( || (
-		>=sci-libs/lapack-3.8[eselect-ldso]
+		>=sci-libs/lapack-3.8.0[eselect-ldso]
 		sci-libs/openblas[eselect-ldso]
 		sci-libs/blis[eselect-ldso] ) )
 "
