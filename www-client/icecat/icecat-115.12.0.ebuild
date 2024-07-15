@@ -6,9 +6,9 @@ EAPI=8
 # Using Gentoos firefox patches as system libraries and lto are quite nice
 FIREFOX_PATCHSET="firefox-${PV%%.*}esr-patches-09.tar.xz"
 
-LLVM_COMPAT=( 18 17 )
+LLVM_COMPAT=( 17 )
 PP="1"
-PYTHON_COMPAT=( python3_{10..11} )
+PYTHON_COMPAT=( python3_{11..13} )
 PYTHON_REQ_USE="ncurses,sqlite,ssl"
 
 WANT_AUTOCONF="2.1"
@@ -376,6 +376,7 @@ BDEPEND+="
 	>=dev-util/pkgconf-1.8.0[${MULTILIB_USEDEP},pkg-config(+)]
 	>=net-libs/nodejs-12
 	>=virtual/rust-1.69.0[${MULTILIB_USEDEP}]
+	<virtual/rust-1.78.0[${MULTILIB_USEDEP}]
 	app-alternatives/awk
 	app-arch/unzip
 	app-arch/zip
@@ -398,7 +399,10 @@ BDEPEND+="
 			x11-apps/xhost
 		)
 		wayland? (
-			>=gui-libs/wlroots-0.15.1-r1[tinywl]
+			|| (
+				gui-wm/tinywl
+				<gui-libs/wlroots-0.17.3[tinywl(-)]
+			)
 			x11-misc/xkeyboard-config
 		)
 	)
@@ -407,7 +411,7 @@ BDEPEND+="
 	)
 "
 
-RESTRICT="mirror test"
+RESTRICT="mirror"
 
 S="${WORKDIR}/${PN}-${PV%_*}"
 
@@ -522,7 +526,7 @@ moz_clear_vendor_checksums() {
 
 	sed -i \
 		-e 's/\("files":{\)[^}]*/\1/' \
-		"${S}"/third_party/rust/${1}/.cargo-checksum.json \
+		"${s}"/third_party/rust/${1}/.cargo-checksum.json \
 		|| die
 }
 
@@ -533,7 +537,7 @@ moz_build_xpi() {
 		fy-NL ga-IE gu-IN hi-IN hy-AM nb-NO ne-NP nn-NO pa-IN sv-SE
 	)
 
-	cd "${BUILD_DIR}"/browser/locales || die
+	cd "${BUILD_OBJ_DIR}"/browser/locales || die
 	local lang xflag
 	for lang in "${MOZ_LANGS[@]}"; do
 		# en and en_US are handled internally
@@ -987,13 +991,8 @@ src_prepare() {
 		fi
 	fi
 
-	# Make LTO respect MAKEOPTS
-	sed -i \
-		-e "s/multiprocessing.cpu_count()/$(makeopts_jobs)/" \
-		"${S}"/build/moz.configure/lto-pgo.configure \
-		|| die "sed failed to set num_cores"
 
-	# Make ICU respect MAKEOPTS
+	# Make LTO & ICU respect MAKEOPTS
 	sed -i \
 		-e "s/multiprocessing.cpu_count()/$(makeopts_jobs)/" \
 		"${S}/build/moz.configure/lto-pgo.configure" \
@@ -1281,6 +1280,7 @@ _src_configure() {
 		fi
 		have_switched_compiler="yes"
 		AR="llvm-ar"
+		AS="llvm-as"
 		CC="${CHOST}-clang-${version_clang}"
 		CXX="${CHOST}-clang++-${version_clang}"
 		NM="llvm-nm"
@@ -1326,8 +1326,7 @@ _src_configure() {
 	# AS is used in a non-standard way by upstream, #bmo1654031
 	export HOST_CC="$(tc-getBUILD_CC)"
 	export HOST_CXX="$(tc-getBUILD_CXX)"
-	export AS="$(tc-getCC) -c"
-	tc-export CC CXX LD AR AS NM OBJDUMP RANLIB PKG_CONFIG
+	tc-export CC CXX LD AR NM OBJDUMP RANLIB PKG_CONFIG
 	_fix_paths
 	# Pass the correct toolchain paths through cbindgen
 	if tc-is-cross-compiler ; then
@@ -1339,8 +1338,8 @@ _src_configure() {
 		"
 	fi
 
-	# MOZILLA_FIVE_HOME is dynamically generated per ABI in _fix_paths().
-	#
+	# Set MOZILLA_FIVE_HOME
+	export MOZILLA_FIVE_HOME="/usr/$(get_libdir)/${PN}"
 
 	# python/mach/mach/mixin/process.py fails to detect SHELL
 	export SHELL="${EPREFIX}/bin/bash"
@@ -1348,8 +1347,8 @@ _src_configure() {
 	# Set state path
 	export MOZBUILD_STATE_PATH="${s}"
 
-	# MOZCONFIG is dynamically generated per ABI in _fix_paths().
-	#
+	# Set MOZCONFIG
+	export MOZCONFIG="${s}/.mozconfig"
 
 	# Initialize MOZCONFIG
 	mozconfig_add_options_ac '' --enable-application="browser"
@@ -1448,38 +1447,38 @@ _src_configure() {
 	# Can be removed once upstream enable it by default in the future.
 	use riscv && mozconfig_add_options_ac 'Enable JIT for RISC-V 64' --enable-jit
 
-	if [[ -s "${S}/api-google.key" ]] ; then
+	if [[ -s "${s}/api-google.key" ]] ; then
 		local key_origin="Gentoo default"
-		if [[ $(cat "${S}/api-google.key" | md5sum | awk '{ print $1 }') != 709560c02f94b41f9ad2c49207be6c54 ]] ; then
+		if [[ $(cat "${s}/api-google.key" | md5sum | awk '{ print $1 }') != 709560c02f94b41f9ad2c49207be6c54 ]] ; then
 			key_origin="User value"
 		fi
 
 		mozconfig_add_options_ac "${key_origin}" \
-			--with-google-safebrowsing-api-keyfile="${S}/api-google.key"
+			--with-google-safebrowsing-api-keyfile="${s}/api-google.key"
 	else
 		einfo "Building without Google API key ..."
 	fi
 
-	if [[ -s "${S}/api-location.key" ]] ; then
+	if [[ -s "${s}/api-location.key" ]] ; then
 		local key_origin="Gentoo default"
-		if [[ $(cat "${S}/api-location.key" | md5sum | awk '{ print $1 }') != ffb7895e35dedf832eb1c5d420ac7420 ]] ; then
+		if [[ $(cat "${s}/api-location.key" | md5sum | awk '{ print $1 }') != ffb7895e35dedf832eb1c5d420ac7420 ]] ; then
 			key_origin="User value"
 		fi
 
 		mozconfig_add_options_ac "${key_origin}" \
-			--with-google-location-service-api-keyfile="${S}/api-location.key"
+			--with-google-location-service-api-keyfile="${s}/api-location.key"
 	else
 		einfo "Building without Location API key ..."
 	fi
 
-	if [[ -s "${S}/api-mozilla.key" ]] ; then
+	if [[ -s "${s}/api-mozilla.key" ]] ; then
 		local key_origin="Gentoo default"
-		if [[ $(cat "${S}/api-mozilla.key" | md5sum | awk '{ print $1 }') != 3927726e9442a8e8fa0e46ccc39caa27 ]] ; then
+		if [[ $(cat "${s}/api-mozilla.key" | md5sum | awk '{ print $1 }') != 3927726e9442a8e8fa0e46ccc39caa27 ]] ; then
 			key_origin="User value"
 		fi
 
 		mozconfig_add_options_ac "${key_origin}" \
-			--with-mozilla-api-keyfile="${S}/api-mozilla.key"
+			--with-mozilla-api-keyfile="${s}/api-mozilla.key"
 	else
 		einfo "Building without Mozilla API key ..."
 	fi
@@ -1939,7 +1938,7 @@ _src_install() {
 	fi
 
 	# Install language packs
-	local langpacks=( $(find "${BUILD_DIR}/dist/linux-x86_64/xpi" -type f -name '*.xpi') )
+	local langpacks=( $(find "${BUILD_OBJ_DIR}/dist/linux-x86_64/xpi" -type f -name '*.xpi') )
 	if [[ -n "${langpacks}" ]] ; then
 		moz_install_xpi "${MOZILLA_FIVE_HOME}/distribution/extensions" "${langpacks[@]}"
 	fi
@@ -1962,7 +1961,7 @@ _src_install() {
 	newins "${icon_symbolic_file}" "${PN}-symbolic.svg"
 
 	local icon size
-	for icon in "${icon_srcdir}/default*.png" ; do
+	for icon in "${icon_srcdir}/default"*".png" ; do
 		size=${icon%.png}
 		size=${size##*/default}
 
@@ -2000,7 +1999,7 @@ _src_install() {
 
 	# Install wrapper script
 	[[ -f "${ED}/usr/bin/${PN}" ]] && rm "${ED}/usr/bin/${PN}"
-	newbin "${FILESDIR}/extra-patches/${PN}-r1.sh" "${PN}-${ABI}"
+	newbin "${FILESDIR}/${PN}-r1.sh" "${PN}-${ABI}"
 	dosym "/usr/bin/${PN}-${ABI}" "/usr/bin/${PN}"
 
 	# Update wrapper
@@ -2057,6 +2056,23 @@ pkg_postinst() {
 		elog "used for sound.  If you wish to use pulseaudio instead please unmerge"
 		elog "media-sound/apulse."
 		elog
+	fi
+
+	if ! use hwaccel ; then
+		ewarn
+		ewarn "You must manually enable \"Use hardware acceleration when available\""
+		ewarn "for smoother scrolling and >= 25 FPS video playback."
+		ewarn
+		ewarn "For details, see https://support.mozilla.org/en-US/kb/performance-settings"
+		ewarn
+	fi
+	if use libcanberra ; then
+		if has_version "media-libs/libcanberra[-sound]" ; then
+			ewarn
+			ewarn "You need a sound theme to hear notifications."
+			ewarn "The default one can be installed with media-libs/libcanberra[sound]"
+			ewarn
+		fi
 	fi
 
 	# bug 835078
