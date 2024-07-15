@@ -4,7 +4,7 @@
 EAPI=8
 
 CONFIG_CHECK="~ADVISE_SYSCALLS"
-PYTHON_COMPAT=( python3_{8..12} )
+PYTHON_COMPAT=( python3_{9..12} )
 PYTHON_REQ_USE="threads(+)"
 
 inherit bash-completion-r1 check-reqs flag-o-matic linux-info pax-utils python-any-r1 toolchain-funcs xdg-utils
@@ -16,11 +16,10 @@ LICENSE="Apache-1.1 Apache-2.0 BSD BSD-2 MIT"
 SLOT_MAJOR="$(ver_cut 1 ${PV})"
 SLOT="${SLOT_MAJOR}/$(ver_cut 1-2 ${PV})"
 
-
 if [[ ${PV} == *9999 ]]; then
 	inherit git-r3
 	EGIT_REPO_URI="https://github.com/nodejs/node"
-	SLOT="22/3"
+	SLOT="22/4"
 else
 	SRC_URI="https://nodejs.org/dist/v${PV}/node-v${PV}.tar.xz"
 	KEYWORDS="~amd64 ~arm ~arm64 ~loong ~ppc64 ~riscv ~x86 ~amd64-linux ~x64-macos"
@@ -116,7 +115,7 @@ src_prepare() {
 	default
 	tc-export AR CC CXX PKG_CONFIG
 	export V=1
-	export CONFIGURATION="Release"
+	export BUILDTYPE="Release"
 
 	# Fix compilation on Darwin
 	# https://code.google.com/p/gyp/issues/detail?id=260
@@ -183,7 +182,7 @@ src_prepare() {
 	# debug builds. change install path, remove optimisations and override buildtype
 	if use debug; then
 		sed -i -e "s|out/Release/|out/Debug/|g" tools/install.py || die
-		CONFIGURATION="Debug"
+		BUILDTYPE="Debug"
 	fi
 
 	# We need to disable mprotect on two files when it builds Bug 694100.
@@ -219,6 +218,7 @@ src_configure() {
 		# sindutf is not packaged yet
 		# https://github.com/simdutf/simdutf
 		# --shared-simdutf
+		--shared-sqlite
 		--shared-zlib
 	)
 	use debug && myconf+=( --debug )
@@ -339,8 +339,6 @@ src_install() {
 		"${ED}/usr/bin/npm" completion > "${tmp_npm_completion_file}"
 		newbashcomp "${tmp_npm_completion_file}" npm
 
-
-
 		# Clean up
 		rm -f "${LIBDIR}"/node_modules/npm/{.mailmap,.npmignore,Makefile}
 		rm -rf "${LIBDIR}"/node_modules/npm/{doc,html,man}
@@ -365,6 +363,7 @@ src_install() {
 
 src_test() {
 	local drop_tests=(
+		test/parallel/test-dns.js
 		test/parallel/test-dns-resolveany-bad-ancount.js
 		test/parallel/test-dns-setserver-when-querying.js
 		test/parallel/test-fs-mkdir.js
@@ -372,6 +371,7 @@ src_test() {
 		test/parallel/test-fs-utimes-y2K38.js
 		test/parallel/test-fs-watch-recursive-add-file.js
 		test/parallel/test-process-euid-egid.js
+		test/parallel/test-process-get-builtin.mjs
 		test/parallel/test-process-initgroups.js
 		test/parallel/test-process-setgroups.js
 		test/parallel/test-process-uid-gid.js

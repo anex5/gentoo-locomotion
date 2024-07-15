@@ -526,7 +526,7 @@ moz_clear_vendor_checksums() {
 
 	sed -i \
 		-e 's/\("files":{\)[^}]*/\1/' \
-		"${s}"/third_party/rust/${1}/.cargo-checksum.json \
+		"${S}"/third_party/rust/${1}/.cargo-checksum.json \
 		|| die
 }
 
@@ -1345,7 +1345,7 @@ _src_configure() {
 	export SHELL="${EPREFIX}/bin/bash"
 
 	# Set state path
-	export MOZBUILD_STATE_PATH="${s}"
+	export MOZBUILD_STATE_PATH="${BUILD_OBJ_DIR}"
 
 	# Set MOZCONFIG
 	export MOZCONFIG="${s}/.mozconfig"
