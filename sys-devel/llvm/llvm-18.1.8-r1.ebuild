@@ -68,8 +68,8 @@ RDEPEND="
 		>=sys-devel/binutils-2.31.1-r4:*[plugins]
 	)
 	debuginfod? (
-		dev-cpp/cpp-httplib:=
 		net-misc/curl:=
+		dev-cpp/cpp-httplib:=
 	)
 	exegesis? ( dev-libs/libpfm:= )
 	libedit? ( dev-libs/libedit:0=[${MULTILIB_USEDEP}] )
@@ -281,6 +281,16 @@ get_distribution_components() {
 		LLVMTableGen
 
 	)
+
+	if use test; then
+		out+=(
+			# testing libraries
+			llvm_gtest
+			llvm_gtest_main
+			LLVMTestingAnnotations
+			LLVMTestingSupport
+		)
+	fi
 
 	if multilib_is_native_abi; then
 		out+=(
