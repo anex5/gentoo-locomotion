@@ -4,11 +4,11 @@
 EAPI=8
 
 # Using Gentoos firefox patches as system libraries and lto are quite nice
-FIREFOX_PATCHSET="firefox-${PV%%.*}esr-patches-09.tar.xz"
+FIREFOX_PATCHSET="firefox-${PV%%.*}esr-patches-12.tar.xz"
 
-LLVM_COMPAT=( 17 )
-PP="1"
-PYTHON_COMPAT=( python3_{11..13} )
+LLVM_COMPAT=( 18 )
+PP="3"
+PYTHON_COMPAT=( python3_{10..12} )
 PYTHON_REQ_USE="ncurses,sqlite,ssl"
 
 WANT_AUTOCONF="2.1"
@@ -376,13 +376,10 @@ BDEPEND+="
 	>=dev-util/pkgconf-1.8.0[${MULTILIB_USEDEP},pkg-config(+)]
 	>=net-libs/nodejs-12
 	>=virtual/rust-1.69.0[${MULTILIB_USEDEP}]
-	<virtual/rust-1.78.0[${MULTILIB_USEDEP}]
+	<virtual/rust-1.82.0[${MULTILIB_USEDEP}]
 	app-alternatives/awk
 	app-arch/unzip
 	app-arch/zip
-	amd64? (
-		>=dev-lang/nasm-${NASM_PV}
-	)
 	buildtarball? (
 		~www-client/makeicecat-"${PV}"[buildtarball]
 	)
@@ -392,6 +389,8 @@ BDEPEND+="
 	lld? (
 		sys-devel/lld
 	)
+	amd64? ( >=dev-lang/nasm-${NASM_PV} )
+	x86? ( >=dev-lang/nasm-${NASM_PV} )
 	pgo? (
 		X? (
 			sys-devel/gettext
@@ -967,6 +966,10 @@ src_prepare() {
 		rm -v "${WORKDIR}/firefox-patches/"*"bgo-748849-RUST_TARGET_override.patch" || die
 	fi
 
+	# Modify patch to apply correctly
+	sed -i -e 's/firefox/icecat/' "${WORKDIR}"/firefox-patches/0033-bmo-1882209-update-crates-for-rust-1.78-stripped-patch-from-bugs.freebsd.org-bug278834.patch || die
+	# sed -i -e 's/880c982df0843cbdff38b9f9c3829a2d863a224e4de2260c41c3ac69e9148ad4/239b3e4d20498f69ed5f94481ed932340bd58cb485b26c35b09517f249d20d11/' "${S}"/third_party/rust/bindgen/.cargo-checksum.json || die
+
 	eapply "${WORKDIR}/firefox-patches"
 
 	# Allow user to apply any additional patches without modifing ebuild
@@ -1007,7 +1010,7 @@ src_prepare() {
 
 	sed -i \
 		-e 's/ccache_stats = None/return None/' \
-		"${S}/python/mozbuild/mozbuild/controller/building.py" \
+		"${S}"/python/mozbuild/mozbuild/controller/building.py \
 		|| die "sed failed to disable ccache stats call"
 
 	einfo "Removing pre-built binaries ..."
@@ -1017,6 +1020,10 @@ src_prepare() {
 	# Clear cargo checksums from crates we have patched
 	# moz_clear_vendor_checksums crate
 	moz_clear_vendor_checksums audio_thread_priority
+	moz_clear_vendor_checksums bindgen
+	moz_clear_vendor_checksums encoding_rs
+	moz_clear_vendor_checksums any_all_workaround
+	moz_clear_vendor_checksums packed_simd
 
 	# Write API keys to disk
 	echo -n "${MOZ_API_KEY_GOOGLE//gGaPi/}" > "${S}"/api-google.key || die
