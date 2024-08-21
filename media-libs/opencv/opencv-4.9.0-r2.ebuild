@@ -248,6 +248,10 @@ DEPEND+="
 		)
 	)
 "
+RDEPEND="
+	${COMMON_DEPEND}
+	java? ( >=virtual/jre-1.8:* )
+"
 BDEPEND="
 	virtual/pkgconfig
 	cuda? ( dev-util/nvidia-cuda-toolkit:0= )
@@ -257,6 +261,7 @@ BDEPEND="
 			dev-python/beautifulsoup4[${PYTHON_USEDEP}]
 		)
 	)
+	java? ( >=dev-java/ant-1.10.14-r3 )
 "
 
 RESTRICT="
@@ -350,6 +355,10 @@ src_prepare() {
 		cd "${WORKDIR}/${PN}_contrib-${PV}" || die
 		eapply "${FILESDIR}/${PN}_contrib-4.8.1-rgbd.patch"
 		eapply "${FILESDIR}/${PN}_contrib-4.8.1-NVIDIAOpticalFlowSDK-2.0.tar.gz.patch"
+		if has_version ">=dev-util/nvidia-cuda-toolkit-12.4" && use cuda; then
+			# TODO https://github.com/NVIDIA/cccl/pull/1522
+			eapply "${FILESDIR}/${PN}_contrib-4.9.0-cuda-12.4.patch"
+		fi
 		cd "${S}" || die
 
 		! use contribcvv && { rm -R "${WORKDIR}/${PN}_contrib-${PV}/modules/cvv" || die; }
@@ -434,10 +443,10 @@ src_prepare() {
 	if use java; then
 		java-pkg-opt-2_src_prepare
 
-		# this really belongs in src_prepare() too
-		JAVA_ANT_ENCODING="iso-8859-1"
 		# set encoding so even this cmake build will pick it up.
 		export ANT_OPTS+=" -Dfile.encoding=iso-8859-1"
+		export ANT_OPTS+=" -Dant.build.javac.source=$(java-pkg_get-source)"
+		export ANT_OPTS+=" -Dant.build.javac.target=$(java-pkg_get-target)"
 	fi
 }
 
@@ -452,7 +461,6 @@ multilib_src_configure() {
 	local mycmakeargs=(
 		-DMIN_VER_CMAKE=3.26
 
-		-DCMAKE_POLICY_DEFAULT_CMP0146="OLD" # FindCUDA
 		-DCMAKE_POLICY_DEFAULT_CMP0148="OLD" # FindPythonInterp
 
 		# for protobuf
@@ -607,7 +615,7 @@ multilib_src_configure() {
 	# ===================================================
 	# things we want to be hard enabled not worth useflag
 	# ===================================================
-		# -DOPENCV_DOC_INSTALL_PATH="share/doc/${P}"
+		-DOPENCV_DOC_INSTALL_PATH="share/doc/${P}"
 		# NOTE do this so testprograms do not fail TODO adjust path in code
 		-DOPENCV_TEST_DATA_INSTALL_PATH="share/${PN}$(ver_cut 1)/testdata"
 		-DOPENCV_TEST_INSTALL_PATH="libexec/${PN}/bin/test"
@@ -619,6 +627,7 @@ multilib_src_configure() {
 	# ===================================================
 	# configure modules to be build
 	# ===================================================
+		-DBUILD_opencv_gapi="$(usex ffmpeg yes "$(usex gstreamer)")"
 		-DBUILD_opencv_features2d="$(usex features2d)"
 		-DBUILD_opencv_java_bindings_generator="$(usex java)"
 		-DBUILD_opencv_js="no"
@@ -705,9 +714,11 @@ multilib_src_configure() {
 	# workaround for bug 413429
 	tc-export CC CXX
 
-	if use cuda; then
+	if multilib_is_native_abi && use cuda; then
 		cuda_add_sandbox -w
+		addwrite "/proc/self/task"
 		CUDAHOSTCXX="$(cuda_get_cuda_compiler)"
+		CUDAARCHS="$(cuda_get_host_native_arch)"
 		export CUDAHOSTCXX
 
 		for CT in ${CUDA_TARGETS_COMPAT[@]}; do
@@ -728,6 +739,14 @@ multilib_src_configure() {
 	if use ffmpeg; then
 		mycmakeargs+=(
 			-DOPENCV_GAPI_GSTREAMER="no"
+		)
+	fi
+
+	# according to modules/java/jar/CMakeLists.txt:23-26
+	if use java; then
+		mycmakeargs+=(
+			-DOPENCV_JAVA_SOURCE_VERSION="$(java-pkg_get-source)"
+			-DOPENCV_JAVA_TARGET_VERSION="$(java-pkg_get-target)"
 		)
 	fi
 
@@ -784,7 +803,6 @@ multilib_src_configure() {
 				-DBUILD_NEW_PYTHON_SUPPORT="ON"
 			)
 			cmake_src_configure
-			use java && java-ant-2_src_configure
 		}
 
 		python_foreach_impl python_configure
@@ -799,14 +817,16 @@ multilib_src_configure() {
 		)
 		cmake_src_configure
 	fi
-	use java && java-ant-2_src_configure
 }
 
 multilib_src_compile() {
-	if multilib_is_native_abi && use python; then
-		python_foreach_impl cmake_src_compile
-	else
+	opencv_compile() {
 		cmake_src_compile
+	}
+	if multilib_is_native_abi && use python; then
+		python_foreach_impl opencv_compile
+	else
+		opencv_compile
 	fi
 }
 
@@ -827,7 +847,7 @@ multilib_src_test() {
 		)
 	fi
 
-	if use cuda; then
+	if multilib_is_native_abi && use cuda; then
 		CMAKE_SKIP_TESTS+=(
 			'CUDA_OptFlow/BroxOpticalFlow.Regression/0'
 			'CUDA_OptFlow/BroxOpticalFlow.OpticalFlowNan/0'
@@ -853,7 +873,7 @@ multilib_src_test() {
 		--test-timeout 180
 	)
 
-	if use cuda; then
+	if multilib_is_native_abi && use cuda; then
 		cuda_add_sandbox -w
 		export OPENCV_PARALLEL_BACKEND="threads"
 		export DNN_BACKEND_OPENCV="cuda"
