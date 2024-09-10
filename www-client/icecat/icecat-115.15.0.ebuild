@@ -4,10 +4,10 @@
 EAPI=8
 
 # Using Gentoos firefox patches as system libraries and lto are quite nice
-FIREFOX_PATCHSET="firefox-${PV%%.*}esr-patches-12.tar.xz"
+FIREFOX_PATCHSET="firefox-${PV%%.*}esr-patches-13.tar.xz"
 
 LLVM_COMPAT=( 18 )
-PP="3"
+PP="1"
 PYTHON_COMPAT=( python3_{10..12} )
 PYTHON_REQ_USE="ncurses,sqlite,ssl"
 
@@ -2090,6 +2090,7 @@ pkg_postinst() {
 		ewarn "explained in https://bugs.gentoo.org/835078#c5 if Firefox crashes."
 	fi
 
+	readme.gentoo_print_elog
 
 	optfeature_header "Optional programs for extra features:"
 	optfeature "desktop notifications" x11-libs/libnotify
