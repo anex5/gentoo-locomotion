@@ -3,10 +3,10 @@
 
 EAPI=8
 
-LLVM_COMPAT=( {15..18} )
+LLVM_COMPAT=( {18..19} )
 LLVM_OPTIONAL=1
 CARGO_OPTIONAL=1
-PYTHON_COMPAT=( python3_{10..12} )
+PYTHON_COMPAT=( python3_{10..13} )
 
 inherit flag-o-matic llvm-r1 meson-multilib python-any-r1 linux-info rust-toolchain toolchain-funcs
 
@@ -32,7 +32,7 @@ else
 	SRC_URI="
 		https://archive.mesa3d.org/${MY_P}.tar.xz
 	"
-	KEYWORDS="~alpha ~amd64 ~arm ~arm64 ~hppa ~ia64 ~loong ~mips ~ppc ~ppc64 ~riscv ~s390 ~sparc ~x86 ~amd64-linux ~x86-linux ~x64-solaris"
+	KEYWORDS="~alpha ~amd64 ~arm ~arm64 ~hppa ~loong ~mips ~ppc ~ppc64 ~riscv ~s390 ~sparc ~x86 ~amd64-linux ~x86-linux ~x64-solaris"
 fi
 
 # This should be {CARGO_CRATE_URIS//.crate/.tar.gz} to correspond to the wrap files,
@@ -89,7 +89,7 @@ REQUIRED_USE="
 	X? ( gles1? ( opengl ) gles2? ( opengl ) )
 "
 
-LIBDRM_DEPSTRING=">=x11-libs/libdrm-2.4.119"
+LIBDRM_DEPSTRING=">=x11-libs/libdrm-2.4.121"
 RDEPEND="
 	>=dev-libs/expat-2.1.0-r3[${MULTILIB_USEDEP}]
 	>=media-libs/libglvnd-1.3.2[X?,${MULTILIB_USEDEP}]
@@ -170,6 +170,7 @@ BDEPEND="
 	$(python_gen_any_dep "
 		>=dev-python/mako-0.8.0[\${PYTHON_USEDEP}]
 		dev-python/packaging[\${PYTHON_USEDEP}]
+		dev-python/pyyaml[\${PYTHON_USEDEP}]
 	")
 	video_cards_intel? (
 		~dev-util/intel_clc-${PV}
@@ -275,7 +276,8 @@ pkg_pretend() {
 
 python_check_deps() {
 	python_has_version -b ">=dev-python/mako-0.8.0[${PYTHON_USEDEP}]" &&
-	python_has_version -b "dev-python/packaging[${PYTHON_USEDEP}]" || return 1
+	python_has_version -b "dev-python/packaging[${PYTHON_USEDEP}]" &&
+	python_has_version -b "dev-python/pyyaml[${PYTHON_USEDEP}]" || return 1
 	if use llvm && use vulkan && use video_cards_intel && use amd64; then
 		python_has_version -b "dev-python/ply[${PYTHON_USEDEP}]" || return 1
 	fi
@@ -369,16 +371,8 @@ multilib_src_configure() {
 		emesonargs+=(-Dgallium-xa=disabled)
 	fi
 
-	if use video_cards_freedreno ||
-	   use video_cards_lima ||
-	   use video_cards_panfrost ||
-	   use video_cards_v3d ||
-	   use video_cards_vc4 ||
-	   use video_cards_vivante; then
-		gallium_enable -- kmsro
-	fi
-
-	gallium_enable -- swrast
+	gallium_enable !llvm softpipe
+	gallium_enable llvm llvmpipe
 	gallium_enable video_cards_d3d12 d3d12
 	gallium_enable video_cards_freedreno freedreno
 	gallium_enable video_cards_intel crocus i915 iris
