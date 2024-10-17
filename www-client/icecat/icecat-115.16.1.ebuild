@@ -6,8 +6,8 @@ EAPI=8
 # Using Gentoos firefox patches as system libraries and lto are quite nice
 FIREFOX_PATCHSET="firefox-${PV%%.*}esr-patches-13.tar.xz"
 
-LLVM_COMPAT=( 18 )
-PP="2"
+LLVM_COMPAT=( 18 19 )
+PP="1"
 PYTHON_COMPAT=( python3_{10..12} )
 PYTHON_REQ_USE="ncurses,sqlite,ssl"
 
@@ -16,7 +16,6 @@ WANT_AUTOCONF="2.1"
 VIRTUALX_REQUIRED="manual"
 
 MOZ_ESR=yes
-
 
 inherit autotools check-reqs desktop flag-o-matic gnome2-utils linux-info llvm-r1 multiprocessing \
 	 multilib-minimal rust-toolchain optfeature pax-utils python-any-r1 toolchain-funcs virtualx xdg

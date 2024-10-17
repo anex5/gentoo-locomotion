@@ -4,7 +4,7 @@
 EAPI=8
 
 CONFIG_CHECK="~ADVISE_SYSCALLS"
-PYTHON_COMPAT=( python3_{9..12} )
+PYTHON_COMPAT=( python3_{11..13} )
 PYTHON_REQ_USE="threads(+)"
 
 inherit bash-completion-r1 check-reqs flag-o-matic linux-info pax-utils python-any-r1 toolchain-funcs xdg-utils
@@ -26,7 +26,9 @@ else
 	S="${WORKDIR}/node-v${PV}"
 fi
 
-IUSE="+corepack cpu_flags_x86_sse2 debug doc +icu inspector lto lld man mold +npm pax-kernel +snapshot +ssl system-icu +system-ssl test"
+IUSE="+corepack cpu_flags_x86_sse2 debug doc +icu inspector +jit \
+lto lld man mold +npm pax-kernel -pointer-compression +snapshot +ssl \
+system-icu +system-ssl test"
 REQUIRED_USE="
 	^^ ( mold lld )
 	corepack
@@ -46,6 +48,7 @@ RDEPEND="
 	!net-libs/nodejs:0
 	>=app-arch/brotli-1.1.0
 	>=app-eselect/eselect-nodejs-20230521
+	dev-db/sqlite:3
 	>=dev-libs/libuv-1.48.0:=
 	>=dev-libs/simdjson-3.9.4:=
 	>=net-dns/c-ares-1.29.0
@@ -53,8 +56,12 @@ RDEPEND="
 	>=net-libs/ngtcp2-1.6.0:=
 	>=sys-libs/zlib-1.3
 	corepack? ( !sys-apps/yarn )
-	system-icu? ( >=dev-libs/icu-74.0:= )
-	system-ssl? ( >=dev-libs/openssl-3.0.13:0= )
+	system-icu? ( >=dev-libs/icu-73.0:= )
+	system-ssl? (
+		>=net-libs/ngtcp2-1.3.0:=
+		>=dev-libs/openssl-3.0.13:0=
+	)
+	!system-ssl? ( >=net-libs/ngtcp2-1.3.0:=[-gnutls] )
 "
 BDEPEND="${PYTHON_DEPS}
 	app-alternatives/ninja
@@ -242,18 +249,23 @@ src_configure() {
 		myconf+=( --without-ssl )
 	fi
 
-	local myarch=""
-	case "${ARCH}:${ABI}" in
-		*:amd64) myarch="x64";;
-		*:arm) myarch="arm";;
-		*:arm64) myarch="arm64";;
-		loong:lp64*) myarch="loong64";;
-		riscv:lp64*) myarch="riscv64";;
-		*:ppc64) myarch="ppc64";;
-		*:x32) myarch="x32";;
-		*:x86) myarch="ia32";;
-		*) myarch="${ABI}";;
-	esac
+	use jit || myconf+=( --v8-lite-mode )
+	if use jit && use debug && has_version "dev-debug/gdb" ; then
+		myconf+=( --gdb )
+	fi
+	use pointer-compression && myconf+=( --experimental-enable-pointer-compression )
+	if use kernel_linux && linux_chkconfig_present "TRANSPARENT_HUGEPAGE" ; then
+		myconf+=( --v8-enable-hugepage )
+	fi
+	if ! use pointer-compression ; then
+		ewarn "Disabing USE=pointer-compression will disable the V8 Sandbox."
+	fi
+
+	local myarch
+	myarch="${ABI/amd64/x64}"
+	myarch="${myarch/x86/ia32}"
+	[[ "${ARCH}:${ABI}" =~ "loong:lp64" ]] && myarch="loong64"
+	[[ "${ARCH}:${ABI}" =~ "riscv:lp64" ]] && myarch="riscv64"
 
 	GYP_DEFINES="linux_use_gold_flags=0
 		linux_use_bundled_binutils=0
@@ -362,28 +374,25 @@ src_install() {
 }
 
 src_test() {
-	local drop_tests=(
-		test/parallel/test-dns.js
-		test/parallel/test-dns-resolveany-bad-ancount.js
-		test/parallel/test-dns-setserver-when-querying.js
-		test/parallel/test-fs-mkdir.js
-		test/parallel/test-fs-read-stream.js
-		test/parallel/test-fs-utimes-y2K38.js
-		test/parallel/test-fs-watch-recursive-add-file.js
-		test/parallel/test-process-euid-egid.js
-		test/parallel/test-process-get-builtin.mjs
-		test/parallel/test-process-initgroups.js
-		test/parallel/test-process-setgroups.js
-		test/parallel/test-process-uid-gid.js
-		test/parallel/test-release-npm.js
-		test/parallel/test-socket-write-after-fin-error.js
-		test/parallel/test-strace-openat-openssl.js
-		test/sequential/test-util-debug.js
-	)
-	rm -f "${drop_tests[@]}" || die "disabling tests failed"
+	if has usersandbox ${FEATURES}; then
+		rm -f "${S}/test/parallel/test-fs-mkdir.js"
+		ewarn
+		ewarn "You are emerging ${PN} with 'usersandbox' enabled. Excluding tests known"
+		ewarn "to fail in this mode.  For full test coverage, emerge =${CATEGORY}/${PF}"
+		ewarn "with 'FEATURES=-usersandbox'."
+		ewarn
+	fi
 
-	out/${BUILDTYPE}/cctest || die
-	"${EPYTHON}" tools/test.py --mode=${BUILDTYPE,,} --flaky-tests=dontcare -J message parallel sequential || die
+	"out/${CONFIGURATION}/cctest" || die
+	"${EPYTHON}" \
+		"tools/test.py" \
+		--mode="${CONFIGURATION,,}" \
+		--flaky-tests="dontcare" \
+		-J \
+		message \
+		parallel \
+		sequential \
+		|| die
 }
 
 pkg_postinst() {
