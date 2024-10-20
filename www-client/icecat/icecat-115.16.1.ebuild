@@ -8,7 +8,7 @@ FIREFOX_PATCHSET="firefox-${PV%%.*}esr-patches-13.tar.xz"
 
 LLVM_COMPAT=( 18 19 )
 PP="1"
-PYTHON_COMPAT=( python3_{10..12} )
+PYTHON_COMPAT=( python3_{10..13} )
 PYTHON_REQ_USE="ncurses,sqlite,ssl"
 
 WANT_AUTOCONF="2.1"
@@ -375,7 +375,7 @@ BDEPEND+="
 	>=dev-util/pkgconf-1.8.0[${MULTILIB_USEDEP},pkg-config(+)]
 	>=net-libs/nodejs-12
 	>=virtual/rust-1.69.0[${MULTILIB_USEDEP}]
-	<virtual/rust-1.82.0[${MULTILIB_USEDEP}]
+	<virtual/rust-1.83.0[${MULTILIB_USEDEP}]
 	app-alternatives/awk
 	app-arch/unzip
 	app-arch/zip

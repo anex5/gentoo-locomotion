@@ -6,6 +6,7 @@ EAPI=8
 CONFIG_CHECK="~ADVISE_SYSCALLS"
 PYTHON_COMPAT=( python3_{11..13} )
 PYTHON_REQ_USE="threads(+)"
+MULTIPLEXER_VER="11"
 
 inherit bash-completion-r1 check-reqs flag-o-matic linux-info pax-utils python-any-r1 toolchain-funcs xdg-utils
 
@@ -19,7 +20,7 @@ SLOT="${SLOT_MAJOR}/$(ver_cut 1-2 ${PV})"
 if [[ ${PV} == *9999 ]]; then
 	inherit git-r3
 	EGIT_REPO_URI="https://github.com/nodejs/node"
-	SLOT="22/4"
+	SLOT="23/0"
 else
 	SRC_URI="https://nodejs.org/dist/v${PV}/node-v${PV}.tar.xz"
 	KEYWORDS="~amd64 ~arm ~arm64 ~loong ~ppc64 ~riscv ~x86 ~amd64-linux ~x64-macos"
@@ -119,7 +120,6 @@ is_flagq_last() {
 }
 
 src_prepare() {
-	default
 	tc-export AR CC CXX PKG_CONFIG
 	export V=1
 	export BUILDTYPE="Release"
@@ -138,6 +138,14 @@ src_prepare() {
 
 	# Avoid writing a depfile, not useful
 	sed -i -e "/DEPFLAGS =/d" tools/gyp/pylib/gyp/generator/make.py || die
+
+	# We need to disable mprotect on two files when it builds Bug 694100.
+	use pax-kernel && PATCHES+=( "${FILESDIR}"/${PN}-20.6.0-paxmarking.patch )
+
+	# https://github.com/nodejs/node/issues/51339
+	use pointer-compression && PATCHES+=( "${FILESDIR}"/${PN}-23.0.0-fix-v8-external-code-space.patch )
+
+	default
 
 	local FP=(
 		$(grep -l -r -e "-O3" $(find deps/openssl -name "*.gn*" -o -name "*gyp*"))
@@ -191,10 +199,6 @@ src_prepare() {
 		sed -i -e "s|out/Release/|out/Debug/|g" tools/install.py || die
 		BUILDTYPE="Debug"
 	fi
-
-	# We need to disable mprotect on two files when it builds Bug 694100.
-	use pax-kernel && PATCHES+=( "${FILESDIR}"/${PN}-20.6.0-paxmarking.patch )
-
 }
 
 src_configure() {
@@ -296,7 +300,7 @@ src_install() {
 		--prefix "${EPREFIX}/usr" \
 		|| die
 
-	mv "${ED}/usr/bin/node"{"","${SLOT_MAJOR}"} || die
+	mv "${ED}/usr/bin/node" "${ED}/usr/bin/node${SLOT_MAJOR}" || die
 	dosym "node${SLOT_MAJOR}" "/usr/bin/node"
 
 	pax-mark -m "${ED}/usr/bin/node${SLOT_MAJOR}"
@@ -371,6 +375,10 @@ src_install() {
 				"${find_name[@]}" \
 			\) \) -exec rm -rf "{}" \;
 	fi
+	cp --remove-destination "${FILESDIR}/node-multiplexer-v${MULTIPLEXER_VER}" "${ED}/usr/bin/node" || die
+	sed -e "s|__EPREFIX__|${EPREFIX}|g" -i "${ED}/usr/bin/node" || die
+	fperms 0755 "/usr/bin/node" || die
+	fowners -R root:root "/usr/bin/node" || die
 }
 
 src_test() {
@@ -400,21 +408,11 @@ pkg_postinst() {
 		ewarn "remember to run: source /etc/profile if you plan to use nodejs"
 		ewarn "	in your current shell"
 	fi
-	if has_version ">=net-libs/nodejs-${PV}" ; then
+	if has_version ">net-libs/nodejs-${PV}" ; then
 		einfo "Found higher slots, manually change the headers with \`eselect nodejs\`."
 	else
 		eselect nodejs set "node${SLOT_MAJOR}"
 	fi
-	cp \
-		"${FILESDIR}/node-multiplexer-v${MULTIPLEXER_VER}" \
-		"${EROOT}/usr/bin/node" \
-		|| die
-	sed -i \
-		-e "s|__EPREFIX__|${EPREFIX}|g" \
-		"${EROOT}/usr/bin/node" \
-		|| die
-	chmod 0755 "/usr/bin/node" || die
-	chown "root:root" "/usr/bin/node" || die
 	grep -q -F "NODE_VERSION" "${EROOT}/usr/bin/node" || die "Wrapper did not copy."
 	einfo
 	einfo "When compiling with nodejs multislot, you to switch via"
