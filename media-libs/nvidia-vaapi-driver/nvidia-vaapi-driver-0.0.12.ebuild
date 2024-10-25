@@ -3,37 +3,40 @@
 
 EAPI=8
 
-inherit meson
+inherit meson-multilib
 
-NV_VER="545.29.06"
-COMMIT_HASH="746d5510eabe949def3c79acc856393596d75cf5"
+NV_VER="560.35.03"
+COMMIT_HASH="68efa33131745f1b2d530c64f6692f3993f3d53c"
 
 DESCRIPTION="A VA-API implemention using NVIDIA's NVDEC, specifically designed to be used by Firefox"
 HOMEPAGE="https://github.com/elFarto/nvidia-vaapi-driver"
 #SRC_URI="https://github.com/elFarto/nvidia-vaapi-driver/archive/refs/tags/v${PV}.tar.gz -> ${P}.tar.gz"
 SRC_URI="
 	https://github.com/elFarto/nvidia-vaapi-driver/archive/${COMMIT_HASH}.tar.gz -> ${P}-${COMMIT_HASH}.tar.gz
-	https://github.com/NVIDIA/open-gpu-kernel-modules/archive/refs/tags/${NV_VER}.tar.gz -> open-gpu-kernel-modules-${NV_VER}.tar.gz
+	kernel-open? ( https://github.com/NVIDIA/open-gpu-kernel-modules/archive/refs/tags/${NV_VER}.tar.gz -> open-gpu-kernel-modules-${NV_VER}.tar.gz )
 "
 
 LICENSE="MIT"
 SLOT="0"
 KEYWORDS="~amd64"
-IUSE="-kernel-open"
+IUSE="kernel-open"
 
 RDEPEND="
 	>=x11-drivers/nvidia-drivers-${NV_VER}:=[kernel-open?]
 	>=media-libs/libva-2.20
+	media-libs/libglvnd
+	>=x11-libs/libdrm-2.4.60
 "
 BDEPEND="
 	dev-build/meson
 	>=media-libs/nv-codec-headers-12.1.14:=
 	>=media-video/ffmpeg-6.1:=[nvenc]
+	virtual/pkgconfig
 "
 
 RESTRICT="mirror"
 
-#PATCHES=( "${FILESDIR}/${PN}-0.0.8-install-path.patch" )
+PATCHES=( "${FILESDIR}/${PN}-wayland-fix.patch" )
 
 S=${WORKDIR}/${PN}-${COMMIT_HASH}
 
@@ -46,8 +49,14 @@ src_prepare() {
 }
 
 pkg_postinst() {
-	ewarn "This library requires special configuration! See "
-	ewarn "${HOMEPAGE}"
-	ewarn "The direct backend is currently required on NVIDIA driver series 525 due to a regression"
-	ewarn "See ${HOMEPAGE}/issues/126"
+	elog "This library requires special configuration! See "
+	elog "${HOMEPAGE}"
+
+	# Source: https://github.com/elFarto/nvidia-vaapi-driver/blob/v0.0.12/src/backend-common.c#L13
+	elog "If vaapi drivers fail to load, then make sure that you are"
+	elog "passing the correct parameters to the kernel."
+	elog "nvidia_drm.modeset should be set to 1."
+
+	elog "Check the wiki page for more information: "
+	elog "https://wiki.gentoo.org/wiki/VAAPI"
 }
