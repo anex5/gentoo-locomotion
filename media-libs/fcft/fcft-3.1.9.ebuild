@@ -15,7 +15,7 @@ S="${WORKDIR}/${PN}"
 # ZLIB for nanosvg
 LICENSE="MIT ZLIB"
 SLOT="0"
-KEYWORDS="~amd64 ~arm64 ~arm ~x86"
+KEYWORDS="~amd64 ~arm64 ~arm ~ppc64 ~riscv ~x86"
 IUSE="examples +harfbuzz +libutf8proc man test"
 REQUIRED_USE="
 	libutf8proc? ( harfbuzz )
@@ -92,7 +92,7 @@ src_install() {
 	local DOCS=( CHANGELOG.md README.md )
 	meson_src_install
 
-	rm -r "${ED}"/usr/share/doc/${PF}
+	rm -r "${ED}"/usr/share/doc/${PN}
 
 	use examples && newbin "${BUILD_DIR}/example/example" fcft-example
 }
