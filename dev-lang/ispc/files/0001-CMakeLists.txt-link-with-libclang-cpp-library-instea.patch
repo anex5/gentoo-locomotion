@@ -14,15 +14,14 @@ diff --git a/CMakeLists.txt b/CMakeLists.txt
 index f6199704..f979f1c1 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -288,7 +288,7 @@ if (WASM_ENABLED)
-     list(APPEND ISPC_TARGETS wasm-i32x4)
+@@ -377,7 +377,7 @@ if (${LLVM_VERSION_NUMBER} VERSION_LESS
+     message(FATAL_ERROR "ISPC requires LLVM 16.0.0 or later")
  endif()
  
--set(CLANG_LIBRARY_LIST clangFrontend clangBasic clangEdit clangLex)
+-set(CLANG_LIBRARY_LIST clangFrontend clangBasic clangEdit clangLex clangSupport clangASTMatchers)
 +set(CLANG_LIBRARY_LIST clang-cpp)
- if (${LLVM_VERSION_NUMBER} VERSION_GREATER_EQUAL "15.0.0")
-     list(APPEND CLANG_LIBRARY_LIST clangSupport)
- endif()
+ 
+ set(LLVM_COMPONENTS engine ipo bitreader bitwriter instrumentation linker option frontendopenmp passes)
+ 
 -- 
 2.37.3
-

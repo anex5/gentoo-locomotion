@@ -3,12 +3,16 @@
 
 EAPI=8
 
+LLVM_COMPAT=( {17..19} )
 PYTHON_COMPAT=( python3_{10..12} )
-LLVM_MAX_SLOT=18
-inherit cmake toolchain-funcs python-any-r1 llvm
+
+inherit cmake llvm-r1 multiprocessing python-any-r1 toolchain-funcs
 
 DESCRIPTION="Intel SPMD Program Compiler"
-HOMEPAGE="https://ispc.github.io/"
+HOMEPAGE="
+	https://ispc.github.io/
+	https://github.com/ispc/ispc/
+"
 
 if [[ ${PV} == 9999 ]]; then
 	inherit git-r3
@@ -18,47 +22,50 @@ if [[ ${PV} == 9999 ]]; then
 else
 	SRC_URI="https://github.com/${PN}/${PN}/archive/v${PV//_*/}.tar.gz -> ${P}.tar.gz"
 	KEYWORDS="amd64 ~arm ~arm64 ~ppc64 ~x86"
-	PATCHES=(
-		"${FILESDIR}/${PN}-1.23.0-backport-20240321.patch"
-	)
 	S=${WORKDIR}/${PN}-${PV//_*/}
 fi
 
 LICENSE="BSD BSD-2 UoI-NCSA"
 SLOT="0"
-IUSE="examples doc sanitize test"
-RESTRICT="mirror"
-
-RDEPEND="
-	<sys-devel/clang-$((${LLVM_MAX_SLOT} + 1)):=
-	sys-libs/ncurses:0=
-"
+IUSE="doc examples gpu openmp sanitize test utils"
+RESTRICT="!test? ( test ) mirror"
 
 DEPEND="
-	${RDEPEND}
+	$(llvm_gen_dep '
+		sys-devel/clang:${LLVM_SLOT}
+	')
+	sys-libs/ncurses:=
+	gpu? ( dev-libs/level-zero:= )
+	!openmp? ( dev-cpp/tbb:= )
 	doc? (
 		app-doc/doxygen[dot(+)]
 		media-fonts/freefont
 	)
 "
-
+RDEPEND="
+	${DEPEND}
+"
 BDEPEND="
-	sys-devel/bison
-	sys-devel/flex
+	app-alternatives/yacc
+	app-alternatives/lex
 	${PYTHON_DEPS}
 "
 
 PATCHES+=(
-	#"${FILESDIR}"/${PN}-1.14.0-cmake-gentoo-release.patch
 	"${FILESDIR}"/0001-Fix-QA-Issues.patch
-	"${FILESDIR}"/0002-cmake-don-t-build-for-32-bit-targets.patch
+	#"${FILESDIR}"/0002-cmake-don-t-build-for-32-bit-targets.patch
 	"${FILESDIR}"/0001-CMakeLists.txt-link-with-libclang-cpp-library-instea.patch
 )
 
 DOCS=( README.md "${S}"/docs/{ReleaseNotes.txt,faq.rst,ispc.rst,perf.rst,perfguide.rst} )
 
+pkg_pretend() {
+	[[ ${MERGE_TYPE} != binary ]] && use openmp && tc-check-openmp
+}
+
 pkg_setup() {
-	llvm_pkg_setup
+	[[ ${MERGE_TYPE} != binary ]] && use openmp && tc-check-openmp
+	llvm-r1_pkg_setup
 	python-any-r1_pkg_setup
 }
 
@@ -70,6 +77,14 @@ src_prepare() {
 	if use doc; then
 		sed -e 's|/usr/local/bin/dot|/usr/bin/dot|' -i "${S}"/doxygen.cfg || die
 	fi
+
+	# do not require bundled gtest
+	mkdir -p ispcrt/tests/vendor/google/googletest || die
+	cat > ispcrt/tests/vendor/google/googletest/CMakeLists.txt <<-EOF || die
+		find_package(GTest)
+	EOF
+	# remove hacks that break unbundling
+	sed -i -e '/gmock/d' -e '/install/,$d' ispcrt/tests/CMakeLists.txt || die
 
 	cmake_src_prepare
 }
@@ -83,19 +98,25 @@ src_configure() {
 		-DISPC_INCLUDE_EXAMPLES=$(usex examples)
 		-DISPC_INCLUDE_DPCPP_EXAMPLES=$(usex examples)
 		-DISPC_INCLUDE_TESTS=$(usex test)
-		-DISPC_INCLUDE_UTILS=ON
+		-DISPC_INCLUDE_UTILS=$(usex utils)
 		-DISPC_PREPARE_PACKAGE=OFF
 		-DISPC_STATIC_STDCXX_LINK=OFF
 		-DISPC_STATIC_LINK=OFF
+		-DISPCRT_BUILD_GPU=$(usex gpu)
+		-DISPCRT_BUILD_TASK_MODEL=$(usex openmp OpenMP TBB)
 		-DISPC_USE_ASAN=$(usex sanitize)
 		-DPython3_EXECUTABLE="${PYTHON}"
+		# prevent it from trying to find the git repo
+		-DGIT_BINARY=GIT_BINARY-NOTFOUND
 	)
 	cmake_src_configure
 }
 
 src_test() {
 	# Inject path to prevent using system ispc
-	PATH="${BUILD_DIR}/bin:${PATH}" ${EPYTHON} run_tests.py || die "Testing failed under ${EPYTHON}"
+	local -x PATH="${BUILD_DIR}/bin:${PATH}"
+	"${EPYTHON}" ./scripts/run_tests.py "-j$(makeopts_jobs)" -v ||
+		die "Testing failed under ${EPYTHON}"
 }
 
 src_compile(){
@@ -118,8 +139,9 @@ src_install() {
 	einstalldocs
 
 	if use examples; then
-		insinto "/usr/share/doc/${PF}/examples"
+		#insinto "/usr/share/doc/${PF}/examples"
 		docompress -x "/usr/share/doc/${PF}/examples"
-		doins -r "${BUILD_DIR}"/examples/*
+		#doins -r "${BUILD_DIR}"/examples/*
+		dodoc -r examples
 	fi
 }
