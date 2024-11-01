@@ -115,7 +115,7 @@ PATCHES=(
 )
 LLVM_COMPONENTS=( "llvm" "cmake" "third-party" )
 LLVM_MANPAGES=0
-#LLVM_PATCHSET=${PV}
+LLVM_PATCHSET=${PV}-r6
 LLVM_USE_TARGETS="provide"
 llvm.org_set_globals
 

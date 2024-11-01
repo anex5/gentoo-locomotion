@@ -18,7 +18,7 @@ VIRTUALX_REQUIRED="manual"
 MOZ_ESR=yes
 
 inherit autotools check-reqs desktop flag-o-matic gnome2-utils linux-info llvm-r1 multiprocessing \
-	 multilib-minimal rust-toolchain optfeature pax-utils python-any-r1 toolchain-funcs virtualx xdg
+	 multilib-minimal rust-toolchain optfeature pax-utils python-any-r1 toolchain-funcs virtualx xdg readme.gentoo-r1
 
 PATCH_URIS=(
 	https://dev.gentoo.org/~juippis/mozilla/patchsets/${FIREFOX_PATCHSET}

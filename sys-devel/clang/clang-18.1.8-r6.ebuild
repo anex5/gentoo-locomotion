@@ -3,9 +3,9 @@
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{10..12} )
+PYTHON_COMPAT=( python3_{10..13} )
 
-inherit cmake llvm llvm.org multilib multilib-minimal
+inherit cmake llvm.org llvm-utils multilib multilib-minimal
 inherit prefix python-single-r1 toolchain-funcs
 inherit flag-o-matic ninja-utils
 
@@ -137,6 +137,7 @@ LLVM_COMPONENTS=(
 	"llvm/lib/Transforms/Hello"
 )
 LLVM_MANPAGES=0
+LLVM_PATCHSET=${PV}-r6
 LLVM_TEST_COMPONENTS=(
 	"llvm/utils"
 )
@@ -155,7 +156,7 @@ llvm.org_set_globals
 # multilib clang* libraries (not runtime, not wrappers).
 
 pkg_setup() {
-	LLVM_MAX_SLOT=${LLVM_MAJOR} llvm_pkg_setup
+	LLVM_MAX_SLOT=${LLVM_MAJOR}
 	python-single-r1_pkg_setup
 	if tc-is-gcc ; then
 		local gcc_slot=$(best_version "sys-devel/gcc" \
@@ -344,8 +345,6 @@ src_prepare() {
 
 	eapply -p2 "${FILESDIR}/${PN}-17.0.0.9999-stdatomic-force.patch"
 
-	eapply "${FILESDIR}/clang-17.0.4-fix-glibc-limits.h-relative-path.patch"
-
 	#use pgo && \
 	eapply "${FILESDIR}/clang-16.0.0.9999-add-include-path.patch"
 
@@ -361,7 +360,6 @@ src_prepare() {
 			lib/Driver/ToolChains/Linux.cpp \
 			|| die
 	fi
-
 }
 
 check_distribution_components() {
@@ -531,6 +529,8 @@ _gcc_fullversion() {
 }
 
 multilib_src_configure() {
+	llvm_prepend_path "${LLVM_MAJOR}"
+
 
 	# TODO:  Add GCC-10 and below checks to add exceptions to -O* flag downgrading.
 	# Leave a note if you know the commit that fixes the internal compiler error below.
@@ -813,6 +813,7 @@ src_install() {
 }
 
 multilib_src_install() {
+
 	DESTDIR=${D} cmake_build install-distribution
 
 	# Move headers to /usr/include for wrapping & ABI mismatch checks.
