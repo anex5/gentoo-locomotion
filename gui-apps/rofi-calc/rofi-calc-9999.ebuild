@@ -30,7 +30,7 @@ DEPEND="
 RDEPEND="${DEPEND}"
 
 PATCHES=(
-	"${FILESDIR}/${P}-add-to-history-hint.patch"
+	"${FILESDIR}/${PN}-2.2.1-add-to-history-hint.patch"
 )
 
 src_prepare() {
