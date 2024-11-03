@@ -6,7 +6,7 @@ EAPI=8
 # Using Gentoos firefox patches as system libraries and lto are quite nice
 FIREFOX_PATCHSET="firefox-${PV%%.*}esr-patches-13.tar.xz"
 
-LLVM_COMPAT=( 18 )
+LLVM_COMPAT=( {18..19} )
 PP="1"
 PYTHON_COMPAT=( python3_{10..12} )
 PYTHON_REQ_USE="ncurses,sqlite,ssl"
@@ -376,7 +376,7 @@ BDEPEND+="
 	>=dev-util/pkgconf-1.8.0[${MULTILIB_USEDEP},pkg-config(+)]
 	>=net-libs/nodejs-12
 	>=virtual/rust-1.69.0[${MULTILIB_USEDEP}]
-	<virtual/rust-1.82.0[${MULTILIB_USEDEP}]
+	<virtual/rust-1.83.0[${MULTILIB_USEDEP}]
 	app-alternatives/awk
 	app-arch/unzip
 	app-arch/zip
@@ -2089,8 +2089,6 @@ pkg_postinst() {
 		ewarn "required EGL, so either disable 'hwaccel' or try the workaround "
 		ewarn "explained in https://bugs.gentoo.org/835078#c5 if Firefox crashes."
 	fi
-
-	readme.gentoo_print_elog
 
 	optfeature_header "Optional programs for extra features:"
 	optfeature "desktop notifications" x11-libs/libnotify

@@ -3,14 +3,14 @@
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{10..12} )
+PYTHON_COMPAT=( python3_{11..13} )
 
 inherit python-any-r1
 
 DESCRIPTION="Script for creating GNU Icecat tarball"
 HOMEPAGE="https://www.gnu.org/software/gnuzilla/"
 
-COMMIT="53ca891e1aac86153b65a12af97eef9752503313"
+COMMIT="a0b1a124e8e063a35389e1f20653047f37ca069b"
 PP="1"
 COMPARE_LOCALES_PV="9.0.1"
 SRC_URI="
