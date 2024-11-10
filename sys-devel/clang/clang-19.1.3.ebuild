@@ -5,7 +5,7 @@ EAPI=8
 
 PYTHON_COMPAT=( python3_{10..13} )
 
-inherit cmake llvm llvm.org multilib multilib-minimal
+inherit cmake llvm.org llvm-utils multilib multilib-minimal
 inherit prefix python-single-r1 toolchain-funcs
 inherit flag-o-matic ninja-utils
 
@@ -122,8 +122,8 @@ BDEPEND="
 	)
 "
 PDEPEND="
-	sys-devel/clang-toolchain-symlinks:${LLVM_MAJOR}
 	~sys-devel/clang-runtime-${PV}
+	sys-devel/clang-toolchain-symlinks:${LLVM_MAJOR}
 "
 RESTRICT="
 	!test? (
@@ -154,7 +154,7 @@ llvm.org_set_globals
 # multilib clang* libraries (not runtime, not wrappers).
 
 pkg_setup() {
-	LLVM_MAX_SLOT=${LLVM_MAJOR} llvm_pkg_setup
+	LLVM_MAX_SLOT=${LLVM_MAJOR}
 	python-single-r1_pkg_setup
 	if tc-is-gcc ; then
 		local gcc_slot=$(best_version "sys-devel/gcc" \
@@ -532,6 +532,8 @@ _gcc_fullversion() {
 }
 
 multilib_src_configure() {
+	llvm_prepend_path "${LLVM_MAJOR}"
+
 
 	# TODO:  Add GCC-10 and below checks to add exceptions to -O* flag downgrading.
 	# Leave a note if you know the commit that fixes the internal compiler error below.

@@ -67,14 +67,12 @@ RDEPEND="
 		>=sys-devel/binutils-2.31.1-r4:*[plugins]
 	)
 	debuginfod? (
-		dev-cpp/cpp-httplib:=
 		net-misc/curl:=
+		dev-cpp/cpp-httplib:=
 	)
 	exegesis? ( dev-libs/libpfm:= )
-
 	libedit? ( dev-libs/libedit:0=[${MULTILIB_USEDEP}] )
 	libffi? ( >=dev-libs/libffi-3.0.13-r1:0=[${MULTILIB_USEDEP}] )
-
 	ncurses? ( >=sys-libs/ncurses-5.9-r3:0=[${MULTILIB_USEDEP}] )
 	xar? ( app-arch/xar )
 	xml? ( dev-libs/libxml2:2=[${MULTILIB_USEDEP}] )
@@ -256,6 +254,11 @@ src_prepare() {
 
 
 	llvm.org_src_prepare
+
+	if has_version ">=sys-libs/glibc-2.40"; then
+		# https://github.com/llvm/llvm-project/issues/100791
+		rm -r test/tools/llvm-exegesis/X86/latency || die
+	fi
 }
 
 get_distribution_components() {
@@ -381,6 +384,7 @@ get_distribution_components() {
 			llvm-xray
 			obj2yaml
 			opt
+			reduce-chunk-list
 			sancov
 			sanstats
 			split-file
@@ -415,6 +419,10 @@ get_distribution_components() {
 }
 
 multilib_src_configure() {
+	if use ppc && tc-is-gcc && [[ $(gcc-major-version) -lt 14 ]]; then
+		# Workaround for bug #880677
+		append-flags $(test-flags-CXX -fno-ipa-sra -fno-ipa-modref -fno-ipa-icf)
+	fi
 	local ffi_cflags ffi_ldflags
 	if use libffi; then
 		ffi_cflags=$($(tc-getPKG_CONFIG) --cflags-only-I libffi)
