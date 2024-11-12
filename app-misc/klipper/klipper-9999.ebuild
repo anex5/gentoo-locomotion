@@ -41,7 +41,7 @@ RDEPEND="
 	)
 	$(python_gen_cond_dep '
 		dev-python/numpy
-		>=dev-python/jinja-2.10.1[${PYTHON_USEDEP}]
+		>=dev-python/jinja2-2.10.1[${PYTHON_USEDEP}]
 		>=dev-python/pyserial-3.4[${PYTHON_USEDEP}]
 		>=dev-python/markupsafe-1.1.1[${PYTHON_USEDEP}]
 		dev-python/virtualenv[${PYTHON_USEDEP}]
