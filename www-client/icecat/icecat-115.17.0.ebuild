@@ -168,7 +168,7 @@ SYSTEM_PYTHON_LIBS="
 			dev-python/idna[${PYTHON_USEDEP}]
 			dev-python/importlib-metadata[${PYTHON_USEDEP}]
 			dev-python/iso8601[${PYTHON_USEDEP}]
-			dev-python/jinja[${PYTHON_USEDEP}]
+			dev-python/jinja2[${PYTHON_USEDEP}]
 			dev-python/jsmin[${PYTHON_USEDEP}]
 			dev-python/jsonschema[${PYTHON_USEDEP}]
 			dev-python/packaging[${PYTHON_USEDEP}]
