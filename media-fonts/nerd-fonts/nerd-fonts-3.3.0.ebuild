@@ -27,6 +27,7 @@ FONTS=(
 	D2Coding
 	DaddyTimeMono
 	DejaVuSansMono
+	DepartureMono
 	DroidSansMono
 	EnvyCodeR
 	FantasqueSansMono

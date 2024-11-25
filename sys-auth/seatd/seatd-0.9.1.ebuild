@@ -1,4 +1,4 @@
-# Copyright 2020-2023 Gentoo Authors
+# Copyright 2020-2024 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -52,7 +52,7 @@ src_install() {
 	meson_src_install
 
 	if use server; then
-		use elogind && newinitd "${FILESDIR}/seatd.initd" seatd
+		use elogind && newinitd "${FILESDIR}/seatd.initd-r1" seatd
 		use systemd && systemd_dounit contrib/systemd/seatd.service
 
 		if has_version '<sys-auth/seatd-0.7.0-r2'; then
