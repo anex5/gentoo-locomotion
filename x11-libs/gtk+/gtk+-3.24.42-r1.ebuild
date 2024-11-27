@@ -10,7 +10,7 @@ HOMEPAGE="https://www.gtk.org/"
 
 LICENSE="LGPL-2+"
 SLOT="3"
-IUSE="aqua broadway cloudproviders colord cups examples gtk-doc +introspection man sysprof test vim-syntax wayland +X xinerama"
+IUSE="adwaita-icon-theme aqua atk-bridge broadway cloudproviders colord cups examples gtk-doc +introspection man sysprof test vim-syntax wayland +X xinerama"
 REQUIRED_USE="
 	|| ( aqua wayland X )
 	test? ( X )
@@ -18,10 +18,10 @@ REQUIRED_USE="
 "
 RESTRICT="!test? ( test )"
 
-KEYWORDS="~alpha ~amd64 arm arm64 ~hppa ~ia64 ~loong ~mips ~ppc ppc64 ~riscv ~sparc x86 ~amd64-linux ~x86-linux ~ppc-macos ~x64-solaris"
+KEYWORDS="~alpha ~amd64 ~arm ~arm64 ~hppa ~loong ~mips ~ppc ~ppc64 ~riscv ~s390 ~sparc ~x86 ~amd64-linux ~x86-linux ~ppc-macos ~x64-solaris"
 
 COMMON_DEPEND="
-	>=app-accessibility/at-spi2-core-2.46.0[introspection?,${MULTILIB_USEDEP}]
+	atk-bridge? ( >=app-accessibility/at-spi2-core-2.46.0[introspection?,${MULTILIB_USEDEP}] )
 	>=dev-libs/fribidi-0.19.7[${MULTILIB_USEDEP}]
 	>=dev-libs/glib-2.57.2:2[${MULTILIB_USEDEP}]
 	media-libs/fontconfig[${MULTILIB_USEDEP}]
@@ -37,7 +37,6 @@ COMMON_DEPEND="
 	colord? ( >=x11-misc/colord-0.1.9:0=[${MULTILIB_USEDEP}] )
 	cups? ( >=net-print/cups-2.0[${MULTILIB_USEDEP}] )
 	introspection? ( >=dev-libs/gobject-introspection-1.39:= )
-	sysprof? ( >=dev-util/sysprof-capture-3.33.2:3[${MULTILIB_USEDEP}] )
 	wayland? (
 		>=dev-libs/wayland-1.14.91[${MULTILIB_USEDEP}]
 		>=dev-libs/wayland-protocols-1.32
@@ -58,6 +57,7 @@ COMMON_DEPEND="
 	)
 "
 DEPEND="${COMMON_DEPEND}
+	sysprof? ( >=dev-util/sysprof-capture-3.33.2:4[${MULTILIB_USEDEP}] )
 	X? ( x11-base/xorg-proto )
 "
 RDEPEND="${COMMON_DEPEND}
@@ -65,8 +65,9 @@ RDEPEND="${COMMON_DEPEND}
 "
 # librsvg for svg icons (PDEPEND to avoid circular dep), bug #547710
 PDEPEND="
-	gnome-base/librsvg[${MULTILIB_USEDEP}]
-	>=x11-themes/adwaita-icon-theme-3.14
+	adwaita-icon-theme? ( gnome-base/librsvg[${MULTILIB_USEDEP}]
+	  >=x11-themes/adwaita-icon-theme-3.14 )
+	!adwaita-icon-theme? ( virtual/freedesktop-icon-theme )
 	vim-syntax? ( app-vim/gtk-syntax )
 "
 BDEPEND="
@@ -95,14 +96,27 @@ MULTILIB_CHOST_TOOLS=(
 PATCHES=(
 	# gtk-update-icon-cache is installed by dev-util/gtk-update-icon-cache
 	"${FILESDIR}"/${PN}-3.24.36-update-icon-cache.patch
-
+	"${FILESDIR}"/${PN}-atk-bridge-meson.build.patch
+	"${FILESDIR}"/${PN}-atk-bridge-meson_options.txt.patch
+	"${FILESDIR}"/${PN}-atk-bridge-gtkaccessibility.patch
 	# Fix intentionally broken X11 DPI autodetection
 	# See https://bugs.gentoo.org/886157
 	"${FILESDIR}"/${PN}-3.24.34-Xft-setting-fallback-compute-DPI-properly.patch
+	# Gentoo-specific patch to add a "poison" macro support, allowing other ebuilds
+	# with USE="-wayland -X" to trick gtk into claiming that it wasn't built with
+	# such support.
+	# https://bugs.gentoo.org/624960
+	"${FILESDIR}"/0001-gdk-add-a-poison-macro-to-hide-GDK_WINDOWING_.patch
 )
 
 src_prepare() {
 	default
+
+	# Force sysprof-capture-4 instead of checking sysprof-capture-3 first; either is
+	# fine as far as deps are concerned, as it static links, but sysprof-capture-3
+	# links to glib which would be done statically if there's glib[static-libs],
+	# making the whole of gtk+ static link to glib instead of dynamic linking to glib.
+	sed -i -e "s/'sysprof-capture-3'/'sysprof-capture-4'/g" meson.build || die
 
 	# The border-image-excess-size.ui test is known to fail on big-endian platforms
 	# See https://gitlab.gnome.org/GNOME/gtk/-/issues/5904
@@ -117,6 +131,7 @@ src_prepare() {
 multilib_src_configure() {
 	local emesonargs=(
 		$(meson_use aqua quartz_backend)
+		$(meson_use atk-bridge atk_bridge)
 		$(meson_use broadway broadway_backend)
 		$(meson_use cloudproviders)
 		$(meson_use examples demos)

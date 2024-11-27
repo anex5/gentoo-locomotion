@@ -5,10 +5,10 @@ EAPI=8
 
 inherit linux-mod-r1
 
-MODULES_KERNEL_MAX=6.9
+MODULES_KERNEL_MAX=6.12
 MODULES_KERNEL_MIN=2.6.19
 
-COMMIT="043eae2cad7ee26f05a38b5602dce3c207bf974a"
+COMMIT="213db3aa999e9cb14d8b9a7f84d711e15d2619f6"
 
 DESCRIPTION="Driver for it87/it86 series hardware monitoring chips."
 HOMEPAGE="https://github.com/frankcrawford/it87"

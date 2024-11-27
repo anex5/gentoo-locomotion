@@ -374,8 +374,8 @@ BDEPEND+="
 	>=dev-util/cbindgen-0.24.3
 	>=dev-util/pkgconf-1.8.0[${MULTILIB_USEDEP},pkg-config(+)]
 	>=net-libs/nodejs-12
-	>=virtual/rust-1.69.0[${MULTILIB_USEDEP}]
-	<virtual/rust-1.83.0[${MULTILIB_USEDEP}]
+	>=dev-lang/rust-1.69.0[${MULTILIB_USEDEP}]
+	<dev-lang/rust-1.83.0[${MULTILIB_USEDEP}]
 	app-alternatives/awk
 	app-arch/unzip
 	app-arch/zip
