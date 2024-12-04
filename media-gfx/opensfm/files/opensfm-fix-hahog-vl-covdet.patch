@@ -1,0 +1,11 @@
+--- a/opensfm/src/features/src/hahog.cc
++++ b/opensfm/src/features/src/hahog.cc
+@@ -146,7 +146,7 @@ py::tuple hahog(foundation::pyarray_f im
+     // process the image and run the detector
+     vl_covdet_put_image(covdet, image.data(), image.shape(1), image.shape(0));
+     vl_covdet_set_non_extrema_suppression_threshold(covdet, 0);
+-    vl_covdet_detect(covdet, std::numeric_limits<vl_size>::max());
++    vl_covdet_detect(covdet);
+ 
+     // select the best features to keep
+     numFeatures = run_features_selection(covdet, target_num_features);

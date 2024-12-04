@@ -1,0 +1,8 @@
+--- a/opensfm/src/third_party/vlfeat/CMakeLists.txt
++++ b/opensfm/src/third_party/vlfeat/CMakeLists.txt
+@@ -1,4 +1,4 @@
+-file(GLOB VLFEAT_SRCS vl/*.c vl/*.h)
++file(GLOB VLFEAT_SRCS /usr/include/vl/*.c /usr/include/vl/*.h)
+ 
+ if( ${CMAKE_SYSTEM_PROCESSOR} STREQUAL "aarch64" )
+     add_definitions( -DVL_DISABLE_SSE2 )

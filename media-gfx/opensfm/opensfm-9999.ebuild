@@ -21,7 +21,7 @@ HOMEPAGE="https://www.opensfm.org"
 if [[ ${PV} = *9999 ]]; then
 	inherit git-r3
 	EGIT_REPO_URI="https://github.com/mapillary/${MY_PN}"
-	EGIT_SUBMODULES=()
+	EGIT_SUBMODULES=( '*' '-opensfm/src/third_party/pybind11' )
 	EGIT_BRANCH="main"
 	KEYWORDS=""
 	CERES_PV=2.3.0
@@ -83,6 +83,7 @@ RDEPEND="${DEPEND}"
 BDEPEND="
 	dev-python/pybind11[${PYTHON_USEDEP}]
 	dev-python/cython[${PYTHON_USEDEP}]
+	media-libs/vlfeat
 	>=dev-build/cmake-3.0.0
 	dev-cpp/glog[gflags]
 "
@@ -101,22 +102,23 @@ src_prepare() {
 		sed -e "s|\(set(CMAKE_CXX_STANDARD \)14|\117|" -i opensfm/src/CMakeLists.txt || die "Sed failed"
 		#unbundle pybind11
 		sed	-e "s|add_subdirectory(third_party\/pybind11)|find_package (pybind11 CONFIG REQUIRED)|" -i opensfm/src/CMakeLists.txt || die "Sed failed"
-		sed	-e "/include_directories(third_party\/pybind11\/include)/d" -i opensfm/src/CMakeLists.txt || die "Sed failed"
-		#sed	-e "s/include_directories(third_party\/pybind11\/include)/include_directories(\/usr\/include\/pybind11)/" -i opensfm/src/CMakeLists.txt || die "Sed failed"
+		sed -e "/include_directories(third_party\/pybind11\/include)/d" -i opensfm/src/CMakeLists.txt || die "Sed failed"
+		#sed -e "s/include_directories(third_party\/pybind11\/include)/include_directories(\/usr\/include\/pybind11)/" -i opensfm/src/CMakeLists.txt || die "Sed failed"
 		sed -e "/^target_link_libraries(/,/)/s|pybind11|pybind11::headers|g" -i opensfm/src/{bundle,dense,features,foundation,geometry,robust,sfm,geo,map}/CMakeLists.txt || die "Sed failed"
-		eapply "${FILESDIR}/unbundle-pybind.patch"
+		#eapply "${FILESDIR}/unbundle-pybind.patch"
+		eapply "${FILESDIR}/opensfm-fix-vl-src-path.patch"
+		eapply "${FILESDIR}/opensfm-fix-hahog-vl-covdet.patch"
 	else
 		#Enable cxx17 as CERES-2.0 req it
 		sed -e "s|\(set(CMAKE_CXX_STANDARD \)11|\114|" -i opensfm/src/CMakeLists.txt || die "Sed failed"
 		#unbundle pybind11
 		sed	-e "s|add_subdirectory(third_party\/pybind11)|find_package (pybind11 CONFIG REQUIRED)|" -i opensfm/src/CMakeLists.txt || die "Sed failed"
-		sed -e "/^target_link_libraries(/,/)/s|pybind11|pybind11::headers|g" -i opensfm/src/{dense,features,foundation,geometry,robust,sfm}/CMakeLists.txt || die "Sed failed"
+		sed -e "/^target_link_libraries(/,/)/s|pybind11|pybind11::pybind11|g" -i opensfm/src/{dense,features,foundation,geometry,robust,sfm}/CMakeLists.txt || die "Sed failed"
 	fi
 
 	# Build C extension with gentoo cmake eclass
 	sed -e "/^configure_c_extension()$/d" -i setup.py || die "Sed failed"
 	sed -e "/^build_c_extension()$/d" -i setup.py || die "Sed failed"
-
 
 	CMAKE_USE_DIR="${S}/opensfm/src"
 	cmake_src_prepare
@@ -137,7 +139,10 @@ src_configure() {
 	CMAKE_INSTALL_PREFIX="${EPREFIX}/usr"
 
 	local mycmakeargs=(
+		-DCMAKE_SKIP_RPATH=ON
+		-DCMAKE_POLICY_DEFAULT_CMP0057="NEW"
 		-DOPENSFM_BUILD_TESTS=$(usex test)
+		-DPYBIND11_FINDPYTHON=OFF
 	)
 	cmake_src_configure
 	distutils-r1_src_configure
