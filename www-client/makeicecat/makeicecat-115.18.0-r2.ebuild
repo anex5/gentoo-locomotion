@@ -10,8 +10,9 @@ inherit python-any-r1
 DESCRIPTION="Script for creating GNU Icecat tarball"
 HOMEPAGE="https://www.gnu.org/software/gnuzilla/"
 
-COMMIT="21732b4ee88ac55f266cc1e83f2c98514eba9ae9"
+COMMIT="dc99e15355412bc9b11b34d3fe5729bed1c251de"
 PP="1"
+GV="2"
 COMPARE_LOCALES_PV="9.0.1"
 SRC_URI="
 	https://git.savannah.gnu.org/cgit/gnuzilla.git/snapshot/gnuzilla-${COMMIT}.tar.gz
@@ -258,7 +259,7 @@ src_install() {
 	fperms +x "/usr/src/makeicecat-${PV}"/{makeicecat,tools/{AddonsScraper.py,buildbinaries,createdebsrcrepo,gnupload}}
 	if use buildtarball; then
 		insinto /usr/src/makeicecat-"${PV}"/output
-		doins "${S}/output/icecat-${PV}-${PP}gnu1.tar.bz2"
+		doins "${S}/output/icecat-${PV}-${PP}gnu${GV}.tar.bz2"
 	fi
 }
 
