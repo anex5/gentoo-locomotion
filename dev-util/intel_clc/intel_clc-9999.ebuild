@@ -3,7 +3,7 @@
 
 EAPI=8
 
-LLVM_COMPAT=( 17 18 )
+LLVM_COMPAT=( {17..19} )
 PYTHON_COMPAT=( python3_{11..12} )
 
 inherit llvm-r1 meson python-any-r1
@@ -28,14 +28,14 @@ SLOT="0"
 IUSE="debug"
 
 RDEPEND="
-	dev-libs/libclc
 	dev-util/spirv-tools
+	llvm-core/libclc
 	>=sys-libs/zlib-1.2.8:=
 	x11-libs/libdrm
 	$(llvm_gen_dep '
 		dev-util/spirv-llvm-translator:${LLVM_SLOT}
-		sys-devel/clang:${LLVM_SLOT}
-		sys-devel/llvm:${LLVM_SLOT}
+		llvm-core/clang:${LLVM_SLOT}=
+		llvm-core/llvm:${LLVM_SLOT}=
 	')
 "
 DEPEND="${RDEPEND}
@@ -43,12 +43,18 @@ DEPEND="${RDEPEND}
 "
 BDEPEND="
 	${PYTHON_DEPS}
-	$(python_gen_any_dep ">=dev-python/mako-0.8.0[\${PYTHON_USEDEP}]")
+	$(python_gen_any_dep "
+		>=dev-python/mako-0.8.0[\${PYTHON_USEDEP}]
+		dev-python/packaging[\${PYTHON_USEDEP}]
+		dev-python/pyyaml[\${PYTHON_USEDEP}]
+	")
 	virtual/pkgconfig
 "
 
 python_check_deps() {
-	python_has_version -b ">=dev-python/mako-0.8.0[${PYTHON_USEDEP}]"
+	python_has_version -b ">=dev-python/mako-0.8.0[${PYTHON_USEDEP}]" &&
+	python_has_version -b "dev-python/packaging[${PYTHON_USEDEP}]" &&
+	python_has_version -b "dev-python/pyyaml[${PYTHON_USEDEP}]" || return 1
 }
 
 pkg_setup() {

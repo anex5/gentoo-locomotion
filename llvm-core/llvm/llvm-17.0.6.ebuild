@@ -1,12 +1,12 @@
-# Copyright 1999-2024 Gentoo Authors
+# Copyright 1999-2023 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{10..13} )
+PYTHON_COMPAT=( python3_{10..12} )
 
-inherit cmake flag-o-matic llvm.org multilib-minimal pax-utils python-any-r1
-inherit toolchain-funcs git-r3 ninja-utils
+inherit cmake llvm.org multilib-minimal pax-utils python-any-r1 toolchain-funcs
+inherit flag-o-matic git-r3 ninja-utils
 
 DESCRIPTION="Low Level Virtual Machine"
 HOMEPAGE="https://llvm.org/"
@@ -19,7 +19,7 @@ HOMEPAGE="https://llvm.org/"
 
 LICENSE="Apache-2.0-with-LLVM-exceptions UoI-NCSA BSD public-domain rc"
 SLOT="${LLVM_MAJOR}/${LLVM_SOABI}"
-KEYWORDS="~amd64 ~arm ~arm64 ~loong ~mips ~ppc ~ppc64 ~riscv ~sparc ~x86 ~amd64-linux ~arm64-macos ~ppc-macos ~x64-macos"
+KEYWORDS="~amd64 ~arm ~arm64 ~loong ~ppc ~ppc64 ~riscv ~sparc ~x86 ~amd64-linux ~ppc-macos ~x64-macos"
 IUSE="
 	binutils-plugin debug debuginfod doc exegesis libedit +libffi
 	ncurses test xar xml z3 zstd -dump man
@@ -58,7 +58,8 @@ REQUIRED_USE="
 		llvm_targets_Sparc
 	)
 	x86? (
-		llvm_targets_X86
+
+	llvm_targets_X86
 	)
 "
 RDEPEND="
@@ -85,11 +86,12 @@ DEPEND="
 "
 BDEPEND="
 	${PYTHON_DEPS}
-	>=dev-build/cmake-3.16
 	dev-lang/perl
+	>=dev-build/cmake-3.16
 	sys-devel/gnuconfig
 	kernel_Darwin? (
 		<sys-libs/libcxx-${LLVM_VERSION}.9999
+		>=sys-devel/binutils-apple-5.1
 	)
 	doc? ( $(python_gen_any_dep '
 		dev-python/recommonmark[${PYTHON_USEDEP}]
@@ -104,8 +106,8 @@ RDEPEND="
 	!sys-devel/llvm:0
 "
 PDEPEND="
-	sys-devel/llvm-common
-	sys-devel/llvm-toolchain-symlinks:${LLVM_MAJOR}
+	llvm-core/llvm-common
+	llvm-core/llvm-toolchain-symlinks:${LLVM_MAJOR}
 	binutils-plugin? ( >=sys-devel/llvmgold-${LLVM_MAJOR} )
 "
 PATCHES=(
@@ -170,7 +172,7 @@ pkg_setup() {
 python_check_deps() {
 	use doc || return 0
 
-	python_has_version -b "dev-python/myst-parser[${PYTHON_USEDEP}]" &&
+	python_has_version -b "dev-python/recommonmark[${PYTHON_USEDEP}]" &&
 	python_has_version -b "dev-python/sphinx[${PYTHON_USEDEP}]"
 }
 
@@ -191,9 +193,6 @@ check_distribution_components() {
 						;;
 					# TableGen/mlir lib + deps
 					LLVMCodeGenTypes|LLVMDemangle|LLVMSupport|LLVMTableGen)
-						;;
-					# used by lldb
-					LLVMDebuginfod)
 						;;
 					# testing libraries
 					LLVMTestingAnnotations|LLVMTestingSupport)
@@ -254,11 +253,6 @@ src_prepare() {
 
 
 	llvm.org_src_prepare
-
-	if has_version ">=sys-libs/glibc-2.40"; then
-		# https://github.com/llvm/llvm-project/issues/100791
-		rm -r test/tools/llvm-exegesis/X86/latency || die
-	fi
 }
 
 get_distribution_components() {
@@ -285,21 +279,8 @@ get_distribution_components() {
 
 	)
 
-	if use test; then
-		out+=(
-			# testing libraries
-			llvm_gtest
-			llvm_gtest_main
-			LLVMTestingAnnotations
-			LLVMTestingSupport
-		)
-	fi
-
 	if multilib_is_native_abi; then
 		out+=(
-			# library used by lldb
-			LLVMDebuginfod
-
 			# utilities
 			llvm-tblgen
 			FileCheck
@@ -367,8 +348,8 @@ get_distribution_components() {
 			llvm-rc
 			llvm-readelf
 			llvm-readobj
-			llvm-readtapi
 			llvm-reduce
+			llvm-remark-size-diff
 			llvm-remarkutil
 			llvm-rtdyld
 			llvm-sim
@@ -378,13 +359,13 @@ get_distribution_components() {
 			llvm-strings
 			llvm-strip
 			llvm-symbolizer
+			llvm-tapi-diff
 			llvm-tli-checker
 			llvm-undname
 			llvm-windres
 			llvm-xray
 			obj2yaml
 			opt
-			reduce-chunk-list
 			sancov
 			sanstats
 			split-file
@@ -419,10 +400,7 @@ get_distribution_components() {
 }
 
 multilib_src_configure() {
-	if use ppc && tc-is-gcc && [[ $(gcc-major-version) -lt 14 ]]; then
-		# Workaround for bug #880677
-		append-flags $(test-flags-CXX -fno-ipa-sra -fno-ipa-modref -fno-ipa-icf)
-	fi
+	CMAKE_BUILD_TYPE=$(usex debug "Debug" "Release")
 	local ffi_cflags ffi_ldflags
 	if use libffi; then
 		ffi_cflags=$($(tc-getPKG_CONFIG) --cflags-only-I libffi)
@@ -461,8 +439,8 @@ multilib_src_configure() {
 
 	# For PGO
 	if tc-is-gcc ; then
-		# error: number of counters in profile data for function '...' does not match its profile data (counter 'arcs', expected 7 and have 13) [-Werror=coverage-mismatch]
-		# The PGO profiles are isolated.  The Code is the same.
+# error: number of counters in profile data for function '...' does not match its profile data (counter 'arcs', expected 7 and have 13) [-Werror=coverage-mismatch]
+# The PGO profiles are isolated.  The Code is the same.
 		append-flags -Wno-error=coverage-mismatch
 	fi
 
@@ -507,8 +485,7 @@ multilib_src_configure() {
 		-DLLVM_ENABLE_EH=ON
 		-DLLVM_ENABLE_RTTI=ON
 		-DLLVM_ENABLE_Z3_SOLVER=$(usex z3)
-		-DLLVM_ENABLE_ZLIB=FORCE_ON
-		-DLLVM_ENABLE_ZSTD=$(usex zstd FORCE_ON OFF)
+		-DLLVM_ENABLE_ZSTD=$(usex zstd)
 		-DLLVM_ENABLE_CURL=$(usex debuginfod)
 		-DLLVM_ENABLE_HTTPLIB=$(usex debuginfod)
 
@@ -525,12 +502,14 @@ multilib_src_configure() {
 		-DOCAMLFIND=NO
 	)
 
-	local suffix=
-	if [[ -n ${EGIT_VERSION} && ${EGIT_BRANCH} != release/* ]]; then
-		# the ABI of the main branch is not stable, so let's include
-		# the commit id in the SOVERSION to contain the breakage
-		suffix+="git${EGIT_VERSION::8}"
-	fi
+	# On the MacOS prefix, the distro doesn't split sys-libs/ncurses to
+	# libtinfo and libncurses, but llvm tries to use libtinfo before
+	# libncurses, and ends up using libtinfo (actually, libncurses.dylib)
+	# from system instead of prefix.
+	use kernel_Darwin && mycmakeargs+=(
+		-DTerminfo_LIBRARIES=-lncurses
+	)
+
 	if [[ $(tc-get-cxx-stdlib) == libc++ ]]; then
 		# Smart hack: alter version suffix -> SOVERSION when linking
 		# against libc++. This way we won't end up mixing LLVM libc++
@@ -570,22 +549,6 @@ multilib_src_configure() {
 			-DLLVM_BINUTILS_INCDIR="${EPREFIX}"/usr/include
 		)
 	fi
-
-	use kernel_Darwin && mycmakeargs+=(
-		# On Macos prefix, Gentoo doesn't split sys-libs/ncurses to libtinfo and
-		# libncurses, but llvm tries to use libtinfo before libncurses, and ends up
-		# using libtinfo (actually, libncurses.dylib) from system instead of prefix
-		-DTerminfo_LIBRARIES=-lncurses
-		# Use our libtool instead of looking it up with xcrun
-		-DCMAKE_LIBTOOL="${EPREFIX}/usr/bin/${CHOST}-libtool"
-	)
-
-	# LLVM can have very high memory consumption while linking,
-	# exhausting the limit on 32-bit linker executable
-	use x86 && local -x LDFLAGS="${LDFLAGS} -Wl,--no-keep-memory"
-
-	# LLVM_ENABLE_ASSERTIONS=NO does not guarantee this for us, #614844
-	use debug || local -x CPPFLAGS="${CPPFLAGS} -DNDEBUG"
 
 	mycmakeargs+=(
 		-DCMAKE_C_COMPILER="${CC}"

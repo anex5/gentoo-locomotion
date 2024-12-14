@@ -92,7 +92,7 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}
 "
 RDEPEND+="
 	${PYTHON_DEPS}
-	>=sys-devel/clang-common-${PV}
+	>=llvm-core/clang-common-${PV}
 	rocm? (
 		dev-libs/rocm-device-libs:0/5.7
 	)
@@ -102,7 +102,7 @@ RDEPEND+="
 	xml? (
 		dev-libs/libxml2:2=[${MULTILIB_USEDEP}]
 	)
-	~sys-devel/llvm-${PV}:${LLVM_MAJOR}=[${MULTILIB_USEDEP},debug=]
+	~llvm-core/llvm-${PV}:${LLVM_MAJOR}=[${MULTILIB_USEDEP},debug=]
 "
 
 DEPEND="
@@ -122,8 +122,8 @@ BDEPEND="
 	)
 "
 PDEPEND="
-	sys-devel/clang-toolchain-symlinks:${LLVM_MAJOR}
-	~sys-devel/clang-runtime-${PV}
+	llvm-core/clang-toolchain-symlinks:${LLVM_MAJOR}
+	~llvm-core/clang-runtime-${PV}
 "
 RESTRICT="
 	!test? (

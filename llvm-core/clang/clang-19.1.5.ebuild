@@ -92,7 +92,7 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}
 "
 RDEPEND+="
 	${PYTHON_DEPS}
-	>=sys-devel/clang-common-${PV}
+	>=llvm-core/clang-common-${PV}
 	rocm? (
 		dev-libs/rocm-device-libs:0/5.7
 	)
@@ -102,7 +102,7 @@ RDEPEND+="
 	xml? (
 		dev-libs/libxml2:2=[${MULTILIB_USEDEP}]
 	)
-	~sys-devel/llvm-${PV}:${LLVM_MAJOR}=[${MULTILIB_USEDEP},debug=]
+	~llvm-core/llvm-${PV}:${LLVM_MAJOR}=[${MULTILIB_USEDEP},debug=]
 "
 
 DEPEND="
@@ -117,18 +117,15 @@ BDEPEND="
 			dev-python/sphinx[${PYTHON_USEDEP}]
 		')
 	)
-	xml? (
-		>=dev-util/pkgconf-1.3.7[${MULTILIB_USEDEP},pkg-config(+)]
-	)
+	test? ( ~llvm-core/lld-${PV} )
+	xml? ( virtual/pkgconfig )
 "
 PDEPEND="
-	~sys-devel/clang-runtime-${PV}
-	sys-devel/clang-toolchain-symlinks:${LLVM_MAJOR}
+	~llvm-core/clang-runtime-${PV}
+	llvm-core/clang-toolchain-symlinks:${LLVM_MAJOR}
 "
 RESTRICT="
-	!test? (
-		test
-	)
+	!test? ( test )
 "
 LLVM_COMPONENTS=(
 	"clang"

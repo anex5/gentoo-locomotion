@@ -100,10 +100,10 @@ RDEPEND="
 	unwind? ( sys-libs/libunwind[${MULTILIB_USEDEP}] )
 	llvm? (
 		$(llvm_gen_dep "
-			sys-devel/llvm:\${LLVM_SLOT}[llvm_targets_AMDGPU(+),${MULTILIB_USEDEP}]
+			llvm-core/llvm:\${LLVM_SLOT}[llvm_targets_AMDGPU(+),${MULTILIB_USEDEP}]
 			opencl? (
 				dev-util/spirv-llvm-translator:\${LLVM_SLOT}
-				sys-devel/clang:\${LLVM_SLOT}[llvm_targets_AMDGPU(+),${MULTILIB_USEDEP}]
+				llvm-core/clang:\${LLVM_SLOT}[llvm_targets_AMDGPU(+),${MULTILIB_USEDEP}]
 			)
 		")
 		video_cards_amdgpu? (
@@ -119,7 +119,7 @@ RDEPEND="
 	lm-sensors? ( sys-apps/lm-sensors:=[${MULTILIB_USEDEP}] )
 	opencl? (
 		>=virtual/opencl-3
-		dev-libs/libclc[spirv(-)]
+		llvm-core/libclc[spirv(-)]
 		>=dev-util/spirv-tools-1.3.231.0
 		virtual/libelf:0=
 	)
@@ -177,7 +177,7 @@ BDEPEND="
 	")
 	video_cards_intel? (
 		~dev-util/intel_clc-${PV}
-		dev-libs/libclc[spirv(-)]
+		llvm-core/libclc[spirv(-)]
 		$(python_gen_any_dep "dev-python/ply[\${PYTHON_USEDEP}]")
 	)
 	vulkan? (

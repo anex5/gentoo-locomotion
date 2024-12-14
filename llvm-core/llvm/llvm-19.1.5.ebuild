@@ -58,8 +58,7 @@ REQUIRED_USE="
 		llvm_targets_Sparc
 	)
 	x86? (
-
-	llvm_targets_X86
+		llvm_targets_X86
 	)
 "
 RDEPEND="
@@ -86,12 +85,11 @@ DEPEND="
 "
 BDEPEND="
 	${PYTHON_DEPS}
-	dev-lang/perl
 	>=dev-build/cmake-3.16
+	dev-lang/perl
 	sys-devel/gnuconfig
 	kernel_Darwin? (
 		<sys-libs/libcxx-${LLVM_VERSION}.9999
-		>=sys-devel/binutils-apple-5.1
 	)
 	doc? ( $(python_gen_any_dep '
 		dev-python/recommonmark[${PYTHON_USEDEP}]
@@ -106,8 +104,8 @@ RDEPEND="
 	!sys-devel/llvm:0
 "
 PDEPEND="
-	sys-devel/llvm-common
-	sys-devel/llvm-toolchain-symlinks:${LLVM_MAJOR}
+	llvm-core/llvm-common
+	llvm-core/llvm-toolchain-symlinks:${LLVM_MAJOR}
 	binutils-plugin? ( >=sys-devel/llvmgold-${LLVM_MAJOR} )
 "
 PATCHES=(
@@ -115,7 +113,7 @@ PATCHES=(
 )
 LLVM_COMPONENTS=( "llvm" "cmake" "third-party" )
 LLVM_MANPAGES=0
-LLVM_PATCHSET=${PV}-r6
+#LLVM_PATCHSET=${PV}
 LLVM_USE_TARGETS="provide"
 llvm.org_set_globals
 
@@ -256,6 +254,11 @@ src_prepare() {
 
 
 	llvm.org_src_prepare
+
+	if has_version ">=sys-libs/glibc-2.40"; then
+		# https://github.com/llvm/llvm-project/issues/100791
+		rm -r test/tools/llvm-exegesis/X86/latency || die
+	fi
 }
 
 get_distribution_components() {
@@ -381,6 +384,7 @@ get_distribution_components() {
 			llvm-xray
 			obj2yaml
 			opt
+			reduce-chunk-list
 			sancov
 			sanstats
 			split-file
@@ -415,6 +419,10 @@ get_distribution_components() {
 }
 
 multilib_src_configure() {
+	if use ppc && tc-is-gcc && [[ $(gcc-major-version) -lt 14 ]]; then
+		# Workaround for bug #880677
+		append-flags $(test-flags-CXX -fno-ipa-sra -fno-ipa-modref -fno-ipa-icf)
+	fi
 	local ffi_cflags ffi_ldflags
 	if use libffi; then
 		ffi_cflags=$($(tc-getPKG_CONFIG) --cflags-only-I libffi)
