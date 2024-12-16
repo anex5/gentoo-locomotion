@@ -387,7 +387,7 @@ BDEPEND+="
 		sys-devel/mold
 	)
 	lld? (
-		sys-devel/lld
+		llvm-core/lld
 	)
 	amd64? ( >=dev-lang/nasm-${NASM_PV} )
 	x86? ( >=dev-lang/nasm-${NASM_PV} )
@@ -415,14 +415,14 @@ RESTRICT="mirror"
 S="${WORKDIR}/${PN}-${PV%_*}"
 
 llvm_check_deps() {
-	if ! has_version -b "sys-devel/clang:${LLVM_SLOT}" ; then
-		einfo "sys-devel/clang:${LLVM_SLOT} is missing! Cannot use LLVM slot ${LLVM_SLOT} ..." >&2
+	if ! has_version -b "llvm-core/clang:${LLVM_SLOT}" ; then
+		einfo "llvm-core/clang:${LLVM_SLOT} is missing! Cannot use LLVM slot ${LLVM_SLOT} ..." >&2
 		return 1
 	fi
 
 	if use clang && ! use mold ; then
-		if ! has_version -b "sys-devel/lld:${LLVM_SLOT}" ; then
-			einfo "sys-devel/lld:${LLVM_SLOT} is missing! Cannot use LLVM slot ${LLVM_SLOT} ..." >&2
+		if ! has_version -b "llvm-core/lld:${LLVM_SLOT}" ; then
+			einfo "llvm-core/lld:${LLVM_SLOT} is missing! Cannot use LLVM slot ${LLVM_SLOT} ..." >&2
 			return 1
 		fi
 
@@ -432,8 +432,8 @@ llvm_check_deps() {
 		fi
 
 		if use pgo ; then
-			if ! has_version -b "=sys-libs/compiler-rt-sanitizers-${LLVM_SLOT}*[profile]" ; then
-				einfo "=sys-libs/compiler-rt-sanitizers-${LLVM_SLOT}*[profile] is missing! Cannot use LLVM slot ${LLVM_SLOT} ..." >&2
+			if ! has_version -b "=llvm-core/compiler-rt-sanitizers-${LLVM_SLOT}*[profile]" ; then
+				einfo "=llvm-core/compiler-rt-sanitizers-${LLVM_SLOT}*[profile] is missing! Cannot use LLVM slot ${LLVM_SLOT} ..." >&2
 				return 1
 			fi
 		fi
@@ -647,8 +647,6 @@ mozconfig_use_with() {
 	mozconfig_add_options_ac "$(use ${1} && echo +${1} || echo -${1})" "${flag}"
 }
 
-
-
 virtwl() {
 	debug-print-function ${FUNCNAME} "$@"
 
@@ -723,7 +721,7 @@ pkg_setup() {
 		llvm-r1_pkg_setup
 
 		if use clang && use pgo && use lld ; then
-			has_version "sys-devel/lld:$(clang-major-version)" \
+			has_version "llvm-core/lld:$(clang-major-version)" \
 				|| die "Clang PGO requires LLD."
 			local lld_pv=$(ld.lld --version 2>/dev/null \
 				| awk '{ print $2 }')
@@ -1293,13 +1291,13 @@ _src_configure() {
 		NM="llvm-nm"
 		RANLIB="llvm-ranlib"
 		local clang_slot=$(clang-major-version)
-		if ! has_version "sys-devel/lld:${clang_slot}" ; then
+		if ! has_version "llvm-core/lld:${clang_slot}" ; then
 			eerror
-			eerror "You need to emerge sys-devel/lld:${clang_slot}"
+			eerror "You need to emerge llvm-core/lld:${clang_slot}"
 			eerror
 			die
 		fi
-		if ! has_version "=sys-libs/compiler-rt-sanitizers-${clang_slot}*[profile]" ; then
+		if ! has_version "=llvm-core/compiler-rt-sanitizers-${clang_slot}*[profile]" ; then
 			eerror
 			eerror "You need to emerge =sys-libs/compiler-rt-sanitizers-${clang_slot}*[profile]"
 			eerror
@@ -1887,7 +1885,7 @@ _src_install() {
 	rm "${ED}${MOZILLA_FIVE_HOME}/${PN}-bin" || die
 	dosym "${PN}" "${MOZILLA_FIVE_HOME}/${PN}-bin"
 
-	# Don't install llvm-symbolizer from sys-devel/llvm package
+	# Don't install llvm-symbolizer from llvm-core/llvm package
 	if [[ -f "${ED}${MOZILLA_FIVE_HOME}/llvm-symbolizer" ]] ; then
 		rm -v "${ED}${MOZILLA_FIVE_HOME}/llvm-symbolizer" || die
 	fi
