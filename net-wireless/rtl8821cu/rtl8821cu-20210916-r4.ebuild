@@ -5,10 +5,10 @@ EAPI=8
 
 inherit linux-mod-r1
 
-MODULES_KERNEL_MAX=6.11
+MODULES_KERNEL_MAX=6.12
 MODULES_KERNEL_MIN=6.1
 
-COMMIT="b009a8ea848d521abf64d2bc27630f4d081f30c9"
+COMMIT="9a249f5a2096076125dc39f4fb574fc38eeb2304"
 
 DESCRIPTION="Realtek RTL8811CU/RTL8821CU USB wifi adapter driver"
 HOMEPAGE="https://github.com/morrownr/8821cu-20210916"
@@ -33,9 +33,13 @@ pkg_setup() {
 	CONFIG_CHECK2="LIB80211 ~!MAC80211 ~LIB80211_CRYPT_TKIP WIRELESS_EXT COMPAT_NET_DEV_OPS CFG80211"
 }
 
+src_prepare() {
+	default
+	sed -e '/^\# gcc-13/,/^$/ s:^:\#:' -i Makefile || die "Failed to patch Makefile."
+}
+
 src_compile() {
 	local modlist=( 8821cu=kernel/drivers/net/wireless/realtek/rtlwifi/rtl8821cu:. )
-
 
 	local modargs=(
 		KERNELDIR="${KV_OUT_DIR}"
