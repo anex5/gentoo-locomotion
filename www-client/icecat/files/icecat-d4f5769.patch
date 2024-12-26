@@ -1,0 +1,66 @@
+From d4f5769a01531070eb401fd0b78bbd0ce22c4b1f Mon Sep 17 00:00:00 2001
+From: Andi-Bogdan Postelnicu <andi@mozilla.com>
+Date: Fri, 9 Sep 2022 11:01:50 +0000
+Subject: [PATCH] Bug 1746462 - add support for --enable-linker=mold on linux.
+ r=glandium
+
+Differential Revision: https://phabricator.services.mozilla.com/D134330
+---
+ build/moz.configure/toolchain.configure | 9 ++++++---
+ toolkit/moz.configure                   | 2 +-
+ 2 files changed, 7 insertions(+), 4 deletions(-)
+
+diff --git a/build/moz.configure/toolchain.configure b/build/moz.configure/toolchain.configure
+index 93c9ed210e3e7..9df2e9dd7dfb8 100755
+--- a/build/moz.configure/toolchain.configure
++++ b/build/moz.configure/toolchain.configure
+@@ -1513,7 +1513,7 @@ def enable_linker_default(target, developer_options):
+ option(
+     "--enable-linker",
+     nargs=1,
+-    help="Select the linker {bfd, gold, ld64, lld, lld-*}{|}",
++    help="Select the linker {bfd, gold, ld64, lld, lld-*, mold}{|}",
+     default=enable_linker_default,
+     when=is_linker_option_enabled,
+ )
+@@ -1548,7 +1548,7 @@ def select_linker(linker, c_compiler, developer_options, toolchain_flags, target
+         if target.kernel == "Darwin":
+             valid_linkers = ("ld64", "lld")
+         else:
+-            valid_linkers = ("bfd", "gold", "lld")
++            valid_linkers = ("bfd", "gold", "lld", "mold")
+         if linker in valid_linkers:
+             return True
+         if "lld" in valid_linkers and linker.startswith("lld-"):
+@@ -1593,6 +1593,9 @@ def select_linker(linker, c_compiler, developer_options, toolchain_flags, target
+         elif retcode != 0:
+             return None
+ 
++        elif "mold" in stdout:
++            kind = "mold"
++
+         elif "GNU ld" in stdout:
+             # We are using the normal linker
+             kind = "bfd"
+@@ -1699,7 +1702,7 @@ add_old_configure_assignment("LINKER_LDFLAGS", linker_ldflags)
+ @depends(select_linker, target, c_compiler)
+ def gcc_use_gnu_ld(select_linker, target, c_compiler):
+     if select_linker is not None and target.kernel != "Darwin":
+-        return select_linker.KIND in ("bfd", "gold", "lld")
++        return select_linker.KIND in ("bfd", "gold", "lld", "mold")
+     if target.kernel == "WINNT" and c_compiler.type == "clang":
+         return True
+     return None
+diff --git a/toolkit/moz.configure b/toolkit/moz.configure
+index 34a5aaae5338c..abad7e5f15050 100644
+--- a/toolkit/moz.configure
++++ b/toolkit/moz.configure
+@@ -1446,7 +1446,7 @@ with only_when("--enable-compile-environment"):
+     @depends("--enable-release", enable_linker)
+     def default_elfhack(release, linker):
+         # Disable elfhack when explicitly building with --enable-linker=lld
+-        if linker and linker.origin != "default" and linker[0] == "lld":
++        if linker and linker.origin != "default" and linker[0] in ("lld", "mold"):
+             return False
+         return bool(release)
+ 

@@ -542,7 +542,7 @@ moz_build_xpi() {
 		fy-NL ga-IE gu-IN hi-IN hy-AM nb-NO ne-NP nn-NO pa-IN sv-SE
 	)
 
-	cd "${BUILD_OBJ_DIR}"/../browser/locales || die
+	cd "${BUILD_DIR}"/browser/locales || die
 	local lang xflag
 	for lang in "${MOZ_LANGS[@]}"; do
 		# en and en_US are handled internally
@@ -872,7 +872,7 @@ src_prepare() {
 	use atk || eapply "${FILESDIR}/icecat-no-atk.patch"
 	use dbus || eapply "${FILESDIR}/icecat-no-dbus.patch"
 	eapply "${FILESDIR}/icecat-no-fribidi.patch"
-	#eapply "${FILESDIR}/icecat-fix-clang-as.patch"
+	eapply "${FILESDIR}/icecat-fix-clang-as.patch"
 	eapply "${FILESDIR}/icecat-system-gtests.patch"
 
 	if use lto; then
@@ -939,6 +939,7 @@ src_prepare() {
 
 	# Make cargo respect MAKEOPTS
 	[[ -n ${CARGO_BUILD_JOBS} ]] || export CARGO_BUILD_JOBS="$(makeopts_jobs)"
+
 	# Workaround for bgo#915651
 	if ! use elibc_glibc ; then
 		if use amd64 ; then
@@ -1273,7 +1274,7 @@ _src_configure() {
 	export HOST_CXX="$(tc-getBUILD_CXX)"
 	export AS="$(tc-getCC) -c"
 	tc-export CC CXX LD AR AS NM OBJDUMP RANLIB PKG_CONFIG
-
+	_fix_paths
 	# Pass the correct toolchain paths through cbindgen
 	if tc-is-cross-compiler ; then
 		export BINDGEN_CFLAGS="
@@ -1292,7 +1293,7 @@ _src_configure() {
 	export SHELL="${EPREFIX}/bin/bash"
 
 	# Set state path
-	export MOZBUILD_STATE_PATH="${s}"
+	export MOZBUILD_STATE_PATH="${BUILD_DIR}"
 
 	# MOZCONFIG is dynamically generated per ABI in _fix_paths().
 	#export MOZCONFIG="${s}/.mozconfig"
@@ -1331,7 +1332,6 @@ _src_configure() {
 		--without-wasm-sandboxed-libraries \
 		--with-intl-api \
 		--with-l10n-base="${s}/l10n" \
-		--with-libclang-path="$(llvm-config --libdir)" \
 		--with-system-nspr \
 		--with-system-nss \
 		--with-system-zlib \
@@ -1714,7 +1714,7 @@ _src_configure() {
 	mozconfig_add_options_ac 'Gentoo default' "XARGS=${EPREFIX}/usr/bin/xargs"
 
 	# Set build dir
-	mozconfig_add_options_mk 'Gentoo default' "MOZ_OBJDIR=${BUILD_OBJ_DIR}"
+	mozconfig_add_options_mk 'Gentoo default' "MOZ_OBJDIR=${BUILD_DIR}"
 	einfo "Cross-compile ABI:\t\t${ABI}"
 	einfo "Cross-compile CFLAGS:\t${CFLAGS}"
 	einfo "Cross-compile CC:\t\t${CC}"
@@ -1816,9 +1816,9 @@ _src_install() {
 	_fix_paths
 	# xpcshell is getting called during install
 	pax-mark m \
-		"${BUILD_OBJ_DIR}/dist/bin/xpcshell" \
-		"${BUILD_OBJ_DIR}/dist/bin/${PN}" \
-		"${BUILD_OBJ_DIR}/dist/bin/plugin-container"
+		"${BUILD_DIR}/dist/bin/xpcshell" \
+		"${BUILD_DIR}/dist/bin/${PN}" \
+		"${BUILD_DIR}/dist/bin/plugin-container"
 
 	DESTDIR="${D}" ./mach install || die
 
@@ -1884,7 +1884,7 @@ _src_install() {
 	fi
 
 	# Install language packs
-	local langpacks=( $(find "${BUILD_OBJ_DIR}/dist/linux-x86_64/xpi" -type f -name '*.xpi') )
+	local langpacks=( $(find "${BUILD_DIR}/dist/linux-x86_64/xpi" -type f -name '*.xpi') )
 	if [[ -n "${langpacks}" ]] ; then
 		moz_install_xpi "${MOZILLA_FIVE_HOME}/distribution/extensions" "${langpacks[@]}"
 	fi
@@ -1892,9 +1892,9 @@ _src_install() {
 	# Install geckodriver
 	if use geckodriver ; then
 		einfo "Installing geckodriver into ${ED}${MOZILLA_FIVE_HOME} ..."
-		pax-mark m "${BUILD_OBJ_DIR}/dist/bin/geckodriver"
+		pax-mark m "${BUILD_DIR}/dist/bin/geckodriver"
 		exeinto "${MOZILLA_FIVE_HOME}"
-		doexe "${BUILD_OBJ_DIR}/dist/bin/geckodriver"
+		doexe "${BUILD_DIR}/dist/bin/geckodriver"
 
 		dosym "${MOZILLA_FIVE_HOME}/geckodriver" "/usr/bin/geckodriver"
 	fi
