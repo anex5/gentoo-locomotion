@@ -6,7 +6,7 @@ EAPI=8
 # Using Gentoos firefox patches as system libraries and lto are quite nice
 FIREFOX_PATCHSET="firefox-${PV%%.*}esr-patches-13.tar.xz"
 
-LLVM_COMPAT=( 18 19 )
+LLVM_COMPAT=( 18 )
 PP="1"
 GV="2"
 PYTHON_COMPAT=( python3_{10..13} )
@@ -542,7 +542,7 @@ moz_build_xpi() {
 		fy-NL ga-IE gu-IN hi-IN hy-AM nb-NO ne-NP nn-NO pa-IN sv-SE
 	)
 
-	cd "${BUILD_OBJ_DIR}"/browser/locales || die
+	cd "${BUILD_OBJ_DIR}"/../browser/locales || die
 	local lang xflag
 	for lang in "${MOZ_LANGS[@]}"; do
 		# en and en_US are handled internally
@@ -1039,7 +1039,7 @@ _fix_paths() {
 		local version_clang=$(clang --version 2>/dev/null \
 			| grep -F -- 'clang version' \
 			| awk '{ print $3 }')
-		if [[ -n ${version_clang} ]] ; then
+		if [[ -n "${version_clang}" ]] ; then
 			version_clang=$(ver_cut 1 "${version_clang}")
 		else
 			eerror
@@ -1065,7 +1065,7 @@ append_all() {
 is_flagq_last() {
 	local flag="${1}"
 	local olast=$(echo "${CFLAGS}" \
-		| grep -o -E -e "-O(0|g|1|z|s|2|3|4|fast)" \
+		| grep -o -E -e "-O(0|1|z|s|2|3|4|fast)" \
 		| tr " " "\n" \
 		| tail -n 1)
 einfo "CFLAGS:\t${CFLAGS}"
@@ -1076,7 +1076,7 @@ einfo "olast:\t${olast}"
 
 get_olast() {
 	local olast=$(echo "${CFLAGS}" \
-		| grep -o -E -e "-O(0|g|1|z|s|2|3|4|fast)" \
+		| grep -o -E -e "-O(0|1|z|s|2|3|4|fast)" \
 		| tr " " "\n" \
 		| tail -n 1)
 	if [[ -n "${olast}" ]] ; then
@@ -1285,23 +1285,22 @@ _src_configure() {
 	fi
 
 	# Set MOZILLA_FIVE_HOME
-	export MOZILLA_FIVE_HOME="/usr/$(get_libdir)/${PN}"
+	# MOZILLA_FIVE_HOME is dynamically generated per ABI in _fix_paths().
+	#export MOZILLA_FIVE_HOME="/usr/$(get_libdir)/${PN}"
 
 	# python/mach/mach/mixin/process.py fails to detect SHELL
 	export SHELL="${EPREFIX}/bin/bash"
 
 	# Set state path
-	export MOZBUILD_STATE_PATH="${BUILD_OBJ_DIR}"
+	export MOZBUILD_STATE_PATH="${s}"
 
-	# Set MOZCONFIG
-	export MOZCONFIG="${s}/.mozconfig"
-
+	# MOZCONFIG is dynamically generated per ABI in _fix_paths().
+	#export MOZCONFIG="${s}/.mozconfig"
+	# Set Gentoo defaults
+	export MOZILLA_OFFICIAL=1
 	# Initialize MOZCONFIG
 	mozconfig_add_options_ac '' --enable-application="browser"
 	mozconfig_add_options_ac '' --enable-project="browser"
-
-	# Set Gentoo defaults
-	export MOZILLA_OFFICIAL=1
 
 	mozconfig_add_options_ac \
 		'Gentoo default' \
