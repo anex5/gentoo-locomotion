@@ -50,19 +50,18 @@ RDEPEND="
 	>=app-arch/brotli-1.1.0
 	>=app-eselect/eselect-nodejs-20230521
 	dev-db/sqlite:3
-	>=dev-libs/libuv-1.48.0:=
+	>=dev-libs/libuv-1.49.1:=
 	>=dev-libs/simdjson-3.9.4:=
-	>=net-dns/c-ares-1.29.0
+	>=net-dns/c-ares-1.34.3
 	>=net-libs/nghttp2-1.62.1:=
-	>=net-libs/ngtcp2-1.6.0:=
 	>=sys-libs/zlib-1.3
 	corepack? ( !sys-apps/yarn )
-	system-icu? ( >=dev-libs/icu-73.0:= )
-	system-ssl? (
-		>=net-libs/ngtcp2-1.3.0:=
-		>=dev-libs/openssl-3.0.13:0=
+	system-icu? (
+		>=dev-libs/icu-76.1:=
 	)
-	!system-ssl? ( >=net-libs/ngtcp2-1.3.0:=[-gnutls] )
+	system-ssl? (
+		>=dev-libs/openssl-3.0.15:0=
+	)
 "
 BDEPEND="${PYTHON_DEPS}
 	app-alternatives/ninja
@@ -71,7 +70,7 @@ BDEPEND="${PYTHON_DEPS}
 	test? ( net-misc/curl )
 	pax-kernel? ( sys-apps/elfix )
 	mold? ( sys-devel/mold )
-	lld? ( sys-devel/lld )
+	lld? ( llvm-core/lld )
 "
 
 DEPEND="${RDEPEND}"
@@ -122,7 +121,7 @@ is_flagq_last() {
 src_prepare() {
 	tc-export AR CC CXX PKG_CONFIG
 	export V=1
-	export BUILDTYPE="Release"
+	export CONFIGURATION="Release"
 
 	# Fix compilation on Darwin
 	# https://code.google.com/p/gyp/issues/detail?id=260
