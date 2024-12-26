@@ -11,6 +11,7 @@ PP="1"
 GV="2"
 PYTHON_COMPAT=( python3_{10..13} )
 PYTHON_REQ_USE="ncurses,sqlite,ssl"
+RUST_NEEDS_LLVM=1
 
 WANT_AUTOCONF="2.1"
 
@@ -19,14 +20,17 @@ VIRTUALX_REQUIRED="manual"
 MOZ_ESR=yes
 
 inherit autotools check-reqs desktop flag-o-matic gnome2-utils linux-info llvm-r1 multiprocessing \
-	 multilib-minimal rust-toolchain optfeature pax-utils python-any-r1 toolchain-funcs virtualx xdg
+	 multilib-minimal optfeature pax-utils python-any-r1 rust toolchain-funcs virtualx xdg
 
 PATCH_URIS=(
 	https://dev.gentoo.org/~juippis/mozilla/patchsets/${FIREFOX_PATCHSET}
 )
 
 SRC_URI="
-	!buildtarball? ( icecat-${PV}-${PP}gnu${GV}.tar.bz2 )
+	!buildtarball? (
+		icecat-${PV}-${PP}gnu${GV}.tar.bz2
+		https://gitlab.com/api/v4/projects/37881342/packages/generic/${PN}/${PV}/${P}-${PP}gnu${GV}.tar.bz2
+	)
 	${PATCH_URIS[@]}
 "
 
@@ -168,7 +172,7 @@ SYSTEM_PYTHON_LIBS="
 			dev-python/idna[${PYTHON_USEDEP}]
 			dev-python/importlib-metadata[${PYTHON_USEDEP}]
 			dev-python/iso8601[${PYTHON_USEDEP}]
-			dev-python/jinja[${PYTHON_USEDEP}]
+			dev-python/jinja2[${PYTHON_USEDEP}]
 			dev-python/jsmin[${PYTHON_USEDEP}]
 			dev-python/jsonschema[${PYTHON_USEDEP}]
 			dev-python/packaging[${PYTHON_USEDEP}]
@@ -374,9 +378,11 @@ BDEPEND+="
 	>=dev-lang/perl-5.006
 	>=dev-util/cbindgen-0.24.3
 	>=dev-util/pkgconf-1.8.0[${MULTILIB_USEDEP},pkg-config(+)]
-	>=net-libs/nodejs-12
-	>=dev-lang/rust-1.69.0[${MULTILIB_USEDEP}]
-	<dev-lang/rust-1.83.0[${MULTILIB_USEDEP}]
+	>=net-libs/nodejs-21
+	|| (
+		>=dev-lang/rust-1.83.0[${MULTILIB_USEDEP}]
+		>=dev-lang/rust-bin-1.83.0[${MULTILIB_USEDEP}]
+	)
 	app-alternatives/awk
 	app-arch/unzip
 	app-arch/zip
@@ -416,7 +422,7 @@ S="${WORKDIR}/${PN}-${PV%_*}"
 
 llvm_check_deps() {
 	if ! has_version -b "llvm-core/clang:${LLVM_SLOT}" ; then
-		einfo "sys-devel/clang:${LLVM_SLOT} is missing! Cannot use LLVM slot ${LLVM_SLOT} ..." >&2
+		einfo "llvm-core/clang:${LLVM_SLOT} is missing! Cannot use LLVM slot ${LLVM_SLOT} ..." >&2
 		return 1
 	fi
 
@@ -425,15 +431,15 @@ llvm_check_deps() {
 			einfo "llvm-core/lld:${LLVM_SLOT} is missing! Cannot use LLVM slot ${LLVM_SLOT} ..." >&2
 			return 1
 		fi
-
-		if ! has_version -b "dev-lang/rust:0/llvm-${LLVM_SLOT}" ; then
+		if ! has_version -b "dev-lang/rust:0/llvm-${LLVM_SLOT}" && ! has_version -b "dev-lang/rust-bin:0/llvm-${LLVM_SLOT}"; then
 			einfo "dev-lang/rust:0/llvm-${LLVM_SLOT} is missing! Cannot use LLVM slot ${LLVM_SLOT} ..." >&2
 			return 1
 		fi
 
 		if use pgo ; then
-			if ! has_version -b "=llvm-core/compiler-rt-sanitizers-${LLVM_SLOT}*[profile]" ; then
-				einfo "=llvm-core/compiler-rt-sanitizers-${LLVM_SLOT}*[profile] is missing! Cannot use LLVM slot ${LLVM_SLOT} ..." >&2
+			if ! has_version -b "=llvm-runtimes/compiler-rt-sanitizers-${LLVM_SLOT}*[profile]" ; then
+				einfo "=llvm-runtimes/compiler-rt-sanitizers-${LLVM_SLOT}*[profile] is missing!"
+				einfo "Cannot use LLVM slot ${LLVM_SLOT} ..." >&2
 				return 1
 			fi
 		fi
@@ -654,8 +660,6 @@ virtwl() {
 	[[ -n $XDG_RUNTIME_DIR ]] || die "${FUNCNAME} needs XDG_RUNTIME_DIR to be set; try xdg_environment_reset"
 	tinywl -h >/dev/null || die 'tinywl -h failed'
 
-	# TODO: don't run addpredict in utility function. WLR_RENDERER=pixman doesn't work
-	addpredict "/dev/dri"
 	local VIRTWL VIRTWL_PID
 	coproc VIRTWL { WLR_BACKENDS=headless exec tinywl -s 'echo $WAYLAND_DISPLAY; read _; kill $PPID'; }
 	local -x WAYLAND_DISPLAY
@@ -689,18 +693,6 @@ pkg_pretend() {
 	fi
 }
 
-pkg_nofetch() {
-	if ! use buildtarball; then
-		einfo "You have not enabled buildtarball use flag, therefore you will have to"
-		einfo "build the tarball manually and place it in your distfiles directory."
-		einfo "You may find the script for building the tarball here"
-		einfo "https://git.savannah.gnu.org/cgit/gnuzilla.git/, but make sure it is the"
-		einfo "right version."
-		einfo "The output of the script should be icecat-${PV}-${PP}gnu${GV}.tar.bz2"
-	fi
-}
-
-#NABIS=0
 pkg_setup() {
 	if [[ ${MERGE_TYPE} != binary ]] ; then
 		if use pgo ; then
@@ -719,56 +711,26 @@ pkg_setup() {
 		check-reqs_pkg_setup
 
 		llvm-r1_pkg_setup
+		rust_pkg_setup
 
-		if use clang && use pgo && use lld ; then
-			has_version "llvm-core/lld:$(clang-major-version)" \
-				|| die "Clang PGO requires LLD."
-			local lld_pv=$(ld.lld --version 2>/dev/null \
-				| awk '{ print $2 }')
-			if [[ -n ${lld_pv} ]] ; then
-				lld_pv=$(ver_cut 1 "${lld_pv}")
-			fi
-			if [[ -z ${lld_pv} ]] ; then
-				eerror
-				eerror "Failed to read ld.lld version!"
-				eerror
-				die
-			fi
+		if use clang && use lto && use lld ; then
+			local version_lld=$(ld.lld --version 2>/dev/null | awk '{ print $2 }')
+			[[ -n ${version_lld} ]] && version_lld=$(ver_cut 1 "${version_lld}")
+			[[ -z ${version_lld} ]] && die "Failed to read ld.lld version!"
 
-			local llvm_rust_pv=$(rustc -Vv 2>/dev/null \
-				| grep -F -- 'LLVM version:' \
-				| awk '{ print $3 }')
-			if [[ -n ${llvm_rust_pv} ]] ; then
-				llvm_rust_pv=$(ver_cut 1 "${llvm_rust_pv}")
-			fi
-			if [[ -z ${llvm_rust_pv} ]] ; then
-				eerror
-				eerror "Failed to read used LLVM version from rustc!"
-				eerror
-				die
-			fi
+			local version_llvm_rust=$(rustc -Vv 2>/dev/null | grep -F -- 'LLVM version:' | awk '{ print $3 }')
+			[[ -n ${version_llvm_rust} ]] && version_llvm_rust=$(ver_cut 1 "${version_llvm_rust}")
+			[[ -z ${version_llvm_rust} ]] && die "Failed to read used LLVM version from rustc!"
 
-			if ver_test "${lld_pv}" -lt "${llvm_rust_pv}" ; then
-				eerror
-				eerror "Rust is using LLVM version ${llvm_rust_pv} but ld.lld version"
-				eerror "belongs to LLVM version ${lld_pv}."
-				eerror
-				eerror "You will be unable to link ${CATEGORY}/${PN}. To proceed you have the"
-				eerror "following options:"
-				eerror
-				eerror "  - Manually switch rust version using 'eselect rust' to match used"
-				eerror "    LLVM version"
-				eerror "  - Switch to dev-lang/rust[system-llvm] which will guarantee the"
-				eerror "    matching version"
+			if ver_test "${version_lld}" -ne "${version_llvm_rust}" ; then
+				eerror "Rust is using LLVM version ${version_llvm_rust} but ld.lld version belongs to LLVM version ${version_lld}."
+				eerror "You will be unable to link ${CATEGORY}/${PN}. To proceed you have the following options:"
+				eerror "  - Manually switch rust version using 'eselect rust' to match used LLVM version"
+				eerror "  - Switch to dev-lang/rust[system-llvm] which will guarantee matching version"
 				eerror "  - Build ${CATEGORY}/${PN} without USE=lto"
-				eerror "  - Rebuild lld with llvm that was used to build rust (may need to"
-				eerror "    rebuild the whole llvm/clang/lld/rust chain depending on your"
-				eerror "    @world updates)"
-				eerror
-				eerror "LLVM version used by Rust (${llvm_rust_pv}) does not match with"
-				eerror "ld.lld version (${lld_pv})!"
-				eerror
-				die
+				eerror "  - Rebuild lld with llvm that was used to build rust (may need to rebuild the whole "
+				eerror "    llvm/clang/lld/rust chain depending on your @world updates)"
+				die "LLVM version used by Rust (${version_llvm_rust}) does not match with ld.lld version (${version_lld})!"
 			fi
 		fi
 
@@ -910,7 +872,7 @@ src_prepare() {
 	use atk || eapply "${FILESDIR}/icecat-no-atk.patch"
 	use dbus || eapply "${FILESDIR}/icecat-no-dbus.patch"
 	eapply "${FILESDIR}/icecat-no-fribidi.patch"
-	eapply "${FILESDIR}/icecat-fix-clang-as.patch"
+	#eapply "${FILESDIR}/icecat-fix-clang-as.patch"
 	eapply "${FILESDIR}/icecat-system-gtests.patch"
 
 	if use lto; then
@@ -970,6 +932,8 @@ src_prepare() {
 
 	eapply "${WORKDIR}/firefox-patches"
 
+	eapply "${FILESDIR}/icecat-115.18.0-python3.12-fix.patch"
+
 	# Allow user to apply any additional patches without modifing ebuild
 	eapply_user
 
@@ -991,7 +955,6 @@ src_prepare() {
 			die
 		fi
 	fi
-
 
 	# Make LTO & ICU respect MAKEOPTS
 	sed -i \
@@ -1267,51 +1230,28 @@ _src_configure() {
 	einfo
 
 	local have_switched_compiler=
-	if use clang ; then
-	# Force clang
-	einfo
-	einfo "Switching to clang"
-	einfo
-		local version_clang=$(clang --version 2>/dev/null \
-			| grep -F -- 'clang version' \
-			| awk '{ print $3 }')
-		if [[ -n ${version_clang} ]] ; then
-			version_clang=$(ver_cut 1 "${version_clang}")
-		else
-			eerror
-			eerror "Failed to read clang version!"
-			eerror
-			die
+	if use clang; then
+		# Force clang
+		einfo "Enforcing the use of clang due to USE=clang ..."
+
+		local version_clang=$(clang --version 2>/dev/null | grep -F -- 'clang version' | awk '{ print $3 }')
+		[[ -n ${version_clang} ]] && version_clang=$(ver_cut 1 "${version_clang}")
+		[[ -z ${version_clang} ]] && die "Failed to read clang version!"
+
+		if tc-is-gcc; then
+			have_switched_compiler=yes
 		fi
-		have_switched_compiler="yes"
-		AR="llvm-ar"
-		AS="llvm-as"
-		CC="${CHOST}-clang-${version_clang}"
-		CXX="${CHOST}-clang++-${version_clang}"
-		NM="llvm-nm"
-		RANLIB="llvm-ranlib"
-		local clang_slot=$(clang-major-version)
-		if ! has_version "llvm-core/lld:${clang_slot}" ; then
-			eerror
-			eerror "You need to emerge llvm-core/lld:${clang_slot}"
-			eerror
-			die
-		fi
-		if ! has_version "=sys-libs/compiler-rt-sanitizers-${clang_slot}*[profile]" ; then
-			eerror
-			eerror "You need to emerge =sys-libs/compiler-rt-sanitizers-${clang_slot}*[profile]"
-			eerror
-			die
-		fi
-	else
-	# Force gcc
-	ewarn
-	ewarn "GCC is not the upstream default"
-	ewarn
+
+		AR=llvm-ar
+		CC=${CHOST}-clang-${version_clang}
+		CXX=${CHOST}-clang++-${version_clang}
+		NM=llvm-nm
+		RANLIB=llvm-ranlib
+
+	elif ! use clang && ! tc-is-gcc ; then
+		# Force gcc
 		have_switched_compiler=yes
-	einfo
-	einfo "Switching to gcc"
-	einfo
+		einfo "Enforcing the use of gcc due to USE=-clang ..."
 		AR=gcc-ar
 		CC=${CHOST}-gcc
 		CXX=${CHOST}-g++
@@ -1331,8 +1271,9 @@ _src_configure() {
 	# AS is used in a non-standard way by upstream, #bmo1654031
 	export HOST_CC="$(tc-getBUILD_CC)"
 	export HOST_CXX="$(tc-getBUILD_CXX)"
-	tc-export CC CXX LD AR NM OBJDUMP RANLIB PKG_CONFIG
-	_fix_paths
+	export AS="$(tc-getCC) -c"
+	tc-export CC CXX LD AR AS NM OBJDUMP RANLIB PKG_CONFIG
+
 	# Pass the correct toolchain paths through cbindgen
 	if tc-is-cross-compiler ; then
 		export BINDGEN_CFLAGS="
@@ -1391,6 +1332,7 @@ _src_configure() {
 		--without-wasm-sandboxed-libraries \
 		--with-intl-api \
 		--with-l10n-base="${s}/l10n" \
+		--with-libclang-path="$(llvm-config --libdir)" \
 		--with-system-nspr \
 		--with-system-nss \
 		--with-system-zlib \
