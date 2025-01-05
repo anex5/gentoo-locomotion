@@ -1,0 +1,10 @@
+--- a/data/meson.build
++++ b/data/meson.build
+@@ -26,6 +26,7 @@ if xmlto.found()
+             xmlto,
+             '-o', '@OUTPUT@',
+             'html-nochunks',
++            '--skip-validation',
+             '@INPUT@',
+         ],
+         build_by_default: true,
