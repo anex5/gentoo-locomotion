@@ -8,7 +8,7 @@ LLVM_OPTIONAL=1
 CARGO_OPTIONAL=1
 PYTHON_COMPAT=( python3_{10..13} )
 
-inherit flag-o-matic llvm-r1 meson-multilib python-any-r1 linux-info rust-toolchain toolchain-funcs
+inherit flag-o-matic llvm-r2 meson-multilib python-any-r1 linux-info rust-toolchain toolchain-funcs
 
 MY_P="${P/_/-}"
 
@@ -104,6 +104,7 @@ RDEPEND="
 			opencl? (
 				dev-util/spirv-llvm-translator:\${LLVM_SLOT}
 				llvm-core/clang:\${LLVM_SLOT}[llvm_targets_AMDGPU(+),${MULTILIB_USEDEP}]
+				=llvm-core/libclc-\${LLVM_SLOT}*[spirv(-)]
 			)
 		")
 		video_cards_amdgpu? (
@@ -288,8 +289,8 @@ python_check_deps() {
 
 pkg_setup() {
 	# warning message for bug 459306
-	if use llvm && has_version sys-devel/llvm[!debug=]; then
-		ewarn "Mismatch between debug USE flags in media-libs/mesa and sys-devel/llvm"
+	if use llvm && has_version llvm-core/llvm[!debug=]; then
+		ewarn "Mismatch between debug USE flags in media-libs/mesa and llvm-core/llvm"
 		ewarn "detected! This can cause problems. For details, see bug 459306."
 	fi
 
@@ -307,7 +308,7 @@ pkg_setup() {
 		linux-info_pkg_setup
 	fi
 
-	use llvm && llvm-r1_pkg_setup
+	use llvm && llvm-r2_pkg_setup
 	python-any-r1_pkg_setup
 
 	if use opencl || (use vulkan && use video_cards_nvk); then
