@@ -1,0 +1,603 @@
+From a100848f1d0456e75ba337ccea3e6697e640b563 Mon Sep 17 00:00:00 2001
+From: Escain <escain@gmail.com>
+Date: Thu, 17 Oct 2024 14:23:03 +0200
+Subject: [PATCH 01/18] Update OpenGl_GraphicDriver.cxx
+
+Remove XLib access and add _WAYLAND define
+
+Signed-off-by: Escain <escain@gmail.com>
+---
+ src/OpenGl/OpenGl_GraphicDriver.cxx | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/OpenGl/OpenGl_GraphicDriver.cxx b/src/OpenGl/OpenGl_GraphicDriver.cxx
+index a1b5b2be5d..11a10b2d69 100644
+--- a/src/OpenGl/OpenGl_GraphicDriver.cxx
++++ b/src/OpenGl/OpenGl_GraphicDriver.cxx
+@@ -40,7 +40,7 @@ IMPLEMENT_STANDARD_RTTIEXT(OpenGl_GraphicDriver,Graphic3d_GraphicDriver)
+   #include <Aspect_NeutralWindow.hxx>
+ #endif
+ 
+-#if !defined(_WIN32) && !defined(__ANDROID__) && !defined(__QNX__) && !defined(__EMSCRIPTEN__) && (!defined(__APPLE__) || defined(HAVE_XLIB))
++#if !defined(_WAYLAND) && !defined(_WIN32) && !defined(__ANDROID__) && !defined(__QNX__) && !defined(__EMSCRIPTEN__) && (!defined(__APPLE__) || defined(HAVE_XLIB))
+   #include <X11/Xlib.h> // XOpenDisplay()
+   #include <GL/glx.h>
+ #endif
+
+From f12da756a075c7a317a6d0239fe0a623cbe9d9ad Mon Sep 17 00:00:00 2001
+From: Escain <escain@gmail.com>
+Date: Thu, 17 Oct 2024 14:30:38 +0200
+Subject: [PATCH 02/18] Update OpenGl_GraphicDriver.cxx
+
+Signed-off-by: Escain <escain@gmail.com>
+---
+ src/OpenGl/OpenGl_GraphicDriver.cxx | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/OpenGl/OpenGl_GraphicDriver.cxx b/src/OpenGl/OpenGl_GraphicDriver.cxx
+index 11a10b2d69..999b988bdc 100644
+--- a/src/OpenGl/OpenGl_GraphicDriver.cxx
++++ b/src/OpenGl/OpenGl_GraphicDriver.cxx
+@@ -40,7 +40,7 @@ IMPLEMENT_STANDARD_RTTIEXT(OpenGl_GraphicDriver,Graphic3d_GraphicDriver)
+   #include <Aspect_NeutralWindow.hxx>
+ #endif
+ 
+-#if !defined(_WAYLAND) && !defined(_WIN32) && !defined(__ANDROID__) && !defined(__QNX__) && !defined(__EMSCRIPTEN__) && (!defined(__APPLE__) || defined(HAVE_XLIB))
++#if defined(HAVE_XLIB))
+   #include <X11/Xlib.h> // XOpenDisplay()
+   #include <GL/glx.h>
+ #endif
+
+From 398bb191e6e20097a3948fe8ae469a4a7d33e531 Mon Sep 17 00:00:00 2001
+From: Escain <escain@gmail.com>
+Date: Thu, 17 Oct 2024 14:34:06 +0200
+Subject: [PATCH 03/18] Update CMakeLists.txt
+
+Signed-off-by: Escain <escain@gmail.com>
+---
+ CMakeLists.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 8507b7fb15..cfd9415e29 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -422,7 +422,7 @@ set (USE_DRACO     OFF CACHE BOOL "${USE_DRACO_DESCR}")
+ set (USE_TBB       OFF CACHE BOOL "${USE_TBB_DESCR}")
+ set (USE_EIGEN     OFF CACHE BOOL "${USE_EIGEN_DESCR}")
+ 
+-if (WIN32 OR ANDROID OR IOS OR EMSCRIPTEN)
++if (WIN32 OR ANDROID OR IOS OR EMSCRIPTEN OR WAYLAND)
+   # no Xlib
+ elseif (APPLE)
+   set (USE_XLIB OFF CACHE BOOL "${USE_XLIB_DESCR}")
+
+From 279a05f37d6f902db3c657fefd89e313566335c9 Mon Sep 17 00:00:00 2001
+From: Escain <escain@gmail.com>
+Date: Thu, 17 Oct 2024 14:38:21 +0200
+Subject: [PATCH 04/18] Update OpenGl_GraphicDriver.cxx
+
+Signed-off-by: Escain <escain@gmail.com>
+---
+ src/OpenGl/OpenGl_GraphicDriver.cxx | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/OpenGl/OpenGl_GraphicDriver.cxx b/src/OpenGl/OpenGl_GraphicDriver.cxx
+index 999b988bdc..3b14c28133 100644
+--- a/src/OpenGl/OpenGl_GraphicDriver.cxx
++++ b/src/OpenGl/OpenGl_GraphicDriver.cxx
+@@ -40,7 +40,7 @@ IMPLEMENT_STANDARD_RTTIEXT(OpenGl_GraphicDriver,Graphic3d_GraphicDriver)
+   #include <Aspect_NeutralWindow.hxx>
+ #endif
+ 
+-#if defined(HAVE_XLIB))
++#if defined(HAVE_XLIB)
+   #include <X11/Xlib.h> // XOpenDisplay()
+   #include <GL/glx.h>
+ #endif
+
+From 47d30d208852d6f7d9a24abc98784dabade1d899 Mon Sep 17 00:00:00 2001
+From: Escain <escain@gmail.com>
+Date: Thu, 17 Oct 2024 14:44:56 +0200
+Subject: [PATCH 05/18] Update CMakeLists.txt
+
+Signed-off-by: Escain <escain@gmail.com>
+---
+ CMakeLists.txt | 22 ++++++++++++++++------
+ 1 file changed, 16 insertions(+), 6 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index cfd9415e29..062aad678e 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -448,12 +448,22 @@ else()
+ endif()
+ 
+ # OpenGL
+-if (ANDROID OR IOS OR EMSCRIPTEN OR "${CMAKE_SYSTEM_NAME}" STREQUAL "WindowsStore")
+-  set (USE_OPENGL OFF)
+-  set (USE_GLES2 ON)
+-else()
+-  set (USE_OPENGL ON CACHE BOOL "${USE_OPENGL_DESCR}")
+-  set (USE_GLES2 OFF CACHE BOOL "${USE_GLES2_DESCR}")
++# Try to find OpenGL package
++find_package(OpenGL)
++if(NOT USE_D3D AND OPENGL_FOUND AND (NOT USE_GLES2 OR USE_OPENGL) )
++  set(USE_OPENGL ON)
++  set(USE_GLES2 OFF)
++  message(STATUS "OpenGL found, using OpenGL")
++  include_directories(${OPENGL_INCLUDE_DIRS})
++  list(APPEND EXTRA_LIBS ${OPENGL_LIBRARIES})
++  set(USE_OPENGL ${USE_OPENGL} CACHE BOOL "${USE_OPENGL_DESCR}")
++elseif( find_package(OpenGLES2) )
++  set(USE_OPENGL OFF)
++  set(USE_GLES2 ON)
++  message(STATUS "OpenGL ES 2 found, using GLES2")
++  include_directories(${OPENGLES2_INCLUDE_DIRS})
++  list(APPEND EXTRA_LIBS ${OPENGLES2_LIBRARIES})
++  set(USE_GLES2 ${USE_GLES2} CACHE BOOL "${USE_GLES2_DESCR}")
+ endif()
+ 
+ # include the patched or original list of modules
+
+From 53c13f6896df7ac356d908671e691d833388d68a Mon Sep 17 00:00:00 2001
+From: Escain <escain@gmail.com>
+Date: Thu, 17 Oct 2024 14:49:13 +0200
+Subject: [PATCH 06/18] Update CMakeLists.txt
+
+Signed-off-by: Escain <escain@gmail.com>
+---
+ CMakeLists.txt | 35 ++++++++++++++++++++---------------
+ 1 file changed, 20 insertions(+), 15 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 062aad678e..2c4fd2eead 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -449,21 +449,26 @@ endif()
+ 
+ # OpenGL
+ # Try to find OpenGL package
+-find_package(OpenGL)
+-if(NOT USE_D3D AND OPENGL_FOUND AND (NOT USE_GLES2 OR USE_OPENGL) )
+-  set(USE_OPENGL ON)
+-  set(USE_GLES2 OFF)
+-  message(STATUS "OpenGL found, using OpenGL")
+-  include_directories(${OPENGL_INCLUDE_DIRS})
+-  list(APPEND EXTRA_LIBS ${OPENGL_LIBRARIES})
+-  set(USE_OPENGL ${USE_OPENGL} CACHE BOOL "${USE_OPENGL_DESCR}")
+-elseif( find_package(OpenGLES2) )
+-  set(USE_OPENGL OFF)
+-  set(USE_GLES2 ON)
+-  message(STATUS "OpenGL ES 2 found, using GLES2")
+-  include_directories(${OPENGLES2_INCLUDE_DIRS})
+-  list(APPEND EXTRA_LIBS ${OPENGLES2_LIBRARIES})
+-  set(USE_GLES2 ${USE_GLES2} CACHE BOOL "${USE_GLES2_DESCR}")
++if (NOT USE_D3D)
++  find_package(OpenGL)
++  find_package(OpenGLES2)
++  # If GLES is not found, or we enforced GLES but not OpenGL, setup OpenGL
++  if(OPENGL_FOUND AND (NOT USE_GLES2 OR USE_OPENGL OR NOT OPENGLES2_FOUND) )
++    set(USE_OPENGL ON)
++    set(USE_GLES2 OFF)
++    message(STATUS "OpenGL found, using OpenGL")
++    include_directories(${OPENGL_INCLUDE_DIRS})
++    list(APPEND EXTRA_LIBS ${OPENGL_LIBRARIES})
++    set(USE_OPENGL ${USE_OPENGL} CACHE BOOL "${USE_OPENGL_DESCR}")
++  elseif( OPENGLES2_FOUND )
++    # Either we found no OpenGL, or GLES was enforced
++    set(USE_OPENGL OFF)
++    set(USE_GLES2 ON)
++    message(STATUS "OpenGL ES 2 found, using GLES2")
++    include_directories(${OPENGLES2_INCLUDE_DIRS})
++    list(APPEND EXTRA_LIBS ${OPENGLES2_LIBRARIES})
++    set(USE_GLES2 ${USE_GLES2} CACHE BOOL "${USE_GLES2_DESCR}")
++  endif()
+ endif()
+ 
+ # include the patched or original list of modules
+
+From ad1ce8fb4b66c21749a592e8bda1decddd180098 Mon Sep 17 00:00:00 2001
+From: Escain <escain@gmail.com>
+Date: Thu, 17 Oct 2024 14:54:14 +0200
+Subject: [PATCH 07/18] Update CMakeLists.txt
+
+Signed-off-by: Escain <escain@gmail.com>
+---
+ CMakeLists.txt | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 2c4fd2eead..629735a2b5 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -422,12 +422,17 @@ set (USE_DRACO     OFF CACHE BOOL "${USE_DRACO_DESCR}")
+ set (USE_TBB       OFF CACHE BOOL "${USE_TBB_DESCR}")
+ set (USE_EIGEN     OFF CACHE BOOL "${USE_EIGEN_DESCR}")
+ 
+-if (WIN32 OR ANDROID OR IOS OR EMSCRIPTEN OR WAYLAND)
++if (WIN32 OR ANDROID OR IOS OR EMSCRIPTEN)
+   # no Xlib
+ elseif (APPLE)
+   set (USE_XLIB OFF CACHE BOOL "${USE_XLIB_DESCR}")
+ else()
+-  set (USE_XLIB ON  CACHE BOOL "${USE_XLIB_DESCR}")
++  find_package(Xlib)
++  if (XLIB_FOUND)
++    set (USE_XLIB ON  CACHE BOOL "${USE_XLIB_DESCR}")
++  else()
++    set(USE_WAYLAND)
++  endif()
+ endif()
+ 
+ if (WIN32)
+
+From 2a7f36406eca1164e3ac19d0dc30b301d787e9f9 Mon Sep 17 00:00:00 2001
+From: Escain <escain@gmail.com>
+Date: Thu, 17 Oct 2024 15:00:38 +0200
+Subject: [PATCH 08/18] Update CMakeLists.txt
+
+Signed-off-by: Escain <escain@gmail.com>
+---
+ CMakeLists.txt | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 629735a2b5..a947c466e5 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -430,8 +430,10 @@ else()
+   find_package(Xlib)
+   if (XLIB_FOUND)
+     set (USE_XLIB ON  CACHE BOOL "${USE_XLIB_DESCR}")
++    message(ERROR "XLIB")
+   else()
+     set(USE_WAYLAND)
++    message(ERROR "WAYLAND")
+   endif()
+ endif()
+ 
+@@ -465,6 +467,7 @@ if (NOT USE_D3D)
+     include_directories(${OPENGL_INCLUDE_DIRS})
+     list(APPEND EXTRA_LIBS ${OPENGL_LIBRARIES})
+     set(USE_OPENGL ${USE_OPENGL} CACHE BOOL "${USE_OPENGL_DESCR}")
++    message(ERROR "OPENGL")
+   elseif( OPENGLES2_FOUND )
+     # Either we found no OpenGL, or GLES was enforced
+     set(USE_OPENGL OFF)
+@@ -473,6 +476,7 @@ if (NOT USE_D3D)
+     include_directories(${OPENGLES2_INCLUDE_DIRS})
+     list(APPEND EXTRA_LIBS ${OPENGLES2_LIBRARIES})
+     set(USE_GLES2 ${USE_GLES2} CACHE BOOL "${USE_GLES2_DESCR}")
++    message(ERROR "GLES2")
+   endif()
+ endif()
+ 
+
+From 6ecaa7df7f653944074f04237c3e6b4101c468c6 Mon Sep 17 00:00:00 2001
+From: Escain <escain@gmail.com>
+Date: Thu, 17 Oct 2024 15:01:43 +0200
+Subject: [PATCH 09/18] Update CMakeLists.txt
+
+Signed-off-by: Escain <escain@gmail.com>
+---
+ CMakeLists.txt | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index a947c466e5..443c0ccc63 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -430,10 +430,10 @@ else()
+   find_package(Xlib)
+   if (XLIB_FOUND)
+     set (USE_XLIB ON  CACHE BOOL "${USE_XLIB_DESCR}")
+-    message(ERROR "XLIB")
++    message(FATAL_ERROR "XLIB")
+   else()
+     set(USE_WAYLAND)
+-    message(ERROR "WAYLAND")
++    message(FATAL_ERROR "WAYLAND")
+   endif()
+ endif()
+ 
+@@ -467,7 +467,7 @@ if (NOT USE_D3D)
+     include_directories(${OPENGL_INCLUDE_DIRS})
+     list(APPEND EXTRA_LIBS ${OPENGL_LIBRARIES})
+     set(USE_OPENGL ${USE_OPENGL} CACHE BOOL "${USE_OPENGL_DESCR}")
+-    message(ERROR "OPENGL")
++    message(FATAL_ERROR "OPENGL")
+   elseif( OPENGLES2_FOUND )
+     # Either we found no OpenGL, or GLES was enforced
+     set(USE_OPENGL OFF)
+@@ -476,7 +476,7 @@ if (NOT USE_D3D)
+     include_directories(${OPENGLES2_INCLUDE_DIRS})
+     list(APPEND EXTRA_LIBS ${OPENGLES2_LIBRARIES})
+     set(USE_GLES2 ${USE_GLES2} CACHE BOOL "${USE_GLES2_DESCR}")
+-    message(ERROR "GLES2")
++    message(FATAL_ERROR "GLES2")
+   endif()
+ endif()
+ 
+
+From f70887982affea114fef0ba89fc6a6a63c9e5c03 Mon Sep 17 00:00:00 2001
+From: Escain <escain@gmail.com>
+Date: Thu, 17 Oct 2024 15:04:33 +0200
+Subject: [PATCH 10/18] Update CMakeLists.txt
+
+Signed-off-by: Escain <escain@gmail.com>
+---
+ CMakeLists.txt | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 443c0ccc63..79505d5cb4 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -427,7 +427,7 @@ if (WIN32 OR ANDROID OR IOS OR EMSCRIPTEN)
+ elseif (APPLE)
+   set (USE_XLIB OFF CACHE BOOL "${USE_XLIB_DESCR}")
+ else()
+-  find_package(Xlib)
++  find_package(Xlib QUIET)
+   if (XLIB_FOUND)
+     set (USE_XLIB ON  CACHE BOOL "${USE_XLIB_DESCR}")
+     message(FATAL_ERROR "XLIB")
+@@ -457,8 +457,8 @@ endif()
+ # OpenGL
+ # Try to find OpenGL package
+ if (NOT USE_D3D)
+-  find_package(OpenGL)
+-  find_package(OpenGLES2)
++  find_package(OpenGL QUIET)
++  find_package(OpenGLES2 QUIET)
+   # If GLES is not found, or we enforced GLES but not OpenGL, setup OpenGL
+   if(OPENGL_FOUND AND (NOT USE_GLES2 OR USE_OPENGL OR NOT OPENGLES2_FOUND) )
+     set(USE_OPENGL ON)
+
+From b1145d14302c5f897df1fb933301a0611a358abd Mon Sep 17 00:00:00 2001
+From: Escain <escain@gmail.com>
+Date: Thu, 17 Oct 2024 15:06:11 +0200
+Subject: [PATCH 11/18] Update CMakeLists.txt
+
+Signed-off-by: Escain <escain@gmail.com>
+---
+ CMakeLists.txt | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 79505d5cb4..7e26969833 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -430,10 +430,10 @@ else()
+   find_package(Xlib QUIET)
+   if (XLIB_FOUND)
+     set (USE_XLIB ON  CACHE BOOL "${USE_XLIB_DESCR}")
+-    message(FATAL_ERROR "XLIB")
++    message("Configuring XLIB")
+   else()
+     set(USE_WAYLAND)
+-    message(FATAL_ERROR "WAYLAND")
++    message("Configuring WAYLAND")
+   endif()
+ endif()
+ 
+
+From 8f8246a377ef126150fae820cf60b6e408394c64 Mon Sep 17 00:00:00 2001
+From: Escain <escain@gmail.com>
+Date: Thu, 17 Oct 2024 15:09:00 +0200
+Subject: [PATCH 12/18] Update CMakeLists.txt
+
+Signed-off-by: Escain <escain@gmail.com>
+---
+ CMakeLists.txt | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 7e26969833..e2781eb29a 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -430,10 +430,10 @@ else()
+   find_package(Xlib QUIET)
+   if (XLIB_FOUND)
+     set (USE_XLIB ON  CACHE BOOL "${USE_XLIB_DESCR}")
+-    message("Configuring XLIB")
++    message(STATUS "Configuring XLIB")
+   else()
+     set(USE_WAYLAND)
+-    message("Configuring WAYLAND")
++    message(STATUS "Configuring WAYLAND")
+   endif()
+ endif()
+ 
+@@ -467,7 +467,7 @@ if (NOT USE_D3D)
+     include_directories(${OPENGL_INCLUDE_DIRS})
+     list(APPEND EXTRA_LIBS ${OPENGL_LIBRARIES})
+     set(USE_OPENGL ${USE_OPENGL} CACHE BOOL "${USE_OPENGL_DESCR}")
+-    message(FATAL_ERROR "OPENGL")
++    message(FATAL_ERROR "OPENGL ${USE_GLES2} ${USE_OPENGL} ${OPENGLES2_FOUND}")
+   elseif( OPENGLES2_FOUND )
+     # Either we found no OpenGL, or GLES was enforced
+     set(USE_OPENGL OFF)
+
+From 46aabc19a66259378a1a764385262f890e0e243a Mon Sep 17 00:00:00 2001
+From: Escain <escain@gmail.com>
+Date: Thu, 17 Oct 2024 15:11:21 +0200
+Subject: [PATCH 13/18] Update CMakeLists.txt
+
+Signed-off-by: Escain <escain@gmail.com>
+---
+ CMakeLists.txt | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index e2781eb29a..825fee896c 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -460,14 +460,14 @@ if (NOT USE_D3D)
+   find_package(OpenGL QUIET)
+   find_package(OpenGLES2 QUIET)
+   # If GLES is not found, or we enforced GLES but not OpenGL, setup OpenGL
+-  if(OPENGL_FOUND AND (NOT USE_GLES2 OR USE_OPENGL OR NOT OPENGLES2_FOUND) )
++  if(OPENGL_FOUND AND (NOT USE_GLES2 OR USE_OPENGL OR NOT OpenGLES2_FOUND) )
+     set(USE_OPENGL ON)
+     set(USE_GLES2 OFF)
+     message(STATUS "OpenGL found, using OpenGL")
+     include_directories(${OPENGL_INCLUDE_DIRS})
+     list(APPEND EXTRA_LIBS ${OPENGL_LIBRARIES})
+     set(USE_OPENGL ${USE_OPENGL} CACHE BOOL "${USE_OPENGL_DESCR}")
+-    message(FATAL_ERROR "OPENGL ${USE_GLES2} ${USE_OPENGL} ${OPENGLES2_FOUND}")
++    message(FATAL_ERROR "OPENGL USE_GLES2=${USE_GLES2} USE_OPENGL=${USE_OPENGL} GLES_FOUND=${OpenGLES2_FOUND}")
+   elseif( OPENGLES2_FOUND )
+     # Either we found no OpenGL, or GLES was enforced
+     set(USE_OPENGL OFF)
+
+From 75e5c896834580cc93d1a9b50ace50968ef482ac Mon Sep 17 00:00:00 2001
+From: Escain <escain@gmail.com>
+Date: Thu, 17 Oct 2024 15:15:30 +0200
+Subject: [PATCH 14/18] Update CMakeLists.txt
+
+Signed-off-by: Escain <escain@gmail.com>
+---
+ CMakeLists.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 825fee896c..4ec788b88a 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -461,13 +461,13 @@ if (NOT USE_D3D)
+   find_package(OpenGLES2 QUIET)
+   # If GLES is not found, or we enforced GLES but not OpenGL, setup OpenGL
+   if(OPENGL_FOUND AND (NOT USE_GLES2 OR USE_OPENGL OR NOT OpenGLES2_FOUND) )
++    message(FATAL_ERROR "OPENGL USE_GLES2=${USE_GLES2} USE_OPENGL=${USE_OPENGL} GLES_FOUND=${OpenGLES2_FOUND}")
+     set(USE_OPENGL ON)
+     set(USE_GLES2 OFF)
+     message(STATUS "OpenGL found, using OpenGL")
+     include_directories(${OPENGL_INCLUDE_DIRS})
+     list(APPEND EXTRA_LIBS ${OPENGL_LIBRARIES})
+     set(USE_OPENGL ${USE_OPENGL} CACHE BOOL "${USE_OPENGL_DESCR}")
+-    message(FATAL_ERROR "OPENGL USE_GLES2=${USE_GLES2} USE_OPENGL=${USE_OPENGL} GLES_FOUND=${OpenGLES2_FOUND}")
+   elseif( OPENGLES2_FOUND )
+     # Either we found no OpenGL, or GLES was enforced
+     set(USE_OPENGL OFF)
+
+From e55f1689abe67abe81e09929cc07b37e6b95b917 Mon Sep 17 00:00:00 2001
+From: Escain <escain@gmail.com>
+Date: Thu, 17 Oct 2024 15:16:50 +0200
+Subject: [PATCH 15/18] Update CMakeLists.txt
+
+Signed-off-by: Escain <escain@gmail.com>
+---
+ CMakeLists.txt | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 4ec788b88a..dd0f37bef3 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -460,7 +460,7 @@ if (NOT USE_D3D)
+   find_package(OpenGL QUIET)
+   find_package(OpenGLES2 QUIET)
+   # If GLES is not found, or we enforced GLES but not OpenGL, setup OpenGL
+-  if(OPENGL_FOUND AND (NOT USE_GLES2 OR USE_OPENGL OR NOT OpenGLES2_FOUND) )
++  if(OPENGL_FOUND AND (NOT USE_GLES2 OR USE_OPENGL) )
+     message(FATAL_ERROR "OPENGL USE_GLES2=${USE_GLES2} USE_OPENGL=${USE_OPENGL} GLES_FOUND=${OpenGLES2_FOUND}")
+     set(USE_OPENGL ON)
+     set(USE_GLES2 OFF)
+@@ -476,7 +476,6 @@ if (NOT USE_D3D)
+     include_directories(${OPENGLES2_INCLUDE_DIRS})
+     list(APPEND EXTRA_LIBS ${OPENGLES2_LIBRARIES})
+     set(USE_GLES2 ${USE_GLES2} CACHE BOOL "${USE_GLES2_DESCR}")
+-    message(FATAL_ERROR "GLES2")
+   endif()
+ endif()
+ 
+
+From dbfcd2fb78dd92cf24793941497c2cae84ee0d04 Mon Sep 17 00:00:00 2001
+From: Escain <escain@gmail.com>
+Date: Thu, 17 Oct 2024 15:20:43 +0200
+Subject: [PATCH 16/18] Update CMakeLists.txt
+
+Signed-off-by: Escain <escain@gmail.com>
+---
+ CMakeLists.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index dd0f37bef3..b08e6012a6 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -460,7 +460,7 @@ if (NOT USE_D3D)
+   find_package(OpenGL QUIET)
+   find_package(OpenGLES2 QUIET)
+   # If GLES is not found, or we enforced GLES but not OpenGL, setup OpenGL
+-  if(OPENGL_FOUND AND (NOT USE_GLES2 OR USE_OPENGL) )
++  if(OPENGL_FOUND AND (NOT USE_GLES2 OR USE_OPENGL OR NOT OpenGLES2_FOUND) )
+     message(FATAL_ERROR "OPENGL USE_GLES2=${USE_GLES2} USE_OPENGL=${USE_OPENGL} GLES_FOUND=${OpenGLES2_FOUND}")
+     set(USE_OPENGL ON)
+     set(USE_GLES2 OFF)
+
+From 2bd89f5e5290a7fb621e8f5281b3dd12b4e4769a Mon Sep 17 00:00:00 2001
+From: Escain <escain@gmail.com>
+Date: Thu, 17 Oct 2024 15:25:45 +0200
+Subject: [PATCH 17/18] Update CMakeLists.txt
+
+Signed-off-by: Escain <escain@gmail.com>
+---
+ CMakeLists.txt | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index b08e6012a6..263393ef25 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -461,7 +461,9 @@ if (NOT USE_D3D)
+   find_package(OpenGLES2 QUIET)
+   # If GLES is not found, or we enforced GLES but not OpenGL, setup OpenGL
+   if(OPENGL_FOUND AND (NOT USE_GLES2 OR USE_OPENGL OR NOT OpenGLES2_FOUND) )
+-    message(FATAL_ERROR "OPENGL USE_GLES2=${USE_GLES2} USE_OPENGL=${USE_OPENGL} GLES_FOUND=${OpenGLES2_FOUND}")
++    message(WARNING "OPENGL USE_GLES2=${USE_GLES2} USE_OPENGL=${USE_OPENGL} GLES_FOUND=${OpenGLES2_FOUND}")
++  endif()
++  if(OPENGL_FOUND AND (NOT USE_GLES2 OR USE_OPENGL))
+     set(USE_OPENGL ON)
+     set(USE_GLES2 OFF)
+     message(STATUS "OpenGL found, using OpenGL")
+
+From e0cb3f83086f3345af857b829e2518c917c611a0 Mon Sep 17 00:00:00 2001
+From: Escain <escain@gmail.com>
+Date: Thu, 17 Oct 2024 15:36:56 +0200
+Subject: [PATCH 18/18] Update CMakeLists.txt
+
+Signed-off-by: Escain <escain@gmail.com>
+---
+ CMakeLists.txt | 8 +-------
+ 1 file changed, 1 insertion(+), 7 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 263393ef25..687246ec2f 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -458,12 +458,8 @@ endif()
+ # Try to find OpenGL package
+ if (NOT USE_D3D)
+   find_package(OpenGL QUIET)
+-  find_package(OpenGLES2 QUIET)
+   # If GLES is not found, or we enforced GLES but not OpenGL, setup OpenGL
+-  if(OPENGL_FOUND AND (NOT USE_GLES2 OR USE_OPENGL OR NOT OpenGLES2_FOUND) )
+-    message(WARNING "OPENGL USE_GLES2=${USE_GLES2} USE_OPENGL=${USE_OPENGL} GLES_FOUND=${OpenGLES2_FOUND}")
+-  endif()
+-  if(OPENGL_FOUND AND (NOT USE_GLES2 OR USE_OPENGL))
++  if(OPENGL_FOUND AND (NOT USE_GLES2 OR USE_OPENGL) )
+     set(USE_OPENGL ON)
+     set(USE_GLES2 OFF)
+     message(STATUS "OpenGL found, using OpenGL")
+@@ -475,8 +471,6 @@ if (NOT USE_D3D)
+     set(USE_OPENGL OFF)
+     set(USE_GLES2 ON)
+     message(STATUS "OpenGL ES 2 found, using GLES2")
+-    include_directories(${OPENGLES2_INCLUDE_DIRS})
+-    list(APPEND EXTRA_LIBS ${OPENGLES2_LIBRARIES})
+     set(USE_GLES2 ${USE_GLES2} CACHE BOOL "${USE_GLES2_DESCR}")
+   endif()
+ endif()

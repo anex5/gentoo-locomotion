@@ -8,7 +8,7 @@ PYTHON_COMPAT=( python3_{11..13} )
 PYTHON_REQ_USE="threads(+)"
 MULTIPLEXER_VER="11"
 
-inherit bash-completion-r1 check-reqs flag-o-matic linux-info pax-utils python-any-r1 toolchain-funcs xdg-utils
+inherit bash-completion-r1 check-reqs flag-o-matic linux-info ninja-utils pax-utils python-any-r1 toolchain-funcs xdg-utils
 
 DESCRIPTION="A JavaScript runtime built on Chrome's V8 JavaScript engine"
 HOMEPAGE="https://nodejs.org/"
@@ -48,18 +48,19 @@ RESTRICT="
 RDEPEND="
 	!net-libs/nodejs:0
 	>=app-arch/brotli-1.1.0
-	>=app-eselect/eselect-nodejs-20230521
+	>=app-eselect/eselect-nodejs-20250106
 	dev-db/sqlite:3
 	>=dev-libs/libuv-1.49.1:=
 	>=dev-libs/simdjson-3.9.4:=
 	>=net-dns/c-ares-1.34.3
 	>=net-libs/nghttp2-1.62.1:=
 	>=sys-libs/zlib-1.3
-	corepack? ( !sys-apps/yarn )
+	corepack? ( sys-apps/yarn )
 	system-icu? (
 		>=dev-libs/icu-76.1:=
 	)
 	system-ssl? (
+		>=net-libs/ngtcp2-1.3.0:=
 		>=dev-libs/openssl-3.0.15:0=
 	)
 "
@@ -127,9 +128,6 @@ src_prepare() {
 	# https://code.google.com/p/gyp/issues/detail?id=260
 	sed -i -e "/append('-arch/d" tools/gyp/pylib/gyp/xcode_emulation.py || die
 
-	# Less verbose install output (stating the same as portage, basically)
-	#sed -i -e "/print/d" tools/install.py || die
-
 	# Proper libdir, hat tip @ryanpcmcquen https://github.com/iojs/io.js/issues/504
 	local LIBDIR=$(get_libdir)
 	sed -i -e "s|lib/|${LIBDIR}/|g" tools/install.py || die
@@ -196,7 +194,7 @@ src_prepare() {
 	# debug builds. change install path, remove optimisations and override buildtype
 	if use debug; then
 		sed -i -e "s|out/Release/|out/Debug/|g" tools/install.py || die
-		BUILDTYPE="Debug"
+		CONFIGURATION="Debug"
 	fi
 }
 
@@ -207,6 +205,12 @@ src_configure() {
 
 	# LTO compiler flags are handled by configure.py itself
 	filter-lto
+	# GCC with -ftree-vectorize miscompiles node's exception handling code
+	# causing it to fail to catch exceptions sometimes
+	# https://gcc.gnu.org/bugzilla/show_bug.cgi?id=116057
+	tc-is-gcc && append-cxxflags -fno-tree-vectorize
+	# https://bugs.gentoo.org/931514
+	use arm64 && append-flags $(test-flags-CXX -mbranch-protection=none)
 	# nodejs unconditionally links to libatomic #869992
 	# specifically it requires __atomic_is_lock_free which
 	# is not yet implemented by sys-libs/compiler-rt (see
@@ -283,7 +287,8 @@ src_configure() {
 }
 
 src_compile() {
-	emake
+	export NINJA_ARGS=" $(get_NINJAOPTS)"
+	emake -Onone
 }
 
 src_install() {
@@ -347,12 +352,20 @@ src_install() {
 	if use npm; then
 		keepdir /etc/npm
 		echo "NPM_CONFIG_GLOBALCONFIG=${EPREFIX}/etc/npm/npmrc" > "${T}"/50npm
+		#echo "PATH=${EPREFIX}/usr/$(get_libdir)/corepack/node${SLOT_MAJOR}" > "${T}"/50npm
+
 		doenvd "${T}"/50npm
+
+		dosym "/usr/$(get_libdir)/corepack/node${SLOT_MAJOR}/shims/npm" "/usr/bin/npm"
+		sed -e "/^dirname /s|\"$(.+)\"|\"$(readlink -q \$0)\"|g" -i "${ED}/usr/$(get_libdir)/corepack/node${SLOT_MAJOR}/shims/npm" || die
 
 		# Install bash completion for `npm`
 		local tmp_npm_completion_file="$(TMPDIR="${T}" mktemp -t npm.XXXXXXXXXX)"
-		"${ED}/usr/bin/npm" completion > "${tmp_npm_completion_file}"
+		"${ED}/usr/$(get_libdir)/corepack/node${SLOT_MAJOR}/shims/npm" completion > "${tmp_npm_completion_file}"
 		newbashcomp "${tmp_npm_completion_file}" npm
+
+		# Move man pages
+		use man && doman "${LIBDIR}"/node_modules/npm/man/man{1,5,7}/*
 
 		# Clean up
 		rm -f "${LIBDIR}"/node_modules/npm/{.mailmap,.npmignore,Makefile}
@@ -374,6 +387,9 @@ src_install() {
 				"${find_name[@]}" \
 			\) \) -exec rm -rf "{}" \;
 	fi
+
+	use doc && ( mv "${ED}"/usr/share/doc/node "${ED}"/usr/share/doc/${PF} || die )
+
 	cp --remove-destination "${FILESDIR}/node-multiplexer-v${MULTIPLEXER_VER}" "${ED}/usr/bin/node" || die
 	sed -e "s|__EPREFIX__|${EPREFIX}|g" -i "${ED}/usr/bin/node" || die
 	fperms 0755 "/usr/bin/node" || die
@@ -381,6 +397,32 @@ src_install() {
 }
 
 src_test() {
+	local drop_tests=(
+		test/parallel/test-dns.js
+		test/parallel/test-dns-resolveany-bad-ancount.js
+		test/parallel/test-dns-setserver-when-querying.js
+		test/parallel/test-fs-read-stream.js
+		test/parallel/test-fs-utimes-y2K38.js
+		test/parallel/test-fs-watch-recursive-add-file.js
+		test/parallel/test-process-euid-egid.js
+		test/parallel/test-process-get-builtin.mjs
+		test/parallel/test-process-initgroups.js
+		test/parallel/test-process-setgroups.js
+		test/parallel/test-process-uid-gid.js
+		test/parallel/test-release-npm.js
+		test/parallel/test-socket-write-after-fin-error.js
+		test/parallel/test-strace-openat-openssl.js
+		test/sequential/test-util-debug.js
+	)
+	[[ "$(nice)" -gt 10 ]] && drop_tests+=( "test/parallel/test-os.js" )
+	use inspector ||
+		drop_tests+=(
+			test/parallel/test-inspector-emit-protocol-event.js
+			test/parallel/test-inspector-network-domain.js
+			test/sequential/test-watch-mode.mjs
+		)
+	rm -f "${drop_tests[@]}" || die "disabling tests failed"
+
 	if has usersandbox ${FEATURES}; then
 		rm -f "${S}/test/parallel/test-fs-mkdir.js"
 		ewarn
@@ -405,7 +447,7 @@ src_test() {
 pkg_postinst() {
 	if use npm; then
 		ewarn "remember to run: source /etc/profile if you plan to use nodejs"
-		ewarn "	in your current shell"
+		ewarn "in your current shell"
 	fi
 	if has_version ">net-libs/nodejs-${PV}" ; then
 		einfo "Found higher slots, manually change the headers with \`eselect nodejs\`."
