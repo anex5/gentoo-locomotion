@@ -1,4 +1,4 @@
-# Copyright 2020-2024 Gentoo Authors
+# Copyright 2020-2025 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -16,7 +16,7 @@ S="${WORKDIR}/${PN}"
 LICENSE="MIT ZLIB"
 SLOT="0"
 KEYWORDS="~amd64 ~arm64 ~arm ~ppc64 ~riscv ~x86"
-IUSE="examples +harfbuzz +libutf8proc man test"
+IUSE="examples +harfbuzz +libutf8proc doc test"
 REQUIRED_USE="
 	libutf8proc? ( harfbuzz )
 	examples? ( libutf8proc )
@@ -52,7 +52,7 @@ DEPEND="
 "
 BDEPEND="
 	${PYTHON_DEPS}
-	man? ( app-text/scdoc )
+	doc? ( app-text/scdoc )
 	virtual/pkgconfig
 	examples? (
 		dev-util/wayland-scanner
@@ -78,7 +78,7 @@ src_configure() {
 	local emesonargs=(
 		$(meson_feature harfbuzz grapheme-shaping)
 		$(meson_feature libutf8proc run-shaping)
-		$(meson_feature man docs)
+		$(meson_feature doc docs)
 		$(meson_use examples)
 		$(use test && meson_use harfbuzz test-text-shaping)
 		# bundled, tiny, I believe this means we should always include it
