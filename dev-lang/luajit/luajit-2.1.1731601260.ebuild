@@ -2,32 +2,39 @@
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
-GIT_COMMIT=d06beb0480c5d1eb53b3343e78063950275aa281
 
-LUA_COMPAT=( lua5-{1..4} luajit)
 
-inherit pax-utils lua-single toolchain-funcs
+inherit pax-utils toolchain-funcs
 
-MY_PV="$(ver_cut 1-5)"
-MY_PV="${MY_PV/_beta/-beta}"
-MY_P="LuaJIT-${MY_PV}"
+# Split release channel (such as "2.1") from relver (such as "1727870382")
+VER_CHANNEL=${PV%.*}
+VER_RELVER=${PV##*.}
 
 DESCRIPTION="Just-In-Time Compiler for the Lua programming language"
 HOMEPAGE="https://luajit.org/"
-#SRC_URI="https://luajit.org/download/${MY_P}.tar.gz"
-SRC_URI="https://github.com/LuaJIT/LuaJIT/archive/${GIT_COMMIT}.tar.gz -> ${P}.tar.gz"
+
+if [[ ${VER_RELVER} == 9999999999 ]]; then
+	# Upstream recommends pulling rolling releases from versioned branches.
+	# > The old git master branch is phased out and stays pinned to the v2.0
+	# > branch. Please follow the versioned branches instead.
+	#
+	# See http://luajit.org/status.html for additional information.
+	EGIT_BRANCH="v${VER_CHANNEL}"
+	EGIT_REPO_URI="https://luajit.org/git/luajit.git"
+	inherit git-r3
+else
+	# Update this commit hash to bump a pinned-commit ebuild.
+	GIT_COMMIT=fe71d0fb54ceadfb5b5f3b6baf29e486d97f6059
+	SRC_URI="https://github.com/LuaJIT/LuaJIT/archive/${GIT_COMMIT}.tar.gz -> ${P}.tar.gz"
+	S="${WORKDIR}/LuaJIT-${GIT_COMMIT}"
+
+	KEYWORDS="~amd64 ~arm ~arm64 -hppa ~mips ~ppc -riscv -sparc ~x86 ~amd64-linux ~x86-linux"
+fi
 
 LICENSE="MIT"
-# this should probably be pkgmoved to 2.0 for sake of consistency.
+# this should probably be pkgmoved to 2.1 for sake of consistency.
 SLOT="2/${PV}"
-KEYWORDS="~amd64 ~arm ~arm64 -hppa ~mips ~ppc -riscv -sparc ~x86 ~amd64-linux ~x86-linux"
 IUSE="lua52compat static-libs"
-
-#BDEPEND="${LUA_DEPS}"
-
-RESTRICT="mirror"
-
-S="${WORKDIR}/LuaJIT-${GIT_COMMIT}"
 
 get-abi-cflags() {
 	# Convert the ABI name we use in Gentoo to what gcc uses
@@ -82,6 +89,7 @@ _emake() {
 		TARGET_LD="$(tc-getCC)" \
 		TARGET_CFLAGS="${CPPFLAGS} ${CFLAGS}" \
 		TARGET_LDFLAGS="${LDFLAGS}" \
+		TARGET_SHLDFLAGS="${LDFLAGS}" \
 		TARGET_AR="$(tc-getAR) rcus" \
 		BUILDMODE="$(usex static-libs mixed dynamic)" \
 		TARGET_STRIP="true" \
@@ -90,15 +98,18 @@ _emake() {
 }
 
 src_compile() {
-	_emake \
-		$(tc-is-cross-compiler && echo CROSS="${CHOST}-" ) \
-		$(tc-is-cross-compiler && echo HOST_LUA="${LUA}" ) \
-		$(usex lua52compat "XCFLAGS=-DLUAJIT_ENABLE_LUA52COMPAT" '')
+# 	_emake \
+#		$(tc-is-cross-compiler && echo CROSS="${CHOST}-" ) \
+#		$(tc-is-cross-compiler && echo HOST_LUA="${LUA}" ) \
+#		$(usex lua52compat "XCFLAGS=-DLUAJIT_ENABLE_LUA52COMPAT" '')
+	tc-export_build_env
+	_emake XCFLAGS="$(usex lua52compat "-DLUAJIT_ENABLE_LUA52COMPAT" "")"
 }
 
 src_install() {
 	_emake install
-	dosym luajit-2.1.1710088188 /usr/bin/luajit
+	local relver="$(cat "${S}/src/luajit_relver.txt" || die 'error retrieving relver')"
+	dosym luajit-"${VER_CHANNEL}.${relver}" /usr/bin/luajit
 	pax-mark m "${ED}/usr/bin/luajit-${MY_PV}"
 
 	HTML_DOCS="doc/." einstalldocs
