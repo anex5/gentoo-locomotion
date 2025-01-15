@@ -1,4 +1,4 @@
-# Copyright 1999-2024 Gentoo Authors
+# Copyright 1999-2025 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -32,7 +32,8 @@ RESTRICT="!test? ( test ) mirror"
 
 DEPEND="
 	$(llvm_gen_dep '
-		sys-devel/clang:${LLVM_SLOT}
+		llvm-core/clang:${LLVM_SLOT}
+		llvm-core/llvm:${LLVM_SLOT}
 	')
 	sys-libs/ncurses:=
 	gpu? ( dev-libs/level-zero:= )
@@ -83,7 +84,7 @@ src_prepare() {
 	cat > ispcrt/tests/vendor/google/googletest/CMakeLists.txt <<-EOF || die
 		find_package(GTest)
 	EOF
-	# remove hacks that break unbundling
+	# remove hacks that break unbinding
 	sed -i -e '/gmock/d' -e '/install/,$d' ispcrt/tests/CMakeLists.txt || die
 
 	cmake_src_prepare
@@ -92,6 +93,7 @@ src_prepare() {
 src_configure() {
 	CMAKE_BUILD_TYPE="Release"
 	local mycmakeargs=(
+		-DCMAKE_CXX_STANDARD=17
 		-DARM_ENABLED=$(usex arm)
 		-DCMAKE_SKIP_RPATH=ON
 		#-DNVPTX_ENABLED=OFF

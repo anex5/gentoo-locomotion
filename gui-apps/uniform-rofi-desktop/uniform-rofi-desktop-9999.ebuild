@@ -30,6 +30,7 @@ DEPEND="
 	sys-apps/grep
 	sys-apps/sed
 	sys-apps/util-linux
+	sys-apps/findutils
 	media-fonts/nerd-fonts
 	bluetooth? (
 		sys-apps/hwdata
