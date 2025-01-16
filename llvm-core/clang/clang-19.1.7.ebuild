@@ -1,11 +1,11 @@
-# Copyright 1999-2023 Gentoo Authors
+# Copyright 1999-2025 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{10..12} )
+PYTHON_COMPAT=( python3_{10..13} )
 
-inherit cmake llvm llvm.org multilib multilib-minimal
+inherit cmake llvm.org llvm-utils multilib multilib-minimal
 inherit prefix python-single-r1 toolchain-funcs
 inherit flag-o-matic ninja-utils
 
@@ -92,7 +92,7 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}
 "
 RDEPEND+="
 	${PYTHON_DEPS}
-	>=sys-devel/clang-common-${PV}
+	>=llvm-core/clang-common-${PV}
 	rocm? (
 		dev-libs/rocm-device-libs:0/5.7
 	)
@@ -102,7 +102,7 @@ RDEPEND+="
 	xml? (
 		dev-libs/libxml2:2=[${MULTILIB_USEDEP}]
 	)
-	~sys-devel/llvm-${PV}:${LLVM_MAJOR}=[${MULTILIB_USEDEP},debug=]
+	~llvm-core/llvm-${PV}:${LLVM_MAJOR}=[${MULTILIB_USEDEP},debug=]
 "
 
 DEPEND="
@@ -117,26 +117,23 @@ BDEPEND="
 			dev-python/sphinx[${PYTHON_USEDEP}]
 		')
 	)
-	xml? (
-		>=dev-util/pkgconf-1.3.7[${MULTILIB_USEDEP},pkg-config(+)]
-	)
+	test? ( ~llvm-core/lld-${PV} )
+	xml? ( virtual/pkgconfig )
 "
 PDEPEND="
-	sys-devel/clang-toolchain-symlinks:${LLVM_MAJOR}
-	~sys-devel/clang-runtime-${PV}
+	~llvm-core/clang-runtime-${PV}
+	llvm-core/clang-toolchain-symlinks:${LLVM_MAJOR}
 "
 RESTRICT="
-	!test? (
-		test
-	)
+	!test? ( test )
 "
 LLVM_COMPONENTS=(
 	"clang"
 	"clang-tools-extra"
 	"cmake"
-	"llvm/lib/Transforms/Hello"
 )
 LLVM_MANPAGES=0
+#LLVM_PATCHSET=${PV}-r6
 LLVM_TEST_COMPONENTS=(
 	"llvm/utils"
 )
@@ -151,11 +148,11 @@ llvm.org_set_globals
 # 3. ${CHOST}-clang wrappers are always installed for all ABIs included
 #    in the current profile (i.e. alike supported by sys-devel/gcc).
 #
-# Therefore: use sys-devel/clang[${MULTILIB_USEDEP}] only if you need
+# Therefore: use llvm-core/clang[${MULTILIB_USEDEP}] only if you need
 # multilib clang* libraries (not runtime, not wrappers).
 
 pkg_setup() {
-	LLVM_MAX_SLOT=${LLVM_MAJOR} llvm_pkg_setup
+	LLVM_MAX_SLOT=${LLVM_MAJOR}
 	python-single-r1_pkg_setup
 	if tc-is-gcc ; then
 		local gcc_slot=$(best_version "sys-devel/gcc" \
@@ -199,7 +196,7 @@ ewarn "FAILED: lib/Tooling/ASTNodeAPI.json"
 ewarn
 ewarn "Build ~clang-${PV} with only gcc and ~llvm-${PV} without LTO."
 ewarn
-ewaen
+ewarn
 ewarn "To avoid missing symbols, both clang-${PV} and llvm-${PV} should be"
 ewarn "built with the same commit."
 ewarn
@@ -298,7 +295,7 @@ ewarn
 	if use default-stack-clash-protection ; then
 		if use x86 || use amd64 ; then
 			patches_hardened+=(
-				"${FILESDIR}/clang-12.0.1-enable-SCP-by-default.patch"
+				"${FILESDIR}/clang-18.0.0.9999-2b033a3-enable-SCP-by-default.patch"
 			)
 			hardened_features+="SCP, "
 		elif use arm64 ; then
@@ -323,7 +320,7 @@ ewarn
 		ewarn
 	fi
 	patches_hardened+=(
-		"${FILESDIR}/clang-14.0.0.9999-cross-dso-cfi-link-with-shared.patch"
+		"${FILESDIR}/clang-18.0.0.9999-cross-dso-cfi-link-with-shared.patch"
 	)
 	eapply ${patches_hardened[@]}
 
@@ -333,32 +330,6 @@ ewarn
 		sed -i -e "s|__HARDENED_FEATURES__|${hardened_features}|g" \
 			lib/Driver/Driver.cpp || die
 	fi
-}
-
-fix_rocm_paths() {
-	eapply "${FILESDIR}/clang-17.0.0.9999-rocm-path-changes.patch"
-	sed \
-		-i \
-		-e "s|@LIBDIR@|$(get_libdir)|g" \
-		-e "s|@EPREFIX_LLVM_PATH@|${EPREFIX}/usr/lib/llvm/${PV%%.*}|g" \
-		"lib/Driver/ToolChains/AMDGPU.cpp" \
-		|| die
-
-	if use rocm ; then
-		local rocm_slot="5.7"
-		sed \
-			-i \
-			-e "s|@ROCM_PATH@|/usr/$(get_libdir)/rocm/${rocm_slot}|g" \
-			-e "s|@EPREFIX_ROCM_PATH@|${EPREFIX}/usr/$(get_libdir)/rocm/${rocm_slot}|g" \
-			-e "s|@ESYSROOT_ROCM_PATH@|${ESYSROOT}/usr/$(get_libdir)/rocm/${rocm_slot}|g" \
-			"lib/Driver/ToolChains/AMDGPU.cpp" \
-			|| die
-	fi
-	sed \
-		-i \
-		-e "s|@ESYSROOT_ROCM_PATH@|${ESYSROOT}/usr/$(get_libdir)/rocm/${rocm_slot}|g" \
-		"tools/amdgpu-arch/CMakeLists.txt" \
-		|| die
 }
 
 src_prepare() {
@@ -387,8 +358,6 @@ src_prepare() {
 			lib/Driver/ToolChains/Linux.cpp \
 			|| die
 	fi
-
-	fix_rocm_paths
 }
 
 check_distribution_components() {
@@ -495,7 +464,9 @@ get_distribution_components() {
 			c-index-test
 			clang
 			clang-format
+			clang-installapi
 			clang-linker-wrapper
+			clang-nvlink-wrapper
 			clang-offload-bundler
 			clang-offload-packager
 			clang-refactor
@@ -558,6 +529,8 @@ _gcc_fullversion() {
 }
 
 multilib_src_configure() {
+	llvm_prepend_path "${LLVM_MAJOR}"
+
 
 	# TODO:  Add GCC-10 and below checks to add exceptions to -O* flag downgrading.
 	# Leave a note if you know the commit that fixes the internal compiler error below.
@@ -612,7 +585,7 @@ multilib_src_configure() {
 
 	# [Err 8]: control flow integrity check for type '.*' failed during non-virtual call (vtable address 0x[0-9a-z]+)
 	# [Err 5]: runtime error: control flow integrity check for type '.*' failed during cast to unrelated type (vtable address 0x[0-9a-z]+)
-	# sys-devel/clang no-cfi-nvcall.conf no-cfi-cast.conf # Build time failures: [Err 8] with llvm header, [Err 5] with gcc header
+	# llvm-core/clang no-cfi-nvcall.conf no-cfi-cast.conf # Build time failures: [Err 8] with llvm header, [Err 5] with gcc header
 	if tc-is-clang ; then
 		if is-flagq "-fsanitize=*cfi" ; then
 			ewarn
@@ -657,9 +630,10 @@ multilib_src_configure() {
 		-DDEFAULT_SYSROOT=$(usex prefix-guest "" "${EPREFIX}")
 		-DCMAKE_INSTALL_PREFIX="${EPREFIX}/usr/lib/llvm/${LLVM_MAJOR}"
 		-DCMAKE_INSTALL_MANDIR="${EPREFIX}/usr/lib/llvm/${LLVM_MAJOR}/share/man"
+		-DLLVM_ROOT="${EPREFIX}/usr/lib/llvm/${LLVM_MAJOR}"
 		-DCLANG_CONFIG_FILE_SYSTEM_DIR="${EPREFIX}/etc/clang"
-
-		# This is relative to bindir.
+		-DCLANG_CONFIG_FILE_USER_DIR="~/.config/clang"
+		# relative to bindir
 		-DCLANG_RESOURCE_DIR="../../../../lib/clang/${LLVM_MAJOR}"
 
 		-DBUILD_SHARED_LIBS=OFF
@@ -744,8 +718,8 @@ multilib_src_configure() {
 	fi
 
 	if tc-is-cross-compiler; then
-		has_version -b sys-devel/clang:${LLVM_MAJOR} ||
-			die "sys-devel/clang:${LLVM_MAJOR} is required on the build host."
+		has_version -b llvm-core/clang:${LLVM_MAJOR} ||
+			die "llvm-core/clang:${LLVM_MAJOR} is required on the build host."
 		local tools_bin=${BROOT}/usr/lib/llvm/${LLVM_MAJOR}/bin
 		mycmakeargs+=(
 			-DLLVM_TOOLS_BINARY_DIR="${tools_bin}"
@@ -753,6 +727,12 @@ multilib_src_configure() {
 		)
 	fi
 
+	# LLVM can have very high memory consumption while linking,
+	# exhausting the limit on 32-bit linker executable
+	use x86 && local -x LDFLAGS="${LDFLAGS} -Wl,--no-keep-memory"
+
+	# LLVM_ENABLE_ASSERTIONS=NO does not guarantee this for us, #614844
+	use debug || local -x CPPFLAGS="${CPPFLAGS} -DNDEBUG"
 
 	mycmakeargs+=(
 		-DCMAKE_C_COMPILER="${CC}"
@@ -766,7 +746,6 @@ multilib_src_configure() {
 }
 
 multilib_src_compile() {
-	# Includes pgt_build_self
 	cmake_build distribution
 }
 

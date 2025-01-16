@@ -117,18 +117,15 @@ BDEPEND="
 			dev-python/sphinx[${PYTHON_USEDEP}]
 		')
 	)
-	xml? (
-		>=dev-util/pkgconf-1.3.7[${MULTILIB_USEDEP},pkg-config(+)]
-	)
+	test? ( ~llvm-core/lld-${PV} )
+	xml? ( virtual/pkgconfig )
 "
 PDEPEND="
-	llvm-core/clang-toolchain-symlinks:${LLVM_MAJOR}
 	~llvm-core/clang-runtime-${PV}
+	llvm-core/clang-toolchain-symlinks:${LLVM_MAJOR}
 "
 RESTRICT="
-	!test? (
-		test
-	)
+	!test? ( test )
 "
 LLVM_COMPONENTS=(
 	"clang"
@@ -152,7 +149,7 @@ llvm.org_set_globals
 # 3. ${CHOST}-clang wrappers are always installed for all ABIs included
 #    in the current profile (i.e. alike supported by sys-devel/gcc).
 #
-# Therefore: use sys-devel/clang[${MULTILIB_USEDEP}] only if you need
+# Therefore: use llvm-core/clang[${MULTILIB_USEDEP}] only if you need
 # multilib clang* libraries (not runtime, not wrappers).
 
 pkg_setup() {
@@ -587,7 +584,7 @@ multilib_src_configure() {
 
 	# [Err 8]: control flow integrity check for type '.*' failed during non-virtual call (vtable address 0x[0-9a-z]+)
 	# [Err 5]: runtime error: control flow integrity check for type '.*' failed during cast to unrelated type (vtable address 0x[0-9a-z]+)
-	# sys-devel/clang no-cfi-nvcall.conf no-cfi-cast.conf # Build time failures: [Err 8] with llvm header, [Err 5] with gcc header
+	# llvm-core/clang no-cfi-nvcall.conf no-cfi-cast.conf # Build time failures: [Err 8] with llvm header, [Err 5] with gcc header
 	if tc-is-clang ; then
 		if is-flagq "-fsanitize=*cfi" ; then
 			ewarn
@@ -632,8 +629,9 @@ multilib_src_configure() {
 		-DDEFAULT_SYSROOT=$(usex prefix-guest "" "${EPREFIX}")
 		-DCMAKE_INSTALL_PREFIX="${EPREFIX}/usr/lib/llvm/${LLVM_MAJOR}"
 		-DCMAKE_INSTALL_MANDIR="${EPREFIX}/usr/lib/llvm/${LLVM_MAJOR}/share/man"
+		-DLLVM_ROOT="${EPREFIX}/usr/lib/llvm/${LLVM_MAJOR}"
 		-DCLANG_CONFIG_FILE_SYSTEM_DIR="${EPREFIX}/etc/clang"
-
+		-DCLANG_CONFIG_FILE_USER_DIR="~/.config/clang"
 		# This is relative to bindir.
 		-DCLANG_RESOURCE_DIR="../../../../lib/clang/${LLVM_MAJOR}"
 
@@ -719,8 +717,8 @@ multilib_src_configure() {
 	fi
 
 	if tc-is-cross-compiler; then
-		has_version -b sys-devel/clang:${LLVM_MAJOR} ||
-			die "sys-devel/clang:${LLVM_MAJOR} is required on the build host."
+		has_version -b llvm-core/clang:${LLVM_MAJOR} ||
+			die "llvm-core/clang:${LLVM_MAJOR} is required on the build host."
 		local tools_bin=${BROOT}/usr/lib/llvm/${LLVM_MAJOR}/bin
 		mycmakeargs+=(
 			-DLLVM_TOOLS_BINARY_DIR="${tools_bin}"
@@ -815,7 +813,6 @@ src_install() {
 }
 
 multilib_src_install() {
-
 	DESTDIR=${D} cmake_build install-distribution
 
 	# Move headers to /usr/include for wrapping & ABI mismatch checks.

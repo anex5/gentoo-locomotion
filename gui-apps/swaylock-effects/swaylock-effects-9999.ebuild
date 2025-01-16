@@ -1,4 +1,4 @@
-# Copyright 1999-2023 Gentoo foundation
+# Copyright 1999-2025 Gentoo foundation
 # Distributed under the terms of the ISC License
 
 EAPI=8
@@ -13,8 +13,9 @@ if [[ ${PV} == 9999 ]]; then
 	EGIT_REPO_URI="https://github.com/jirutka/swaylock-effects.git"
 	KEYWORDS="-*"
 else
-	SRC_URI="https://github.com/jirutka/swaylock-effects/archive/refs/tags/v${PV}.tar.gz -> ${P}.tar.gz"
-	S="${WORKDIR}"/${PN}-${PV}
+	COMMIT="496059a8565c2d5eed672c2e5bc5e1edd14b3de8"
+	SRC_URI="https://github.com/jirutka/swaylock-effects/archive/${COMMIT}.tar.gz -> ${P}.tar.gz"
+	S="${WORKDIR}"/${PN}-${COMMIT}
 	KEYWORDS="~amd64 ~arm64 ~arm ~x86"
 fi
 

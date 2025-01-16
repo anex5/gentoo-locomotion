@@ -1,4 +1,4 @@
-# Copyright 1999-2024 Gentoo Authors
+# Copyright 1999-2025 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -21,7 +21,7 @@ LICENSE="Apache-2.0-with-LLVM-exceptions UoI-NCSA BSD public-domain rc"
 SLOT="${LLVM_MAJOR}/${LLVM_SOABI}"
 KEYWORDS="~amd64 ~arm ~arm64 ~loong ~mips ~ppc ~ppc64 ~riscv ~sparc ~x86 ~amd64-linux ~arm64-macos ~ppc-macos ~x64-macos"
 IUSE="
-	binutils-plugin debug debuginfod doc exegesis libedit +libffi
+	+binutils-plugin debug debuginfod doc exegesis libedit +libffi
 	ncurses test xar xml z3 zstd -dump man
 "
 RESTRICT="!test? ( test )"
@@ -58,8 +58,7 @@ REQUIRED_USE="
 		llvm_targets_Sparc
 	)
 	x86? (
-
-	llvm_targets_X86
+		llvm_targets_X86
 	)
 "
 RDEPEND="
@@ -86,11 +85,11 @@ DEPEND="
 "
 BDEPEND="
 	${PYTHON_DEPS}
-	dev-lang/perl
 	>=dev-build/cmake-3.16
+	dev-lang/perl
 	sys-devel/gnuconfig
 	kernel_Darwin? (
-		<sys-libs/libcxx-${LLVM_VERSION}.9999
+		<llvm-runtimes/libcxx-${LLVM_VERSION}.9999
 		>=sys-devel/binutils-apple-5.1
 	)
 	doc? ( $(python_gen_any_dep '
@@ -103,12 +102,12 @@ BDEPEND="
 # installed means llvm-config there will take precedence.
 RDEPEND="
 	${RDEPEND}
-	!sys-devel/llvm:0
+	!llvm-core/llvm:0
 "
 PDEPEND="
 	llvm-core/llvm-common
 	llvm-core/llvm-toolchain-symlinks:${LLVM_MAJOR}
-	binutils-plugin? ( >=sys-devel/llvmgold-${LLVM_MAJOR} )
+	binutils-plugin? ( >=llvm-core/llvmgold-${LLVM_MAJOR} )
 "
 PATCHES=(
 	"${FILESDIR}/llvm-14.0.0.9999-stop-triple-spam.patch"
@@ -165,7 +164,7 @@ pkg_setup() {
 	fi
 
 	einfo
-	einfo "See sys-devel/clang/metadata.xml for details on PGO optimization."
+	einfo "See llvm-core/clang/metadata.xml for details on PGO optimization."
 	einfo
 }
 
@@ -256,6 +255,11 @@ src_prepare() {
 
 
 	llvm.org_src_prepare
+
+	if has_version ">=sys-libs/glibc-2.40"; then
+		# https://github.com/llvm/llvm-project/issues/100791
+		rm -r test/tools/llvm-exegesis/X86/latency || die
+	fi
 }
 
 get_distribution_components() {
@@ -415,6 +419,10 @@ get_distribution_components() {
 }
 
 multilib_src_configure() {
+	if use ppc && tc-is-gcc && [[ $(gcc-major-version) -lt 14 ]]; then
+		# Workaround for bug #880677
+		append-flags $(test-flags-CXX -fno-ipa-sra -fno-ipa-modref -fno-ipa-icf)
+	fi
 	local ffi_cflags ffi_ldflags
 	if use libffi; then
 		ffi_cflags=$($(tc-getPKG_CONFIG) --cflags-only-I libffi)

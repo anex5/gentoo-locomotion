@@ -156,7 +156,7 @@ build_cbuild_python() {
 	# pass system CFLAGS & LDFLAGS as _NODIST, otherwise they'll get
 	# propagated to sysconfig for built extensions
 	#
-	local -x CFLAGS_NODIST="${BUILD_CFLAGS}"
+	local -x CFLAGS_NODIST="${BUILD_CFLAGS} -fno-lto"
 	local -x LDFLAGS_NODIST=${BUILD_LDFLAGS}
 	local -x CFLAGS= LDFLAGS=
 	local -x BUILD_CFLAGS="${CFLAGS_NODIST}"
@@ -433,9 +433,6 @@ src_configure() {
 		$(usev !readline 'readline')
 		$(usev !tk '_tkinter')
 	EOF
-
-	# Workaround for: undefined symbol error with --no-undefined ldflag
-	append-ldflags $(no-as-needed)
 
 	# disable implicit optimization/debugging flags
 	local -x OPT=
