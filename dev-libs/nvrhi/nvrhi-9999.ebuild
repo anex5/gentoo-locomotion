@@ -24,7 +24,7 @@ BDEPEND="
 	dev-libs/cxxopts
 	rtxmu? ( dev-libs/rtxmu )
 	dxc? ( dev-util/DirectXShaderCompiler )
-	sys-devel/llvm[llvm_targets_DirectX]
+	llvm-core/llvm[llvm_targets_DirectX]
 	vulkan? ( dev-util/vulkan-headers )
 "
 
