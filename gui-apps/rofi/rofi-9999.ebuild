@@ -15,7 +15,7 @@ if [[ ${PV} = *9999 ]]; then
 	EGIT_BRANCH="wayland"
 	KEYWORDS=""
 else
-	MY_PV="${PV}+wayland3"
+	MY_PV="${PV}+wayland${PR##r}"
 	SRC_URI="https://github.com/lbonn/rofi/releases/download/${MY_PV}/${PN}-${MY_PV}.tar.xz"
 	KEYWORDS="~amd64 ~x86 ~arm ~arm64"
 	S=${WORKDIR}/${PN}-${MY_PV}
