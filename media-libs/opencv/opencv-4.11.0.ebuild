@@ -1,10 +1,10 @@
-# Copyright 1999-2024 Gentoo Authors
+# Copyright 1999-2025 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
 PYTHON_COMPAT=( python3_{11..13} )
-inherit cuda java-pkg-opt-2 cmake-multilib flag-o-matic python-r1 toolchain-funcs virtualx
+inherit cuda java-pkg-opt-2 cmake-multilib flag-o-matic multilib multiprocessing python-r1 toolchain-funcs virtualx
 
 DESCRIPTION="A collection of algorithms and sample code for various computer vision problems"
 HOMEPAGE="https://opencv.org"
@@ -331,13 +331,13 @@ PATCHES=(
 	"${FILESDIR}/${PN}-4.8.1-use-system-flatbuffers.patch"
 	"${FILESDIR}/${PN}-4.8.1-use-system-opencl.patch"
 	"${FILESDIR}/${PN}-4.9.0-drop-python2-detection.patch"
-	"${FILESDIR}/${PN}-4.9.0-ade-0.1.2d.tar.gz.patch"
+	#"${FILESDIR}/${PN}-4.9.0-ade-0.1.2d.tar.gz.patch"
 	"${FILESDIR}/${PN}-4.9.0-cmake-cleanup.patch"
 	"${FILESDIR}/${PN}-4.10.0-fix-build-with-vtk9.patch"
 	"${FILESDIR}/${PN}-4.10.0-dnn-explicitly-include-abseil-cpp.patch"
-	"${FILESDIR}/${PN}-4.10.0-cudnn-9.patch" # 25841
-	"${FILESDIR}/${PN}-4.10.0-cuda-fp16.patch" # 25880
-	"${FILESDIR}/${PN}-4.10.0-26234.patch" # 26234
+	#"${FILESDIR}/${PN}-4.10.0-cudnn-9.patch" # 25841
+	#"${FILESDIR}/${PN}-4.10.0-cuda-fp16.patch" # 25880
+	#"${FILESDIR}/${PN}-4.10.0-26234.patch" # 26234
 	"${FILESDIR}/${PN}-4.10.0-tbb-detection.patch"
 
 	# TODO applied in src_prepare
@@ -470,7 +470,7 @@ src_prepare() {
 		eapply "${FILESDIR}/${PN}_contrib-4.8.1-NVIDIAOpticalFlowSDK-2.0.tar.gz.patch"
 		if type -P nvcc &> /dev/null && ver_test "$(nvcc --version | tail -n 1 | cut -d '_' -f 2- | cut -d '.' -f 1-2)" -ge 12.4; then
 			eapply "${DISTDIR}/${PN}_contrib-4.10.0-3607.patch"
-			eapply "${FILESDIR}/${PN}_contrib-4.10.0-CUDA-12.6-tuple_size.patch" # 3785
+			#eapply "${FILESDIR}/${PN}_contrib-4.10.0-CUDA-12.6-tuple_size.patch" # 3785
 		fi
 
 		cd "${S}" || die
