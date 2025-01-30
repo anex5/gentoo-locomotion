@@ -1,0 +1,56 @@
+From 1ce65761db1958e73a29a2c221ff4264b5706ea4 Mon Sep 17 00:00:00 2001
+From: Yahor Berdnikau <egorr.berd@gmail.com>
+Date: Thu, 2 Jan 2025 11:13:31 +0100
+Subject: [PATCH] Relax OpenCascade version requirement
+
+Current approach is too strict and only allow to use 7.6.2 which is not shipped in many distros.
+
+Due to reorganization of components in 7.8.0 release (https://dev.opencascade.org/doc/overview/html/occt__upgrade.html#upgrade_occt780) added conditional OCCT_LIBS configuration based on found OpenCascade version.
+
+Signed-off-by: Yahor Berdnikau <egorr.berd@gmail.com>
+---
+ src/occt_wrapper/CMakeLists.txt | 22 ++++++++++++++++------
+ 1 file changed, 16 insertions(+), 6 deletions(-)
+
+diff --git a/src/occt_wrapper/CMakeLists.txt b/src/occt_wrapper/CMakeLists.txt
+index 8ab9fb4be8e..ae95e041f4d 100644
+--- a/src/occt_wrapper/CMakeLists.txt
++++ b/src/occt_wrapper/CMakeLists.txt
+@@ -19,14 +19,9 @@ include(GenerateExportHeader)
+ 
+ generate_export_header(OCCTWrapper)
+ 
+-find_package(OpenCASCADE 7.6.2 REQUIRED)
++find_package(OpenCASCADE REQUIRED)
+ 
+ set(OCCT_LIBS
+-    TKXDESTEP
+-    TKSTEP
+-    TKSTEP209
+-    TKSTEPAttr
+-    TKSTEPBase
+     TKXCAF
+     TKXSBase
+     TKVCAF
+@@ -50,6 +45,21 @@ set(OCCT_LIBS
+     TKernel
+ )
+ 
++if (OpenCASCADE_VERSION VERSION_LESS 7.8.0)
++    list(APPEND OCCT_LIBS
++            TKXDESTEP
++            TKSTEP
++            TKSTEP209
++            TKSTEPAttr
++            TKSTEPBase
++    )
++else()
++    list(APPEND OCCT_LIBS
++            TKDESTEP
++            TKXSDRAWSTEP
++    )
++endif()
++
+ slic3r_remap_configs("${OCCT_LIBS}" RelWithDebInfo Release)
+ 
+ target_include_directories(OCCTWrapper PRIVATE ${CMAKE_CURRENT_BINARY_DIR})

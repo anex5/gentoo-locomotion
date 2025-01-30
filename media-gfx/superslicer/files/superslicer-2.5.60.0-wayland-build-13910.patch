@@ -1,0 +1,183 @@
+From 239d1e7ae0a29a0a6dfaaace2bce390b0ad36dc9 Mon Sep 17 00:00:00 2001
+From: TimovVeen <timovanveen@hotmail.nl>
+Date: Sun, 5 Jan 2025 16:50:44 +0100
+Subject: [PATCH 1/4] allow wayland backend
+
+---
+ src/PrusaSlicer.cpp | 10 ++--------
+ 1 file changed, 2 insertions(+), 8 deletions(-)
+
+diff --git a/src/PrusaSlicer.cpp b/src/PrusaSlicer.cpp
+index 5eb3893447..391331df36 100644
+--- a/src/PrusaSlicer.cpp
++++ b/src/PrusaSlicer.cpp
+@@ -90,11 +90,6 @@ int CLI::run(int argc, char **argv)
+     save_main_thread_id();
+ 
+ #ifdef __WXGTK__
+-    // On Linux, wxGTK has no support for Wayland, and the app crashes on
+-    // startup if gtk3 is used. This env var has to be set explicitly to
+-    // instruct the window manager to fall back to X server mode.
+-    ::setenv("GDK_BACKEND", "x11", /* replace */ true);
+-
+     // https://github.com/prusa3d/PrusaSlicer/issues/12969
+     ::setenv("WEBKIT_DISABLE_COMPOSITING_MODE", "1", /* replace */ false);
+     ::setenv("WEBKIT_DISABLE_DMABUF_RENDERER", "1", /* replace */ false);
+@@ -802,9 +797,8 @@ int CLI::run(int argc, char **argv)
+     #if !defined(_WIN32) && !defined(__APPLE__)
+         // likely some linux / unix system
+         const char *display = boost::nowide::getenv("DISPLAY");
+-        // const char *wayland_display = boost::nowide::getenv("WAYLAND_DISPLAY");
+-        //if (! ((display && *display) || (wayland_display && *wayland_display))) {
+-        if (! (display && *display)) {
++        const char *wayland_display = boost::nowide::getenv("WAYLAND_DISPLAY");
++        if (! ((display && *display) || (wayland_display && *wayland_display))) {
+             // DISPLAY not set.
+             boost::nowide::cerr << "DISPLAY not set, GUI mode not available." << std::endl << std::endl;
+             this->print_help(false);
+
+From 6782debcbab409c737ea1b8417b47fae05d59aee Mon Sep 17 00:00:00 2001
+From: TimovVeen <timovanveen@hotmail.nl>
+Date: Sun, 5 Jan 2025 16:55:58 +0100
+Subject: [PATCH 2/4] enable egl backend on deps
+
+---
+ deps/+GLEW/GLEW.cmake           | 3 ++-
+ deps/+wxWidgets/wxWidgets.cmake | 6 +++---
+ 2 files changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/deps/+GLEW/GLEW.cmake b/deps/+GLEW/GLEW.cmake
+index c2db9117b6..280caec26b 100644
+--- a/deps/+GLEW/GLEW.cmake
++++ b/deps/+GLEW/GLEW.cmake
+@@ -5,4 +5,5 @@ add_cmake_project(
+   SOURCE_SUBDIR build/cmake
+   CMAKE_ARGS
+     -DBUILD_UTILS=OFF
+-)
+\ No newline at end of file
++    -DGLEW_EGL=ON
++)
+diff --git a/deps/+wxWidgets/wxWidgets.cmake b/deps/+wxWidgets/wxWidgets.cmake
+index e09f3d9874..1d21a056db 100644
+--- a/deps/+wxWidgets/wxWidgets.cmake
++++ b/deps/+wxWidgets/wxWidgets.cmake
+@@ -28,8 +28,8 @@ else ()
+ endif ()
+ 
+ add_cmake_project(wxWidgets
+-    URL https://github.com/prusa3d/wxWidgets/archive/323a465e577e03f330e2e6a4c78e564d125340cb.zip
+-    URL_HASH SHA256=B538E4AD3CC93117932F4DED70C476D6650F9C70A9D4055A08F3693864C47465
++    URL https://github.com/wxWidgets/wxWidgets/releases/download/v3.2.5/wxWidgets-3.2.5.tar.bz2
++    URL_HASH SHA256=0AD86A3AD3E2E519B6A705248FC9226E3A09BBF069C6C692A02ACF7C2D1C6B51
+     PATCH_COMMAND COMMAND ${PATCH_CMD} ${CMAKE_CURRENT_LIST_DIR}/webview.patch
+     CMAKE_ARGS
+         "-DCMAKE_DEBUG_POSTFIX:STRING="
+@@ -51,7 +51,7 @@ add_cmake_project(wxWidgets
+         -DwxUSE_EXPAT=sys
+         -DwxUSE_LIBSDL=OFF
+         -DwxUSE_XTEST=OFF
+-        -DwxUSE_GLCANVAS_EGL=OFF
++        -DwxUSE_GLCANVAS_EGL=ON
+         -DwxUSE_WEBREQUEST=OFF
+         ${_wx_webview}
+         ${_wx_secretstore}
+
+From 11a8cb9b201ac4905c28f5fab0e7cb349808625e Mon Sep 17 00:00:00 2001
+From: TimovVeen <timovanveen@hotmail.nl>
+Date: Sun, 5 Jan 2025 17:22:49 +0100
+Subject: [PATCH 3/4] explicit initializers for wxwidgets 3.2.5
+
+---
+ src/slic3r/GUI/PhysicalPrinterDialog.cpp | 2 +-
+ src/slic3r/GUI/Plater.cpp                | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/slic3r/GUI/PhysicalPrinterDialog.cpp b/src/slic3r/GUI/PhysicalPrinterDialog.cpp
+index 849e987c73..7d0c628c23 100644
+--- a/src/slic3r/GUI/PhysicalPrinterDialog.cpp
++++ b/src/slic3r/GUI/PhysicalPrinterDialog.cpp
+@@ -607,7 +607,7 @@ void PhysicalPrinterDialog::build_printhost_settings(ConfigOptionsGroup* m_optgr
+     // Always fill in the "printhost_port" combo box from the config and select it.
+     {
+         Choice* choice = dynamic_cast<Choice*>(m_optgroup->get_field("printhost_port"));
+-        choice->set_values({ m_config->opt_string("printhost_port") });
++        choice->set_values(std::vector<std::string>({ m_config->opt_string("printhost_port") }));
+         choice->set_selection();
+     }
+ 
+diff --git a/src/slic3r/GUI/Plater.cpp b/src/slic3r/GUI/Plater.cpp
+index debfe625fd..4d61e29a2d 100644
+--- a/src/slic3r/GUI/Plater.cpp
++++ b/src/slic3r/GUI/Plater.cpp
+@@ -4420,7 +4420,7 @@ void Plater::load_project(const wxString& filename)
+     s_multiple_beds.set_loading_project_flag(true);
+     ScopeGuard guard([](){ s_multiple_beds.set_loading_project_flag(false);});
+ 
+-    if (! load_files({ into_path(filename) }).empty()) {
++    if (! load_files(std::vector<boost::filesystem::path>({ into_path(filename) })).empty()) {
+         // At least one file was loaded.
+         p->set_project_filename(filename);
+         // Save the names of active presets and project specific config into ProjectDirtyStateManager.
+
+From 49232874ff46f92558203adac22ba6dd965ee8bf Mon Sep 17 00:00:00 2001
+From: TimovVeen <timovanveen@hotmail.nl>
+Date: Fri, 10 Jan 2025 03:47:42 +0100
+Subject: [PATCH 4/4] add egl option, disable by default
+
+---
+ CMakeLists.txt                  | 1 +
+ deps/+GLEW/GLEW.cmake           | 2 +-
+ deps/+wxWidgets/wxWidgets.cmake | 5 +++--
+ 3 files changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 25bf56b3fd..1feda18696 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -35,6 +35,7 @@ endif()
+ 
+ option(SLIC3R_STATIC 			"Compile PrusaSlicer with static libraries (Boost, TBB, glew)" ${SLIC3R_STATIC_INITIAL})
+ option(SLIC3R_GUI    			"Compile PrusaSlicer with GUI components (OpenGL, wxWidgets)" 1)
++option(SLIC3R_EGL               "Use EGL backend (wxWidgets, glew)" OFF)
+ option(SLIC3R_FHS               "Assume PrusaSlicer is to be installed in a FHS directory structure" 0)
+ option(SLIC3R_PCH               "Use precompiled headers" 1)
+ option(SLIC3R_MSVC_COMPILE_PARALLEL "Compile on Visual Studio in parallel" 1)
+diff --git a/deps/+GLEW/GLEW.cmake b/deps/+GLEW/GLEW.cmake
+index 280caec26b..b2382af387 100644
+--- a/deps/+GLEW/GLEW.cmake
++++ b/deps/+GLEW/GLEW.cmake
+@@ -5,5 +5,5 @@ add_cmake_project(
+   SOURCE_SUBDIR build/cmake
+   CMAKE_ARGS
+     -DBUILD_UTILS=OFF
+-    -DGLEW_EGL=ON
++    -DGLEW_EGL=${SLIC3R_EGL}
+ )
+diff --git a/deps/+wxWidgets/wxWidgets.cmake b/deps/+wxWidgets/wxWidgets.cmake
+index 1d21a056db..38dfa4a15e 100644
+--- a/deps/+wxWidgets/wxWidgets.cmake
++++ b/deps/+wxWidgets/wxWidgets.cmake
+@@ -7,6 +7,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+         set(_gtk_ver 3)
+     endif ()
+     set(_wx_toolkit "-DwxBUILD_TOOLKIT=gtk${_gtk_ver}")
++
++    set(_wx_glcanvas_egl "-DwxUSE_GLCANVAS_EGL=${SLIC3R_EGL}")
+ endif()
+ 
+ set(_unicode_utf8 OFF)
+@@ -51,7 +53,7 @@ add_cmake_project(wxWidgets
+         -DwxUSE_EXPAT=sys
+         -DwxUSE_LIBSDL=OFF
+         -DwxUSE_XTEST=OFF
+-        -DwxUSE_GLCANVAS_EGL=ON
++        ${_wx_glcanvas_egl}
+         -DwxUSE_WEBREQUEST=OFF
+         ${_wx_webview}
+         ${_wx_secretstore}
+@@ -68,4 +70,3 @@ if (MSVC)
+             "${CMAKE_CURRENT_BINARY_DIR}/builds/wxWidgets/lib/vc_x64_lib/WebView2Loader.dll"
+             "${${PROJECT_NAME}_DEP_INSTALL_PREFIX}/bin/WebView2Loader.dll")
+ endif()
+-

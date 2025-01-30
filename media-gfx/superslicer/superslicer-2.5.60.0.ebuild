@@ -1,4 +1,4 @@
-# Copyright 1999-2023 Gentoo Authors
+# Copyright 1999-2025 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -35,45 +35,52 @@ RDEPEND="
 	dev-libs/gmp:=
 	dev-libs/mpfr:=
 	dev-libs/imath:=
-	>=media-gfx/openvdb-8.2:=
+	media-gfx/openvdb:=
+	media-gfx/libbgcode
 	net-misc/curl[adns]
 	media-libs/glew:0=
+	media-libs/libjpeg-turbo:=
 	media-libs/libpng:0=
 	media-libs/qhull:=
 	sci-libs/nlopt
 	sci-libs/opencascade:=
-	>=sci-mathematics/cgal-5.0:=
+	sci-mathematics/cgal:=
 	sys-apps/dbus
 	sys-libs/zlib:=
 	gui? (
-		x11-libs/wxGTK:${WX_GTK_VER}[gui?,opengl]
-		virtual/glu
-		virtual/opengl
+		x11-libs/wxGTK:${WX_GTK_VER}[gui?]
+		virtual/libglvnd
 	)
+	step? (
+		sci-libs/opencascade:=[tk]
+	)
+)
 "
 DEPEND="${RDEPEND}
 	media-libs/qhull[static-libs]
 "
 
 PATCHES=(
-	"${FILESDIR}/${PN}-2.5.59.2-boost.patch"
 	"${FILESDIR}/${PN}-2.5.59.2-cereal.patch"
 	"${FILESDIR}/${PN}-2.5.59.2-dont-install-angelscript.patch"
-	"${FILESDIR}/${PN}-2.5.59.2-gcodeviewer-symlink-fix.patch"
-	"${FILESDIR}/${PN}-2.5.59.2-missing-includes-fix.patch"
+	#"${FILESDIR}/${PN}-2.5.59.2-gcodeviewer-symlink-fix.patch"
+	#"${FILESDIR}/${PN}-2.5.59.2-missing-includes-fix.patch"
 	"${FILESDIR}/${PN}-2.5.59.2-openexr3.patch"
 	"${FILESDIR}/${PN}-2.5.59.2-wxgtk3-wayland-fix.patch"
 	"${FILESDIR}/${PN}-2.5.59.2-relax-OpenCASCADE-dep.patch"
-	"${FILESDIR}/${PN}-2.5.59.2-link-occtwrapper-statically.patch"
-	"${FILESDIR}/${PN}-2.5.59.8-additional-imports-fixes.patch"
+	#"${FILESDIR}/${PN}-2.5.59.8-additional-imports-fixes.patch"
+	"${FILESDIR}/${PN}-2.5.59.2-boost.patch"
 	"${FILESDIR}/${PN}-2.5.59.8-fix-compilation-error-gnu17.patch"
 	"${FILESDIR}/${PN}-2.5.59.8-libnest2d-link-xcb.patch"
 	"${FILESDIR}/${PN}-2.5.59.8-boost-replace-load-string-file.patch"
-	"${FILESDIR}/${PN}-2.5.59.10-boost-1.85.patch"
-	"${FILESDIR}/${PN}-2.5.59.10-boost-headers.patch"
-	"${FILESDIR}/${PN}-2.5.59.2-fix-dereferencing-in-std-unique_ptr-to-nullptr.patch"
-	"${FILESDIR}/${PN}-2.5.59.2-fix-spiral_vase-null-pointer.patch"
+	#"${FILESDIR}/${PN}-2.5.59.10-boost-headers.patch"
+	#"${FILESDIR}/${PN}-2.5.59.2-fix-dereferencing-in-std-unique_ptr-to-nullptr.patch"
+	#"${FILESDIR}/${PN}-2.5.59.2-fix-spiral_vase-null-pointer.patch"
 	"${FILESDIR}/${PN}-2.5.59.2-wxGTK-disable-asserts.patch"
+	#"${FILESDIR}/${PN}-2.5.60.0-mesh-boolean-fix.patch"
+	#"${FILESDIR}/${PN}-2.5.60.0-fan-speed-gui-fix.patch"
+	"${FILESDIR}/${PN}-2.5.60.0-code-build-fixes.patch"
+	"${FILESDIR}/${PN}-2.5.60.0-gcc-14-include-cstdint.patch"
 )
 
 S="${WORKDIR}/${MY_PN}-${PV}"
@@ -85,7 +92,8 @@ src_unpack() {
 }
 
 src_prepare() {
-	use step && eapply "${FILESDIR}/${P}-link-occtwrapper-statically.patch"
+	use gui || sed -e '/find_package(OpenGL REQUIRED)/d' -i CMakeLists.txt
+	use step && eapply "${FILESDIR}/${PN}-2.5.59.2-link-occtwrapper-statically.patch"
 	cmake_src_prepare
 }
 
@@ -113,6 +121,13 @@ src_configure() {
 	)
 
 	cmake_src_configure
+}
+
+src_test() {
+	CMAKE_SKIP_TESTS=(
+		"^libslic3r_tests$"
+	)
+	cmake_src_test
 }
 
 src_install() {

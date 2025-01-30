@@ -17,47 +17,22 @@ index e7c81f8..a626986 100644
 +++ b/src/libslic3r/AppConfig.cpp
 @@ -1,3 +1,4 @@
 +#include <boost/filesystem.hpp>
- #include "libslic3r/libslic3r.h"
- #include "libslic3r/Utils.hpp"
  #include "AppConfig.hpp"
-diff --git a/src/libslic3r/AppConfig.hpp b/src/libslic3r/AppConfig.hpp
-index 35e36c0..5e8059b 100644
---- a/src/libslic3r/AppConfig.hpp
-+++ b/src/libslic3r/AppConfig.hpp
-@@ -5,6 +5,7 @@
- #include <map>
- #include <string>
- 
-+#include <boost/filesystem/path.hpp>
- #include <boost/algorithm/string/trim_all.hpp>
- 
- #include "libslic3r/Config.hpp"
-diff --git a/src/libslic3r/Flow.cpp b/src/libslic3r/Flow.cpp
-index 269c1cb..acea297 100644
---- a/src/libslic3r/Flow.cpp
-+++ b/src/libslic3r/Flow.cpp
-@@ -6,6 +6,7 @@
- #include <assert.h>
- 
- #include <boost/algorithm/string/predicate.hpp>
-+#include <boost/algorithm/string/replace.hpp>
- 
- // Mark string for localization and translate.
- #define L(s) Slic3r::I18N::translate(s)
+
+ #include "libslic3r.h"
 diff --git a/src/libslic3r/GCode/WipeTower.cpp b/src/libslic3r/GCode/WipeTower.cpp
 index 132c9a7..c311d05 100644
 --- a/src/libslic3r/GCode/WipeTower.cpp
 +++ b/src/libslic3r/GCode/WipeTower.cpp
-@@ -12,7 +12,9 @@
- #include "LocalesUtils.hpp"
- #include "Flow.hpp"
+@@ -14,7 +14,8 @@
  
-+
+ #include <boost/algorithm/string/case_conv.hpp>
  #include <boost/algorithm/string/predicate.hpp>
 +#include <boost/algorithm/string.hpp>
  
- 
  namespace Slic3r
+ {
+
 diff --git a/src/libslic3r/LocalesUtils.cpp b/src/libslic3r/LocalesUtils.cpp
 index 5bf5205..7b87052 100644
 --- a/src/libslic3r/LocalesUtils.cpp
@@ -216,9 +191,9 @@ index ffc600b..c8080d1 100644
  #include "wxExtensions.hpp"
  
 +#include <boost/algorithm/string/split.hpp>
+ #include <boost/algorithm/string.hpp>
  #include <boost/filesystem.hpp>
  #include <boost/filesystem/path.hpp>
- 
 diff --git a/src/slic3r/GUI/PrintHostDialogs.cpp b/src/slic3r/GUI/PrintHostDialogs.cpp
 index 87bef23..d097d58 100644
 --- a/src/slic3r/GUI/PrintHostDialogs.cpp
@@ -283,12 +258,11 @@ diff --git a/src/slic3r/GUI/Tab.cpp b/src/slic3r/GUI/Tab.cpp
 index 340369e..837982e 100644
 --- a/src/slic3r/GUI/Tab.cpp
 +++ b/src/slic3r/GUI/Tab.cpp
-@@ -36,6 +36,8 @@
- #include <boost/filesystem.hpp>
+@@ -36,6 +36,7 @@
  #include <boost/filesystem/path.hpp>
  #include <boost/lexical_cast.hpp>
+ #include <boost/log/trivial.hpp>
 +#include <boost/nowide/fstream.hpp>
-+#include <boost/log/trivial.hpp>
  
  #include "wxExtensions.hpp"
  #include "PresetComboBoxes.hpp"

@@ -1,0 +1,168 @@
+From 488cc2620a29179bd8ba0c1fc78a038bde53877d Mon Sep 17 00:00:00 2001
+From: supermerill <merill@free.fr>
+Date: Wed, 14 Aug 2024 12:39:50 +0200
+Subject: [PATCH 1/4] wip arrange
+
+---
+ src/slic3r/GUI/ArrangeSettingsDialogImgui.cpp | 3 +++
+ src/slic3r/GUI/GLCanvas3D.cpp                 | 6 ++++++
+ src/slic3r/GUI/GLCanvas3D.hpp                 | 2 +-
+ src/slic3r/GUI/Tab.cpp                        | 2 +-
+ 4 files changed, 11 insertions(+), 2 deletions(-)
+
+diff --git a/src/slic3r/GUI/ArrangeSettingsDialogImgui.cpp b/src/slic3r/GUI/ArrangeSettingsDialogImgui.cpp
+index 92d595bdbdc..c51022afd08 100644
+--- a/src/slic3r/GUI/ArrangeSettingsDialogImgui.cpp
++++ b/src/slic3r/GUI/ArrangeSettingsDialogImgui.cpp
+@@ -140,6 +140,8 @@ void ArrangeSettingsDialogImgui::render(float pos_x, float pos_y)
+ 
+ void ArrangeSettingsDialogImgui::set_arrange_settings(const DynamicPrintConfig &conf, PrinterTechnology tech)
+ {
++    assert(conf.option("duplicate_distance") && conf.option("complete_objects") && conf.option("nozzle_diameter"));
++
+     const ConfigOptionFloat *dd_opt = conf.option<ConfigOptionFloat>("duplicate_distance");
+ 
+     if (dd_opt && dd_opt->value != 0) {
+@@ -147,6 +149,7 @@ void ArrangeSettingsDialogImgui::set_arrange_settings(const DynamicPrintConfig &
+         if (tech == ptSLA) {
+             dist = dd_opt->value;
+         } else if (tech == ptFFF) {
++    assert(conf.option("duplicate_distance") && conf.option("complete_objects") && conf.option("nozzle_diameter"));
+             const ConfigOptionBool *co_opt = conf.option<ConfigOptionBool>("complete_objects");
+             if (co_opt && co_opt->value) {
+                 dist = float(min_object_distance(&conf, 0.) * 2);
+diff --git a/src/slic3r/GUI/GLCanvas3D.cpp b/src/slic3r/GUI/GLCanvas3D.cpp
+index e23bd24e346..ac1a21fa84e 100644
+--- a/src/slic3r/GUI/GLCanvas3D.cpp
++++ b/src/slic3r/GUI/GLCanvas3D.cpp
+@@ -1857,6 +1857,12 @@ void GLCanvas3D::set_model(Model* model)
+     m_selection.set_model(m_model);
+ }
+ 
++void GLCanvas3D::set_arrange_settings(const DynamicPrintConfig &conf, PrinterTechnology tech)
++{
++
++    m_arrange_settings_dialog.set_arrange_settings(conf, tech);
++}
++
+ void GLCanvas3D::bed_shape_changed()
+ {
+     refresh_camera_scene_box();
+diff --git a/src/slic3r/GUI/GLCanvas3D.hpp b/src/slic3r/GUI/GLCanvas3D.hpp
+index 9af8d09a7fd..4a0d5c5c9e0 100644
+--- a/src/slic3r/GUI/GLCanvas3D.hpp
++++ b/src/slic3r/GUI/GLCanvas3D.hpp
+@@ -768,7 +768,7 @@ class GLCanvas3D
+     const Model* get_model() const { return m_model; }
+ 
+     const arr2::ArrangeSettingsView * get_arrange_settings_view() const { return &m_arrange_settings_dialog; }
+-    void set_arrange_settings(const DynamicPrintConfig& conf, PrinterTechnology tech) { m_arrange_settings_dialog.set_arrange_settings(conf, tech); }
++    void set_arrange_settings(const DynamicPrintConfig& conf, PrinterTechnology tech);
+ 
+     const Selection& get_selection() const { return m_selection; }
+     Selection& get_selection() { return m_selection; }
+diff --git a/src/slic3r/GUI/Tab.cpp b/src/slic3r/GUI/Tab.cpp
+index c5bb33b9724..9c137301868 100644
+--- a/src/slic3r/GUI/Tab.cpp
++++ b/src/slic3r/GUI/Tab.cpp
+@@ -4199,7 +4199,7 @@ void Tab::load_current_preset()
+ 
+     // apply duplicate_distance for print preset
+     if (type() == Preset::TYPE_FFF_PRINT || type() == Preset::TYPE_SLA_PRINT) {
+-        wxGetApp().mainframe->plater()->canvas3D()->set_arrange_settings(m_presets->get_edited_preset().config, m_presets->get_edited_preset().printer_technology());
++        //wxGetApp().mainframe->plater()->canvas3D()->set_arrange_settings(m_presets->get_edited_preset().config, m_presets->get_edited_preset().printer_technology());
+     }
+ 
+ //	m_undo_to_sys_btn->Enable(!preset.is_default);
+
+From b8faba7591e33a351d6aa3042a2f06c4293ae3f0 Mon Sep 17 00:00:00 2001
+From: supermerill <merill@free.fr>
+Date: Mon, 23 Sep 2024 23:45:13 +0200
+Subject: [PATCH 2/4] wip disable by default max_gcode_per_second &
+ gcode_min_length as they are creating issues (tofix)
+
+---
+ src/libslic3r/PrintConfig.cpp | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/libslic3r/PrintConfig.cpp b/src/libslic3r/PrintConfig.cpp
+index 18c71581d08..d7dc3b66d71 100644
+--- a/src/libslic3r/PrintConfig.cpp
++++ b/src/libslic3r/PrintConfig.cpp
+@@ -3821,7 +3821,7 @@ void PrintConfigDef::init_fff_params()
+         "\nSet zero to disable.");
+     def->min = 0;
+     def->mode = comExpert | comSuSi;
+-    def->set_default_value(new ConfigOptionFloat(1500));
++    def->set_default_value(new ConfigOptionFloat(0/*1500*/));
+ 
+     def = this->add("max_fan_speed", coInts);
+     def->label = L("Max");
+@@ -4845,7 +4845,7 @@ void PrintConfigDef::init_fff_params()
+     def->min = 0;
+     def->precision = 6;
+     def->mode = comExpert | comSuSi;
+-    def->set_default_value(new ConfigOptionFloatOrPercent(0.02, false));
++    def->set_default_value(new ConfigOptionFloatOrPercent(0/*0.02*/, false));
+     def->aliases = {"min_length"};
+ 
+     def = this->add("gcode_min_resolution", coFloatOrPercent);
+
+From 2d15a30e3de17ef9e9b063e58fce1be5a6990fc7 Mon Sep 17 00:00:00 2001
+From: supermerill <merill@free.fr>
+Date: Tue, 1 Oct 2024 19:49:36 +0200
+Subject: [PATCH 3/4] WIP: TODO:filament selection on range modifier don't work
+
+wip strange chain_lines_by_triangle_connectivity issue
+---
+ src/libslic3r/TriangleMeshSlicer.cpp | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/src/libslic3r/TriangleMeshSlicer.cpp b/src/libslic3r/TriangleMeshSlicer.cpp
+index 22b3cb97e9e..554e329a4e3 100644
+--- a/src/libslic3r/TriangleMeshSlicer.cpp
++++ b/src/libslic3r/TriangleMeshSlicer.cpp
+@@ -968,6 +968,9 @@ struct OpenPolyline {
+ // Only connects segments crossing triangles of the same orientation.
+ static void chain_lines_by_triangle_connectivity(IntersectionLines &lines, Polygons &loops, std::vector<OpenPolyline> &open_polylines)
+ {
++    for(auto &loop : loops)
++        assert(!loop.points.front().coincides_with(loop.points.back()));
++
+     // Build a map of lines by edge_a_id and a_id.
+     std::vector<IntersectionLine*> by_edge_a_id;
+     std::vector<IntersectionLine*> by_a_id;
+@@ -1050,7 +1053,8 @@ static void chain_lines_by_triangle_connectivity(IntersectionLines &lines, Polyg
+                     for(auto &loop : loops)
+                         assert(!loop.points.front().coincides_with(loop.points.back()));
+                     if (loop_pts.size() > 2) {
+-                        assert(!loop_pts.front().coincides_with(loop_pts.back()));
++    for(auto &loop : loops)
++        assert(!loop.points.front().coincides_with(loop.points.back()));
+                         loops.emplace_back(std::move(loop_pts));
+                     }
+                     #ifdef SLIC3R_TRIANGLEMESH_DEBUG
+
+From 545c2da152121fd792effeba4bd53d0ebbf5bf3d Mon Sep 17 00:00:00 2001
+From: Tim Long <Tim@timtek.net>
+Date: Fri, 25 Oct 2024 15:02:09 +0100
+Subject: [PATCH 4/4] Add default_fan_speed into alternate GUI layout and
+ remove the "fan_always_on" line that appeared to not do anything.
+
+---
+ resources/ui_layout/example/filament.ui | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/resources/ui_layout/example/filament.ui b/resources/ui_layout/example/filament.ui
+index fdf3c8fca99..4f2714c7bcf 100644
+--- a/resources/ui_layout/example/filament.ui
++++ b/resources/ui_layout/example/filament.ui
+@@ -29,7 +29,7 @@ group:Print speed override
+ 
+ page:Cooling:time
+ group:Fan speed - default
+-	setting:id$0:label$Run the fan at default speed when possible:fan_always_on
++	setting:id$0:default_fan_speed
+ 	line:Disable fan for the first
+ 		setting:id$0:width$5:label$_:sidetext_width$7:disable_fan_first_layers
+ 		setting:id$0:width$5:label_width$12:full_fan_speed_layer

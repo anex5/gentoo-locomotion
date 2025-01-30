@@ -1,0 +1,20 @@
+--- a/src/libslic3r/CustomGCode.hpp
++++ b/src/libslic3r/CustomGCode.hpp
+@@ -3,6 +3,7 @@
+ 
+ #include <string>
+ #include <vector>
++#include <cstdint>
+ 
+ namespace Slic3r {
+ 
+--- a/src/libslic3r/PNGReadWrite.hpp
++++ b/src/libslic3r/PNGReadWrite.hpp
+@@ -4,6 +4,7 @@
+ #include <vector>
+ #include <string>
+ #include <istream>
++#include <cstdint>
+ 
+ namespace Slic3r { namespace png {
+ 
