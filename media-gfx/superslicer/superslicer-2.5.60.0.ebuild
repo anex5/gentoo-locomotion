@@ -19,7 +19,7 @@ SRC_URI="
 LICENSE="AGPL-3 Boost-1.0 GPL-2 LGPL-3 MIT"
 SLOT="0"
 KEYWORDS="~amd64 ~arm64 ~x86"
-IUSE="gui step test"
+IUSE="+gui -step test"
 
 RESTRICT="test mirror"
 
@@ -49,12 +49,10 @@ RDEPEND="
 	sys-libs/zlib:=
 	gui? (
 		x11-libs/wxGTK:${WX_GTK_VER}[gui?]
-		virtual/libglvnd
 	)
 	step? (
 		sci-libs/opencascade:=[tk]
 	)
-)
 "
 DEPEND="${RDEPEND}
 	media-libs/qhull[static-libs]
