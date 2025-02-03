@@ -5,9 +5,9 @@
      char *hint_result;
      char *hint_welcome;
 +    char *hint_history;
+     char *calc_error_color;
      char *last_result;
      char *previous_input;
-     GPtrArray* history;
 @@ -82,6 +82,10 @@ typedef struct
  #define HINT_WELCOME "-hint-welcome"
  #define HINT_WELCOME_STR "Calculator"

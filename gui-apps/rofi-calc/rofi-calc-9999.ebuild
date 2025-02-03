@@ -31,7 +31,8 @@ DEPEND="
 RDEPEND="${DEPEND}"
 
 PATCHES=(
-	"${FILESDIR}/${PN}-2.2.1-add-to-history-hint.patch"
+	"${FILESDIR}/${P}-add-to-history-hint.patch"
+	"${FILESDIR}/${P}-reload-menu-on-history-cmd.patch"
 )
 
 src_prepare() {
