@@ -1,4 +1,4 @@
-# Copyright 1999-2024 Gentoo Authors
+# Copyright 1999-2025 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -27,9 +27,9 @@ else
 	S="${WORKDIR}/node-v${PV}"
 fi
 
-IUSE="+corepack cpu_flags_x86_sse2 debug doc +icu inspector +jit \
-lto lld man mold +npm pax-kernel -pointer-compression +snapshot +ssl \
-system-icu +system-ssl test"
+IUSE="asm +corepack cpu_flags_x86_sse2 debug doc fips +icu inspector +jit \
+lto lld man mold +npm pax-kernel pointer-compression +snapshot +ssl \
+system-icu +system-ssl test v8-sandbox"
 REQUIRED_USE="
 	^^ ( mold lld )
 	corepack
@@ -37,7 +37,7 @@ REQUIRED_USE="
 	npm? ( corepack )
 	system-icu? ( icu )
 	system-ssl? ( ssl )
-	x86? ( cpu_flags_x86_sse2 )
+	v8-sandbox? ( pointer-compression )
 "
 
 RESTRICT="
@@ -50,9 +50,9 @@ RDEPEND="
 	>=app-arch/brotli-1.1.0
 	>=app-eselect/eselect-nodejs-20250106
 	dev-db/sqlite:3
-	>=dev-libs/libuv-1.49.1:=
+	>=dev-libs/libuv-1.49.2:=
 	>=dev-libs/simdjson-3.9.4:=
-	>=net-dns/c-ares-1.34.3
+	>=net-dns/c-ares-1.34.4
 	>=net-libs/nghttp2-1.62.1:=
 	>=sys-libs/zlib-1.3
 	corepack? ( sys-apps/yarn )
@@ -61,7 +61,7 @@ RDEPEND="
 	)
 	system-ssl? (
 		>=net-libs/ngtcp2-1.3.0:=
-		>=dev-libs/openssl-3.0.15:0=
+		>=dev-libs/openssl-3.0.15:0=[asm?,fips?]
 	)
 "
 BDEPEND="${PYTHON_DEPS}
@@ -92,6 +92,7 @@ PATCHES=(
 	"${FILESDIR}/${PN}-22.2.0-lto-update.patch"
 	"${FILESDIR}/${PN}-20.1.0-support-clang-pgo.patch"
 	"${FILESDIR}/${PN}-19.3.0-v8-oflags.patch"
+	"${FILESDIR}/${PN}-23.5.0-split-pointer-compression-and-v8-sandbox-options.patch"
 )
 
 pkg_pretend() {
@@ -140,7 +141,9 @@ src_prepare() {
 	use pax-kernel && PATCHES+=( "${FILESDIR}"/${PN}-20.6.0-paxmarking.patch )
 
 	# https://github.com/nodejs/node/issues/51339
-	use pointer-compression && PATCHES+=( "${FILESDIR}"/${PN}-23.0.0-fix-v8-external-code-space.patch )
+	#use pointer-compression && PATCHES+=(
+#		"${FILESDIR}/${PN}-23.0.0-fix-v8-external-code-space.patch"
+#	)
 
 	default
 
@@ -235,6 +238,9 @@ src_configure() {
 		--shared-sqlite
 		--shared-zlib
 	)
+	if ! use asm; then
+		myconf+=( --openssl-no-asm )
+	fi
 	use debug && myconf+=( --debug )
 	use lto && myconf+=( --enable-lto )
 	use mold && myconf+=( --with-moldlto )
@@ -255,17 +261,23 @@ src_configure() {
 	else
 		myconf+=( --without-ssl )
 	fi
-
+	if use fips ; then
+		myconf+=( --openssl-is-fips )
+	fi
+	if [[ -n "${NODEJS_OPENSSL_DEFAULT_LIST_CORE}" ]] ; then
+		myconf+=( --openssl-default-cipher-list=${NODEJS_OPENSSL_DEFAULT_LIST_CORE} )
+	fi
 	use jit || myconf+=( --v8-lite-mode )
 	if use jit && use debug && has_version "dev-debug/gdb" ; then
 		myconf+=( --gdb )
 	fi
-	use pointer-compression && myconf+=( --experimental-enable-pointer-compression )
+
+	if use amd64 || use arm64 ; then
+		use pointer-compression && myconf+=( --experimental-enable-pointer-compression )
+	fi
+	use v8-sandbox && myconf+=( --experimental-enable-v8-sandbox )
 	if use kernel_linux && linux_chkconfig_present "TRANSPARENT_HUGEPAGE" ; then
 		myconf+=( --v8-enable-hugepage )
-	fi
-	if ! use pointer-compression ; then
-		ewarn "Disabing USE=pointer-compression will disable the V8 Sandbox."
 	fi
 
 	local myarch
@@ -299,7 +311,7 @@ src_install() {
 	local D_BASE="/${REL_D_BASE}"
 	local ED_BASE="${ED}/${REL_D_BASE}"
 
-	${EPYTHON} tools/install.py install \
+	${EPYTHON} "tools/install.py" install \
 		--dest-dir "${D}" \
 		--prefix "${EPREFIX}/usr" \
 		|| die
