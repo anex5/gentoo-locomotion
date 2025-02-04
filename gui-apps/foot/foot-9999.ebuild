@@ -1,4 +1,4 @@
-# Copyright 1999-2024 Gentoo Authors
+# Copyright 1999-2025 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -84,5 +84,5 @@ src_install() {
 	# foot unconditionally installs CHANGELOG.md, README.md and LICENSE.
 	# we handle this via DOCS and dodoc instead.
 	use doc && ( rm -r "${ED}/usr/share/doc/${PN}" || die )
-	systemd_douserunit foot-server.service "${S}"/foot-server.socket
+	use systemd && systemd_douserunit foot-server.service "${S}"/foot-server.socket
 }

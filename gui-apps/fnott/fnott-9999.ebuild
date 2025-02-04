@@ -1,9 +1,9 @@
-# Copyright 1999-2024 Gentoo Authors
+# Copyright 1999-2025 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-inherit meson toolchain-funcs
+inherit meson xdg systemd toolchain-funcs
 
 DESCRIPTION="Keyboard driven and lightweight Wayland notification daemon."
 HOMEPAGE="https://codeberg.org/dnkl/fnott"
@@ -17,8 +17,11 @@ else
 	KEYWORDS="~amd64 ~x86 ~arm ~arm64"
 fi
 
-IUSE="doc zsh-completion test"
-RESTRICT="mirror"
+IUSE="doc zsh-completion systemd test"
+RESTRICT="
+	!test? ( test )
+	mirror
+"
 LICENSE="MIT ZLIB"
 SLOT="0"
 
@@ -42,15 +45,26 @@ BDEPEND="
 
 src_prepare() {
 	default
-
 	tc-is-cross-compiler && ( sed "/wscanner\./s@native\: true@native\: false@" -i meson.build || die "Sed failed..." )
+	use systemd || ( sed "/subdir('systemd')/d" -i meson.build || die "Sed failed..." )
 	use doc || ( sed "/subdir('doc')/d" -i meson.build || die "Sed failed..." )
 	use zsh-completion || ( sed "/subdir('completions')/d" -i meson.build || die "Sed failed..." )
 }
+
+src_configure() {
+	local emesonargs=(
+		$(meson_feature doc docs)
+		-Dsystem-nanosvg=disabled
+	)
+	meson_src_configure
+
+	sed 's|@bindir@|/usr/bin|g' "${S}"/dbus/${PN}.service.in > ${PN}.service || die
+}
+
 
 src_install() {
 	local DOCS=( CHANGELOG.md README.md LICENSE )
 	meson_src_install
 
-	#use doc || ( rm -r "${ED}/usr/share/doc/${P}" || die )
+	use systemd && systemd_douserunit ${PN}.service
 }
