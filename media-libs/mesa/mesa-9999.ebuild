@@ -35,7 +35,7 @@ else
 	SRC_URI="
 		https://archive.mesa3d.org/${MY_P}.tar.xz
 	"
-	KEYWORDS="~alpha ~amd64 ~arm ~arm64 ~hppa ~loong ~mips ~ppc ~ppc64 ~riscv ~s390 ~sparc ~x86 ~amd64-linux ~x86-linux ~x64-solaris"
+	KEYWORDS="~amd64 ~arm ~arm64 ~loong ~ppc ~ppc64 ~riscv ~sparc ~x86 ~amd64-linux ~x86-linux ~x64-solaris"
 fi
 
 # This should be {CARGO_CRATE_URIS//.crate/.tar.gz} to correspond to the wrap files,
@@ -63,7 +63,7 @@ IUSE="${IUSE_VIDEO_CARDS}
 	cpu_flags_x86_sse2 egl gbm d3d9 debug gles1 +gles2 +llvm
 	lm-sensors opencl +opengl osmesa +proprietary-codecs selinux
 	test unwind vaapi valgrind vdpau vulkan
-	vulkan-overlay wayland +X xa +zstd"
+	wayland +X xa +zstd"
 RESTRICT="!test? ( test )"
 REQUIRED_USE="
 	d3d9? (
@@ -80,7 +80,6 @@ REQUIRED_USE="
 		)
 	)
 	llvm? ( ${LLVM_REQUIRED_USE} )
-	vulkan-overlay? ( vulkan )
 	video_cards_lavapipe? ( llvm vulkan )
 	video_cards_radeon? ( x86? ( llvm ) amd64? ( llvm ) )
 	video_cards_r300?   ( x86? ( llvm ) amd64? ( llvm ) )
@@ -95,6 +94,7 @@ REQUIRED_USE="
 LIBDRM_DEPSTRING=">=x11-libs/libdrm-2.4.121"
 RDEPEND="
 	>=dev-libs/expat-2.1.0-r3[${MULTILIB_USEDEP}]
+	>=dev-util/spirv-tools-1.3.231.0[${MULTILIB_USEDEP}]
 	>=media-libs/libglvnd-1.3.2[X?,${MULTILIB_USEDEP}]
 	>=sys-libs/zlib-1.2.9[${MULTILIB_USEDEP}]
 	unwind? ( sys-libs/libunwind[${MULTILIB_USEDEP}] )
@@ -121,7 +121,6 @@ RDEPEND="
 	opencl? (
 		>=virtual/opencl-3
 		llvm-core/libclc[spirv(-)]
-		>=dev-util/spirv-tools-1.3.231.0
 		virtual/libelf:0=
 	)
 	vaapi? (
@@ -153,9 +152,9 @@ RDEPEND="${RDEPEND}
 "
 
 DEPEND="${RDEPEND}
-	video_cards_d3d12? ( >=dev-util/directx-headers-1.613.0[${MULTILIB_USEDEP}] )
+	video_cards_d3d12? ( >=dev-util/directx-headers-1.614.1[${MULTILIB_USEDEP}] )
 	valgrind? ( dev-debug/valgrind )
-	wayland? ( >=dev-libs/wayland-protocols-1.34 )
+	wayland? ( >=dev-libs/wayland-protocols-1.38 )
 	X? (
 		x11-libs/libXrandr[${MULTILIB_USEDEP}]
 		x11-base/xorg-proto
@@ -431,17 +430,14 @@ multilib_src_configure() {
 				)
 			fi
 		fi
+
+		emesonargs+=(-Dvulkan-layers=device-select,overlay)
 	fi
 
 	driver_list() {
 		local drivers="$(sort -u <<< "${1// /$'\n'}")"
 		echo "${drivers//$'\n'/,}"
 	}
-
-	local vulkan_layers
-	use vulkan && vulkan_layers+="device-select"
-	use vulkan-overlay && vulkan_layers+=",overlay"
-	emesonargs+=(-Dvulkan-layers=${vulkan_layers#,})
 
 	if use llvm && use vulkan && use video_cards_intel && use amd64; then
 		emesonargs+=(-Dintel-clc=system)
