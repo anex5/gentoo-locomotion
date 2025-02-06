@@ -1,0 +1,65 @@
+--- a/src/lib/AKAZE.cpp
++++ b/src/lib/AKAZE.cpp
+@@ -53,7 +53,7 @@ void AKAZE::Allocate_Memory_Evolution()
+ 
+   // Allocate the dimension of the matrices for the evolution
+   for (int i = 0; i <= options_.omax-1; i++) {
+-    rfactor = 1.0/pow(2.0f, i);
++    rfactor = 1.0/powf(2.0f, i);
+     level_height = (int)(options_.img_height*rfactor);
+     level_width = (int)(options_.img_width*rfactor);
+ 
+@@ -76,7 +76,7 @@ void AKAZE::Allocate_Memory_Evolution()
+       step.Lflow.create(size, CV_32F);
+       step.Lstep.create(size, CV_32F);
+ 
+-      step.esigma = options_.soffset*pow(2.0f, (float)(j)/(float)(options_.nsublevels) + i);
++      step.esigma = options_.soffset*powf(2.0f, (float)(j)/(float)(options_.nsublevels) + i);
+       step.sigma_size = fRound(step.esigma);
+       step.etime = 0.5*(step.esigma*step.esigma);
+       step.octave = i;
+@@ -199,7 +199,7 @@ void AKAZE::Compute_Multiscale_Derivativ
+ 
+   for (int i = 0; i < (int) evolution_.size(); i++) {
+ 
+-    float ratio = pow(2.0f,(float)evolution_[i].octave);
++    float ratio = powf(2.0f,(float)evolution_[i].octave);
+     int sigma_size_ = fRound(evolution_[i].esigma*options_.derivative_factor/ratio);
+ 
+     compute_scharr_derivatives(evolution_[i].Lsmooth, evolution_[i].Lx, 1, 0, sigma_size_);
+@@ -224,7 +224,7 @@ void AKAZE::Compute_Determinant_Hessian_
+     if (options_.verbosity == true)
+       cout << "Computing detector response. Determinant of Hessian. Evolution time: " << evolution_[i].etime << endl;
+ 
+-    float ratio = pow(2.0f,(float)evolution_[i].octave);
++    float ratio = powf(2.0f,(float)evolution_[i].octave);
+     int sigma_size = fRound(evolution_[i].esigma*options_.derivative_factor/ratio);
+     int sigma_size_quat = sigma_size*sigma_size*sigma_size*sigma_size;
+ 
+@@ -287,7 +287,7 @@ void AKAZE::Find_Scale_Space_Extrema(std
+           point.size = evolution_[i].esigma*options_.derivative_factor;
+           point.octave = evolution_[i].octave;
+           point.class_id = i;
+-          ratio = pow(2.0f, point.octave);
++          ratio = powf(2.0f, point.octave);
+           sigma_size_ = fRound(point.size/ratio);
+           point.pt.x = jx;
+           point.pt.y = ix;
+@@ -391,7 +391,7 @@ void AKAZE::Do_Subpixel_Refinement(std::
+   t1 = cv::getTickCount();
+ 
+   for (size_t i = 0; i < kpts.size(); i++) {
+-    ratio = pow(2.f,kpts[i].octave);
++    ratio = powf(2.0f,kpts[i].octave);
+     x = fRound(kpts[i].pt.x/ratio);
+     y = fRound(kpts[i].pt.y/ratio);
+ 
+@@ -427,7 +427,7 @@ void AKAZE::Do_Subpixel_Refinement(std::
+     if (fabs(dst(0)) <= 1.0 && fabs(dst(1)) <= 1.0) {
+       kpts[i].pt.x = x + dst(0);
+       kpts[i].pt.y = y + dst(1);
+-      int power = powf(2, evolution_[kpts[i].class_id].octave);
++      int power = powf(2.0, evolution_[kpts[i].class_id].octave);
+       kpts[i].pt.x = kpts[i].pt.x*power + .5*(power-1);
+       kpts[i].pt.y = kpts[i].pt.y*power + .5*(power-1);
+       kpts[i].angle = 0.0;

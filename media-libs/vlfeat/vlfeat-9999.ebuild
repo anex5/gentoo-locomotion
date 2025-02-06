@@ -1,9 +1,9 @@
-# Copyright 1999-2024 Gentoo Authors
+# Copyright 1999-2025 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-inherit toolchain-funcs
+inherit toolchain-funcs flag-o-matic
 
 DESCRIPTION="VisionLab Features Library for SFM applications"
 HOMEPAGE="https://www.vlfeat.org"
@@ -22,7 +22,7 @@ fi
 
 LICENSE="BSD"
 
-IUSE="debug man mpi octave"
+IUSE="debug man mpi octave utils"
 RESTRICT="
 	!test (test)
 	mirror
@@ -58,7 +58,7 @@ src_compile() {
 }
 
 src_install() {
-	dobin bin/${ARCH}/{sift,mser}
+	use utils && dobin bin/${ARCH}/{sift,mser}
 	use man && doman src/{vlfeat.7,mser.1,sift.1}
 	dolib.so bin/${ARCH}/libvl.so
 	insinto /usr/include

@@ -1,9 +1,9 @@
-# Copyright 1999-2023 Gentoo Authors
+# Copyright 1999-2025 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-inherit cmake
+inherit cmake flag-o-matic
 
 MY_PN="OpenMesh"
 MY_PV=$(ver_cut 1-2)
@@ -20,13 +20,15 @@ IUSE="doc qt5 static-libs test"
 RESTRICT="!test? ( test ) mirror"
 
 RDEPEND="
-	qt5? (
-		dev-qt/qtcore:5
-		dev-qt/qtgui:5
-		dev-qt/qtopengl:5
-		dev-qt/qtwidgets:5
+	qt6? (
+		dev-qt/qtcore:6
+		dev-qt/qtgui:6
+		dev-qt/qtopengl:6
+		dev-qt/qtwidgets:6
 		media-libs/freeglut
 	)
+"
+BDEPEND="
 	doc? (
 		app-doc/doxygen
 		media-gfx/graphviz
@@ -35,8 +37,6 @@ RDEPEND="
 DEPEND="${RDEPEND}
 	test? ( dev-cpp/gtest )
 "
-
-#CMAKE_BUILD_TYPE=Release
 
 src_prepare() {
 	cmake_src_prepare
@@ -61,11 +61,12 @@ src_prepare() {
 
 src_configure() {
 	local mycmakeargs=(
-		-DBUILD_APPS=$(usex qt5)
+		-DBUILD_APPS=$(usex qt6)
 		-DOPENMESH_BUILD_UNIT_TESTS=$(usex test)
 		-DOPENMESH_DOCS=$(usex doc)
 	)
 
+	CMAKE_BUILD_TYPE=$(usex debug "RelWithDebInfo" "Release")
 	cmake_src_configure
 }
 
