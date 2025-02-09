@@ -1,4 +1,4 @@
-# Copyright 1999-2023 Gentoo Authors
+# Copyright 1999-2025 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -23,18 +23,22 @@ S="${WORKDIR}/${PN}-$(ver_cut 1-3)"
 LICENSE="libtiff"
 SLOT="0/6"
 if [[ ${PV} != *_rc* ]] ; then
-	KEYWORDS="~alpha amd64 arm arm64 hppa ~ia64 ~loong ~m68k ~mips ppc ppc64 ~riscv ~s390 ~sparc x86 ~amd64-linux ~x86-linux ~arm64-macos ~ppc-macos ~x64-macos ~x64-solaris"
+	KEYWORDS="~alpha ~amd64 ~arm ~arm64 ~hppa ~loong ~m68k ~mips ~ppc ~ppc64 ~riscv ~s390 ~sparc ~x86 ~amd64-linux ~x86-linux ~arm64-macos ~ppc-macos ~x64-macos ~x64-solaris"
 fi
-IUSE="+cxx doc contrib jbig jpeg lerc lzma static-libs test tools webp zlib zstd"
+IUSE="X +cxx doc contrib jbig jpeg lerc lzma opengl static-libs test tools webp zlib zstd"
 RESTRICT="!test? ( test )"
 
 # bug #483132
-REQUIRED_USE="test? ( jpeg )"
+REQUIRED_USE="
+	opengl? ( X )
+	test? ( jpeg )
+"
 
 RDEPEND="
 	jbig? ( >=media-libs/jbigkit-2.1:=[${MULTILIB_USEDEP}] )
 	jpeg? ( media-libs/libjpeg-turbo:=[${MULTILIB_USEDEP}] )
 	lzma? ( >=app-arch/xz-utils-5.0.5-r1[${MULTILIB_USEDEP}] )
+	opengl? ( media-libs/freeglut )
 	webp? ( media-libs/libwebp:=[${MULTILIB_USEDEP}] )
 	zlib? ( >=sys-libs/zlib-1.2.8-r1[${MULTILIB_USEDEP}] )
 	zstd? ( >=app-arch/zstd-1.3.7-r1:=[${MULTILIB_USEDEP}] )
@@ -42,12 +46,19 @@ RDEPEND="
 DEPEND="${RDEPEND}"
 BDEPEND="
 	verify-sig? ( sec-keys/openpgp-keys-evenrouault )
-	sys-devel/slibtool
+	virtual/pkgconfig
 "
 
 MULTILIB_WRAPPED_HEADERS=(
 	/usr/include/tiffconf.h
 )
+
+src_prepare() {
+	default
+
+	# Added to fix cross-compilation
+	elibtoolize
+}
 
 multilib_src_configure() {
 	append-lfs-flags
@@ -57,11 +68,12 @@ multilib_src_configure() {
 		"PREFIX=${EPREFIX}/usr"
 		"LIBDIR=${EPREFIX}/usr/$(get_libdir)"
 		--disable-sphinx
-		--without-x
 		--with-docdir="${EPREFIX}"/usr/share/doc/${PF}
+		$(use_with X x)
 		$(use_enable cxx)
 		$(use_enable jbig)
 		$(use_enable jpeg)
+		$(multilib_native_use_enable opengl)
 		$(use_enable lzma)
 		$(use_enable static-libs static)
 		$(use_enable test tests)
@@ -80,5 +92,4 @@ multilib_src_configure() {
 
 multilib_src_install_all() {
 	find "${ED}" -type f -name '*.la' -delete || die
-	use doc && ( rm "${ED}"/usr/share/doc/${PF}/{README*,RELEASE-DATE,TODO,VERSION} || die )
 }

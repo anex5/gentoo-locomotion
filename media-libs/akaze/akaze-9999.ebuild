@@ -51,8 +51,8 @@ pkg_setup() {
 
 src_prepare() {
 	cmake_src_prepare
-	# drop hardcoced cflags
-	sed -e "s/ -DDEBUG -D_DEBUG//g" -e "s/-msse[2-4]//g" -i src/CMakeLists.txt || die "Sed failed."
+	# drop hardcoded cflags
+	sed -e "s/ -DDEBUG -D_DEBUG//g" -e "s/-msse[2-4]\+//g" -i src/CMakeLists.txt || die "Sed failed."
 	# add build doc option
 	sed -e "/if(DOXYGEN_FOUND)/i set(BUILD_DOCS, true)" \
 		-e "s|if(DOXYGEN_FOUND)|if(DOXYGEN_FOUND AND BUILD_DOCS)|" \
