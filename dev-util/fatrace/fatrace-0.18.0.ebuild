@@ -1,9 +1,9 @@
-# Copyright 2022 Gentoo Authors
+# Copyright 2025 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{8..10} )
+PYTHON_COMPAT=( python3_{11..13} )
 
 inherit linux-info python-r1 toolchain-funcs
 
@@ -33,6 +33,6 @@ src_install() {
 	dosbin fatrace
 	use powertop && dosbin power-usage-report
 
-	use man && doman fatrace.1
+	use man && doman fatrace.8
 	use doc && dodoc NEWS
 }

@@ -19,7 +19,7 @@ SRC_URI="
 LICENSE="AGPL-3 Boost-1.0 GPL-2 LGPL-3 MIT"
 SLOT="0"
 KEYWORDS="~amd64 ~arm64 ~x86"
-IUSE="+gui -step test"
+IUSE="debug +gui -step test"
 
 RESTRICT="test mirror"
 
@@ -35,6 +35,7 @@ RDEPEND="
 	dev-libs/gmp:=
 	dev-libs/mpfr:=
 	dev-libs/imath:=
+	media-libs/openexr
 	media-gfx/openvdb:=
 	media-gfx/libbgcode
 	net-misc/curl[adns]
@@ -90,13 +91,17 @@ src_unpack() {
 }
 
 src_prepare() {
-	use gui || sed -e '/find_package(OpenGL REQUIRED)/d' -i CMakeLists.txt
+	use gui || ( sed -e '/find_package(OpenGL REQUIRED)/d' -i CMakeLists.txt || die )
+	# Relax wxWidgets dep reqs
+	sed -e 's/find_package(wxWidgets 3.0 REQUIRED COMPONENTS base core adv html gl stc)/find_package(wxWidgets 3.2 REQUIRED COMPONENTS base core adv html gl stc)/' \
+		-e 's/find_package(wxWidgets 3.1 QUIET COMPONENTS base core adv html gl stc)/find_package(wxWidgets 3.3 QUIET COMPONENTS base core adv html gl stc)/' \
+		-i src/CMakeLists.txt || die
 	use step && eapply "${FILESDIR}/${PN}-2.5.59.2-link-occtwrapper-statically.patch"
 	cmake_src_prepare
 }
 
 src_configure() {
-	CMAKE_BUILD_TYPE="Release"
+	CMAKE_BUILD_TYPE=$(usex debug "RelWithDebInfo" "Release")
 
 	append-flags -fno-strict-aliasing
 
@@ -105,6 +110,7 @@ src_configure() {
 	local mycmakeargs=(
 		-DOPENVDB_FIND_MODULE_PATH="/usr/$(get_libdir)/cmake/OpenVDB"
 		-DSLIC3R_BUILD_TESTS=$(usex test)
+		-DSLIC3R_BUILD_SANDBOXES=$(usex test)
 		-DSLIC3R_ENABLE_FORMAT_STEP=$(usex step)
 		-DSLIC3R_FHS=ON
 		-DSLIC3R_GTK=3
@@ -112,7 +118,7 @@ src_configure() {
 		-DSLIC3R_PCH=OFF
 		-DSLIC3R_STATIC=OFF
 		-DSLIC3R_WX_STABLE=ON
-		-Wno-dev
+		#-Wno-dev
 	)
 	tc-is-cross-compiler && mycmakeargs+=(
 		-DIS_CROSS_COMPILE=ON

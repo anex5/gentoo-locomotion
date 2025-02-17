@@ -1,4 +1,4 @@
-# Copyright 1999-2024 Gentoo Authors
+# Copyright 1999-2025 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -20,7 +20,7 @@ fi
 
 LICENSE="MIT"
 SLOT="0"
-IUSE="zsh-completion bash-completion fish-completion grimshot +man +swaybar +swaynag tray wallpapers X"
+IUSE="bash-completion fish-completion grimshot +man +swaybar +swaynag tray wallpapers x11-backend zsh-completion"
 REQUIRED_USE="tray? ( swaybar )"
 
 DEPEND="
@@ -43,7 +43,7 @@ DEPEND="
 		sys-libs/basu
 	) )
 	wallpapers? ( gui-apps/swaybg[gdk-pixbuf(+)] )
-	X? (
+	x11-backend? (
 		x11-libs/libxcb:0=
 		x11-libs/xcb-util-wm
 	)
@@ -77,11 +77,15 @@ FILECAPS=(
 
 RESTRICT="mirror"
 
+src_prepare() {
+	default
+	use x11-backend || ( eapply "${FILESDIR}/swayfx-9999-disable-xwayland.patch" || die )
+}
+
 src_configure() {
 	local emesonargs=(
 		$(meson_feature man man-pages)
 		$(meson_feature tray)
-		$(meson_feature X xwayland)
 		$(meson_feature swaybar gdk-pixbuf)
 		$(meson_use swaynag)
 		$(meson_use swaybar)

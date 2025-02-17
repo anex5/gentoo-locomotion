@@ -1,0 +1,12 @@
+--- a/sway/desktop/output.c
++++ b/sway/desktop/output.c
+@@ -248,8 +248,7 @@ static void output_configure_scene(struc
+ 		// Other buffers should set their own effects manually, like the
+ 		// text buffer and saved views
+ 		struct wlr_layer_surface_v1 *layer_surface = NULL;
+-		if (wlr_xdg_surface_try_from_wlr_surface(surface->surface)
+-				|| wlr_xwayland_surface_try_from_wlr_surface(surface->surface)) {
++		if (wlr_xdg_surface_try_from_wlr_surface(surface->surface)) {
+ 			wlr_scene_buffer_set_corner_radius(buffer,
+ 					container_has_corner_radius(closest_con) ? corner_radius : 0,
+ 					has_titlebar ? CORNER_LOCATION_BOTTOM : CORNER_LOCATION_ALL);

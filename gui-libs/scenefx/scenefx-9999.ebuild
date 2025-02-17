@@ -1,5 +1,5 @@
-# Copyright 1999-2024 Gentoo Authors
-# Distributed under the terms of the GNU General Public License v2
+# Copyright 1999-2025 Gentoo Authors
+# Distributed under the terms of the GNU Public License v2
 
 EAPI=8
 
@@ -19,34 +19,15 @@ DESCRIPTION="A replacement for the wlroots scene API with eye-candy effects."
 HOMEPAGE="https://github.com/wlrfx/scenefx"
 LICENSE="MIT"
 SLOT="0"
-IUSE="+drm +gbm examples +liftoff +libinput vulkan x11-backend xcb-errors X"
-REQUIRED_USE="
-	xcb-errors? ( || ( x11-backend  ) )
-"
+IUSE="X man examples"
 
 DEPEND="
-	>=dev-libs/wayland-1.22.0
-	>=x11-libs/libdrm-2.4.114
-	media-libs/mesa[egl(+),gles2(+),vulkan?]
+	>=dev-libs/wayland-1.23.0
+	>=x11-libs/libdrm-2.4.122
+	media-libs/mesa[egl(+),gles2(+)]
 	>=x11-libs/pixman-0.42.0
 	media-libs/libglvnd
 	x11-libs/libxkbcommon
-	drm? (
-		media-libs/libdisplay-info
-		sys-apps/hwdata
-		liftoff? ( >=dev-libs/libliftoff-0.4 )
-	)
-	libinput? ( >=dev-libs/libinput-1.14.0:= )
-	x11-backend? (
-		x11-libs/libxcb:=
-		x11-libs/xcb-util-renderutil
-	)
-	vulkan? (
-		dev-util/glslang:=
-		dev-util/vulkan-headers
-		media-libs/vulkan-loader
-	)
-	xcb-errors? ( x11-libs/xcb-util-errors )
 	X? (
 		x11-libs/libxcb:=
 		x11-libs/xcb-util-wm
@@ -55,34 +36,26 @@ DEPEND="
 "
 # Check this on every update
 DEPEND+="
-	>=gui-libs/wlroots-0.17:=[X?,liftoff?,vulkan?,x11-backend?,xcb-errors?]
-	<gui-libs/wlroots-0.18:=[X?,liftoff?,vulkan?,x11-backend?,xcb-errors?]
+	>=gui-libs/wlroots-0.18:=[X?]
+	<gui-libs/wlroots-0.19:=[X?]
 "
 RDEPEND="${DEPEND}"
 BDEPEND="
-	>=dev-libs/wayland-protocols-1.24
+	>=dev-libs/wayland-protocols-1.35
 	>=dev-build/meson-0.59.0
+	dev-util/glslang
+	app-alternatives/ninja
 	virtual/pkgconfig
-	dev-build/ninja
-    vulkan? ( >=dev-util/vulkan-headers-1.3.255 )
+	virtual/libc
 "
+BDEPEND+="man? ( >=app-text/scdoc-1.9.2 )"
 
 RESTRICT="mirror"
 
 src_configure() {
-	local backends=(
-		$(usev drm)
-		$(usev libinput)
-		$(usev x11-backend 'x11')
-	)
-	local meson_backends=$(IFS=','; echo "${backends[*]}")
 	local emesonargs=(
-		-Drenderers=$(usex vulkan 'gles2,vulkan' gles2)
-		$(meson_feature X xwayland)
-		$(meson_feature xcb-errors)
+		-Drenderers=auto
 		$(meson_use examples)
-		-Dbackends=${meson_backends}
-		-Dallocators="$(usex gbm gbm auto)"
 	)
 
 	meson_src_configure
