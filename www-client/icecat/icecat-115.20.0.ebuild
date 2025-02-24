@@ -1,4 +1,4 @@
-# Copyright 1999-2024 Gentoo Authors
+# Copyright 1999-2025 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -6,9 +6,9 @@ EAPI=8
 # Using Gentoos firefox patches as system libraries and lto are quite nice
 FIREFOX_PATCHSET="firefox-${PV%%.*}esr-patches-13.tar.xz"
 
-LLVM_COMPAT=( 18 )
+LLVM_COMPAT=( 18 19 )
 PP="1"
-GV="2"
+GV="1"
 PYTHON_COMPAT=( python3_{10..13} )
 PYTHON_REQ_USE="ncurses,sqlite,ssl"
 RUST_NEEDS_LLVM=1
@@ -29,7 +29,6 @@ PATCH_URIS=(
 SRC_URI="
 	!buildtarball? (
 		icecat-${PV}-${PP}gnu${GV}.tar.bz2
-		https://gitlab.com/api/v4/projects/37881342/packages/generic/${PN}/${PV}/${P}-${PP}gnu${GV}.tar.bz2
 	)
 	${PATCH_URIS[@]}
 "
