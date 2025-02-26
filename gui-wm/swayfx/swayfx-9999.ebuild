@@ -30,7 +30,7 @@ DEPEND="
 	sys-auth/seatd:=
 	dev-libs/libpcre2
 	>=dev-libs/wayland-1.20.0
-	gui-libs/scenefx
+	>=gui-libs/scenefx-0.2
 	x11-libs/cairo
 	>=x11-libs/libxkbcommon-1.5.0:0=
 	x11-libs/pango

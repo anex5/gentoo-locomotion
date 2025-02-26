@@ -8,7 +8,7 @@ LLVM_OPTIONAL=1
 CARGO_OPTIONAL=1
 PYTHON_COMPAT=( python3_{10..13} )
 
-inherit flag-o-matic llvm-r2 meson-multilib python-any-r1 linux-info rust-toolchain toolchain-funcs
+inherit flag-o-matic llvm-r1 meson-multilib python-any-r1 linux-info rust-toolchain toolchain-funcs
 
 MY_P="${P/_/-}"
 
@@ -20,7 +20,8 @@ CRATES="
 	paste@1.0.14
 "
 
-RUST_MIN_VER="1.74.1"
+RUST_MIN_VER="1.78.0"
+RUST_MULTILIB=1
 RUST_OPTIONAL=1
 
 inherit cargo
@@ -176,7 +177,7 @@ BDEPEND="
 		dev-python/pyyaml[\${PYTHON_USEDEP}]
 	")
 	video_cards_intel? (
-		~dev-util/intel_clc-${PV}
+		~dev-util/mesa_clc-${PV}
 		llvm-core/libclc[spirv(-)]
 		$(python_gen_any_dep "dev-python/ply[\${PYTHON_USEDEP}]")
 	)
@@ -193,7 +194,7 @@ BDEPEND="
 
 QA_WX_LOAD="
 x86? (
-	usr/lib/libglapi.so.0.0.0
+	usr/lib/libgallium-*.so
 	usr/lib/libOSMesa.so.8.0.0
 	usr/lib/libGLX_mesa.so.0.0.0
 )"
@@ -307,7 +308,7 @@ pkg_setup() {
 		linux-info_pkg_setup
 	fi
 
-	use llvm && llvm-r2_pkg_setup
+	use llvm && llvm-r1_pkg_setup
 	python-any-r1_pkg_setup
 
 	if use opencl || (use vulkan && use video_cards_nvk); then
@@ -440,9 +441,9 @@ multilib_src_configure() {
 	}
 
 	if use llvm && use vulkan && use video_cards_intel && use amd64; then
-		emesonargs+=(-Dintel-clc=system)
+		emesonargs+=(-Dmesa-clc=system)
 	else
-		emesonargs+=(-Dintel-clc=disabled)
+		emesonargs+=(-Dmesa-clc=disabled)
 	fi
 
 	if use opengl && use X; then
@@ -460,6 +461,7 @@ multilib_src_configure() {
 	emesonargs+=(
 		$(meson_use test build-tests)
 		-Dshared-glapi=enabled
+		-Dlegacy-x11=dri2
 		-Dexpat=enabled
 		$(meson_use opengl)
 		$(meson_feature gbm)
@@ -474,7 +476,7 @@ multilib_src_configure() {
 		$(meson_feature unwind libunwind)
 		$(meson_feature zstd)
 		$(meson_use cpu_flags_x86_sse2 sse2)
-		-Dintel-clc=$(usex video_cards_intel system auto)
+		-Dmesa-clc=$(usex video_cards_intel system auto)
 		-Dvalgrind=$(usex valgrind auto disabled)
 		-Dvideo-codecs=$(usex proprietary-codecs "all" "all_free")
 		-Dgallium-drivers=$(driver_list "${GALLIUM_DRIVERS[*]}")
