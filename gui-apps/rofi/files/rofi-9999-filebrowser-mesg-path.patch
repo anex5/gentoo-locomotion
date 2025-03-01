@@ -1,0 +1,22 @@
+--- a/source/modes/filebrowser.c
++++ b/source/modes/filebrowser.c
+@@ -629,7 +629,7 @@ static char *_get_message(const Mode *sw
+   if (pd->current_dir) {
+     char *dirname = g_file_get_parse_name(pd->current_dir);
+     char *str =
+-        g_markup_printf_escaped("<b>Current directory:</b> %s", dirname);
++        g_markup_printf_escaped("%s", dirname);
+     g_free(dirname);
+     return str;
+   }
+--- a/source/modes/recursivebrowser.c
++++ b/source/modes/recursivebrowser.c
+@@ -521,7 +521,7 @@ static char *_get_message(const Mode *sw
+   if (pd->current_dir) {
+     char *dirname = g_file_get_parse_name(pd->current_dir);
+     char *str =
+-        g_markup_printf_escaped("<b>Current directory:</b> %s", dirname);
++        g_markup_printf_escaped("%s", dirname);
+     g_free(dirname);
+     return str;
+   }

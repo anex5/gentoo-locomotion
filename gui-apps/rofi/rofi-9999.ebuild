@@ -67,6 +67,10 @@ DEPEND="
 "
 RESTRICT="mirror"
 
+PATCHES=(
+	"${FILESDIR}"/rofi-9999-filebrowser-mesg-path.patch
+)
+
 src_prepare() {
 	use man || ( sed -i -e '/install_man(/{:1;/)/!{N;b1};d}' -e "/subdir('doc')/d" meson.build || die )
 	use test || ( sed -i -e '/test(/{:1;/))/!{N;b1};d}' meson.build || die )
