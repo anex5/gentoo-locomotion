@@ -64,6 +64,10 @@ BDEPEND="
 
 RESTRICT="mirror test"
 
+PATCHES=(
+	"${FILESDIR}/yambar-9999-module-mem-float.patch"
+)
+
 src_prepare() {
 	default
 

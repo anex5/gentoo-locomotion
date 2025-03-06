@@ -3,7 +3,7 @@
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{10..12} )
+PYTHON_COMPAT=( python3_{10..13} )
 inherit meson python-any-r1
 
 DESCRIPTION="Simple library for font loading and glyph rasterization"
@@ -16,7 +16,7 @@ S="${WORKDIR}/${PN}"
 LICENSE="MIT ZLIB"
 SLOT="0"
 KEYWORDS="~amd64 ~arm64 ~arm ~ppc64 ~riscv ~x86"
-IUSE="examples +harfbuzz +libutf8proc doc test"
+IUSE="examples +harfbuzz +libutf8proc man test"
 REQUIRED_USE="
 	libutf8proc? ( harfbuzz )
 	examples? ( libutf8proc )
@@ -35,7 +35,7 @@ RDEPEND="
 		media-libs/harfbuzz:=[truetype]
 	)
 	libutf8proc? (
-		dev-libs/libutf8proc:=
+		dev-libs/libutf8proc:=[-cjk]
 	)
 "
 DEPEND="
@@ -52,7 +52,7 @@ DEPEND="
 "
 BDEPEND="
 	${PYTHON_DEPS}
-	doc? ( app-text/scdoc )
+	man? ( app-text/scdoc )
 	virtual/pkgconfig
 	examples? (
 		dev-util/wayland-scanner
@@ -78,7 +78,7 @@ src_configure() {
 	local emesonargs=(
 		$(meson_feature harfbuzz grapheme-shaping)
 		$(meson_feature libutf8proc run-shaping)
-		$(meson_feature doc docs)
+		$(meson_feature man docs)
 		$(meson_use examples)
 		$(use test && meson_use harfbuzz test-text-shaping)
 		# bundled, tiny, I believe this means we should always include it
@@ -92,7 +92,7 @@ src_install() {
 	local DOCS=( CHANGELOG.md README.md )
 	meson_src_install
 
-	rm -r "${ED}"/usr/share/doc/${PN}
+	rm -r "${ED}"/usr/share/doc/${P} || die
 
 	use examples && newbin "${BUILD_DIR}/example/example" fcft-example
 }

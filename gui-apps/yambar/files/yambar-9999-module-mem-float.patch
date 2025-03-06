@@ -1,0 +1,13 @@
+--- a/modules/mem.c
++++ b/modules/mem.c
+@@ -92,8 +92,8 @@ content(struct module *mod)
+     double percent_free = ((double)mem_free * 100) / (mem_total + 1);
+ 
+     struct tag_set tags = {
+-        .tags = (struct tag *[]){tag_new_int(mod, "free", mem_free * 1024), tag_new_int(mod, "used", mem_used * 1024),
+-                                 tag_new_int(mod, "total", mem_total * 1024),
++        .tags = (struct tag *[]){tag_new_float(mod, "free", mem_free * 1024), tag_new_float(mod, "used", mem_used * 1024),
++                                 tag_new_float(mod, "total", mem_total * 1024),
+                                  tag_new_int_range(mod, "percent_free", round(percent_free), 0, 100),
+                                  tag_new_int_range(mod, "percent_used", round(percent_used), 0, 100)},
+         .count = 5,
