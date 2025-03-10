@@ -1,14 +1,14 @@
-# Copyright 1999-2024 Gentoo Foundation
+# Copyright 1999-2025 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
 inherit linux-mod-r1
 
-MODULES_KERNEL_MAX=6.12
+MODULES_KERNEL_MAX=6.14
 MODULES_KERNEL_MIN=6.1
 
-COMMIT="9a249f5a2096076125dc39f4fb574fc38eeb2304"
+COMMIT="132dcf025806a436b9a95fb4af24eacfd07222f5"
 
 DESCRIPTION="Realtek RTL8811CU/RTL8821CU USB wifi adapter driver"
 HOMEPAGE="https://github.com/morrownr/8821cu-20210916"

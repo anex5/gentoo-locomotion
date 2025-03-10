@@ -1,0 +1,23 @@
+From 4c0f3cf7aec51c8d842f8df130227a69dbfb74a0 Mon Sep 17 00:00:00 2001
+From: Xtr126 <crawleymsh@gmail.com>
+Date: Fri, 7 Feb 2025 17:27:07 +0530
+Subject: [PATCH] update function definition for kernel 6.13.0
+
+---
+ os_dep/linux/ioctl_cfg80211.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/os_dep/linux/ioctl_cfg80211.c b/os_dep/linux/ioctl_cfg80211.c
+index d91bbbb..1666288 100644
+--- a/os_dep/linux/ioctl_cfg80211.c
++++ b/os_dep/linux/ioctl_cfg80211.c
+@@ -5868,6 +5868,9 @@ static int	cfg80211_rtw_set_channel(struct wiphy *wiphy
+ }
+ 
+ static int cfg80211_rtw_set_monitor_channel(struct wiphy *wiphy
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 13, 0)
++	, struct net_device *dev
++#endif
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 8, 0))
+ 	, struct cfg80211_chan_def *chandef
+ #else

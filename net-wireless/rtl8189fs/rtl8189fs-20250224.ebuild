@@ -1,14 +1,14 @@
-# Copyright 1999-2024 Gentoo Foundation
+# Copyright 1999-2025 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
 inherit linux-mod-r1
 
-MODULES_KERNEL_MAX=6.9
+MODULES_KERNEL_MAX=6.14
 MODULES_KERNEL_MIN=6.1
 
-COMMIT="30a52f789a0b933c4a7eb06cbf4a4d21c8e581aa"
+COMMIT="fcf2a5746e6fe11d9d71337ee5dac6cf43423a97"
 
 DESCRIPTION="Realtek 8189es wifi chip driver"
 HOMEPAGE="https://github.com/jwrdegoede/rtl8189ES_linux"
@@ -31,6 +31,11 @@ pkg_setup() {
 
 	CONFIG_CHECK="~!SSB ~!X86_INTEL_LPSS"
 	CONFIG_CHECK2="LIB80211 ~!MAC80211 ~LIB80211_CRYPT_TKIP WIRELESS_EXT COMPAT_NET_DEV_OPS CFG80211"
+}
+
+src_prepare() {
+	default
+	sed -e '/^\# gcc-1[0-9]/,/^$/ s:^:\#:' -i Makefile || die "Failed to patch Makefile."
 }
 
 src_compile() {
