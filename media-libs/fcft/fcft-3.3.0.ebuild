@@ -4,12 +4,14 @@
 EAPI=8
 
 PYTHON_COMPAT=( python3_{10..13} )
-inherit meson python-any-r1
+inherit meson python-any-r1 verify-sig
 
 DESCRIPTION="Simple library for font loading and glyph rasterization"
 HOMEPAGE="https://codeberg.org/dnkl/fcft"
-SRC_URI="https://codeberg.org/dnkl/fcft/archive/${PV}.tar.gz -> ${P}.tar.gz"
-S="${WORKDIR}/${PN}"
+SRC_URI="
+	https://codeberg.org/dnkl/${PN}/releases/download/${PV}/${P}.tar.gz
+	verify-sig? ( https://codeberg.org/dnkl/${PN}/releases/download/${PV}/${P}.tar.gz.sig )
+"
 
 # MIT for fcft
 # ZLIB for nanosvg
@@ -57,7 +59,10 @@ BDEPEND="
 	examples? (
 		dev-util/wayland-scanner
 	)
+	verify-sig? ( sec-keys/openpgp-keys-dnkl )
 "
+
+VERIFY_SIG_OPENPGP_KEY_PATH=/usr/share/openpgp-keys/dnkl.asc
 
 src_prepare() {
 	default
