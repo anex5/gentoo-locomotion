@@ -69,6 +69,7 @@ RESTRICT="mirror"
 
 PATCHES=(
 	"${FILESDIR}"/rofi-9999-filebrowser-mesg-path.patch
+	"${FILESDIR}"/rofi-9999-filebrowser-regex.patch
 )
 
 src_prepare() {
