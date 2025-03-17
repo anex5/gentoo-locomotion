@@ -5,8 +5,8 @@ EAPI=8
 
 inherit cmake
 
-DESCRIPTION="A file browser for rofi"
-HOMEPAGE="https://github.com/marvinkreis/rofi-file-browser-extended"
+DESCRIPTION="A json dictionary for rofi"
+HOMEPAGE="https://github.com/marvinkreis/rofi-json-dict"
 
 if [[ ${PV} == "9999" ]]; then
 	inherit git-r3
@@ -23,6 +23,7 @@ BDEPEND="virtual/pkgconfig"
 COMMON_DEPEND="
 	dev-libs/glib:2
 	gui-apps/rofi
+	dev-libs/json-c
 "
 DEPEND="
 	${COMMON_DEPEND}
@@ -30,19 +31,13 @@ DEPEND="
 "
 RDEPEND="${COMMON_DEPEND}"
 
-IUSE="debug man"
+IUSE="debug"
+
+RESTRICT="mirror"
 
 PATCHES=(
-	# https://bugs.gentoo.org/880985 https://github.com/marvinkreis/rofi-file-browser-extended/pull/49
-	"${FILESDIR}/${PN}-1.3.1-fix-function-pointer-initialization.patch"
-	"${FILESDIR}/${PN}-1.3.1-fix-gcc14-build-fix.patch"
+	"${FILESDIR}/${PN}-0.1.1-fix-gcc14-build.patch"
 )
-
-src_prepare() {
-	# Delete the lines in CMakeLists.txt that install the man page.
-	sed -i "45,56d" CMakeLists.txt || die
-	cmake_src_prepare
-}
 
 src_configure() {
 	use debug && CMAKE_BUILD_TYPE="RelWithDebInfo" || CMAKE_BUILD_TYPE="Release"
@@ -51,5 +46,6 @@ src_configure() {
 
 src_install() {
 	cmake_src_install
-	use man && doman "doc/${PN}.1"
+	dobin convert-dict
+	fperms +x /usr/bin/convert-dict
 }

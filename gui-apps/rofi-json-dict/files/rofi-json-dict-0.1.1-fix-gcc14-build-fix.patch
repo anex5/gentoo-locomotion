@@ -48,36 +48,6 @@ Signed-off-by: Brahmajit Das <brahmajit.xyz@gmail.com>
      char** icon_names_raw = g_array_steal ( icon_names, &num_icon_names );
  
      /* Create icon fetcher requests. */
---- a/src/cmds.c
-+++ b/src/cmds.c
-@@ -115,7 +115,7 @@ void search_path_for_cmds ( FileBrowserM
-     g_hash_table_steal_all ( table );
-     g_hash_table_destroy ( table );
- 
--    g_qsort_with_data ( cmds, num_cmds, sizeof ( FBCmd ), compare_cmds, NULL );
-+    g_sort_array ( cmds, num_cmds, sizeof ( FBCmd ), compare_cmds, NULL );
- 
-     add_cmds(cmds, num_cmds, pd);
- 
---- a/src/files.c
-+++ b/src/files.c
-@@ -142,15 +142,15 @@ void load_files ( FileBrowserFileData *f
-     /* Sort all but the parent dir. */
-     if ( fd->sort_by_type ) {
-         if ( fd->sort_by_depth ) {
--            g_qsort_with_data ( sort_files, num_sort_files, sizeof ( FBFile ), compare_files_depth_type, NULL );
-+            g_sort_array ( sort_files, num_sort_files, sizeof ( FBFile ), compare_files_depth_type, NULL );
-         } else {
--            g_qsort_with_data ( sort_files, num_sort_files, sizeof ( FBFile ), compare_files_type, NULL );
-+            g_sort_array ( sort_files, num_sort_files, sizeof ( FBFile ), compare_files_type, NULL );
-         }
-     } else {
-         if ( fd->sort_by_depth ) {
--            g_qsort_with_data ( sort_files, num_sort_files, sizeof ( FBFile ), compare_files_depth, NULL );
-+            g_sort_array ( sort_files, num_sort_files, sizeof ( FBFile ), compare_files_depth, NULL );
-         } else {
--            g_qsort_with_data ( sort_files, num_sort_files, sizeof ( FBFile ), compare_files, NULL );
-+            g_sort_array ( sort_files, num_sort_files, sizeof ( FBFile ), compare_files, NULL );
-         }
-     }
- }
+-- 
+2.45.0.rc1.218.g7b19149425.dirty
+

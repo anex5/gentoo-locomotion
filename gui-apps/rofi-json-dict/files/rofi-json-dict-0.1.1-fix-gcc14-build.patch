@@ -1,0 +1,15 @@
+--- a/src/jsondict.c
++++ b/src/jsondict.c
+@@ -479,10 +479,10 @@ void set_results ( const char* search, M
+ 
+     switch ( pd->cur_match_mode ) {
+         case match_substring:
+-            g_qsort_with_data ( pd->results, pd->num_results, sizeof ( Result ), substring_compare, pd->search );
++            g_sort_array ( pd->results, pd->num_results, sizeof ( Result ), substring_compare, pd->search );
+             break;
+         case match_levenshtein:
+-            g_qsort_with_data ( pd->results, pd->num_results, sizeof ( Result ), levenshtein_compare, pd->search );
++            g_sort_array ( pd->results, pd->num_results, sizeof ( Result ), levenshtein_compare, pd->search );
+             break;
+         default:
+             break;
