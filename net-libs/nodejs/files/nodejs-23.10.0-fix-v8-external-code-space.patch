@@ -7,9 +7,9 @@ index 84b016cd85..df9aebdd3f 100755
                                           o['variables']['target_arch'] in maglev_enabled_architectures)
    o['variables']['v8_enable_pointer_compression'] = 1 if options.enable_pointer_compression else 0
 +  o['variables']['v8_enable_external_code_space'] = 1 if options.enable_pointer_compression else 0   
-   o['variables']['v8_enable_sandbox'] = 1 if options.enable_pointer_compression else 0
-   o['variables']['v8_enable_31bit_smis_on_64bit_arch'] = 1 if options.enable_pointer_compression else 0
-   o['variables']['v8_enable_shared_ro_heap'] = 0 if options.enable_pointer_compression or options.disable_shared_ro_heap else 1
+   if options.enable_v8_sandbox and not options.enable_pointer_compression:
+     raise Exception(
+         '--experimental-enable-v8-sandbox needs --experimental-enable-pointer-compression')
 diff --git a/tools/v8_gypfiles/features.gypi b/tools/v8_gypfiles/features.gypi
 index c768d7a0f1..f762a5990c 100644
 --- a/tools/v8_gypfiles/features.gypi
@@ -24,15 +24,5 @@ index c768d7a0f1..f762a5990c 100644
        ['dcheck_always_on!=0', {
          'defines': ['DEBUG',],
        }],
---- a/test/cctest/node_test_fixture.cc
-+++ b/test/cctest/node_test_fixture.cc
-@@ -20,9 +20,6 @@ void NodeTestEnvironment::SetUp() {
-   NodeZeroIsolateTestFixture::platform.reset(
-       new node::NodePlatform(kV8ThreadPoolSize, tracing_controller));
-   v8::V8::InitializePlatform(NodeZeroIsolateTestFixture::platform.get());
--#ifdef V8_ENABLE_SANDBOX
--  ASSERT_TRUE(v8::V8::InitializeSandbox());
--#endif
-   cppgc::InitializeProcess(
-       NodeZeroIsolateTestFixture::platform->GetPageAllocator());
- 
+--
+

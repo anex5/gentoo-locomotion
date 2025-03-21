@@ -1,0 +1,74 @@
+From 93848975353774eb4aed7e41f6b92018779a5f61 Mon Sep 17 00:00:00 2001
+From: Aditi <aditisingh1400@gmail.com>
+Date: Fri, 21 Mar 2025 18:47:07 +0530
+Subject: [PATCH] src: update std::vector<v8::Local<T>> to use
+ v8::LocalVector<T>
+
+According to V8's public API documentation, local handles
+(i.e., objects of type v8::Local<T>) "should never be allocated
+on the heap". This replaces the usage of heap-allocated data
+structures containing instances of `v8::Local`, specifically the
+`std::vector<v8::Local<v8::String>>` with recently
+introduced `v8::LocalVector<T>`.
+
+This is first of the series of commits to replace all
+`std::vector<v8::Local<T>>` to use `v8::LocalVector<T>`.
+---
+ src/node_builtins.cc | 6 +++---
+ src/node_builtins.h  | 4 ++--
+ 2 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/src/node_builtins.cc b/src/node_builtins.cc
+index d619379ad07df2..226d989e667eb5 100644
+--- a/src/node_builtins.cc
++++ b/src/node_builtins.cc
+@@ -258,7 +258,7 @@ void BuiltinLoader::AddExternalizedBuiltin(const char* id,
+ MaybeLocal<Function> BuiltinLoader::LookupAndCompileInternal(
+     Local<Context> context,
+     const char* id,
+-    std::vector<Local<String>>* parameters,
++    v8::LocalVector<String>* parameters,
+     Realm* optional_realm) {
+   Isolate* isolate = context->GetIsolate();
+   EscapableHandleScope scope(isolate);
+@@ -382,8 +382,8 @@ void BuiltinLoader::SaveCodeCache(const char* id, Local<Function> fun) {
+ MaybeLocal<Function> BuiltinLoader::LookupAndCompile(Local<Context> context,
+                                                      const char* id,
+                                                      Realm* optional_realm) {
+-  std::vector<Local<String>> parameters;
+   Isolate* isolate = context->GetIsolate();
++  v8::LocalVector<String> parameters(isolate);
+   // Detects parameters of the scripts based on module ids.
+   // internal/bootstrap/realm: process, getLinkedBinding,
+   //                           getInternalBinding, primordials
+@@ -497,7 +497,7 @@ MaybeLocal<Value> BuiltinLoader::CompileAndCall(Local<Context> context,
+ MaybeLocal<Function> BuiltinLoader::LookupAndCompile(
+     Local<Context> context,
+     const char* id,
+-    std::vector<Local<String>>* parameters,
++    v8::LocalVector<String>* parameters,
+     Realm* optional_realm) {
+   return LookupAndCompileInternal(context, id, parameters, optional_realm);
+ }
+diff --git a/src/node_builtins.h b/src/node_builtins.h
+index 196934b706b9dd..83ddad2127227d 100644
+--- a/src/node_builtins.h
++++ b/src/node_builtins.h
+@@ -101,7 +101,7 @@ class NODE_EXTERN_PRIVATE BuiltinLoader {
+   v8::MaybeLocal<v8::Function> LookupAndCompile(
+       v8::Local<v8::Context> context,
+       const char* id,
+-      std::vector<v8::Local<v8::String>>* parameters,
++      v8::LocalVector<v8::String>* parameters,
+       Realm* optional_realm);
+ 
+   v8::MaybeLocal<v8::Value> CompileAndCall(v8::Local<v8::Context> context,
+@@ -159,7 +159,7 @@ class NODE_EXTERN_PRIVATE BuiltinLoader {
+   v8::MaybeLocal<v8::Function> LookupAndCompileInternal(
+       v8::Local<v8::Context> context,
+       const char* id,
+-      std::vector<v8::Local<v8::String>>* parameters,
++      v8::LocalVector<v8::String>* parameters,
+       Realm* optional_realm);
+   void SaveCodeCache(const char* id, v8::Local<v8::Function> fn);
+ 

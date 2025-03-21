@@ -50,7 +50,7 @@ RDEPEND="
 	>=app-arch/brotli-1.1.0
 	>=app-eselect/eselect-nodejs-20250106
 	dev-db/sqlite:3
-	>=dev-libs/libuv-1.49.2:=
+	>=dev-libs/libuv-1.50.0:=
 	>=dev-libs/simdjson-3.9.4:=
 	>=net-dns/c-ares-1.34.4
 	>=net-libs/nghttp2-1.62.1:=
@@ -61,7 +61,7 @@ RDEPEND="
 	)
 	system-ssl? (
 		>=net-libs/ngtcp2-1.3.0:=
-		>=dev-libs/openssl-3.0.15:0=[asm?,fips?]
+		>=dev-libs/openssl-3.0.16:0=[asm?,fips?]
 	)
 "
 BDEPEND="${PYTHON_DEPS}
@@ -93,6 +93,8 @@ PATCHES=(
 	"${FILESDIR}/${PN}-20.1.0-support-clang-pgo.patch"
 	"${FILESDIR}/${PN}-19.3.0-v8-oflags.patch"
 	"${FILESDIR}/${PN}-23.5.0-split-pointer-compression-and-v8-sandbox-options.patch"
+	"${FILESDIR}/${PN}-23.10.0-allow-unbundling-deps-55903.patch"
+	"${FILESDIR}/${PN}-23.10.0-use-v8-localvector-57578.patch"
 )
 
 pkg_pretend() {
@@ -141,9 +143,9 @@ src_prepare() {
 	use pax-kernel && PATCHES+=( "${FILESDIR}"/${PN}-20.6.0-paxmarking.patch )
 
 	# https://github.com/nodejs/node/issues/51339
-	#use pointer-compression && PATCHES+=(
-#		"${FILESDIR}/${PN}-23.0.0-fix-v8-external-code-space.patch"
-#	)
+	use pointer-compression && PATCHES+=(
+		"${FILESDIR}/${PN}-23.10.0-fix-v8-external-code-space.patch"
+	)
 
 	default
 
@@ -238,7 +240,7 @@ src_configure() {
 		--shared-sqlite
 		--shared-zlib
 	)
-	if ! use asm; then
+	if ! use asm && ! use system-ssl ; then
 		myconf+=( --openssl-no-asm )
 	fi
 	use debug && myconf+=( --debug )
@@ -252,6 +254,7 @@ src_configure() {
 	else
 		myconf+=( --with-intl=none )
 	fi
+	#use system-llhttp || myconf+=( --without-system-llhttp )
 	use corepack || myconf+=( --without-corepack )
 	use inspector || myconf+=( --without-inspector )
 	use npm || myconf+=( --without-npm )
