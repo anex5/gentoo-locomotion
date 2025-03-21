@@ -74,34 +74,37 @@ src_install() {
 	doins "urd-confirm"
 	doins "urd-prompt"
 	local SNS=()
-	use bluetooth && SNS+=( "urd-bluetooth-connections" )
-	use calendar && SNS+=( "urd-date-picker" )
-	use fonts && SNS+=( "urd-font-picker" )
-	use pipewire && SNS+=( "urd-pipewire-sink" "urd-pipewire-source" )
-	use usb-storage && SNS+=( "urd-usbstor-mounter" )
-	use sway && SNS+=( "urd-logout-menu" "urd-sway-display" )
-	use wifi && SNS+=( "urd-wifi-networks" )
-	use network && SNS+=( "urd-network-info" )
+	use bluetooth && SNS+=( "urd-bluetooth-connections,bluetooth-symbolic" )
+	use calendar && SNS+=( "urd-date-picker,x-office-calendar-symbolic" )
+	use fonts && SNS+=( "urd-font-picker,font-select-symbolic" )
+	use pipewire && SNS+=( "urd-pipewire-sink,audio-speakers-symbolic" "urd-pipewire-source,audio-input-microphone-symbolic" )
+	use usb-storage && SNS+=( "urd-usbstor-mounter,drive-harddisk-usb-symbolic" )
+	use sway && SNS+=( "urd-logout-menu,system-shutdown-symbolic" "urd-sway-display,video-display-symbolic" )
+	use wifi && SNS+=( "urd-wifi-networks,network-wireless-symbolic" )
+	use network && SNS+=( "urd-network-info,network-wired-symbolic" )
 
 	for f in "${SNS[@]}"; do
-		doins "${f}"
+		fn=${f%%,*}
+		fi=${f##*,}
+		doins "${fn}"
 		#chmod 0755 "${f}"
-		dosym "/usr/libexec/${PN}/${f}" "/usr/bin/${f}"
+		dosym "/usr/libexec/${PN}/${fn}" "/usr/bin/${fn}"
 		if use shortcuts; then
-			n="${f##*urd-}"
+			n="${fn##*urd-}"
 			gn="${n/-/ }"
-			sed -e "s/^\(Exec=\)/\1${f}/" \
-				-e "s/^\(Name=\)/\1${gn^}/" \
-				-e "s/^\(GenericName=\)/\1${gn^}/" \
-				"${FILESDIR}/urd.desktop" > "${T}/${f}.desktop"
+			sed -e "s/^\(Exec=\).*$/\1${fn}/" \
+				-e "s/^\(Name=\).*$/\1${gn^}/" \
+				-e "s/^\(Icon=\).*$/\1${fi}/" \
+				-e "s/^\(GenericName=\).*$/\1${gn^}/" \
+				"${FILESDIR}/urd.desktop" > "${T}/${fn}.desktop"
 			for lang in "${MY_L10N[@]}"; do
 				#[[ "${lang}" == "en-US" ]] && continue
 				ln="$(sed -une "s|\[header_${n/-/_}\]\=\"\(.\+\)\"|\u\1|p" "${S}/common/langs/${lang/-/_}" || die)"
 				lgn="$(sed -une "s|\[usage_${n/-/_}\]\=\"\(.\+\)\"|\u\1|p" "${S}/common/langs/${lang/-/_}" || die)"
-				echo -e "Name[${lang/-/_}]=${ln}" >> "${T}/${f}.desktop"
-				echo -e "GenericName[${lang/-/_}]=${lgn}" >> "${T}/${f}.desktop"
+				echo -e "Name[${lang/-/_}]=${ln}" >> "${T}/${fn}.desktop"
+				echo -e "GenericName[${lang/-/_}]=${lgn}" >> "${T}/${fn}.desktop"
 			done
-			domenu "${T}/${f}.desktop"
+			domenu "${T}/${fn}.desktop"
 		fi
 	done
 
