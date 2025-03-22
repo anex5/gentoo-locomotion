@@ -17,7 +17,7 @@ else
 	KEYWORDS="~amd64 ~x86 ~arm ~arm64"
 fi
 
-IUSE="doc zsh-completion systemd test"
+IUSE="man zsh-completion systemd test"
 RESTRICT="
 	!test? ( test )
 	mirror
@@ -39,26 +39,29 @@ RDEPEND="${DEPEND}
 BDEPEND="
 	dev-util/wayland-scanner
 	dev-libs/wayland-protocols
-	doc? ( app-text/scdoc )
+	man? ( app-text/scdoc )
 	dev-libs/tllist
 "
 
 src_prepare() {
 	default
-	tc-is-cross-compiler && ( sed "/wscanner\./s@native\: true@native\: false@" -i meson.build || die "Sed failed..." )
-	use systemd || ( sed "/subdir('systemd')/d" -i meson.build || die "Sed failed..." )
-	use doc || ( sed "/subdir('doc')/d" -i meson.build || die "Sed failed..." )
-	use zsh-completion || ( sed "/subdir('completions')/d" -i meson.build || die "Sed failed..." )
+	sed -e "s/^\(Icon=\).*$/\1preferences-system-notifications-symbolic/" -i "${PN}.desktop"
+	echo -e "Name[ru_RU]=Уведомления" >> "${PN}.desktop"
+	echo -e "GenericName[ru_RU]=Служба уведомлений" >> "${PN}.desktop"
+	tc-is-cross-compiler && ( sed -e "/wscanner\./s@native\: true@native\: false@" -i meson.build || die "Sed failed..." )
+	use systemd || ( sed -e "/subdir('systemd')/d" -i meson.build || die "Sed failed..." )
+	use man || ( sed -e "/subdir('doc')/d" -i meson.build || die "Sed failed..." )
+	use zsh-completion || ( sed -e "/subdir('completions')/d" -i meson.build || die "Sed failed..." )
 }
 
 src_configure() {
 	local emesonargs=(
-		$(meson_feature doc docs)
+		$(meson_feature man docs)
 		-Dsystem-nanosvg=disabled
 	)
 	meson_src_configure
 
-	sed 's|@bindir@|/usr/bin|g' "${S}"/dbus/${PN}.service.in > ${PN}.service || die
+	use systemd && ( sed 's|@bindir@|/usr/bin|g' "${S}"/dbus/${PN}.service.in > ${PN}.service || die )
 }
 
 

@@ -1,0 +1,11 @@
+--- a/modules/mpris.c
++++ b/modules/mpris.c
+@@ -22,7 +22,7 @@
+ #include "../plugin.h"
+ 
+ #include "dbus.h"
+-#include "yml.h"
++#include "../yml.h"
+ 
+ #define is_empty_string(str) ((str) == NULL || (str)[0] == '\0')
+ 

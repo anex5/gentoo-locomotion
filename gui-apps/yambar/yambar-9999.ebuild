@@ -19,7 +19,7 @@ DESCRIPTION="Simplistic and highly configurable status panel for X and Wayland"
 HOMEPAGE="https://codeberg.org/dnkl/yambar"
 LICENSE="MIT"
 SLOT="0"
-IUSE="alsa backlight battery +clock +cpu debug +disk-io dwl +foreign-toplevel man +memory mpd i3 +label +network pipewire pulseaudio removables river +script +shared-plugins sway-xkb wayland X xkb xwindow"
+IUSE="alsa backlight battery +clock +cpu debug +disk-io dwl +foreign-toplevel man +memory mpd mpris niri i3 +label +network pipewire pulseaudio removables river +script +shared-plugins sway-xkb wayland X xkb xwindow"
 REQUIRED_USE="
 	|| ( wayland X )
 	sway-xkb? ( wayland )
@@ -33,14 +33,26 @@ RDEPEND="
 	alsa? ( media-libs/alsa-lib )
 	backlight? ( virtual/libudev:= )
 	battery? ( virtual/libudev:= )
-	mpd? ( media-libs/libmpdclient )
+	dwl? ( gui-wm/dwl )
+	mpris? (
+		sys-apps/dbus
+		media-sound/mpd
+	)
+	mpd? (
+		media-libs/libmpdclient
+		media-sound/mpd
+	)
+	niri? ( gui-wm/niri )
 	pipewire? (
-			  dev-libs/json-c
-			  media-video/pipewire
+		dev-libs/json-c
+		media-video/pipewire
 	)
 	pulseaudio? ( media-libs/libpulse )
 	removables? ( virtual/libudev:= )
-	sway-xkb? ( dev-libs/json-c )
+	sway-xkb? (
+		|| ( gui-wm/sway gui-wm/swayfx )
+		dev-libs/json-c
+	)
 	x11-libs/pixman
 	X? (
 		x11-libs/libxcb:0=[xkb]
@@ -66,17 +78,23 @@ RESTRICT="mirror test"
 
 PATCHES=(
 	"${FILESDIR}/yambar-9999-module-mem-float.patch"
+	"${FILESDIR}/yambar-9999-autohide-wayland.patch"
 )
 
 src_prepare() {
 	default
-
+	#sed -e "s/^\(Icon=\).*$/\1preferences-system-notifications-symbolic/" -i "${PN}.desktop"
+	echo -e "Name[ru_RU]=Ямбар" >> "${PN}.desktop"
+	echo -e "GenericName[ru_RU]=Панель" >> "${PN}.desktop"
 	tc-is-cross-compiler && ( sed "/find_program(wayland_scanner/s@native\: true@native\: false@" -i meson.build || die "Sed failed..." )
 	use man || $( sed -i "/subdir('doc')/d" meson.build || die "Sed failed..." )
+	if [[ ${PV} == *9999* ]]; then
+		"${FILESDIR}/yambar-9999-mpris-build-fix.patch"
+	fi
 }
 
 src_configure() {
-	use debug && EMESON_BUILDTYPE=debug
+	use debug && EMESON_BUILDTYPE=debug || EMESON_BUILDTYPE=release
 	local emesonargs=(
 		$(meson_feature wayland backend-wayland)
 		$(meson_feature X backend-x11)
@@ -91,6 +109,9 @@ src_configure() {
 		$(meson_feature foreign-toplevel plugin-foreign-toplevel)
 		$(meson_feature memory plugin-mem)
 		$(meson_feature mpd plugin-mpd)
+		$(meson_feature mpris plugin-mpris)
+		$(meson_feature niri plugin-niri-workspaces)
+		$(meson_feature niri plugin-niri-language)
 		$(meson_feature i3 plugin-i3)
 		$(meson_feature label plugin-label)
 		$(meson_feature network plugin-network)

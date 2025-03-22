@@ -1,0 +1,240 @@
+From 3dce815fe38374f334eb8788d9355aa577089541 Mon Sep 17 00:00:00 2001
+From: Aivars Vaivods <aivars@vaivods.lv>
+Date: Sun, 17 Nov 2024 22:18:51 +0200
+Subject: [PATCH] Implemented auto-hide functionality on Wayland
+
+---
+ bar/bar.c        | 14 ++++++++++++++
+ bar/bar.h        |  3 ++-
+ bar/private.h    |  1 +
+ bar/wayland.c    | 19 ++++++++++++++-----
+ config-verify.c  |  2 +-
+ config.c         |  2 ++
+ doc/yambar.5.scd |  5 +++--
+ main.c           | 17 +++++++++++++++++
+ 8 files changed, 54 insertions(+), 9 deletions(-)
+
+diff --git a/bar/bar.c b/bar/bar.c
+index 109f210..cbbcf09 100644
+--- a/bar/bar.c
++++ b/bar/bar.c
+@@ -177,6 +177,18 @@ set_cursor(struct bar *bar, const char *cursor)
+     b->backend.iface->set_cursor(bar, cursor);
+ }
+ 
++static void
++set_visible(struct bar *bar, bool visible)
++{
++    struct private *b = bar->private;
++
++    if (b->layer != BAR_LAYER_HIDDEN)
++       return;
++
++    b->visible = visible;
++    bar->refresh(bar);
++}
++
+ static const char *
+ output_name(const struct bar *bar)
+ {
+@@ -446,6 +458,7 @@ bar_new(const struct bar_config *config)
+     struct private *priv = calloc(1, sizeof(*priv));
+     priv->monitor = config->monitor != NULL ? strdup(config->monitor) : NULL;
+     priv->layer = config->layer;
++    priv->visible = false;
+     priv->location = config->location;
+     priv->height = config->height;
+     priv->background = config->background;
+@@ -488,6 +501,7 @@ bar_new(const struct bar_config *config)
+     bar->destroy = &destroy;
+     bar->refresh = &refresh;
+     bar->set_cursor = &set_cursor;
++    bar->set_visible = &set_visible;
+     bar->output_name = &output_name;
+ 
+     for (size_t i = 0; i < priv->left.count; i++)
+diff --git a/bar/bar.h b/bar/bar.h
+index ce91247..fc39fcb 100644
+--- a/bar/bar.h
++++ b/bar/bar.h
+@@ -12,13 +12,14 @@ struct bar {
+     void (*destroy)(struct bar *bar);
+ 
+     void (*refresh)(const struct bar *bar);
++    void (*set_visible)(struct bar *bar, bool visible);
+     void (*set_cursor)(struct bar *bar, const char *cursor);
+ 
+     const char *(*output_name)(const struct bar *bar);
+ };
+ 
+ enum bar_location { BAR_TOP, BAR_BOTTOM };
+-enum bar_layer { BAR_LAYER_OVERLAY, BAR_LAYER_TOP, BAR_LAYER_BOTTOM, BAR_LAYER_BACKGROUND };
++enum bar_layer { BAR_LAYER_OVERLAY, BAR_LAYER_TOP, BAR_LAYER_BOTTOM, BAR_LAYER_BACKGROUND, BAR_LAYER_HIDDEN };
+ enum bar_backend { BAR_BACKEND_AUTO, BAR_BACKEND_XCB, BAR_BACKEND_WAYLAND };
+ 
+ struct bar_config {
+diff --git a/bar/private.h b/bar/private.h
+index d48b07f..0ab8362 100644
+--- a/bar/private.h
++++ b/bar/private.h
+@@ -8,6 +8,7 @@ struct private
+     /* From bar_config */
+     char *monitor;
+     enum bar_layer layer;
++    bool visible;
+     enum bar_location location;
+     int height;
+     int left_spacing, right_spacing;
+diff --git a/bar/wayland.c b/bar/wayland.c
+index 3d8e4e0..bac7752 100644
+--- a/bar/wayland.c
++++ b/bar/wayland.c
+@@ -651,7 +651,7 @@ handle_global(void *data, struct wl_registry *registry, uint32_t name, const cha
+     }
+ 
+     else if (strcmp(interface, zwlr_layer_shell_v1_interface.name) == 0) {
+-        const uint32_t required = 1;
++        const uint32_t required = 2;
+         if (!verify_iface_version(interface, version, required))
+             return;
+ 
+@@ -773,6 +773,7 @@ create_surface(struct wayland_backend *backend)
+         break;
+ 
+     case BAR_LAYER_BOTTOM:
++    case BAR_LAYER_HIDDEN:
+         layer = ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM;
+         break;
+ 
+@@ -1025,10 +1026,12 @@ update_size(struct wayland_backend *backend)
+     bar->height_with_border = height;
+ 
+     zwlr_layer_surface_v1_set_size(backend->layer_surface, 0, bar->height_with_border / scale);
+-    zwlr_layer_surface_v1_set_exclusive_zone(
+-        backend->layer_surface,
+-        (bar->height_with_border + (bar->location == BAR_TOP ? bar->border.bottom_margin : bar->border.top_margin))
++    if (bar->layer != BAR_LAYER_HIDDEN) {
++        zwlr_layer_surface_v1_set_exclusive_zone(
++            backend->layer_surface,
++            (bar->height_with_border + (bar->location == BAR_TOP ? bar->border.bottom_margin : bar->border.top_margin))
+             / scale);
++    }
+ 
+     zwlr_layer_surface_v1_set_margin(backend->layer_surface, bar->border.top_margin / scale,
+                                      bar->border.right_margin / scale, bar->border.bottom_margin / scale,
+@@ -1243,8 +1246,14 @@ loop(struct bar *_bar, void (*expose)(const struct bar *bar),
+             }
+ 
+             LOG_DBG("coalesced %zu expose commands", count);
+-            if (do_expose)
++            if (bar->layer == BAR_LAYER_HIDDEN) {
++              zwlr_layer_surface_v1_set_layer(
++                  backend->layer_surface,
++                  (bar->visible) ? ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY : ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM);
++            }
++            if (do_expose) {
+                 expose(_bar);
++            }
+         }
+ 
+         if (fds[1].revents & POLLIN) {
+diff --git a/config-verify.c b/config-verify.c
+index ed7d2f5..ff5af75 100644
+--- a/config-verify.c
++++ b/config-verify.c
+@@ -416,7 +416,7 @@ verify_bar_location(keychain_t *chain, const struct yml_node *node)
+ static bool
+ verify_bar_layer(keychain_t *chain, const struct yml_node *node)
+ {
+-    return conf_verify_enum(chain, node, (const char *[]){"overlay", "top", "bottom", "background"}, 4);
++    return conf_verify_enum(chain, node, (const char *[]){"overlay", "top", "bottom", "background", "hidden"}, 5);
+ }
+ 
+ bool
+diff --git a/config.c b/config.c
+index 0f80364..e6e1655 100644
+--- a/config.c
++++ b/config.c
+@@ -325,6 +325,8 @@ conf_to_bar(const struct yml_node *bar, enum bar_backend backend)
+             conf.layer = BAR_LAYER_BOTTOM;
+         else if (strcmp(tmp, "background") == 0)
+             conf.layer = BAR_LAYER_BACKGROUND;
++        else if (strcmp(tmp, "hidden") == 0)
++            conf.layer = BAR_LAYER_HIDDEN;
+         else
+             assert(false);
+     }
+diff --git a/doc/yambar.5.scd b/doc/yambar.5.scd
+index 38c521d..23d69eb 100644
+--- a/doc/yambar.5.scd
++++ b/doc/yambar.5.scd
+@@ -54,8 +54,9 @@ types that are frequently used:
+ |  layer
+ :  string
+ :  no
+-:  Layer to put bar on. One of _overlay_, _top_, _bottom_ or
+-   _background_. Wayland only. Default: _bottom_.
++:  Layer to put bar on. One of _overlay_, _top_, _bottom_, _bottom_ or
++   _hidden_. Wayland only. Default: _bottom_. If set to _hidden_, will move
++   between _overlay_ and _bottom_ when receives respectively SIGUSR1 or SIGUSR2.
+ |  left-spacing
+ :  int
+ :  no
+diff --git a/main.c b/main.c
+index c355843..700955b 100644
+--- a/main.c
++++ b/main.c
+@@ -27,6 +27,7 @@
+ #include "version.h"
+ 
+ static volatile sig_atomic_t aborted = 0;
++static volatile sig_atomic_t sigusr = 0;
+ 
+ static void
+ signal_handler(int signo)
+@@ -34,6 +35,12 @@ signal_handler(int signo)
+     aborted = signo;
+ }
+ 
++static void
++sigusr_handler(int signo)
++{
++    sigusr = signo;
++}
++
+ static char *
+ get_config_path_user_config(void)
+ {
+@@ -295,12 +302,18 @@ main(int argc, char *const *argv)
+     sigaction(SIGINT, &sa, NULL);
+     sigaction(SIGTERM, &sa, NULL);
+ 
++    const struct sigaction sau = {.sa_handler = &sigusr_handler};
++    sigaction(SIGUSR1, &sau, NULL);
++    sigaction(SIGUSR2, &sau, NULL);
++
+     /* Block SIGINT (this is under the assumption that threads inherit
+      * the signal mask */
+     sigset_t signal_mask;
+     sigemptyset(&signal_mask);
+     sigaddset(&signal_mask, SIGINT);
+     sigaddset(&signal_mask, SIGTERM);
++    sigaddset(&signal_mask, SIGUSR1);
++    sigaddset(&signal_mask, SIGUSR2);
+     pthread_sigmask(SIG_BLOCK, &signal_mask, NULL);
+ 
+     int abort_fd = eventfd(0, EFD_CLOEXEC);
+@@ -354,6 +367,10 @@ main(int argc, char *const *argv)
+         struct pollfd fds[] = {{.fd = abort_fd, .events = POLLIN}};
+         int r __attribute__((unused)) = poll(fds, sizeof(fds) / sizeof(fds[0]), -1);
+ 
++        if (sigusr) {
++            bar->set_visible(bar, (sigusr == SIGUSR1));
++            sigusr = 0;
++        }
+         if (fds[0].revents & (POLLIN | POLLHUP)) {
+             /*
+              * Either the bar aborted (triggering the abort_fd), or user
+-- 
+2.45.2
+
