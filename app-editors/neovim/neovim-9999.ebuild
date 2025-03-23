@@ -1,4 +1,4 @@
-# Copyright 1999-2024 Gentoo Authors
+# Copyright 1999-2025 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -79,7 +79,6 @@ BDEPEND+="
 
 PATCHES=(
 	"${FILESDIR}/${PN}-9999-cmake_lua_version.patch"
-	"${FILESDIR}/${PN}-0.10.3-specify-POST_BUILD-when-using-add_custom_command.patch"
 	"${FILESDIR}/${PN}-9999-cmake-darwin.patch"
 )
 
