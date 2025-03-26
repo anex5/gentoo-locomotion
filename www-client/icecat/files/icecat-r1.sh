@@ -113,4 +113,4 @@ fi
 export MOZ_ALLOW_DOWNGRADE=1
 
 # Run the browser
-exec ${MOZ_PROGRAM} "${@}"
+exec nice -n 10 ${MOZ_PROGRAM} "${@}"

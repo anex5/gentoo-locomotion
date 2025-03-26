@@ -1,7 +1,7 @@
 [Desktop Entry]
 Version=1.0
 Name=@NAME@
-Name[ru]=Барс
+Name[ru_RU]=Барс
 GenericName=Web Browser
 Comment=Browse the Web
 Exec=@EXEC@ %u

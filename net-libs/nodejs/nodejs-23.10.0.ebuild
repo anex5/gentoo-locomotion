@@ -372,7 +372,7 @@ src_install() {
 		doenvd "${T}"/50npm
 
 		dosym "/usr/$(get_libdir)/corepack/node${SLOT_MAJOR}/shims/npm" "/usr/bin/npm"
-		sed -e "/^dirname /s|\"$(.+)\"|\"$(readlink -q \$0)\"|g" -i "${ED}/usr/$(get_libdir)/corepack/node${SLOT_MAJOR}/shims/npm" || die
+		sed -e "/^dirname /s|\$(.+)|\$(readlink -q \$0)|g" -i "${ED}/usr/$(get_libdir)/corepack/node${SLOT_MAJOR}/shims/npm" || die
 
 		# Install bash completion for `npm`
 		local tmp_npm_completion_file="$(TMPDIR="${T}" mktemp -t npm.XXXXXXXXXX)"
@@ -380,7 +380,7 @@ src_install() {
 		newbashcomp "${tmp_npm_completion_file}" npm
 
 		# Move man pages
-		use man && doman "${LIBDIR}"/node_modules/npm/man/man{1,5,7}/*
+		#use man && doman "${LIBDIR}"/node_modules/npm/man/man{1,5,7}/*
 
 		# Clean up
 		rm -f "${LIBDIR}"/node_modules/npm/{.mailmap,.npmignore,Makefile}
