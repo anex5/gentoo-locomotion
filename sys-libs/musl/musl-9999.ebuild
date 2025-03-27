@@ -17,7 +17,7 @@ else
 
 	SRC_URI="https://musl.libc.org/releases/${P}.tar.gz"
 	SRC_URI+=" verify-sig? ( https://musl.libc.org/releases/${P}.tar.gz.asc )"
-	KEYWORDS="-* ~amd64 ~arm ~arm64 ~m68k ~mips ~ppc ~ppc64 ~riscv ~x86"
+	KEYWORDS="-* amd64 arm arm64 ~m68k ~mips ppc ppc64 ~riscv x86"
 
 	BDEPEND="verify-sig? ( sec-keys/openpgp-keys-musl )"
 fi
@@ -149,8 +149,8 @@ src_install() {
 
 	if ! use crypt ; then
 		# Allow sys-libs/libxcrypt[system] to provide it instead
-		rm "${ED}/usr/include/crypt.h" || die
-		rm "${ED}/usr/$(get_libdir)/libcrypt.a" || die
+		rm "${ED}${sysroot}/usr/include/crypt.h" || die
+		rm "${ED}${sysroot}"/usr/*/libcrypt.a || die
 	fi
 
 	if ! is_crosspkg ; then

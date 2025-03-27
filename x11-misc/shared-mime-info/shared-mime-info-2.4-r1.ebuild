@@ -34,7 +34,7 @@ DOCS=( HACKING.md NEWS README.md )
 
 PATCHES=(
 	"${FILESDIR}"/${P}-libxml2.12.patch
-	"${FILESDIR}"/${P}-xmlto-skip-validation.patch
+	"${FILESDIR}"/${PN}-xmlto-skip-validation.patch
 )
 
 src_prepare() {

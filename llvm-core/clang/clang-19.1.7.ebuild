@@ -625,8 +625,8 @@ multilib_src_configure() {
 	fi
 	einfo
 
-	use debug && CMAKE_BUILD_TYPE="Debug" || CMAKE_BUILD_TYPE="Release"
 	local mycmakeargs=(
+		-DCMAKE_BUILD_TYPE=$(usex debug RelWithDebInfo Release)
 		-DDEFAULT_SYSROOT=$(usex prefix-guest "" "${EPREFIX}")
 		-DCMAKE_INSTALL_PREFIX="${EPREFIX}/usr/lib/llvm/${LLVM_MAJOR}"
 		-DCMAKE_INSTALL_MANDIR="${EPREFIX}/usr/lib/llvm/${LLVM_MAJOR}/share/man"

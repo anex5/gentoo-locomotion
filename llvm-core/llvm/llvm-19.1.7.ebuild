@@ -22,7 +22,7 @@ SLOT="${LLVM_MAJOR}/${LLVM_SOABI}"
 KEYWORDS="~amd64 ~arm ~arm64 ~loong ~mips ~ppc ~ppc64 ~riscv ~sparc ~x86 ~amd64-linux ~arm64-macos ~ppc-macos ~x64-macos"
 IUSE="
 	+binutils-plugin debug debuginfod doc exegesis libedit +libffi
-	ncurses test xar xml z3 zstd -dump man
+	test xml z3 zstd -dump man
 "
 RESTRICT="!test? ( test )"
 
@@ -73,8 +73,6 @@ RDEPEND="
 	exegesis? ( dev-libs/libpfm:= )
 	libedit? ( dev-libs/libedit:0=[${MULTILIB_USEDEP}] )
 	libffi? ( >=dev-libs/libffi-3.0.13-r1:0=[${MULTILIB_USEDEP}] )
-	ncurses? ( >=sys-libs/ncurses-5.9-r3:0=[${MULTILIB_USEDEP}] )
-	xar? ( app-arch/xar )
 	xml? ( dev-libs/libxml2:2=[${MULTILIB_USEDEP}] )
 	z3? ( >=sci-mathematics/z3-4.7.1:0=[${MULTILIB_USEDEP}] )
 	zstd? ( app-arch/zstd:=[${MULTILIB_USEDEP}] )
@@ -112,7 +110,7 @@ PATCHES=(
 	"${FILESDIR}/llvm-14.0.0.9999-stop-triple-spam.patch"
 )
 LLVM_COMPONENTS=( "llvm" "cmake" "third-party" )
-LLVM_MANPAGES=0
+LLVM_MANPAGES=1
 #LLVM_PATCHSET=${PV}
 LLVM_USE_TARGETS="provide"
 llvm.org_set_globals
@@ -477,6 +475,7 @@ multilib_src_configure() {
 
 	local libdir=$(get_libdir)
 	local mycmakeargs=(
+		-DCMAKE_BUILD_TYPE=$(usex debug RelWithDebInfo Release)
 		# disable appending VCS revision to the version to improve
 		# direct cache hit ratio
 		-DLLVM_APPEND_VC_REV=OFF
@@ -500,7 +499,6 @@ multilib_src_configure() {
 		-DLLVM_ENABLE_DUMP=$(usex dump)
 		-DLLVM_ENABLE_FFI=$(usex libffi)
 		-DLLVM_ENABLE_LIBEDIT=$(usex libedit)
-		-DLLVM_ENABLE_TERMINFO=$(usex ncurses)
 		-DLLVM_ENABLE_LIBXML2=$(usex xml)
 		-DLLVM_ENABLE_ASSERTIONS=$(usex debug)
 		-DLLVM_ENABLE_LIBPFM=$(usex exegesis)
@@ -516,8 +514,6 @@ multilib_src_configure() {
 
 		-DFFI_INCLUDE_DIR="${ffi_cflags#-I}"
 		-DFFI_LIBRARY_DIR="${ffi_ldflags#-L}"
-		# used only for llvm-objdump tool
-		-DLLVM_HAVE_LIBXAR=$(multilib_native_usex xar 1 0)
 
 		-DPython3_EXECUTABLE="${PYTHON}"
 
@@ -572,10 +568,6 @@ multilib_src_configure() {
 	fi
 
 	use kernel_Darwin && mycmakeargs+=(
-		# On Macos prefix, Gentoo doesn't split sys-libs/ncurses to libtinfo and
-		# libncurses, but llvm tries to use libtinfo before libncurses, and ends up
-		# using libtinfo (actually, libncurses.dylib) from system instead of prefix
-		-DTerminfo_LIBRARIES=-lncurses
 		# Use our libtool instead of looking it up with xcrun
 		-DCMAKE_LIBTOOL="${EPREFIX}/usr/bin/${CHOST}-libtool"
 	)
@@ -659,7 +651,7 @@ multilib_src_install_all() {
 	_EOF_
 
 	docompress "/usr/lib/llvm/${LLVM_MAJOR}/share/man"
-	llvm_install_manpages
+	use man && llvm_install_manpages
 }
 
 pkg_postinst() {

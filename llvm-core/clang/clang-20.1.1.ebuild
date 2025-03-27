@@ -1,4 +1,4 @@
-# Copyright 1999-2024 Gentoo Authors
+# Copyright 1999-2025 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -131,15 +131,23 @@ LLVM_COMPONENTS=(
 	"clang"
 	"clang-tools-extra"
 	"cmake"
-	"llvm/lib/Transforms/Hello"
 )
-LLVM_MANPAGES=0
-LLVM_PATCHSET=${PV}-r6
+LLVM_MANPAGES=1
+#LLVM_PATCHSET=${PV}-r6
 LLVM_TEST_COMPONENTS=(
 	"llvm/utils"
 )
 LLVM_USE_TARGETS="llvm"
 llvm.org_set_globals
+
+[[ -n ${LLVM_MANPAGE_DIST} ]] && BDEPEND+=" doc? ( "
+BDEPEND+="
+	$(python_gen_cond_dep '
+		dev-python/myst-parser[${PYTHON_USEDEP}]
+		dev-python/sphinx[${PYTHON_USEDEP}]
+	')
+"
+[[ -n ${LLVM_MANPAGE_DIST} ]] && BDEPEND+=" ) "
 
 # Multilib notes:
 # 1. ABI_* flags control ABIs libclang* is built for only.
@@ -465,13 +473,15 @@ get_distribution_components() {
 			c-index-test
 			clang
 			clang-format
+			clang-installapi
 			clang-linker-wrapper
+			clang-nvlink-wrapper
 			clang-offload-bundler
 			clang-offload-packager
 			clang-refactor
 			clang-repl
-			clang-rename
 			clang-scan-deps
+			clang-sycl-linker
 			diagtool
 			hmaptool
 			nvptx-arch
@@ -489,7 +499,6 @@ get_distribution_components() {
 				clang-include-cleaner
 				clang-include-fixer
 				clang-move
-				clang-pseudo
 				clang-query
 				clang-reorder-fields
 				clang-tidy
@@ -624,15 +633,15 @@ multilib_src_configure() {
 	fi
 	einfo
 
-	use debug && CMAKE_BUILD_TYPE="Debug" || CMAKE_BUILD_TYPE="Release"
 	local mycmakeargs=(
+		-DCMAKE_BUILD_TYPE=$(usex debug RelWithDebInfo Release)
 		-DDEFAULT_SYSROOT=$(usex prefix-guest "" "${EPREFIX}")
 		-DCMAKE_INSTALL_PREFIX="${EPREFIX}/usr/lib/llvm/${LLVM_MAJOR}"
 		-DCMAKE_INSTALL_MANDIR="${EPREFIX}/usr/lib/llvm/${LLVM_MAJOR}/share/man"
 		-DLLVM_ROOT="${EPREFIX}/usr/lib/llvm/${LLVM_MAJOR}"
 		-DCLANG_CONFIG_FILE_SYSTEM_DIR="${EPREFIX}/etc/clang"
 		-DCLANG_CONFIG_FILE_USER_DIR="~/.config/clang"
-		# This is relative to bindir.
+		# relative to bindir
 		-DCLANG_RESOURCE_DIR="../../../../lib/clang/${LLVM_MAJOR}"
 
 		-DBUILD_SHARED_LIBS=OFF
