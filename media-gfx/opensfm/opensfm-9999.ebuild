@@ -41,7 +41,7 @@ IUSE="debug doc test lto"
 #media-libs/opengv[python,${PYTHON_USEDEP}]
 DEPEND="
 	dev-libs/boost[${PYTHON_USEDEP}]
-	>=media-libs/opencv-3.0.0:=[contrib,contribsfm,contribxfeatures2d,eigen,features2d,openmp,python,${PYTHON_USEDEP}]
+	>=media-libs/opencv-4.8.0:=[contrib,contribsfm,contribxfeatures2d,eigen,features2d,openmp,python,${PYTHON_USEDEP}]
 	<=sci-libs/ceres-solver-${CERES_PV}:=
 	>=sci-libs/suitesparseconfig-7.6.0:=
 	>=sci-libs/amd-3.3.1:=
@@ -123,7 +123,7 @@ src_prepare() {
 		sed -e "s|\(set(CMAKE_CXX_STANDARD \)14|\117|" -i opensfm/src/CMakeLists.txt || die "Sed failed"
 		# Unbundle pybind11
 		sed	-e "s|add_subdirectory(third_party\/pybind11)|find_package (pybind11 CONFIG REQUIRED)|" -i opensfm/src/CMakeLists.txt || die "Sed failed"
-		sed -e "/^target_link_libraries(/,/)/s|pybind11|pybind11::embed|g" -i opensfm/src/{bundle,dense,features,foundation,geometry,robust,sfm,geo,map}/CMakeLists.txt || die "Sed failed"
+		sed -e "/^target_link_libraries(/,/)/s|pybind11|pybind11::pybind11|g" -i opensfm/src/{bundle,dense,features,foundation,geometry,robust,sfm,geo,map}/CMakeLists.txt || die "Sed failed"
 		#eapply "${FILESDIR}/opensfm-fix-vl-src-path.patch"
 		eapply "${FILESDIR}/opensfm-fix-hahog-vl-covdet.patch"
 	else

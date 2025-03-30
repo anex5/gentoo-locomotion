@@ -1,0 +1,47 @@
+# HG changeset patch
+# User Mike Hommey <mh+mozilla@glandium.org>
+# Date 1714652267 0
+# Node ID 3a09d22ef9646c3399b709c2e3bbb29d2edba4d2
+# Parent  00b16937bdd9fb255ac65c485e1b5fa59e91d561
+Bug 1894093 - Apply https://github.com/rust-lang/rust-bindgen/pull/2824 to vendored bindgen. r=emilio,supply-chain-reviewers
+
+Differential Revision: https://phabricator.services.mozilla.com/D209112
+
+diff --git a/third_party/rust/bindgen/clang.rs b/third_party/rust/bindgen/clang.rs
+--- a/third_party/rust/bindgen/clang.rs
++++ b/third_party/rust/bindgen/clang.rs
+@@ -1515,7 +1515,7 @@ impl SourceLocation {
+             let mut line = 0;
+             let mut col = 0;
+             let mut off = 0;
+-            clang_getSpellingLocation(
++            clang_getFileLocation(
+                 self.x, &mut file, &mut line, &mut col, &mut off,
+             );
+             (File { x: file }, line as usize, col as usize, off as usize)
+diff --git a/js/src/threading/ExclusiveData.h b/js/src/threading/ExclusiveData.h
+--- a/js/src/threading/ExclusiveData.h
++++ b/js/src/threading/ExclusiveData.h
+@@ -104,21 +104,16 @@ class ExclusiveData {
+ 
+   /**
+    * Create a new `ExclusiveData`, constructing the protected value in place.
+    */
+   template <typename... Args>
+   explicit ExclusiveData(const MutexId& id, Args&&... args)
+       : lock_(id), value_(std::forward<Args>(args)...) {}
+ 
+-  ExclusiveData(ExclusiveData&& rhs)
+-      : lock_(std::move(rhs.lock)), value_(std::move(rhs.value_)) {
+-    MOZ_ASSERT(&rhs != this, "self-move disallowed!");
+-  }
+-
+   ExclusiveData& operator=(ExclusiveData&& rhs) {
+     this->~ExclusiveData();
+     new (mozilla::KnownNotNull, this) ExclusiveData(std::move(rhs));
+     return *this;
+   }
+ 
+   /**
+    * An RAII class that provides exclusive access to a `ExclusiveData<T>`'s
+

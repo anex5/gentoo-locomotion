@@ -693,11 +693,18 @@ pkg_pretend() {
 }
 
 pkg_setup() {
+
 	if [[ ${MERGE_TYPE} != binary ]] ; then
+
 		if use pgo ; then
 			if ! has userpriv ${FEATURES} ; then
 				eerror "Building ${PN} with USE=pgo and FEATURES=-userpriv is not supported!"
 			fi
+		fi
+		if use lto; then
+			# -Werror=lto-type-mismatch -Werror=odr are going to fail with GCC,
+			# bmo#1516758, bgo#942288
+			filter-flags -Werror=lto-type-mismatch -Werror=odr -ftree-vectorize -fslp-vectorize
 		fi
 
 		# Ensure we have enough disk space to compile
@@ -913,6 +920,12 @@ src_prepare() {
 	# Prevent video seek bug
 	eapply "${FILESDIR}/extra-patches/firefox-106.0.2-disable-broken-flags-ipc-chromium-chromium-config.patch"
 
+	# Build with clang-19
+	if [[ "${LLVM_SLOT}" == "19" ]]; then
+		eapply "${FILESDIR}/extra-patches/firefox-115e-fix-build-with-clang-19.patch"
+		sed -e '/CXXFLAGS += \["-Werror=implicit-int-conversion"\]/d' -i "${S}/dom/canvas/moz.build" -i "${S}/dom/webgpu/moz.build" || die
+	fi
+
 	# Workaround for bgo#917599
 	if has_version ">=dev-libs/icu-74.1" && use system-icu ; then
 		eapply "${WORKDIR}/firefox-patches/0029-bmo-1862601-system-icu-74.patch"
@@ -1055,11 +1068,6 @@ _fix_paths() {
 	fi
 	tc-export CC CXX
 	strip-unsupported-flags
-}
-
-append_all() {
-	append-flags ${@}
-	append-ldflags ${@}
 }
 
 is_flagq_last() {
