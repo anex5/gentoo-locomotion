@@ -16,7 +16,7 @@ KEYWORDS="~amd64 ~riscv ~x86"
 IUSE=""
 RESTRICT="mirror"
 
-BDEPEND="x11-libs/wxGTK:${WX_GTK_VER}"
+DEPEND="x11-libs/wxGTK:${WX_GTK_VER}"
 
 QA_PRESTRIPPED="usr/bin/wxedid"
 
