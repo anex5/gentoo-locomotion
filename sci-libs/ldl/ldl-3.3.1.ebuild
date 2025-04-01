@@ -5,7 +5,7 @@ EAPI=8
 
 inherit cmake-multilib
 
-Sparse_PV="7.6.0"
+Sparse_PV="7.10.1"
 Sparse_P="SuiteSparse-${Sparse_PV}"
 DESCRIPTION="Sparse LDL' factorization and solve library"
 HOMEPAGE="https://people.engr.tamu.edu/davis/suitesparse.html"

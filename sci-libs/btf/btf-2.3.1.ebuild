@@ -6,7 +6,7 @@ EAPI=8
 FORTRAN_NEEDED="fortran"
 inherit cmake-multilib fortran-2
 
-Sparse_PV="7.6.0"
+Sparse_PV="7.10.1"
 Sparse_P="SuiteSparse-${Sparse_PV}"
 DESCRIPTION="BTF is a library for permuting a matrix into block upper triangular form"
 HOMEPAGE="https://people.engr.tamu.edu/davis/suitesparse.html"
