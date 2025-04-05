@@ -20,7 +20,7 @@ fi
 LICENSE="MIT"
 SLOT="0"
 MY_L10N=( "en-US" "ru-RU" )
-IUSE="bluetooth calendar fonts network pipewire +shortcuts usb-storage sway wifi ${MY_L10N[@]/#/l10n_}"
+IUSE="bluetooth calendar fonts network pipewire +shortcuts usb-storage systemd sway wifi ${MY_L10N[@]/#/l10n_}"
 
 RESTRICT="mirror"
 
@@ -29,7 +29,7 @@ DEPEND="
 	gui-apps/rofi
 	sys-apps/grep
 	sys-apps/sed
-	sys-apps/util-linux
+	sys-apps/util-linux[systemd?]
 	sys-apps/findutils
 	media-fonts/nerd-fonts
 	bluetooth? (
@@ -73,6 +73,9 @@ src_install() {
 	doins -r "common"
 	doins "urd-confirm"
 	doins "urd-prompt"
+
+	use systemd && ( sed -e 's/LOGIND="loginctl"/LOGIND="systemctl"/' -i urd-logout-menu || die "Sed failed" )
+
 	local SNS=()
 	use bluetooth && SNS+=( "urd-bluetooth-connections,bluetooth-symbolic" )
 	use calendar && SNS+=( "urd-date-picker,x-office-calendar-symbolic" )

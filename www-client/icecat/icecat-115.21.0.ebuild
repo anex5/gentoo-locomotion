@@ -377,7 +377,7 @@ BDEPEND+="
 	>=dev-lang/perl-5.006
 	>=dev-util/cbindgen-0.24.3
 	>=dev-util/pkgconf-1.8.0[${MULTILIB_USEDEP},pkg-config(+)]
-	>=net-libs/nodejs-21
+	>=net-libs/nodejs-21[${MULTILIB_USEDEP}]
 	|| (
 		>=dev-lang/rust-1.83.0[${MULTILIB_USEDEP}]
 		>=dev-lang/rust-bin-1.83.0[${MULTILIB_USEDEP}]
