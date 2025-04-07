@@ -1,4 +1,4 @@
-# Copyright 1999-2024 Gentoo Authors
+# Copyright 1999-2025 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -17,22 +17,25 @@ KEYWORDS="~amd64 ~arm ~arm64 ~hppa ~ia64 ~loong ~ppc ~ppc64 ~riscv ~sparc ~x86 ~
 IUSE="cuda debug doc openmp static-libs test"
 RESTRICT="!test? ( test ) mirror"
 
+BDEPEND="
+	virtual/pkgconfig
+	doc? ( virtual/latex-base )
+"
 DEPEND=">=sci-libs/suitesparseconfig-${Sparse_PV}[openmp?,cuda?]
-	>=sci-libs/amd-3.3.1
-	>=sci-libs/colamd-3.3.1
-	>=sci-libs/cholmod-5.2.0
+	>=sci-libs/amd-3.3.3:=
+	>=sci-libs/colamd-3.3.1:=
+	>=sci-libs/cholmod-5.2.0:=[supernodal]
 	virtual/blas"
 RDEPEND="${DEPEND}"
-BDEPEND="doc? ( virtual/latex-base )"
 
 S="${WORKDIR}/${Sparse_P}/${PN^^}"
 
 pkg_pretend() {
-	[[ ${MERGE_TYPE} != binary ]] && use openmp && tc-check-openmp
+	[[ ${MERGE_TYPE} != binary ]] && ( use openmp && tc-check-openmp )
 }
 
 pkg_setup() {
-	[[ ${MERGE_TYPE} != binary ]] && use openmp && tc-check-openmp
+	[[ ${MERGE_TYPE} != binary ]] && ( use openmp && tc-check-openmp )
 }
 
 multilib_src_configure() {
@@ -123,6 +126,30 @@ multilib_src_install() {
 }
 
 multilib_src_install_all() {
+	cat >> "${T}/${PN^^}.pc" <<- EOF
+# SuiteSparse_config, Copyright (c) 2012-2025, Timothy A. Davis.
+# All Rights Reserved.
+# SPDX-License-Identifier: BSD-3-clause
+
+prefix=${EPREFIX}/usr
+exec_prefix=\${prefix}
+libdir=\${exec_prefix}/$(get_libdir)
+includedir=\${prefix}/include/suitesparse
+
+Name: ${PN^^}
+Description: ${DESCRIPTION}
+Version: ${PV}
+URL: ${HOMEPAGE}
+Libs: -L\${libdir} -l${PN}
+Libs.private: -lm
+Cflags: -I\${includedir}
+Requires: SuiteSparse_config
+EOF
+
+	insinto /usr/$(get_libdir)/pkgconfig
+	doins "${T}/${PN^^}.pc"
+
+
 	use doc && einstalldocs
 
 	use !static-libs &&	( find "${ED}" -name "*.a" -delete || die )

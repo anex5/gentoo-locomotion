@@ -23,7 +23,7 @@ BDEPEND="
 	doc? ( virtual/latex-base )
 "
 DEPEND=">=sci-libs/suitesparseconfig-${Sparse_PV}"
-REPEND="${DEPEND}"
+RDEPEND="${DEPEND}"
 
 S="${WORKDIR}/${Sparse_P}/${PN^^}"
 
@@ -66,6 +66,29 @@ multilib_src_install() {
 }
 
 multilib_src_install_all() {
+	cat >> "${T}/${PN^^}.pc" <<- EOF
+# SuiteSparse_config, Copyright (c) 2012-2025, Timothy A. Davis.
+# All Rights Reserved.
+# SPDX-License-Identifier: BSD-3-clause
+
+prefix=${EPREFIX}/usr
+exec_prefix=\${prefix}
+libdir=\${exec_prefix}/$(get_libdir)
+includedir=\${prefix}/include/suitesparse
+
+Name: ${PN^^}
+Description: ${DESCRIPTION}
+Version: ${PV}
+URL: ${HOMEPAGE}
+Libs: -L\${libdir} -l${PN}
+Libs.private: -lm
+Cflags: -I\${includedir}
+Requires: SuiteSparse_config
+EOF
+
+	insinto /usr/$(get_libdir)/pkgconfig
+	doins "${T}/${PN^^}.pc"
+
 	use doc && einstalldocs
 
 	use !static-libs &&	( find "${ED}" -name "*.a" -delete || die )

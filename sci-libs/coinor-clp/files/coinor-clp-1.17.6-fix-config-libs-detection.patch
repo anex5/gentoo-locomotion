@@ -1,0 +1,19 @@
+--- a/configure.ac
++++ b/configure.ac
+@@ -96,14 +96,14 @@ AM_CONDITIONAL(COIN_HAS_ABC, test ! "$us
+ #############################################################################
+ 
+ # AMD from UFL
+-AC_COIN_CHECK_USER_LIBRARY(AMD, AMD, [amd.h], [amd_defaults],,[ClpLib])
++AC_COIN_CHECK_USER_LIBRARY(AMD, AMD, [amd.h], [double Control[AMD_CONTROL];amd_defaults(Control);],,[ClpLib])
+ 
+ # CHOLMOD from UFL
+ # CHOLMOD requires AMD, which can be given by AMD_LIBS
+ # CHOLMOD requires Blas and Lapack?
+ coin_save_LIBS="$LIBS"
+ LIBS="$LIBS $AMD_LIBS"
+-AC_COIN_CHECK_USER_LIBRARY(CHOLMOD, CHOLMOD, [cholmod.h], [cholmod_start],,[ClpLib])
++AC_COIN_CHECK_USER_LIBRARY(CHOLMOD, CHOLMOD, [cholmod.h], [cholmod_start((cholmod_common*)0);],,[ClpLib])
+ LIBS="$coin_save_LIBS"
+ 
+ # Glpk also brings AMD

@@ -1,22 +1,26 @@
-# Copyright 1999-2024 Gentoo Authors
+# Copyright 1999-2025 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
 inherit cuda cmake-multilib toolchain-funcs
 
-Sparse_PV="7.6.0"
+Sparse_PV="7.10.1"
 Sparse_P="SuiteSparse-${Sparse_PV}"
 DESCRIPTION="Sparse Cholesky factorization and update/downdate library"
 HOMEPAGE="https://people.engr.tamu.edu/davis/suitesparse.html"
 SRC_URI="https://github.com/DrTimothyAldenDavis/SuiteSparse/archive/v${Sparse_PV}.tar.gz -> ${Sparse_P}.gh.tar.gz"
 
 LICENSE="LGPL-2.1+ modify? ( GPL-2+ ) matrixops? ( GPL-2+ )"
-SLOT="0/4"
+SLOT="0"
 KEYWORDS="~amd64 ~arm ~arm64 ~hppa ~ia64 ~loong ~mips ~ppc ~ppc64 ~riscv ~s390 ~sparc ~x86 ~amd64-linux ~x86-linux"
 IUSE="+cholesky cuda camd +check debug doc fortran openmp +matrixops +modify +partition +supernodal test static-libs"
 RESTRICT="!test? ( test )"
 
+BDEPEND="
+	virtual/pkgconfig
+	doc? ( virtual/latex-base )
+"
 DEPEND=">=sci-libs/suitesparseconfig-${Sparse_PV}
 	>=sci-libs/amd-3.3.1
 	>=sci-libs/colamd-3.3.1
@@ -31,7 +35,6 @@ DEPEND=">=sci-libs/suitesparseconfig-${Sparse_PV}
 		x11-drivers/nvidia-drivers
 	)"
 RDEPEND="${DEPEND}"
-BDEPEND="doc? ( virtual/latex-base )"
 
 REQUIRED_USE="supernodal? ( cholesky )
 	modify? ( cholesky )
@@ -44,11 +47,11 @@ S="${WORKDIR}/${Sparse_P}/${PN^^}"
 RESTRICT="mirror"
 
 pkg_pretend() {
-	[[ ${MERGE_TYPE} != binary ]] && use openmp && tc-check-openmp
+	[[ ${MERGE_TYPE} != binary ]] && ( use openmp && tc-check-openmp )
 }
 
 pkg_setup() {
-	[[ ${MERGE_TYPE} != binary ]] && use openmp && tc-check-openmp
+	[[ ${MERGE_TYPE} != binary ]] && ( use openmp && tc-check-openmp )
 }
 
 src_prepare() {
@@ -97,6 +100,7 @@ multilib_src_test() {
 multilib_src_install() {
 	if use doc; then
 		pushd "${S}/Doc"
+		emake clean
 		rm -rf *.pdf
 		emake
 		popd
@@ -106,9 +110,34 @@ multilib_src_install() {
 }
 
 multilib_src_install_all() {
-	# no static archives
+	cat >> "${T}/${PN^^}.pc" <<- EOF
+# SuiteSparse_config, Copyright (c) 2012-2025, Timothy A. Davis.
+# All Rights Reserved.
+# SPDX-License-Identifier: BSD-3-clause
+
+prefix=${EPREFIX}/usr
+exec_prefix=\${prefix}
+libdir=\${exec_prefix}/$(get_libdir)
+includedir=\${prefix}/include/suitesparse
+
+Name: ${PN^^}
+Description: ${DESCRIPTION}
+Version: ${PV}
+URL: ${HOMEPAGE}
+Libs: -L\${libdir} -l${PN}
+Libs.private: -lm
+Cflags: -I\${includedir}
+Requires: SuiteSparse_config
+EOF
+
+	insinto /usr/$(get_libdir)/pkgconfig
+	doins "${T}/${PN^^}.pc"
+
+	use doc && einstalldocs
+
 	use !static-libs &&	( find "${ED}" -name "*.a" -delete || die )
 
 	# strip .la files
-	find "${D}" -name '*.la' -delete || die
+	find "${ED}" -name '*.la' -delete || die
 }
+
