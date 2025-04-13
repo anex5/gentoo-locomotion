@@ -1,0 +1,18 @@
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -105,15 +105,6 @@ else (OpenMVG_BUILD_SHARED)
+ endif()
+ 
+ # ==============================================================================
+-# Check that submodule have been initialized and updated
+-# ==============================================================================
+-if (NOT EXISTS ${PROJECT_SOURCE_DIR}/dependencies/cereal/include)
+-  message(FATAL_ERROR
+-    "\n submodule(s) are missing, please update your repository:\n"
+-    "  > git submodule update -i\n")
+-endif()
+-
+-# ==============================================================================
+ # Additional cmake find modules
+ # ==============================================================================
+ set(CMAKE_MODULE_PATH

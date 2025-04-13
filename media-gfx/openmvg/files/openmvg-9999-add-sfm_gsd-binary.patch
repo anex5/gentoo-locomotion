@@ -1,0 +1,2971 @@
+From a1950ee441684386aab793196baea5a84c8d9ca3 Mon Sep 17 00:00:00 2001
+From: evanokeeffe <evanokeeffe@gmail.com>
+Date: Sun, 15 Dec 2024 09:46:17 -0300
+Subject: [PATCH 1/9] added in the new way to calculate GSD, this really works
+ for aerial imagery, but can be modified for horizontal imagery as well
+
+---
+ src/openMVG/cameras/Camera_Intrinsics.hpp     |  16 ++-
+ src/openMVG/cameras/Camera_Intrinsics_io.hpp  |   2 +
+ src/openMVG/cameras/Camera_Pinhole.hpp        |  22 +++-
+ src/openMVG/cameras/Camera_Pinhole_Brown.hpp  |   4 +-
+ .../cameras/Camera_Pinhole_Fisheye.hpp        |   4 +-
+ src/openMVG/cameras/Camera_Pinhole_Radial.hpp |   7 +-
+ src/openMVG/cameras/Camera_Spherical.hpp      |   6 +-
+ src/openMVG/sfm/sfm_gsd.cpp                   | 119 ++++++++++++++++++
+ src/openMVG/sfm/sfm_gsd.hpp                   |  28 +++++
+ .../SfM/main_SfMInit_ImageListing.cpp         |  16 +--
+ 11 files changed, 273 insertions(+), 16 deletions(-)
+ create mode 100644 src/openMVG/sfm/sfm_gsd.cpp
+ create mode 100644 src/openMVG/sfm/sfm_gsd.hpp
+
+diff --git a/src/openMVG/cameras/Camera_Intrinsics.hpp b/src/openMVG/cameras/Camera_Intrinsics.hpp
+index 20ca9d3e13..5a412325ae 100644
+--- a/src/openMVG/cameras/Camera_Intrinsics.hpp
++++ b/src/openMVG/cameras/Camera_Intrinsics.hpp
+@@ -40,15 +40,18 @@ struct IntrinsicBase : public Clonable<IntrinsicBase>
+   unsigned int w_;
+   /// Height of image
+   unsigned int h_;
++  /// width of the ccd
++  double ccdw_;
+ 
+   /**
+   * @brief Constructor
+   * @param w Width of the image
+   * @param h Height of the image
+   */
+-  IntrinsicBase( unsigned int w = 0, unsigned int h = 0 )
++  IntrinsicBase( unsigned int w = 0, unsigned int h = 0 , double ccdw = -1.0)
+     : w_( w ),
+-      h_( h )
++      h_( h ),
++      ccdw_(ccdw)
+   {
+ 
+   }
+@@ -76,6 +79,15 @@ struct IntrinsicBase : public Clonable<IntrinsicBase>
+     return h_;
+   }
+ 
++  /**
++  * @brief Get width of the image ccd sensor
++  * @return ccd width of the image
++  */
++  unsigned int ccdw() const
++  {
++    return ccdw_;
++  }
++
+   /**
+   * @brief Compute projection of a 3D point into the image plane
+   * (Apply disto (if any) and Intrinsics)
+diff --git a/src/openMVG/cameras/Camera_Intrinsics_io.hpp b/src/openMVG/cameras/Camera_Intrinsics_io.hpp
+index 64bce8bc6b..160e4421d3 100644
+--- a/src/openMVG/cameras/Camera_Intrinsics_io.hpp
++++ b/src/openMVG/cameras/Camera_Intrinsics_io.hpp
+@@ -16,6 +16,7 @@ void openMVG::cameras::IntrinsicBase::save( Archive & ar ) const
+ {
+   ar( cereal::make_nvp( "width", w_ ) );
+   ar( cereal::make_nvp( "height", h_ ) );
++  ar( cereal::make_nvp( "ccdw", ccdw_ ) );
+ }
+ 
+ template <class Archive>
+@@ -23,6 +24,7 @@ void openMVG::cameras::IntrinsicBase::load( Archive & ar )
+ {
+   ar( cereal::make_nvp( "width", w_ ) );
+   ar( cereal::make_nvp( "height", h_ ) );
++  ar( cereal::make_nvp( "ccdw", ccdw_ ) );
+ }
+ 
+ #endif // #ifndef OPENMVG_CAMERAS_CAMERA_INTRINSICS_IO_HPP
+diff --git a/src/openMVG/cameras/Camera_Pinhole.hpp b/src/openMVG/cameras/Camera_Pinhole.hpp
+index 2432669f6a..93cf6f937d 100644
+--- a/src/openMVG/cameras/Camera_Pinhole.hpp
++++ b/src/openMVG/cameras/Camera_Pinhole.hpp
+@@ -48,15 +48,17 @@ class Pinhole_Intrinsic : public IntrinsicBase
+     * @brief Constructor
+     * @param w Width of the image plane
+     * @param h Height of the image plane
++    * @param ccdw width of the ccd sensor
+     * @param focal_length_pix Focal length (in pixel) of the camera
+     * @param ppx Principal point on x-axis
+     * @param ppy Principal point on y-axis
+     */
+     Pinhole_Intrinsic(
+       unsigned int w = 0, unsigned int h = 0,
++      double ccdw = 0.0,
+       double focal_length_pix = 0.0,
+       double ppx = 0.0, double ppy = 0.0 )
+-      : IntrinsicBase( w, h )
++      : IntrinsicBase( w, h , ccdw)
+     {
+       K_ << focal_length_pix, 0., ppx, 0., focal_length_pix, ppy, 0., 0., 1.;
+       Kinv_ = K_.inverse();
+@@ -78,6 +80,24 @@ class Pinhole_Intrinsic : public IntrinsicBase
+       Kinv_ = K_.inverse();
+     }
+ 
++    /**
++    * @brief Constructor
++    * @param w Width of the image plane
++    * @param h Height of the image plane
++    * @param ccdw width of the ccd sensor
++    * @param K Intrinsic Matrix (3x3) {f,0,ppx; 0,f,ppy; 0,0,1}
++    */
++    Pinhole_Intrinsic(
++      unsigned int w,
++      unsigned int h,
++      double ccdw,
++      const Mat3& K)
++      : IntrinsicBase( w, h, ccdw), K_(K)
++    {
++      K_(0,0) = K_(1,1) = (K(0,0) + K(1,1)) / 2.0;
++      Kinv_ = K_.inverse();
++    }
++
+     /**
+     * @brief Destructor
+     */
+diff --git a/src/openMVG/cameras/Camera_Pinhole_Brown.hpp b/src/openMVG/cameras/Camera_Pinhole_Brown.hpp
+index 038d43b883..8583f146a2 100644
+--- a/src/openMVG/cameras/Camera_Pinhole_Brown.hpp
++++ b/src/openMVG/cameras/Camera_Pinhole_Brown.hpp
+@@ -39,6 +39,7 @@ class Pinhole_Intrinsic_Brown_T2 : public Pinhole_Intrinsic
+     * @brief Constructor
+     * @param w Width of image
+     * @param h Height of image
++    * @param ccdw width of the ccd sensor
+     * @param focal Focal distance (in pixel)
+     * @param ppx Principal point on X-axis
+     * @param ppy Principal point on Y-axis
+@@ -50,10 +51,11 @@ class Pinhole_Intrinsic_Brown_T2 : public Pinhole_Intrinsic
+     */
+     Pinhole_Intrinsic_Brown_T2(
+       int w = 0, int h = 0,
++      double ccdw = 0.0,
+       double focal = 0.0, double ppx = 0, double ppy = 0,
+       double k1 = 0.0, double k2 = 0.0, double k3 = 0.0,
+       double t1 = 0.0, double t2 = 0.0 )
+-      : Pinhole_Intrinsic( w, h, focal, ppx, ppy ),
++      : Pinhole_Intrinsic( w, h, ccdw, focal, ppx, ppy ),
+         params_({k1, k2, k3, t1, t2})
+     {
+     }
+diff --git a/src/openMVG/cameras/Camera_Pinhole_Fisheye.hpp b/src/openMVG/cameras/Camera_Pinhole_Fisheye.hpp
+index 66851938d8..f838e42d7d 100644
+--- a/src/openMVG/cameras/Camera_Pinhole_Fisheye.hpp
++++ b/src/openMVG/cameras/Camera_Pinhole_Fisheye.hpp
+@@ -41,6 +41,7 @@ class Pinhole_Intrinsic_Fisheye : public Pinhole_Intrinsic
+     * @brief Constructor
+     * @param w Width of image plane
+     * @param h Height of image plane
++    * @param ccdw width of the ccd sensor
+     * @param focal Focal distance in pixel
+     * @param ppx Principal point on X-axis
+     * @param ppy Principal point on Y-axis
+@@ -51,9 +52,10 @@ class Pinhole_Intrinsic_Fisheye : public Pinhole_Intrinsic
+     */
+     Pinhole_Intrinsic_Fisheye(
+       int w = 0, int h = 0,
++      double ccdw = 0.0,
+       double focal = 0.0, double ppx = 0, double ppy = 0,
+       double k1 = 0.0, double k2 = 0.0, double k3 = 0.0, double k4 = 0.0 )
+-      : Pinhole_Intrinsic( w, h, focal, ppx, ppy ),
++      : Pinhole_Intrinsic( w, h, ccdw, focal, ppx, ppy ),
+         params_({k1, k2, k3, k4})
+     {
+     }
+diff --git a/src/openMVG/cameras/Camera_Pinhole_Radial.hpp b/src/openMVG/cameras/Camera_Pinhole_Radial.hpp
+index 71b13bc5a5..9cd2664c31 100644
+--- a/src/openMVG/cameras/Camera_Pinhole_Radial.hpp
++++ b/src/openMVG/cameras/Camera_Pinhole_Radial.hpp
+@@ -96,9 +96,10 @@ class Pinhole_Intrinsic_Radial_K1 : public Pinhole_Intrinsic
+     */
+     Pinhole_Intrinsic_Radial_K1(
+       int w = 0, int h = 0,
++      double ccdw = 0.0,
+       double focal = 0.0, double ppx = 0, double ppy = 0,
+       double k1 = 0.0 )
+-      : Pinhole_Intrinsic( w, h, focal, ppx, ppy ),
++      : Pinhole_Intrinsic( w, h, ccdw, focal, ppx, ppy ),
+         params_({k1})
+     {
+ 
+@@ -296,6 +297,7 @@ class Pinhole_Intrinsic_Radial_K3 : public Pinhole_Intrinsic
+     * @brief Constructor
+     * @param w Width of image
+     * @param h Height of image
++    * @param ccdw width of the ccd sensor
+     * @param focal Focal (in pixel) of the camera
+     * @param ppx Principal point on X-Axis
+     * @param ppy Principal point on Y-Axis
+@@ -305,9 +307,10 @@ class Pinhole_Intrinsic_Radial_K3 : public Pinhole_Intrinsic
+     */
+     Pinhole_Intrinsic_Radial_K3(
+       int w = 0, int h = 0,
++      double ccdw = 0.0,
+       double focal = 0.0, double ppx = 0, double ppy = 0,
+       double k1 = 0.0, double k2 = 0.0, double k3 = 0.0 )
+-      : Pinhole_Intrinsic( w, h, focal, ppx, ppy ),
++      : Pinhole_Intrinsic( w, h, ccdw, focal, ppx, ppy ),
+         params_({k1, k2, k3})
+     {
+     }
+diff --git a/src/openMVG/cameras/Camera_Spherical.hpp b/src/openMVG/cameras/Camera_Spherical.hpp
+index b4689b654d..a3f9558345 100644
+--- a/src/openMVG/cameras/Camera_Spherical.hpp
++++ b/src/openMVG/cameras/Camera_Spherical.hpp
+@@ -29,13 +29,15 @@ using class_type = Intrinsic_Spherical;
+   * @brief Constructor
+   * @param w Width of the image plane
+   * @param h Height of the image plane
++  * @param ccdw width of the ccd sensor
+   */
+   Intrinsic_Spherical
+   (
+     unsigned int w = 0,
+-    unsigned int h = 0
++    unsigned int h = 0,
++    double ccdw = 0.0
+   )
+-  : IntrinsicBase(w, h)
++  : IntrinsicBase(w, h, ccdw)
+   {
+   }
+ 
+diff --git a/src/openMVG/sfm/sfm_gsd.cpp b/src/openMVG/sfm/sfm_gsd.cpp
+new file mode 100644
+index 0000000000..56f5ac0f1d
+--- /dev/null
++++ b/src/openMVG/sfm/sfm_gsd.cpp
+@@ -0,0 +1,119 @@
++
++#include <sfm_gsd.hpp>
++
++namespace openMVG {
++namespace sfm {
++
++
++bool AreSame(double a, double b){ return std::fabs(a - b) <= std::numeric_limits<double>::epsilon(); }
++
++double get_ground_sampling_distance(IndexT view_id, const SfM_Data & sfm_data, const Vec2 & sensor_size){
++    
++    int counter = 0;
++    double average_camera_height = 0.0;
++
++    for(auto part: sfm_data.GetPoses()){
++        average_camera_height += (part.second.center()[2] - average_camera_height)/(counter+1);
++        counter++;
++    }
++
++    counter = 0;
++    double average_ground_height = 0.0;
++    for(auto part: sfm_data.GetLandmarks()){
++        average_ground_height += (part.second.X(2) - average_ground_height)/(counter+1);
++        counter++;
++    }
++
++    double average_distance_to_ground = abs(average_camera_height-average_ground_height);
++
++    openMVG::sfm::View *view = sfm_data.GetViews()->at(view_id);
++    std::shared_ptr<cameras::IntrinsicBase> intrinsic = sfm_data.GetIntrinsics().at(view->id_intrinsic);
++    std::vector<double> params = intrinsic->getParams();
++
++    unsigned int width = intrinsic->w();
++    unsigned int height= intrinsic->h();
++    
++    double focal_mm = params[0] * sensor_size[0]/width;
++
++    // GSD is the maximum value of the horizontal and vertical GSDs
++    double GSD_H = -1.0;
++    double GSD_W = -1.0;
++
++    if(!AreSame(0.0,sensor_size[0])){
++        GSD_H = (average_distance_to_ground * sensor_size[0]) / (focal_mm * height);
++    }
++    if(!AreSame(0.0,sensor_size[1])){
++        GSD_W = (average_distance_to_ground * sensor_size[1]) / (focal_mm * width);
++    }
++    
++    return std::max(GSD_H,GSD_W);
++}
++
++double euclidean_distance(Vec2 v1, Vec2 v2){
++    return sqrt(  pow(v1[0]-v2[0],2) + pow(v1[1]-v2[1])  );
++}
++
++std::vector<Vec2> getRealGroundCoordinates(IndexT view_id, const SfM_Data & sfm_data, const double & average_height){
++    openMVG::sfm::View *view = sfm_data.GetViews()->at(view_id);
++
++    if(!sfm_data.IsPoseAndIntrinsicDefined(view)){
++        return std::vector<Vec2>(0);
++    }
++
++    geometry::Pose3 pose = sfm_data.poses.at(view->id_pose);
++
++    double camera_height = pose.center()[2];
++
++    std::shared_ptr<cameras::IntrinsicBase> intrinsic = sfm_data.GetIntrinsics().at(view->id_intrinsic);
++
++    unsigned int width = intrinsic->w();
++    unsigned int height= intrinsic->h();
++
++    std::vector<Vec2> image_points(4);
++    image_points[0] = Vec2(0.0,0.0);
++    image_points[1] = Vec2(width-1.0,0.0);
++    image_points[2] = Vec2(width-1.0,height-1.0);
++    image_points[3] = Vec2(0.0,height-1.0);
++    
++    std::vector<Vec2> ground_points;
++
++    std::vector<double> params = intrinsic->getParams();
++
++    double cu = params[1];
++    double cv = params[2];
++    double fu = params[0];
++    double fv = params[0];
++
++    for(auto p: image_points){
++        // backproject the point
++        // getting the ray
++        Vec2 kp;
++        kp[0] = (kp[0] - cu) / fu;
++        kp[1] = (kp[1] - cv) / fv;
++        
++        Vec2 un_kp= intrinsic->remove_disto(kp);
++
++        const double rho2_d = kp[0] * kp[0] + kp[1] * kp[1];
++        const double tmpD = std::max(1 + (1 - fu*fu) * rho2_d, 0.0);
++
++        Vec3 cray;
++        cray[0] = kp[0];
++        cray[1] = kp[1];
++        cray[2] = 1 - fu * (rho2_d + 1) / (fu + sqrt(tmpD));
++
++        Mat3 RT = pose.rotation().transpose() * pose.center();
++
++        // compute the scale
++        double scale = -(camera_height-average_height) / RT[2][0];
++
++        // compute ground position
++        Vec2 gp = Vec2(pose.center()[0]+scale,pose.center()[1]+scale);
++
++        ground_points.push_back(gp);
++    }
++
++    return ground_points;
++}
++
++}
++}
+\ No newline at end of file
+diff --git a/src/openMVG/sfm/sfm_gsd.hpp b/src/openMVG/sfm/sfm_gsd.hpp
+new file mode 100644
+index 0000000000..be0095362c
+--- /dev/null
++++ b/src/openMVG/sfm/sfm_gsd.hpp
+@@ -0,0 +1,28 @@
++
++#include <vector>
++
++#include "openMVG/sfm/sfm_data.hpp"
++#include <algorithm>
++#include <string>
++#include <utility>
++#include <vector>
++#include <cmath>
++
++namespace openMVG {
++namespace sfm {
++
++bool AreSame(double a, double b);
++
++Vec2 get_ground_sampling_distance(
++    const SfM_Data & sfm_data, 
++    const Vec2 & sensor_size
++);
++
++std::vector<Vec2> getRealGroundCoordinates(
++    IndexT view_id, 
++    const SfM_Data & data,
++    const double & average_height
++);
++
++}
++}
+\ No newline at end of file
+diff --git a/src/software/SfM/main_SfMInit_ImageListing.cpp b/src/software/SfM/main_SfMInit_ImageListing.cpp
+index 482a97dbcf..973f1d9aac 100644
+--- a/src/software/SfM/main_SfMInit_ImageListing.cpp
++++ b/src/software/SfM/main_SfMInit_ImageListing.cpp
+@@ -317,6 +317,8 @@ int main(int argc, char **argv)
+       if (focal_pixels != -1 )
+         focal = focal_pixels;
+ 
++    double ccdw = 0.0;
++
+     // If not manually provided or wrongly provided
+     if (focal == -1)
+     {
+@@ -346,7 +348,7 @@ int main(int argc, char **argv)
+           if ( getInfo( sCamModel, vec_database, datasheet ))
+           {
+             // The camera model was found in the database so we can compute it's approximated focal length
+-            const double ccdw = datasheet.sensorSize_;
++            ccdw = datasheet.sensorSize_;
+             focal = std::max ( width, height ) * exifReader->getFocal() / ccdw;
+           }
+           else
+@@ -369,27 +371,27 @@ int main(int argc, char **argv)
+       {
+         case PINHOLE_CAMERA:
+           intrinsic = std::make_shared<Pinhole_Intrinsic>
+-            (width, height, focal, ppx, ppy);
++            (width, height, ccdw, focal, ppx, ppy);
+         break;
+         case PINHOLE_CAMERA_RADIAL1:
+           intrinsic = std::make_shared<Pinhole_Intrinsic_Radial_K1>
+-            (width, height, focal, ppx, ppy, 0.0); // setup no distortion as initial guess
++            (width, height, ccdw, focal, ppx, ppy, 0.0); // setup no distortion as initial guess
+         break;
+         case PINHOLE_CAMERA_RADIAL3:
+           intrinsic = std::make_shared<Pinhole_Intrinsic_Radial_K3>
+-            (width, height, focal, ppx, ppy, 0.0, 0.0, 0.0);  // setup no distortion as initial guess
++            (width, height, ccdw, focal, ppx, ppy, 0.0, 0.0, 0.0);  // setup no distortion as initial guess
+         break;
+         case PINHOLE_CAMERA_BROWN:
+           intrinsic = std::make_shared<Pinhole_Intrinsic_Brown_T2>
+-            (width, height, focal, ppx, ppy, 0.0, 0.0, 0.0, 0.0, 0.0); // setup no distortion as initial guess
++            (width, height, ccdw, focal, ppx, ppy, 0.0, 0.0, 0.0, 0.0, 0.0); // setup no distortion as initial guess
+         break;
+         case PINHOLE_CAMERA_FISHEYE:
+           intrinsic = std::make_shared<Pinhole_Intrinsic_Fisheye>
+-            (width, height, focal, ppx, ppy, 0.0, 0.0, 0.0, 0.0); // setup no distortion as initial guess
++            (width, height, ccdw, focal, ppx, ppy, 0.0, 0.0, 0.0, 0.0); // setup no distortion as initial guess
+         break;
+         case CAMERA_SPHERICAL:
+            intrinsic = std::make_shared<Intrinsic_Spherical>
+-             (width, height);
++             (width, height, ccdw);
+         break;
+         default:
+           OPENMVG_LOG_ERROR << "Error: unknown camera model: " << (int) e_User_camera_model;
+
+From dd0e02bd54d36e5bac4dc3c24f4fea1972a9ec49 Mon Sep 17 00:00:00 2001
+From: evanokeeffe <evanokeeffe@gmail.com>
+Date: Sun, 15 Dec 2024 11:02:10 -0300
+Subject: [PATCH 2/9] couple of fixes included, I've included a nice fucntion
+ for getting the real world coordinates of an image using the forward
+ projection method
+
+---
+ src/openMVG/sfm/sfm_gsd.cpp         | 78 +++++++++++++++++++++++++----
+ src/openMVG/sfm/sfm_gsd.hpp         |  7 ++-
+ src/software/SfM/CMakeLists.txt     | 10 ++++
+ src/software/SfM/main_ReportGSD.cpp | 61 ++++++++++++++++++++++
+ 4 files changed, 143 insertions(+), 13 deletions(-)
+ create mode 100644 src/software/SfM/main_ReportGSD.cpp
+
+diff --git a/src/openMVG/sfm/sfm_gsd.cpp b/src/openMVG/sfm/sfm_gsd.cpp
+index 56f5ac0f1d..4bb9980918 100644
+--- a/src/openMVG/sfm/sfm_gsd.cpp
++++ b/src/openMVG/sfm/sfm_gsd.cpp
+@@ -1,5 +1,5 @@
+ 
+-#include <sfm_gsd.hpp>
++#include "openMVG/sfm/sfm_gsd.hpp"
+ 
+ namespace openMVG {
+ namespace sfm {
+@@ -7,8 +7,14 @@ namespace sfm {
+ 
+ bool AreSame(double a, double b){ return std::fabs(a - b) <= std::numeric_limits<double>::epsilon(); }
+ 
++/**
++* @brief Get the Ground Sampling Distance
++* @return double value that is the GSD in meters
++* @note return value is in m/px
++*/
+ double get_ground_sampling_distance(IndexT view_id, const SfM_Data & sfm_data, const Vec2 & sensor_size){
+-    
++    // Computes:
++    // - Ground Sampling distance in meters (m)
+     int counter = 0;
+     double average_camera_height = 0.0;
+ 
+@@ -26,7 +32,7 @@ double get_ground_sampling_distance(IndexT view_id, const SfM_Data & sfm_data, c
+ 
+     double average_distance_to_ground = abs(average_camera_height-average_ground_height);
+ 
+-    openMVG::sfm::View *view = sfm_data.GetViews()->at(view_id);
++    openMVG::sfm::View *view = sfm_data.GetViews().at(view_id).get();
+     std::shared_ptr<cameras::IntrinsicBase> intrinsic = sfm_data.GetIntrinsics().at(view->id_intrinsic);
+     std::vector<double> params = intrinsic->getParams();
+ 
+@@ -49,12 +55,65 @@ double get_ground_sampling_distance(IndexT view_id, const SfM_Data & sfm_data, c
+     return std::max(GSD_H,GSD_W);
+ }
+ 
++/**
++* @brief Get the Ground Sampling Distance
++* @return double value that is the GSD in meters
++* @note return value is in cm/px
++*/
++double get_ground_sampling_distance_cm(IndexT view_id, const SfM_Data & sfm_data, const Vec2 & sensor_size){
++    // Computes:
++    // - Ground Sampling distance in centimeters (cm)
++    int counter = 0;
++    double average_camera_height = 0.0;
++
++    for(auto part: sfm_data.GetPoses()){
++        average_camera_height += (part.second.center()[2] - average_camera_height)/(counter+1);
++        counter++;
++    }
++
++    counter = 0;
++    double average_ground_height = 0.0;
++    for(auto part: sfm_data.GetLandmarks()){
++        average_ground_height += (part.second.X(2) - average_ground_height)/(counter+1);
++        counter++;
++    }
++
++    double average_distance_to_ground = abs(average_camera_height-average_ground_height);
++
++    auto view = sfm_data.GetViews().at(view_id).get();
++    std::shared_ptr<cameras::IntrinsicBase> intrinsic = sfm_data.GetIntrinsics().at(view->id_intrinsic);
++    std::vector<double> params = intrinsic->getParams();
++
++    unsigned int width = intrinsic->w();
++    unsigned int height= intrinsic->h();
++    
++    double focal_mm = params[0] * sensor_size[0]/width;
++
++    // GSD is the maximum value of the horizontal and vertical GSDs
++    double GSD_H = -1.0;
++    double GSD_W = -1.0;
++
++    if(!AreSame(0.0,sensor_size[0])){
++        GSD_H = (average_distance_to_ground * sensor_size[0] * 100) / (focal_mm * height);
++    }
++    if(!AreSame(0.0,sensor_size[1])){
++        GSD_W = (average_distance_to_ground * sensor_size[1] * 100) / (focal_mm * width);
++    }
++    
++    return std::max(GSD_H,GSD_W);
++}
++
+ double euclidean_distance(Vec2 v1, Vec2 v2){
+-    return sqrt(  pow(v1[0]-v2[0],2) + pow(v1[1]-v2[1])  );
++    return sqrt(  pow(v1[0]-v2[0],2) + pow(v1[1]-v2[1], 2)  );
+ }
+ 
++/**
++* @brief Get the real world coordinates of the corners of the image
++* @return vector of Vec2 containing the real world coordinates of top left, bottom left, bottom right, top right coordinates
++* @note return value is in cm/px
++*/
+ std::vector<Vec2> getRealGroundCoordinates(IndexT view_id, const SfM_Data & sfm_data, const double & average_height){
+-    openMVG::sfm::View *view = sfm_data.GetViews()->at(view_id);
++    openMVG::sfm::View *view = sfm_data.GetViews().at(view_id).get();
+ 
+     if(!sfm_data.IsPoseAndIntrinsicDefined(view)){
+         return std::vector<Vec2>(0);
+@@ -86,7 +145,7 @@ std::vector<Vec2> getRealGroundCoordinates(IndexT view_id, const SfM_Data & sfm_
+ 
+     for(auto p: image_points){
+         // backproject the point
+-        // getting the ray
++        // getting the ray from the camera to the ground
+         Vec2 kp;
+         kp[0] = (kp[0] - cu) / fu;
+         kp[1] = (kp[1] - cv) / fv;
+@@ -101,10 +160,11 @@ std::vector<Vec2> getRealGroundCoordinates(IndexT view_id, const SfM_Data & sfm_
+         cray[1] = kp[1];
+         cray[2] = 1 - fu * (rho2_d + 1) / (fu + sqrt(tmpD));
+ 
+-        Mat3 RT = pose.rotation().transpose() * pose.center();
++        // now we have the vector to the ground
++        Vec3 RT = pose.rotation() * cray;
+ 
+-        // compute the scale
+-        double scale = -(camera_height-average_height) / RT[2][0];
++        // compute the approximate scale to the ground point
++        double scale = -(camera_height-average_height) / RT(2,0);
+ 
+         // compute ground position
+         Vec2 gp = Vec2(pose.center()[0]+scale,pose.center()[1]+scale);
+diff --git a/src/openMVG/sfm/sfm_gsd.hpp b/src/openMVG/sfm/sfm_gsd.hpp
+index be0095362c..482f0b05ac 100644
+--- a/src/openMVG/sfm/sfm_gsd.hpp
++++ b/src/openMVG/sfm/sfm_gsd.hpp
+@@ -13,10 +13,9 @@ namespace sfm {
+ 
+ bool AreSame(double a, double b);
+ 
+-Vec2 get_ground_sampling_distance(
+-    const SfM_Data & sfm_data, 
+-    const Vec2 & sensor_size
+-);
++double get_ground_sampling_distance(IndexT view_id, const SfM_Data & sfm_data, const Vec2 & sensor_size);
++
++double get_ground_sampling_distance_cm(IndexT view_id, const SfM_Data & sfm_data, const Vec2 & sensor_size);
+ 
+ std::vector<Vec2> getRealGroundCoordinates(
+     IndexT view_id, 
+diff --git a/src/software/SfM/CMakeLists.txt b/src/software/SfM/CMakeLists.txt
+index 893abd39f9..b272097212 100644
+--- a/src/software/SfM/CMakeLists.txt
++++ b/src/software/SfM/CMakeLists.txt
+@@ -216,6 +216,16 @@ target_link_libraries(openMVG_main_ComputeSfM_DataColor
+     ${STLPLUS_LIBRARY}
+ )
+ 
++add_executable(openMVG_main_ReportGSD main_ReportGSD.cpp)
++target_link_libraries(openMVG_main_ReportGSD
++  PRIVATE
++    openMVG_system
++    openMVG_sfm
++    ${STLPLUS_LIBRARY}
++)
++
++
++
+ add_executable(openMVG_main_PointsFiltering main_PointsFiltering.cpp)
+ target_link_libraries(openMVG_main_PointsFiltering
+   PRIVATE
+diff --git a/src/software/SfM/main_ReportGSD.cpp b/src/software/SfM/main_ReportGSD.cpp
+new file mode 100644
+index 0000000000..2bd21e20ed
+--- /dev/null
++++ b/src/software/SfM/main_ReportGSD.cpp
+@@ -0,0 +1,61 @@
++// This file is part of OpenMVG, an Open Multiple View Geometry C++ library.
++
++// Copyright (c) 2015 Pierre MOULON.
++
++// This Source Code Form is subject to the terms of the Mozilla Public
++// License, v. 2.0. If a copy of the MPL was not distributed with this
++// file, You can obtain one at http://mozilla.org/MPL/2.0/.
++
++#include "openMVG/sfm/sfm_data.hpp"
++#include "openMVG/sfm/sfm_data_io.hpp"
++#include "openMVG/sfm/sfm_gsd.hpp"
++#include "openMVG/system/logger.hpp"
++#include "openMVG/types.hpp"
++
++#include "third_party/cmdLine/cmdLine.h"
++
++
++using namespace openMVG;
++using namespace openMVG::sfm;
++
++// Convert from a SfM_Data format to another
++int main(int argc, char **argv)
++{
++  CmdLine cmd;
++
++  std::string
++    sSfM_Data_Filename_In;
++
++  cmd.add(make_option('i', sSfM_Data_Filename_In, "input_file"));
++
++  try {
++      if (argc == 1) throw std::string("Invalid command line parameter.");
++      cmd.process(argc, argv);
++  } catch (const std::string& s) {
++      OPENMVG_LOG_INFO << "Usage: " << argv[0] << '\n' 
++        << "[-i|--input_file] path to the input SfM_Data scene\n";
++
++      OPENMVG_LOG_ERROR << s;
++      return EXIT_FAILURE;
++  }
++
++  // Load input SfM_Data scene
++  SfM_Data sfm_data;
++  if (!Load(sfm_data, sSfM_Data_Filename_In, ESfM_Data(ALL)))
++  {
++    OPENMVG_LOG_ERROR << "The input SfM_Data file \"" << sSfM_Data_Filename_In << "\" cannot be read.";
++    return EXIT_FAILURE;
++  }
++
++  openMVG::sfm::View *view = sfm_data.GetViews().at(0).get();
++  std::shared_ptr<cameras::IntrinsicBase> intrinsic = sfm_data.GetIntrinsics().at(view->id_intrinsic);
++  double ccdw = intrinsic->ccdw();
++
++  // last argument can take both ccd dimensions, it'll take the max value from the calculation 
++  // then as GSD should, format is h,w
++  double gsd = get_ground_sampling_distance(0, sfm_data, Vec2(0.0,ccdw));
++
++  OPENMVG_LOG_INFO << "Scene GSD is: " << gsd;
++
++  return EXIT_FAILURE;
++}
+
+From 6ecf51db4d7cf7ca1b0b1ce6398395652354abb8 Mon Sep 17 00:00:00 2001
+From: evanokeeffe <evanokeeffe@gmail.com>
+Date: Mon, 20 Jan 2025 16:42:53 -0300
+Subject: [PATCH 3/9] fixing a minor issue with the selected sensor size,
+ always choose 1 as it is a must have
+
+---
+ src/openMVG/sfm/sfm_gsd.cpp         | 15 ++++++++++-----
+ src/software/SfM/main_ReportGSD.cpp |  5 ++++-
+ 2 files changed, 14 insertions(+), 6 deletions(-)
+
+diff --git a/src/openMVG/sfm/sfm_gsd.cpp b/src/openMVG/sfm/sfm_gsd.cpp
+index 4bb9980918..8ad14a73c0 100644
+--- a/src/openMVG/sfm/sfm_gsd.cpp
++++ b/src/openMVG/sfm/sfm_gsd.cpp
+@@ -1,5 +1,6 @@
+ 
+ #include "openMVG/sfm/sfm_gsd.hpp"
++#include "openMVG/system/logger.hpp"
+ 
+ namespace openMVG {
+ namespace sfm {
+@@ -39,7 +40,8 @@ double get_ground_sampling_distance(IndexT view_id, const SfM_Data & sfm_data, c
+     unsigned int width = intrinsic->w();
+     unsigned int height= intrinsic->h();
+     
+-    double focal_mm = params[0] * sensor_size[0]/width;
++    OPENMVG_LOG_INFO << params[0] << " " << sensor_size[1] << " " << width;
++    double focal_mm = params[0] * sensor_size[1]/width;
+ 
+     // GSD is the maximum value of the horizontal and vertical GSDs
+     double GSD_H = -1.0;
+@@ -49,9 +51,10 @@ double get_ground_sampling_distance(IndexT view_id, const SfM_Data & sfm_data, c
+         GSD_H = (average_distance_to_ground * sensor_size[0]) / (focal_mm * height);
+     }
+     if(!AreSame(0.0,sensor_size[1])){
++        OPENMVG_LOG_INFO << average_distance_to_ground << " " << sensor_size[1] << " " << focal_mm << " " << width;
+         GSD_W = (average_distance_to_ground * sensor_size[1]) / (focal_mm * width);
+     }
+-    
++    OPENMVG_LOG_INFO << GSD_H << " " << GSD_W;
+     return std::max(GSD_H,GSD_W);
+ }
+ 
+@@ -87,17 +90,19 @@ double get_ground_sampling_distance_cm(IndexT view_id, const SfM_Data & sfm_data
+     unsigned int width = intrinsic->w();
+     unsigned int height= intrinsic->h();
+     
+-    double focal_mm = params[0] * sensor_size[0]/width;
++    double focal_mm = params[0] * sensor_size[1]/width;
+ 
+     // GSD is the maximum value of the horizontal and vertical GSDs
+     double GSD_H = -1.0;
+     double GSD_W = -1.0;
+ 
+     if(!AreSame(0.0,sensor_size[0])){
+-        GSD_H = (average_distance_to_ground * sensor_size[0] * 100) / (focal_mm * height);
++        GSD_H = (average_distance_to_ground * sensor_size[0] ) / (focal_mm * height);
++        GSD_H *= 100;
+     }
+     if(!AreSame(0.0,sensor_size[1])){
+-        GSD_W = (average_distance_to_ground * sensor_size[1] * 100) / (focal_mm * width);
++        GSD_W = (average_distance_to_ground * sensor_size[1] ) / (focal_mm * width);
++        GSD_W *= 100;
+     }
+     
+     return std::max(GSD_H,GSD_W);
+diff --git a/src/software/SfM/main_ReportGSD.cpp b/src/software/SfM/main_ReportGSD.cpp
+index 2bd21e20ed..db68f65a00 100644
+--- a/src/software/SfM/main_ReportGSD.cpp
++++ b/src/software/SfM/main_ReportGSD.cpp
+@@ -55,7 +55,10 @@ int main(int argc, char **argv)
+   // then as GSD should, format is h,w
+   double gsd = get_ground_sampling_distance(0, sfm_data, Vec2(0.0,ccdw));
+ 
+-  OPENMVG_LOG_INFO << "Scene GSD is: " << gsd;
++  double gsd_cm = get_ground_sampling_distance_cm(0, sfm_data, Vec2(0.0,ccdw));
++
++  OPENMVG_LOG_INFO << "Scene GSD is: " << gsd << " m/px";
++  OPENMVG_LOG_INFO << "Scene GSD is: " << gsd_cm << " cm/px";
+ 
+   return EXIT_FAILURE;
+ }
+
+From 3e3c12b36d0ff6c0855ad32b789e4bc184bf91df Mon Sep 17 00:00:00 2001
+From: evanokeeffe <evanokeeffe@gmail.com>
+Date: Tue, 21 Jan 2025 22:19:33 -0300
+Subject: [PATCH 4/9] major rewrite for speed, this should work much better now
+
+---
+ src/openMVG/sfm/sfm_data_merge.cpp | 280 +++++++++++++++++++++++++
+ src/openMVG/sfm/sfm_data_merge.hpp |  56 +++++
+ src/software/SfM/CMakeLists.txt    |  25 +++
+ src/software/SfM/main_MergeSfM.cpp | 324 +++++++++++++++++++++++++++++
+ 4 files changed, 685 insertions(+)
+ create mode 100644 src/openMVG/sfm/sfm_data_merge.cpp
+ create mode 100644 src/openMVG/sfm/sfm_data_merge.hpp
+ create mode 100644 src/software/SfM/main_MergeSfM.cpp
+
+diff --git a/src/openMVG/sfm/sfm_data_merge.cpp b/src/openMVG/sfm/sfm_data_merge.cpp
+new file mode 100644
+index 0000000000..0e2bb6c725
+--- /dev/null
++++ b/src/openMVG/sfm/sfm_data_merge.cpp
+@@ -0,0 +1,280 @@
++
++// This file is part of OpenMVG, an Open Multiple View Geometry C++ library.
++
++// Copyright (c) 2015 Pierre MOULON.
++
++// This Source Code Form is subject to the terms of the Mozilla Public
++// License, v. 2.0. If a copy of the MPL was not distributed with this
++// file, You can obtain one at http://mozilla.org/MPL/2.0/.
++
++#include "openMVG/sfm/sfm_data_merge.hpp"
++
++namespace openMVG {
++namespace sfm {
++
++/**
++* @brief Get the best intrinsics for this particular intrinsic id
++* @return the lowest RMSE camera intrinsic shared_ptr object
++* @note return is based on the best RMSE from that partiular intrinsic id
++*/
++std::shared_ptr<cameras::IntrinsicBase> findBestIntrinsic(const SfM_Data& sfm_data_A, const SfM_Data& sfm_data_B, openMVG::IndexT cam_id)
++{
++  // both alternatives for the intrinsic
++  const auto intrinsicA = sfm_data_A.intrinsics.at(cam_id);
++  const auto intrinsicB = sfm_data_B.intrinsics.at(cam_id);
++
++  // quick escape in case intrinsics are equal
++  if (intrinsicA == intrinsicB // check pointer equality
++      || (intrinsicA->getType() == intrinsicB->getType() // check intrinsics equality
++         && intrinsicA->hashValue() == intrinsicB->hashValue())){
++    return std::shared_ptr<cameras::IntrinsicBase>(intrinsicA->clone());
++  }
++    
++
++  double RMSE_A(0.0), RMSE_B(0.0);
++  int n_totalResiduals(0);
++  for (const auto & sfm_data : {sfm_data_A, sfm_data_B})
++  {
++    for (const auto & landmark : sfm_data.GetLandmarks())
++    {
++      const Observations & observations = landmark.second.obs;
++      for (const auto & obs: observations)
++      {
++        // we have to do the following check because observations of common landmarks are not pruned out when
++        // clustering a submap in two...which makes it simpler to merge back together
++        const auto & view = sfm_data.GetViews().find(obs.first);
++        if (view == sfm_data.GetViews().end()){
++          continue;
++        }
++
++        const IndexT & intrinsic_id = sfm_data.GetViews().at(obs.first)->id_intrinsic;
++        if (intrinsic_id != cam_id){
++          continue;
++        }
++
++        const IndexT & pose_id = sfm_data.GetViews().at(obs.first)->id_pose;
++        const auto & pose = sfm_data.GetPoses().at(pose_id);
++        const Vec3 X = pose(landmark.second.X);
++        const Vec2 residualA = intrinsicA->residual(X, obs.second.x);
++        const Vec2 residualB = intrinsicB->residual(X, obs.second.x);
++        RMSE_A += residualA(0) * residualA(0);
++        RMSE_A += residualA(1) * residualA(1);
++        RMSE_B += residualB(0) * residualB(0);
++        RMSE_B += residualB(1) * residualB(1);
++        ++n_totalResiduals;
++      }
++    }
++  }
++
++  RMSE_A = std::sqrt((RMSE_A)/(n_totalResiduals));
++  RMSE_B = std::sqrt((RMSE_B)/(n_totalResiduals));
++  std::cout << "RMSE_A : " << RMSE_A << " RMSE_B : "  << RMSE_B << std::endl;
++
++  if (RMSE_A < RMSE_B){
++    return std::shared_ptr<cameras::IntrinsicBase>(intrinsicA->clone());
++  }
++  else{
++    return std::shared_ptr<cameras::IntrinsicBase>(intrinsicB->clone());
++  }
++}
++
++/**
++* @brief Get a list of valid intrinsic Ids from sfm file
++* @return returns a list of valid intrinsics in the sfm_data file
++* @note returns the indexes of the valid intrinsics
++*/
++std::set<IndexT> GetValidIntrinsicsIds(const SfM_Data& sfm_data1){
++  std::set<IndexT> valid_views;
++  for (const auto & view : sfm_data1.GetViews())
++  {
++    const View * v = view.second.get();
++    if (sfm_data1.GetIntrinsics().find(v->id_intrinsic) != sfm_data1.GetIntrinsics().end()){
++      valid_views.insert(v->id_view);
++    }
++  }
++  return valid_views;
++}
++
++/**
++* @brief Get a list of valid intrinsic Ids common in both sfm scenes
++* @return returns a list of valid intrinsics in both sfm_data files
++* @note if not common in both, it'll be left out
++*/
++std::set<IndexT> getCommonCameraIds(const SfM_Data& sfm_data_1, const SfM_Data& sfm_data_2)
++{
++  const std::set<IndexT> cam_ids_1 = GetValidIntrinsicsIds(sfm_data_1);
++  const std::set<IndexT> cam_ids_2 = GetValidIntrinsicsIds(sfm_data_2);
++
++  std::set<IndexT> common_cam_ids;
++  std::set_intersection(cam_ids_1.cbegin(), cam_ids_1.cend(),
++                        cam_ids_2.cbegin(), cam_ids_2.cend(),
++                        std::inserter(common_cam_ids, common_cam_ids.begin()));
++  return common_cam_ids;
++}
++
++std::vector<std::string> newUniqueImages(const std::map< std::string, std::pair<bool,std::vector<IndexT>> >& sfm_filenames_indexes){
++    std::vector<std::string> new_filenames;
++    for(auto p: sfm_filenames_indexes){
++        std::pair<openMVG::IndexT, std::vector<openMVG::IndexT>> info = p.second;
++        if(info.first){new_filenames.push_back(p.first);}
++    }
++    return new_filenames;
++}
++
++/**
++* @brief See how many images are overlapping
++* @return returns a single IndexT value, 0 for no Overlapping, >0 for overlap
++* @note returns the indexes of the valid intrinsics
++*/
++openMVG::IndexT getNumberOverlapping(const std::map< std::string, std::pair<bool,std::vector<IndexT>> >& sfm_filenames_indexes){
++    openMVG::IndexT counter = 0;
++    for(auto p: sfm_filenames_indexes){
++        std::pair<openMVG::IndexT, std::vector<openMVG::IndexT>> info = p.second;
++        if(info.second.size() > 1){counter++;}
++    }
++    return counter;
++}
++
++/**
++* @brief See how many images are overlapping
++* @return returns a single IndexT value, 0 for no Overlapping, >0 for overlap
++* @note returns the indexes of the valid intrinsics
++*/
++std::string printOverlapInformation(const std::map< std::string, std::pair<bool,std::vector<IndexT>> >& sfm_filenames_indexes){
++    
++    std::string result = "Name, Size, New Image, Indexes\n";
++    
++    for(auto p: sfm_filenames_indexes){
++        std::pair<openMVG::IndexT, std::vector<openMVG::IndexT>> info = p.second;
++
++        result += p.first+","+std::to_string(info.second.size())+",";
++        std::string indexes = " ";
++        for(auto a: info.second){
++            indexes += std::to_string(a) + " ";
++        }
++        result +=  indexes + "\n";
++    }
++    return result;
++}
++
++/**
++* @brief Get a map of all filenames in 2 sfm scenes, each filename is key, then second is a vector of indexes in first and second
++* @return return a map of std::string and std::vector, filename key, vector contains indexes in 1 and 2
++* @note returns the indexes of the valid intrinsics
++*/
++bool getOverlappingImages(const openMVG::sfm::SfM_Data& first, const openMVG::sfm::SfM_Data& second, 
++    std::map< std::string, std::pair<bool,std::vector<IndexT>> >& sfm_filenames_indexes){
++  // the index and strings will all be different is the thinking here
++
++  IndexT duplicates = 0;
++
++  for (auto iterViews = first.views.cbegin();
++        iterViews != first.views.cend();++iterViews){
++      const openMVG::sfm::View * view = iterViews->second.get();
++      std::string filename = view->s_Img_path;
++      IndexT index = view->id_view;
++      sfm_filenames_indexes.insert( std::make_pair(filename, std::make_pair(false, std::vector<IndexT>{index})) );
++  }
++
++  for (auto iterViews = second.views.cbegin();
++        iterViews != second.views.cend();++iterViews){
++      const openMVG::sfm::View * view = iterViews->second.get();
++      std::string filename = view->s_Img_path;
++      IndexT index = view->id_view;
++      
++      if(sfm_filenames_indexes.count(filename) > 0){
++        sfm_filenames_indexes[filename].second.push_back(index);
++        duplicates++;
++      }else{
++        sfm_filenames_indexes.insert( std::make_pair(filename, std::make_pair(false, std::vector<IndexT>{index})) );
++      }
++  }
++  if(duplicates>0){return true;}
++  return false;
++}
++
++bool getVecs2Align(const openMVG::sfm::SfM_Data& first, const openMVG::sfm::SfM_Data& second, 
++    openMVG::IndexT& overlap_amount, std::vector<openMVG::Vec3>& parent_vecs,
++    std::vector<openMVG::Vec3>& child_vecs,
++    std::map< std::string, std::pair<bool,std::vector<IndexT>> >& sfm_filenames_indexes)
++{
++  
++  IndexT counter=0;
++  std::vector<Pair> unused_cameras;
++
++  for(auto p: sfm_filenames_indexes){
++    std::pair<openMVG::IndexT, std::vector<openMVG::IndexT>> info = p.second;
++    if(info.second.size()<1){continue;}
++
++    IndexT p1 = info.second[0];
++    IndexT p2 = info.second[1];
++    try{
++      const View * view1 = first.views.at(p1).get();
++      const View * view2 = second.views.at(p2).get();
++
++      if(!first.IsPoseAndIntrinsicDefined(view1)){
++        OPENMVG_LOG_INFO << view1->id_view << " has no pose associated in parent";
++        unused_cameras.push_back(std::make_pair(p1,p2));
++      }
++      else if(!second.IsPoseAndIntrinsicDefined(view2)){
++        OPENMVG_LOG_INFO << view2->id_view << " has no pose associated in child";
++        unused_cameras.push_back(std::make_pair(p1,p2));
++      }
++      else{
++        parent_vecs[counter] = first.poses.at(view1->id_pose).center();
++        child_vecs[counter] = second.poses.at(view2->id_pose).center();
++        counter++;
++      }
++    }
++    catch(...){
++      //std::cout << "Views not used in final reconstructions" << std::endl;
++      unused_cameras.push_back(std::make_pair(p1,p2));
++    }
++  }
++
++  return false;
++}
++
++/// Compute a 7DOF rigid transform between the two camera trajectories
++bool computeSimilarity(
++  const std::vector<openMVG::Vec3> & vec_camPosGT,
++  const std::vector<openMVG::Vec3> & vec_camPosComputed,
++  std::vector<openMVG::Vec3> & vec_camPosComputed_T,
++  double *Sout, openMVG::Mat3 * Rout, openMVG::Vec3 * tout)
++{
++  if (vec_camPosGT.size() != vec_camPosComputed.size()) {
++    OPENMVG_LOG_ERROR << "Cannot perform registration, vector sizes are different";
++    return false;
++  }
++
++  // Move input point in appropriate container
++  openMVG::Mat x1(3, vec_camPosGT.size());
++  openMVG::Mat x2(3, vec_camPosGT.size());
++  for (size_t i = 0; i  < vec_camPosGT.size(); ++i) {
++    x1.col(i) = vec_camPosComputed[i];
++    x2.col(i) = vec_camPosGT[i];
++  }
++  // Compute rigid transformation p'i = S R pi + t
++
++  double S;
++  Vec3 t;
++  Mat3 R;
++  openMVG::geometry::FindRTS(x1, x2, &S, &t, &R);
++  OPENMVG_LOG_INFO << "Non linear refinement" << std::endl;
++  openMVG::geometry::Refine_RTS(x1,x2,&S,&t,&R);
++
++  vec_camPosComputed_T.resize(vec_camPosGT.size());
++  for (size_t i = 0; i  < vec_camPosGT.size(); ++i)
++  {
++    const Vec3 newPos = S * R * ( vec_camPosComputed[i]) + t;
++    vec_camPosComputed_T[i] = newPos;
++  }
++
++  *Sout = S;
++  *Rout = R;
++  *tout = t;
++  return true;
++}
++
++}//end of namespace sfm
++}//end of namespace openmvg
+\ No newline at end of file
+diff --git a/src/openMVG/sfm/sfm_data_merge.hpp b/src/openMVG/sfm/sfm_data_merge.hpp
+new file mode 100644
+index 0000000000..a3f36d022f
+--- /dev/null
++++ b/src/openMVG/sfm/sfm_data_merge.hpp
+@@ -0,0 +1,56 @@
++#ifndef OPENMVG_SFM_SFM_MERGE_HPP
++#define OPENMVG_SFM_SFM_MERGE_HPP
++
++#include <vector>
++#include <algorithm>
++#include <set>
++#include <iostream>
++
++#include "openMVG/sfm/sfm_data.hpp"
++#include "openMVG/sfm/sfm_data_io.hpp"
++
++#include "openMVG/geometry/rigid_transformation3D_srt.hpp"
++#include "openMVG/sfm/sfm_data_transform.hpp"
++
++#include "openMVG/system/logger.hpp"
++
++namespace openMVG {
++namespace sfm {
++
++std::set<IndexT> GetValidIntrinsicsIds(const SfM_Data& sfm_data1);
++
++std::set<IndexT> getCommonCameraIds(const SfM_Data& sfm_data_1, const SfM_Data& sfm_data_2);
++
++std::shared_ptr<cameras::IntrinsicBase> findBestIntrinsic(const SfM_Data& sfm_data_A, const SfM_Data& sfm_data_B, openMVG::IndexT cam_id);
++
++std::vector<std::string> newUniqueImages(const std::map< std::string, std::pair<bool,std::vector<IndexT>> >& sfm_filenames_indexes);
++
++// count the number of images that are duplicates
++openMVG::IndexT getNumberOverlapping(const std::map< std::string, std::pair<bool,std::vector<IndexT>> >& sfm_filenames_indexes);
++
++// print information of the overlap 
++std::string printOverlapInformation(const std::map< std::string, std::pair<bool,std::vector<IndexT>> >& sfm_filenames_indexes);
++
++/*
++*   This function gets the overlapping pairs of image names between 2 SfM scenes
++*   it returns bool if the scenes are Overlapping and the overlapping_pairs std::map
++*   contains a tuple with first element being the image name, index in scene 1 , index in scene 2
++*/
++bool getOverlappingImages(const openMVG::sfm::SfM_Data& first, const openMVG::sfm::SfM_Data& second, 
++    std::map< std::string, std::pair<bool,std::vector<IndexT>> >& sfm_filenames_indexes);
++
++bool getVecs2Align(const openMVG::sfm::SfM_Data& first, const openMVG::sfm::SfM_Data& second, 
++    openMVG::IndexT& overlap_amount, std::vector<openMVG::Vec3>& parent_vecs,
++    std::vector<openMVG::Vec3>& child_vecs,
++    std::map< std::string, std::pair<bool,std::vector<IndexT>> >& sfm_filenames_indexes);
++
++bool computeSimilarity(
++  const std::vector<openMVG::Vec3> & vec_camPosGT,
++  const std::vector<openMVG::Vec3> & vec_camPosComputed,
++  std::vector<openMVG::Vec3> & vec_camPosComputed_T,
++  double *Sout, openMVG::Mat3 * Rout, openMVG::Vec3 * tout);
++
++}//end of namespace sfm
++}//end of namespace openmvg
++
++#endif // OPENMVG_SFM_SFM_MERGE_HPP
+\ No newline at end of file
+diff --git a/src/software/SfM/CMakeLists.txt b/src/software/SfM/CMakeLists.txt
+index b272097212..008c94691b 100644
+--- a/src/software/SfM/CMakeLists.txt
++++ b/src/software/SfM/CMakeLists.txt
+@@ -174,6 +174,7 @@ target_link_libraries(openMVG_main_SfM
+     ${STLPLUS_LIBRARY}
+ )
+ 
++
+ add_executable(openMVG_main_ConvertSfM_DataFormat main_ConvertSfM_DataFormat.cpp)
+ target_link_libraries(openMVG_main_ConvertSfM_DataFormat
+   PRIVATE
+@@ -275,6 +276,30 @@ target_link_libraries(openMVG_main_SplitMatchFileIntoMatchFiles
+ set_property(TARGET openMVG_main_SplitMatchFileIntoMatchFiles PROPERTY FOLDER OpenMVG/software)
+ install(TARGETS openMVG_main_SplitMatchFileIntoMatchFiles DESTINATION bin/)
+ 
++# merge SfM files 
++add_executable(openMVG_main_MergeSfM main_MergeSfM.cpp)
++target_link_libraries(openMVG_main_MergeSfM
++  PRIVATE
++    openMVG_system
++    openMVG_image
++    openMVG_features
++    openMVG_sfm
++    ${STLPLUS_LIBRARY}
++)
++
++target_include_directories(openMVG_main_MergeSfM
++  PRIVATE
++    ${CERES_INCLUDE_DIRS}
++    ${EIGEN_INCLUDE_DIRS}
++  PUBLIC
++    $<INSTALL_INTERFACE:include>
++    $<INSTALL_INTERFACE:include/openMVG>
++)
++
++# Installation rules
++set_property(TARGET openMVG_main_MergeSfM PROPERTY FOLDER OpenMVG/software)
++install(TARGETS openMVG_main_MergeSfM DESTINATION bin/)
++
+ # -
+ # Use openCV Feature detector to describe the images
+ # -
+diff --git a/src/software/SfM/main_MergeSfM.cpp b/src/software/SfM/main_MergeSfM.cpp
+new file mode 100644
+index 0000000000..bc3e5cbad1
+--- /dev/null
++++ b/src/software/SfM/main_MergeSfM.cpp
+@@ -0,0 +1,324 @@
++// This file is part of OpenMVG, an Open Multiple View Geometry C++ library.
++
++// Copyright (c) 2012, 2021 Pierre MOULON.
++
++// This Source Code Form is subject to the terms of the Mozilla Public
++// License, v. 2.0. If a copy of the MPL was not distributed with this
++// file, You can obtain one at http://mozilla.org/MPL/2.0/.
++
++#include "openMVG/cameras/Camera_Common.hpp"
++#include "openMVG/cameras/Cameras_Common_command_line_helper.hpp"
++
++#include "openMVG/sfm/pipelines/sfm_features_provider.hpp"
++#include "openMVG/sfm/pipelines/sfm_matches_provider.hpp"
++#include "openMVG/sfm/sfm_data.hpp"
++#include "openMVG/sfm/sfm_data_io.hpp"
++#include "openMVG/sfm/sfm_data_filters.hpp"
++#include "openMVG/sfm/sfm_data_BA.hpp"
++#include "openMVG/sfm/sfm_report.hpp"
++#include "openMVG/sfm/sfm_view.hpp"
++#include "openMVG/system/timer.hpp"
++#include "openMVG/types.hpp"
++
++#include "openMVG/sfm/sfm_data_merge.hpp"
++
++#include "openMVG/sfm/sfm_data_utils.hpp"
++
++#include "third_party/cmdLine/cmdLine.h"
++#include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
++
++#include "openMVG/geometry/rigid_transformation3D_srt.hpp"
++#include "openMVG/sfm/sfm_data_transform.hpp"
++#include "openMVG/system/timer.hpp"
++
++#include <cstdlib>
++#include <memory>
++#include <string>
++#include <utility>
++#include <algorithm>
++#include <unordered_set>
++#include <filesystem>
++
++#include "openMVG/sfm/pipelines/global/GlobalSfM_rotation_averaging.hpp"
++#include "openMVG/sfm/pipelines/global/GlobalSfM_translation_averaging.hpp"
++
++#ifdef OPENMVG_USE_OPENMP
++#include <omp.h>
++#endif
++
++using namespace openMVG;
++using namespace openMVG::cameras;
++using namespace openMVG::sfm;
++
++enum class ESfMSceneInitializer
++{
++  INITIALIZE_EXISTING_POSES,
++  INITIALIZE_MAX_PAIR,
++  INITIALIZE_AUTO_PAIR,
++  INITIALIZE_STELLAR
++};
++
++enum class ESfMEngine
++{
++  INCREMENTAL,
++  INCREMENTALV2,
++  GLOBAL
++};
++
++bool StringToEnum
++(
++  const std::string & str,
++  ESfMEngine & sfm_engine
++)
++{
++  const std::map<std::string, ESfMEngine> string_to_enum_mapping =
++  {
++    {"INCREMENTAL", ESfMEngine::INCREMENTAL},
++    {"INCREMENTALV2", ESfMEngine::INCREMENTALV2},
++    {"GLOBAL", ESfMEngine::GLOBAL},
++  };
++  const auto it  = string_to_enum_mapping.find(str);
++  if (it == string_to_enum_mapping.end())
++    return false;
++  sfm_engine = it->second;
++  return true;
++}
++
++int main(int argc, char **argv)
++{
++  using namespace std;
++  OPENMVG_LOG_INFO
++      << "\n-----------------------------------------------------------"
++      << "\n Structure from Motion:"
++      << "\n-----------------------------------------------------------";
++  CmdLine cmd;
++
++  // Common options:
++  std::string
++      filename_sfm_data,
++      filename_sfm_data_child,
++      directory_match,
++      filename_match,
++      directory_output,
++      engine_name = "GLOBAL";
++
++  // Bundle adjustment options:
++  std::string sIntrinsic_refinement_options = "ADJUST_ALL";
++  std::string sExtrinsic_refinement_options = "ADJUST_ALL";
++  bool b_use_motion_priors = false;
++  bool preform_final_ba = false;
++
++  // Incremental SfM options
++  /*
++  int triangulation_method = static_cast<int>(ETriangulationMethod::DEFAULT);
++  int resection_method  = static_cast<int>(resection::SolverType::DEFAULT);
++  */
++  int user_camera_model = PINHOLE_CAMERA_RADIAL3;
++  
++
++  // Global SfM
++  int rotation_averaging_method = int (ROTATION_AVERAGING_L2);
++  int translation_averaging_method = int (TRANSLATION_AVERAGING_SOFTL1);
++
++
++  // Common options
++  cmd.add( make_option('i', filename_sfm_data, "main_sfm_file") );
++  cmd.add( make_option('c', filename_sfm_data_child, "second_sfm_file") );
++  cmd.add( make_option('o', directory_output, "output") );
++  
++  cmd.add( make_option('s', engine_name, "sfm_engine") );
++
++  // Bundle adjustment options
++  cmd.add( make_option('f', sIntrinsic_refinement_options, "refine_intrinsic_config") );
++  cmd.add( make_option('e', sExtrinsic_refinement_options, "refine_extrinsic_config") );
++  cmd.add( make_switch('P', "prior_usage") );
++  cmd.add( make_switch('B', "final_ba") );
++
++  // Global SfM
++  cmd.add( make_option('R', rotation_averaging_method, "rotationAveraging") );
++  cmd.add( make_option('T', translation_averaging_method, "translationAveraging") );
++
++  try {
++    if (argc == 1) throw std::string("Invalid parameter.");
++    cmd.process(argc, argv);
++  } catch (const std::string& s) {
++
++    OPENMVG_LOG_INFO << "Usage: " << argv[0] << '\n'
++      << "[Required]\n"
++      << "[-i|--main_sfm_file] path to the parent SfM_Data scene\n"
++      << "[-c|--second_sfm_file] path to the child SfM_Data scene to merge\n"
++      << "[-o|--output_dir] path where the output data will be stored\n"
++      << "[-s|--sfm_engine] Type of SfM Engine to use for the reconstruction\n"
++      << "\t GLOBAL    : initialize globally rotation and translations\n"
++      << "\n\n"
++      << "[Optional parameters]\n"
++      << "\n\n"
++      << "[Common]\n"
++      << "[-M|--match_file] path to the match file to use (i.e matches.f.txt or matches.f.bin)\n"
++      << "[-f|--refine_extrinsic_config] Intrinsic parameters refinement option\n"
++      << "\t ADJUST_ALL -> refine all existing parameters (default) \n"
++      << "\t NONE -> intrinsic parameters are held as constant\n"
++      << "\t ADJUST_FOCAL_LENGTH -> refine only the focal length\n"
++      << "\t ADJUST_PRINCIPAL_POINT -> refine only the principal point position\n"
++      << "\t ADJUST_DISTORTION -> refine only the distortion coefficient(s) (if any)\n"
++      << "\t -> NOTE: options can be combined thanks to '|'\n"
++      << "\t ADJUST_FOCAL_LENGTH|ADJUST_PRINCIPAL_POINT\n"
++      <<    "\t\t-> refine the focal length & the principal point position\n"
++      << "\t ADJUST_FOCAL_LENGTH|ADJUST_DISTORTION\n"
++      <<    "\t\t-> refine the focal length & the distortion coefficient(s) (if any)\n"
++      << "\t ADJUST_PRINCIPAL_POINT|ADJUST_DISTORTION\n"
++      <<    "\t\t-> refine the principal point position & the distortion coefficient(s) (if any)\n"
++      << "[-e|--refine_extrinsic_config] Extrinsic parameters refinement option\n"
++      << "\t ADJUST_ALL -> refine all existing parameters (default) \n"
++      << "\t NONE -> extrinsic parameters are held as constant\n"
++      << "[-P|--prior_usage] Enable usage of motion priors (i.e GPS positions) (default: false)\n"
++      << "[-B|--preform_final_ba] Run a final bundle adjustment on the merge operation (default: false)\n"
++      << "\n\n"
++      << "[Engine specifics]\n"
++      << "[GLOBAL]\n"
++      << "\t[-R|--rotationAveraging]\n"
++      << "\t\t 1 -> L1 minimization\n"
++      << "\t\t 2 -> L2 minimization (default)\n"
++      << "\t[-T|--translationAveraging]:\n"
++      << "\t\t 1 -> L1 minimization\n"
++      << "\t\t 2 -> L2 minimization of sum of squared Chordal distances\n"
++      << "\t\t 3 -> SoftL1 minimization (default)\n"
++      << "\t\t 4 -> LiGT: Linear Global Translation constraints from rotation and matches\n";
++
++    OPENMVG_LOG_ERROR << s;
++    return EXIT_FAILURE;
++  }
++
++  b_use_motion_priors = cmd.used('P');
++  preform_final_ba = cmd.used('B');
++
++/*
++  // Check validity of command line parameters:
++  if ( !isValid(static_cast<ETriangulationMethod>(triangulation_method))) {
++    OPENMVG_LOG_ERROR << "Invalid triangulation method";
++    return EXIT_FAILURE;
++  }
++  */
++
++  if ( !isValid(openMVG::cameras::EINTRINSIC(user_camera_model)) )  {
++    OPENMVG_LOG_ERROR << "Invalid camera type";
++    return EXIT_FAILURE;
++  }
++
++  const cameras::Intrinsic_Parameter_Type intrinsic_refinement_options =
++      cameras::StringTo_Intrinsic_Parameter_Type(sIntrinsic_refinement_options);
++  if (intrinsic_refinement_options == static_cast<cameras::Intrinsic_Parameter_Type>(0) )
++  {
++    OPENMVG_LOG_ERROR << "Invalid input for Bundle Adjustment Intrinsic parameter refinement option";
++    return EXIT_FAILURE;
++  }
++
++  const sfm::Extrinsic_Parameter_Type extrinsic_refinement_options =
++      sfm::StringTo_Extrinsic_Parameter_Type(sExtrinsic_refinement_options);
++  if (extrinsic_refinement_options == static_cast<sfm::Extrinsic_Parameter_Type>(0) )
++  {
++    OPENMVG_LOG_ERROR << "Invalid input for the Bundle Adjustment Extrinsic parameter refinement option";
++    return EXIT_FAILURE;
++  }
++
++  ESfMEngine sfm_engine_type;
++  if (!StringToEnum(engine_name, sfm_engine_type))
++  {
++    OPENMVG_LOG_ERROR << "Invalid input for the SfM Engine type";
++    return EXIT_FAILURE;
++  }
++
++  if (rotation_averaging_method < ROTATION_AVERAGING_L1 ||
++      rotation_averaging_method > ROTATION_AVERAGING_L2 )  {
++    OPENMVG_LOG_ERROR << "Rotation averaging method is invalid";
++    return EXIT_FAILURE;
++  }
++
++#ifndef USE_PATENTED_LIGT
++  if (translation_averaging_method == TRANSLATION_LIGT) {
++    OPENMVG_LOG_ERROR << "OpenMVG was not compiled with USE_PATENTED_LIGT cmake option";
++    return EXIT_FAILURE;
++  }
++#endif
++  if (translation_averaging_method < TRANSLATION_AVERAGING_L1 ||
++      translation_averaging_method > TRANSLATION_LIGT )  {
++    OPENMVG_LOG_ERROR << "Translation averaging method is invalid";
++    return EXIT_FAILURE;
++  }
++
++  if (directory_output.empty())  {
++    OPENMVG_LOG_ERROR << "It is an invalid output directory";
++    return EXIT_FAILURE;
++  }
++
++  // SfM related
++  OPENMVG_LOG_INFO << "main SfM:\n"<< filename_sfm_data;
++  // Load input SfM_Data scene
++  SfM_Data sfm_data,child_sfm_data;
++  if (!Load(sfm_data, filename_sfm_data, openMVG::sfm::ESfM_Data(openMVG::sfm::ALL))) {
++    OPENMVG_LOG_ERROR << "The input SfM_Data file \""<< filename_sfm_data << "\" cannot be read.";
++    return EXIT_FAILURE;
++  }
++  OPENMVG_LOG_INFO << "second SfM:\n"<< filename_sfm_data_child;
++
++  if (!Load(child_sfm_data, filename_sfm_data_child, openMVG::sfm::ESfM_Data(openMVG::sfm::ALL))) {
++    OPENMVG_LOG_ERROR << "The input SfM_Data file \""<< filename_sfm_data_child << "\" cannot be read.";
++    return EXIT_FAILURE;
++  }
++
++  if (!stlplus::folder_exists(directory_output))
++  {
++    if (!stlplus::folder_create(directory_output))
++    {
++      OPENMVG_LOG_ERROR << "Cannot create the output directory";
++      return EXIT_FAILURE;
++    }
++  }
++
++  //---------------------------------------
++  // GLOBAL reconstruction merging operation
++  //---------------------------------------
++
++  IndexT start_views = sfm_data.views.size();
++  IndexT start_poses = sfm_data.poses.size();
++  IndexT start_tracks = sfm_data.structure.size();
++
++  std::cout << "#Main SfM Views:" << start_views  << " #Secondary SfM Views:" << child_sfm_data.views.size() << std::endl;
++
++  openMVG::system::Timer timer;
++  
++  std::shared_ptr<cameras::IntrinsicBase> best_camera = findBestIntrinsic(sfm_data,child_sfm_data,0);
++
++  std::cout << "Best camera : " << best_camera << std::endl;
++
++  // this contains the name of the file, whether it's new for the first scene and the indexes it occurs in each SfM scene
++  std::map< std::string, std::pair<bool,std::vector<IndexT>> > sfm_filenames_indexes;
++
++  // we'll read in the filenames and id's within the SfM scenes
++  bool has_overlap = getOverlappingImages(sfm_data, child_sfm_data, sfm_filenames_indexes);
++  // first is do a simple overlap test
++  if(has_overlap){
++    std::cout << "Do datasets have overlap: true" << std::endl;
++  }else{
++    std::cout << "Do datasets have overlap: false" << std::endl;
++  }
++  // next we'll see if it's enough to register the two scenes
++  int overlap_amount = getNumberOverlapping(sfm_filenames_indexes);
++
++  OPENMVG_LOG_INFO  << "Overlap amount: " << overlap_amount;
++
++  if(overlap_amount < 6){
++    OPENMVG_LOG_ERROR << "Too few images to merge correctly, only " << overlap_amount << " overlapping images found";
++    return EXIT_FAILURE;
++  }
++
++  std::string overlap_printout = printOverlapInformation(sfm_filenames_indexes);
++
++  //OPENMVG_LOG_INFO << overlap_printout;
++
++  //bool has_alignableVecs = getVecs2Align();
++  
++  //return EXIT_SUCCESS;
++  //return EXIT_FAILURE
++  return EXIT_SUCCESS;
++}
+
+From 5d04cef23a018281a7432cb17f8a864955ddad8f Mon Sep 17 00:00:00 2001
+From: evanokeeffe <evanokeeffe@gmail.com>
+Date: Wed, 22 Jan 2025 21:25:13 -0300
+Subject: [PATCH 5/9] starting the new merge functions, after that it's
+ landmarks, then BA then outputs
+
+---
+ src/openMVG/sfm/sfm_data_merge.cpp | 83 +++++++++++++++++++++++++++++-
+ src/openMVG/sfm/sfm_data_merge.hpp |  6 ++-
+ src/software/SfM/main_MergeSfM.cpp | 39 ++++++++++++--
+ 3 files changed, 122 insertions(+), 6 deletions(-)
+
+diff --git a/src/openMVG/sfm/sfm_data_merge.cpp b/src/openMVG/sfm/sfm_data_merge.cpp
+index 0e2bb6c725..c7d5701358 100644
+--- a/src/openMVG/sfm/sfm_data_merge.cpp
++++ b/src/openMVG/sfm/sfm_data_merge.cpp
+@@ -194,20 +194,24 @@ bool getOverlappingImages(const openMVG::sfm::SfM_Data& first, const openMVG::sf
+ }
+ 
+ bool getVecs2Align(const openMVG::sfm::SfM_Data& first, const openMVG::sfm::SfM_Data& second, 
+-    openMVG::IndexT& overlap_amount, std::vector<openMVG::Vec3>& parent_vecs,
++    std::vector<openMVG::Vec3>& parent_vecs,
+     std::vector<openMVG::Vec3>& child_vecs,
+     std::map< std::string, std::pair<bool,std::vector<IndexT>> >& sfm_filenames_indexes)
+ {
++  parent_vecs.clear();
++  child_vecs.clear();
+   
+   IndexT counter=0;
+   std::vector<Pair> unused_cameras;
+ 
+   for(auto p: sfm_filenames_indexes){
+     std::pair<openMVG::IndexT, std::vector<openMVG::IndexT>> info = p.second;
+-    if(info.second.size()<1){continue;}
++    // lets make sure we have index in each SfM scene
++    if(info.second.size()<2){continue;}
+ 
+     IndexT p1 = info.second[0];
+     IndexT p2 = info.second[1];
++
+     try{
+       const View * view1 = first.views.at(p1).get();
+       const View * view2 = second.views.at(p2).get();
+@@ -232,6 +236,10 @@ bool getVecs2Align(const openMVG::sfm::SfM_Data& first, const openMVG::sfm::SfM_
+     }
+   }
+ 
++  if(parent_vecs.size() == child_vecs.size() && parent_vecs.size()>3){
++    return true;
++  }
++
+   return false;
+ }
+ 
+@@ -276,5 +284,76 @@ bool computeSimilarity(
+   return true;
+ }
+ 
++bool mergeSfMScenes(openMVG::sfm::SfM_Data& sfm_data, openMVG::sfm::SfM_Data& child_sfm_data, 
++   const double S, const openMVG::Mat3 R, const openMVG::Vec3 T,
++   const std::map< std::string, std::pair<bool,std::vector<IndexT>> >& sfm_filenames_indexes
++){
++    // references
++    Views & parent_views = sfm_data.views;
++    Poses & parent_poses = sfm_data.poses;
++
++    Views & child_views = child_sfm_data.views;
++    Poses & child_poses = child_sfm_data.poses;
++
++    IndexT parent_views_size = parent_views.size();
++
++    std::set<IndexT> remove_track_ids = std::set<IndexT>();
++  
++    for(auto & iterV : child_views){
++        ViewPriors *prior = dynamic_cast<sfm::ViewPriors*>(iterV.second.get());
++        IndexT id_view = prior->id_view;
++        IndexT id_pose = prior->id_pose;
++
++        // if the pose for the parent exists then we skip, if the pose doesn't we use 
++        // the child scenes pose and update the parents
++        if(child_overlap_ids.find(id_view) != child_overlap_ids.end()){
++
++        for(auto p: common_ids){
++            if(p.second!=id_view){continue;}
++            const View * view1 = sfm_data.views.at(p.first).get();
++            const View * view2 = child_sfm_data.views.at(p.second).get();
++
++            if(!sfm_data.IsPoseAndIntrinsicDefined(view1) && child_sfm_data.IsPoseAndIntrinsicDefined(view2)){
++                std::cout << "Pose reinstiated from child sfm scene " << std::endl;
++
++                Pose3 pose = child_poses.at(view2->id_pose);
++                Vec3 nloc = S * R * ( pose.center() ) + t; // update the camera position to the reference scene
++                Pose3 npose = Pose3(pose.rotation(),nloc);
++
++                parent_poses[view1->id_pose] = npose;
++
++                break;
++            }
++        }
++
++            continue;
++        }
++
++        // need to store the new view id to modify the observation ids
++        new_view_pairings.insert(Pair(id_view,parent_views_size));
++
++        // if there's a pose then modify the pose position
++        if (child_sfm_data.IsPoseAndIntrinsicDefined(prior)){
++            // image was not used in reconstruction
++            // use the similarity transform and generate the new poses
++            Pose3 pose = child_poses.at(id_pose);
++            Vec3 nloc = S * R * ( pose.center() ) + T; // update the camera position to the reference scene
++            Pose3 npose = Pose3(pose.rotation(),nloc);
++
++            parent_poses[parent_views_size] = npose;
++
++        }else{
++            remove_track_ids.insert(id_view);
++        }
++
++        prior->id_view = parent_views_size;// new view id 
++        prior->id_pose = parent_views_size;// new pose id
++
++        parent_views[parent_views_size] = std::make_shared<ViewPriors>(*prior);
++
++        parent_views_size++;
++  }
++}
++
+ }//end of namespace sfm
+ }//end of namespace openmvg
+\ No newline at end of file
+diff --git a/src/openMVG/sfm/sfm_data_merge.hpp b/src/openMVG/sfm/sfm_data_merge.hpp
+index a3f36d022f..ce7f451545 100644
+--- a/src/openMVG/sfm/sfm_data_merge.hpp
++++ b/src/openMVG/sfm/sfm_data_merge.hpp
+@@ -40,7 +40,7 @@ bool getOverlappingImages(const openMVG::sfm::SfM_Data& first, const openMVG::sf
+     std::map< std::string, std::pair<bool,std::vector<IndexT>> >& sfm_filenames_indexes);
+ 
+ bool getVecs2Align(const openMVG::sfm::SfM_Data& first, const openMVG::sfm::SfM_Data& second, 
+-    openMVG::IndexT& overlap_amount, std::vector<openMVG::Vec3>& parent_vecs,
++    std::vector<openMVG::Vec3>& parent_vecs,
+     std::vector<openMVG::Vec3>& child_vecs,
+     std::map< std::string, std::pair<bool,std::vector<IndexT>> >& sfm_filenames_indexes);
+ 
+@@ -50,6 +50,10 @@ bool computeSimilarity(
+   std::vector<openMVG::Vec3> & vec_camPosComputed_T,
+   double *Sout, openMVG::Mat3 * Rout, openMVG::Vec3 * tout);
+ 
++bool mergeSfMScenes(openMVG::sfm::SfM_Data& sfm_data, openMVG::sfm::SfM_Data& child_sfm_data, 
++   const double S, const openMVG::Mat3 R, const openMVG::Vec3 T,
++   const std::map< std::string, std::pair<bool,std::vector<IndexT>> >& sfm_filenames_indexes);
++
+ }//end of namespace sfm
+ }//end of namespace openmvg
+ 
+diff --git a/src/software/SfM/main_MergeSfM.cpp b/src/software/SfM/main_MergeSfM.cpp
+index bc3e5cbad1..86c73bc356 100644
+--- a/src/software/SfM/main_MergeSfM.cpp
++++ b/src/software/SfM/main_MergeSfM.cpp
+@@ -303,7 +303,7 @@ int main(int argc, char **argv)
+     std::cout << "Do datasets have overlap: false" << std::endl;
+   }
+   // next we'll see if it's enough to register the two scenes
+-  int overlap_amount = getNumberOverlapping(sfm_filenames_indexes);
++  IndexT overlap_amount = getNumberOverlapping(sfm_filenames_indexes);
+ 
+   OPENMVG_LOG_INFO  << "Overlap amount: " << overlap_amount;
+ 
+@@ -312,12 +312,45 @@ int main(int argc, char **argv)
+     return EXIT_FAILURE;
+   }
+ 
+-  std::string overlap_printout = printOverlapInformation(sfm_filenames_indexes);
++  // this could be used to print a report of the overlap information
++  //std::string overlap_printout = printOverlapInformation(sfm_filenames_indexes);
+ 
+   //OPENMVG_LOG_INFO << overlap_printout;
+ 
+-  //bool has_alignableVecs = getVecs2Align();
++  std::vector<openMVG::Vec3> first_vecs,second_vecs,result_vecs;
++  first_vecs.reserve(overlap_amount);
++  second_vecs.reserve(overlap_amount);
++
++  bool has_alignableVecs = getVecs2Align(sfm_data, child_sfm_data, first_vecs, second_vecs, sfm_filenames_indexes);
+   
++  if(!has_alignableVecs){
++    OPENMVG_LOG_ERROR << "Not enough poses in both SfM scenes for images that exist in both scenes";
++    OPENMVG_LOG_ERROR << "maybe try a higher overlap to increase likelyhood of success";
++    return EXIT_FAILURE;
++  }
++
++  Mat3 R;
++  Vec3 t;
++  double S;
++
++  OPENMVG_LOG_INFO << "Calculating similarity transform:";
++
++  bool p_res = computeSimilarity(first_vecs, second_vecs, result_vecs, &S, &R, &t);
++
++  if(!p_res){
++    OPENMVG_LOG_ERROR << " SRT transform failed to get a stable lock ";
++    return EXIT_FAILURE;
++  }
++
++  OPENMVG_LOG_INFO << "Beginning the SRT transforms of views in scene two";
++
++  bool merge_success = mergeSfMScenes(sfm_data, child_sfm_data, S,R,T,sfm_filenames_indexes);
++
++  if(!merge_success){
++    OPENMVG_LOG_ERROR << " Merging the scenes failed";
++    return EXIT_FAILURE;
++  }
++
+   //return EXIT_SUCCESS;
+   //return EXIT_FAILURE
+   return EXIT_SUCCESS;
+
+From c2acd9ef31f711e3735be9e9a937421807a6d493 Mon Sep 17 00:00:00 2001
+From: evanokeeffe <evanokeeffe@gmail.com>
+Date: Fri, 24 Jan 2025 14:38:44 -0300
+Subject: [PATCH 6/9] fixed SRT, now onto the merge and SRT corrections
+
+---
+ src/openMVG/sfm/sfm_data_merge.cpp | 86 ++++++++++++++++++++++++++----
+ src/openMVG/sfm/sfm_data_merge.hpp |  4 +-
+ src/software/SfM/main_MergeSfM.cpp | 36 ++++++++++---
+ 3 files changed, 108 insertions(+), 18 deletions(-)
+
+diff --git a/src/openMVG/sfm/sfm_data_merge.cpp b/src/openMVG/sfm/sfm_data_merge.cpp
+index c7d5701358..8e856e00c6 100644
+--- a/src/openMVG/sfm/sfm_data_merge.cpp
++++ b/src/openMVG/sfm/sfm_data_merge.cpp
+@@ -194,12 +194,10 @@ bool getOverlappingImages(const openMVG::sfm::SfM_Data& first, const openMVG::sf
+ }
+ 
+ bool getVecs2Align(const openMVG::sfm::SfM_Data& first, const openMVG::sfm::SfM_Data& second, 
+-    std::vector<openMVG::Vec3>& parent_vecs,
+-    std::vector<openMVG::Vec3>& child_vecs,
++    std::vector<openMVG::Vec3> *parent_vecs,
++    std::vector<openMVG::Vec3> *child_vecs,
+     std::map< std::string, std::pair<bool,std::vector<IndexT>> >& sfm_filenames_indexes)
+ {
+-  parent_vecs.clear();
+-  child_vecs.clear();
+   
+   IndexT counter=0;
+   std::vector<Pair> unused_cameras;
+@@ -208,10 +206,12 @@ bool getVecs2Align(const openMVG::sfm::SfM_Data& first, const openMVG::sfm::SfM_
+     std::pair<openMVG::IndexT, std::vector<openMVG::IndexT>> info = p.second;
+     // lets make sure we have index in each SfM scene
+     if(info.second.size()<2){continue;}
+-
++    
+     IndexT p1 = info.second[0];
+     IndexT p2 = info.second[1];
+ 
++    //OPENMVG_LOG_INFO << p1 << "," << p2;
++
+     try{
+       const View * view1 = first.views.at(p1).get();
+       const View * view2 = second.views.at(p2).get();
+@@ -225,8 +225,8 @@ bool getVecs2Align(const openMVG::sfm::SfM_Data& first, const openMVG::sfm::SfM_
+         unused_cameras.push_back(std::make_pair(p1,p2));
+       }
+       else{
+-        parent_vecs[counter] = first.poses.at(view1->id_pose).center();
+-        child_vecs[counter] = second.poses.at(view2->id_pose).center();
++        parent_vecs -> push_back(first.poses.at(view1->id_pose).center());
++        child_vecs -> push_back( second.poses.at(view2->id_pose).center() );
+         counter++;
+       }
+     }
+@@ -236,7 +236,7 @@ bool getVecs2Align(const openMVG::sfm::SfM_Data& first, const openMVG::sfm::SfM_
+     }
+   }
+ 
+-  if(parent_vecs.size() == child_vecs.size() && parent_vecs.size()>3){
++  if(parent_vecs->size() == child_vecs->size() && parent_vecs->size()>3){
+     return true;
+   }
+ 
+@@ -268,7 +268,7 @@ bool computeSimilarity(
+   Vec3 t;
+   Mat3 R;
+   openMVG::geometry::FindRTS(x1, x2, &S, &t, &R);
+-  OPENMVG_LOG_INFO << "Non linear refinement" << std::endl;
++  //OPENMVG_LOG_INFO << "Non linear refinement" << std::endl;
+   openMVG::geometry::Refine_RTS(x1,x2,&S,&t,&R);
+ 
+   vec_camPosComputed_T.resize(vec_camPosGT.size());
+@@ -288,6 +288,7 @@ bool mergeSfMScenes(openMVG::sfm::SfM_Data& sfm_data, openMVG::sfm::SfM_Data& ch
+    const double S, const openMVG::Mat3 R, const openMVG::Vec3 T,
+    const std::map< std::string, std::pair<bool,std::vector<IndexT>> >& sfm_filenames_indexes
+ ){
++    /*
+     // references
+     Views & parent_views = sfm_data.views;
+     Poses & parent_poses = sfm_data.poses;
+@@ -352,7 +353,72 @@ bool mergeSfMScenes(openMVG::sfm::SfM_Data& sfm_data, openMVG::sfm::SfM_Data& ch
+         parent_views[parent_views_size] = std::make_shared<ViewPriors>(*prior);
+ 
+         parent_views_size++;
+-  }
++    }
++
++    std::cout << "Views with no poses: " << remove_track_ids.size() << std::endl;
++
++    std::string root_directory = directory_output.substr(0, directory_output.find_last_of("/\\"));
++    root_directory = root_directory.substr(0, root_directory.find_last_of("/\\"));
++
++    sfm_data.s_root_path = stlplus::create_filespec(root_directory, "Originals");
++    Landmarks child_tracks = child_sfm_data.GetLandmarks();
++
++    IndexT new_track_counter = sfm_data.structure.size();
++    IndexT original_track_num = sfm_data.structure.size();
++    // first update the landmarks in the child scene to the reference frame of the first
++    for (auto& track: child_tracks)
++    {
++        IndexT track_id = track.first;
++        Landmark landmark = track.second;
++    
++        Observations new_observations;
++        for (auto& iterOb: landmark.obs)
++        {
++            IndexT id_view = iterOb.first;
++            // need to update the view_id to the most up to date
++            if(child_overlap_ids.find(id_view) != child_overlap_ids.end()){
++                // it's one of the overlapping features
++                for(auto id: common_ids){
++                    if(id.second == id_view){//child observation is an overlap observation
++                        id_view = id.first;
++                        break;
++                    }
++                }
++            }else{
++                for( auto np: new_view_pairings){
++                    if(np.first == id_view){
++                        id_view = np.second;
++                    }
++                }
++            }
++
++            try{
++                const View * view = sfm_data.views.at(id_view).get();
++                if(!sfm_data.IsPoseAndIntrinsicDefined(view)){
++                    std::cerr << "Pose not defined for view " << id_view << std::endl;
++                    continue;
++                }
++            }catch(...){
++                std::cerr << "View id does not exist " << id_view << std::endl;
++                continue;
++            }
++        
++
++            // view id will have been updated by now, just have to insert it
++            //iterOb.second.id_feat
++            new_observations.insert({id_view,Observation(iterOb.second.x, UndefinedIndexT)});
++            // new observations will have been added
++        }
++
++        Landmark new_landmark;
++        new_landmark.X = S * R * ( landmark.X ) + t;
++        new_landmark.obs = new_observations;
++
++        sfm_data.structure[new_track_counter++] = std::move( new_landmark );
++    }
++    */
++
++    return true;
+ }
+ 
+ }//end of namespace sfm
+diff --git a/src/openMVG/sfm/sfm_data_merge.hpp b/src/openMVG/sfm/sfm_data_merge.hpp
+index ce7f451545..1c458e938e 100644
+--- a/src/openMVG/sfm/sfm_data_merge.hpp
++++ b/src/openMVG/sfm/sfm_data_merge.hpp
+@@ -40,8 +40,8 @@ bool getOverlappingImages(const openMVG::sfm::SfM_Data& first, const openMVG::sf
+     std::map< std::string, std::pair<bool,std::vector<IndexT>> >& sfm_filenames_indexes);
+ 
+ bool getVecs2Align(const openMVG::sfm::SfM_Data& first, const openMVG::sfm::SfM_Data& second, 
+-    std::vector<openMVG::Vec3>& parent_vecs,
+-    std::vector<openMVG::Vec3>& child_vecs,
++    std::vector<openMVG::Vec3> *parent_vecs,
++    std::vector<openMVG::Vec3> *child_vecs,
+     std::map< std::string, std::pair<bool,std::vector<IndexT>> >& sfm_filenames_indexes);
+ 
+ bool computeSimilarity(
+diff --git a/src/software/SfM/main_MergeSfM.cpp b/src/software/SfM/main_MergeSfM.cpp
+index 86c73bc356..df56a94cca 100644
+--- a/src/software/SfM/main_MergeSfM.cpp
++++ b/src/software/SfM/main_MergeSfM.cpp
+@@ -318,11 +318,11 @@ int main(int argc, char **argv)
+   //OPENMVG_LOG_INFO << overlap_printout;
+ 
+   std::vector<openMVG::Vec3> first_vecs,second_vecs,result_vecs;
+-  first_vecs.reserve(overlap_amount);
+-  second_vecs.reserve(overlap_amount);
+ 
+-  bool has_alignableVecs = getVecs2Align(sfm_data, child_sfm_data, first_vecs, second_vecs, sfm_filenames_indexes);
++  bool has_alignableVecs = getVecs2Align(sfm_data, child_sfm_data, &first_vecs, &second_vecs, sfm_filenames_indexes);
+   
++  OPENMVG_LOG_INFO << first_vecs.size() << " " << second_vecs.size();
++
+   if(!has_alignableVecs){
+     OPENMVG_LOG_ERROR << "Not enough poses in both SfM scenes for images that exist in both scenes";
+     OPENMVG_LOG_ERROR << "maybe try a higher overlap to increase likelyhood of success";
+@@ -330,27 +330,51 @@ int main(int argc, char **argv)
+   }
+ 
+   Mat3 R;
+-  Vec3 t;
++  Vec3 T;
+   double S;
+ 
+   OPENMVG_LOG_INFO << "Calculating similarity transform:";
+ 
+-  bool p_res = computeSimilarity(first_vecs, second_vecs, result_vecs, &S, &R, &t);
++  bool p_res = computeSimilarity(first_vecs, second_vecs, result_vecs, &S, &R, &T);
+ 
+   if(!p_res){
+     OPENMVG_LOG_ERROR << " SRT transform failed to get a stable lock ";
+     return EXIT_FAILURE;
+   }
+ 
++  OPENMVG_LOG_INFO << "SRT calculated";
++
+   OPENMVG_LOG_INFO << "Beginning the SRT transforms of views in scene two";
+ 
+-  bool merge_success = mergeSfMScenes(sfm_data, child_sfm_data, S,R,T,sfm_filenames_indexes);
++  bool merge_success = mergeSfMScenes(sfm_data, child_sfm_data, S, R, T, sfm_filenames_indexes);
+ 
+   if(!merge_success){
+     OPENMVG_LOG_ERROR << " Merging the scenes failed";
+     return EXIT_FAILURE;
+   }
+ 
++  // use the best camera for the scene
++  sfm_data.intrinsics[0] = best_camera;
++  // group the shared intrinsics
++  GroupSharedIntrinsics(sfm_data);
++
++  if(preform_final_ba){
++    OPENMVG_LOG_INFO << "";
++  }
++  
++  OPENMVG_LOG_INFO << "...Export SfM_Data to disk.";
++
++  Generate_SfM_Report(sfm_data,
++    stlplus::create_filespec(directory_output, "SfMReconstruction_Report.html"));
++
++  Save(sfm_data,
++    stlplus::create_filespec(directory_output, "sfm_data", ".bin"),
++    ESfM_Data(ALL));
++
++  Save(sfm_data,
++     stlplus::create_filespec(directory_output, "cloud_and_poses", "ply"),
++     ESfM_Data(ALL));
++
+   //return EXIT_SUCCESS;
+   //return EXIT_FAILURE
+   return EXIT_SUCCESS;
+
+From 102b777898fbb00272be3dce5ed77e3fe2d36ec3 Mon Sep 17 00:00:00 2001
+From: evanokeeffe <evanokeeffe@gmail.com>
+Date: Sun, 26 Jan 2025 10:13:48 -0300
+Subject: [PATCH 7/9] ok the merge has an issue in it, during BA it's taking
+ far to long for the final alignment to occur, it's outputing but it's not
+ correct or taking the amount of time it should be
+
+---
+ src/openMVG/sfm/sfm_data_merge.cpp | 80 +++++++++++++++++++---------
+ src/openMVG/sfm/sfm_data_merge.hpp |  9 ++++
+ src/software/SfM/main_MergeSfM.cpp | 84 +++++++++++++++++++++++++++++-
+ 3 files changed, 147 insertions(+), 26 deletions(-)
+
+diff --git a/src/openMVG/sfm/sfm_data_merge.cpp b/src/openMVG/sfm/sfm_data_merge.cpp
+index 8e856e00c6..9b8e1e0866 100644
+--- a/src/openMVG/sfm/sfm_data_merge.cpp
++++ b/src/openMVG/sfm/sfm_data_merge.cpp
+@@ -193,6 +193,24 @@ bool getOverlappingImages(const openMVG::sfm::SfM_Data& first, const openMVG::sf
+   return false;
+ }
+ 
++bool badTrackRejector(double dPrecision, size_t count, SfM_Data& scene)
++{
++  /**
++   * @brief Discard tracks with too large residual error
++   *
++   * Remove observation/tracks that have:
++   *  - too large residual error
++   *  - too small angular value
++   *
++   * @note copied over from sequential sfm !
++   * @return True if more than 'count' outliers have been removed.
++   */
++  const size_t nbOutliers_residualErr = RemoveOutliers_PixelResidualError(scene, dPrecision, 2);
++    const size_t nbOutliers_angleErr = RemoveOutliers_AngleError(scene, 2.0);
++
++  return (nbOutliers_residualErr + nbOutliers_angleErr) > count;
++}
++
+ bool getVecs2Align(const openMVG::sfm::SfM_Data& first, const openMVG::sfm::SfM_Data& second, 
+     std::vector<openMVG::Vec3> *parent_vecs,
+     std::vector<openMVG::Vec3> *child_vecs,
+@@ -288,7 +306,22 @@ bool mergeSfMScenes(openMVG::sfm::SfM_Data& sfm_data, openMVG::sfm::SfM_Data& ch
+    const double S, const openMVG::Mat3 R, const openMVG::Vec3 T,
+    const std::map< std::string, std::pair<bool,std::vector<IndexT>> >& sfm_filenames_indexes
+ ){
+-    /*
++
++    std::set<Pair> common_ids;
++    std::set<openMVG::IndexT> child_overlap_ids;
++
++    for(auto pair: sfm_filenames_indexes){
++        std::pair<openMVG::IndexT, std::vector<openMVG::IndexT>> info = pair.second;
++        // lets make sure we have index in each SfM scene
++        if(info.second.size()<2){continue;}
++        
++        IndexT p1 = info.second[0];
++        IndexT p2 = info.second[1];
++
++        common_ids.insert( Pair(p1,p2) );
++        child_overlap_ids.insert(p2);
++    }
++    
+     // references
+     Views & parent_views = sfm_data.views;
+     Poses & parent_poses = sfm_data.poses;
+@@ -299,6 +332,8 @@ bool mergeSfMScenes(openMVG::sfm::SfM_Data& sfm_data, openMVG::sfm::SfM_Data& ch
+     IndexT parent_views_size = parent_views.size();
+ 
+     std::set<IndexT> remove_track_ids = std::set<IndexT>();
++
++    std::set<Pair> new_view_pairings;
+   
+     for(auto & iterV : child_views){
+         ViewPriors *prior = dynamic_cast<sfm::ViewPriors*>(iterV.second.get());
+@@ -318,7 +353,7 @@ bool mergeSfMScenes(openMVG::sfm::SfM_Data& sfm_data, openMVG::sfm::SfM_Data& ch
+                 std::cout << "Pose reinstiated from child sfm scene " << std::endl;
+ 
+                 Pose3 pose = child_poses.at(view2->id_pose);
+-                Vec3 nloc = S * R * ( pose.center() ) + t; // update the camera position to the reference scene
++                Vec3 nloc = S * R * ( pose.center() ) + T; // update the camera position to the reference scene
+                 Pose3 npose = Pose3(pose.rotation(),nloc);
+ 
+                 parent_poses[view1->id_pose] = npose;
+@@ -355,12 +390,8 @@ bool mergeSfMScenes(openMVG::sfm::SfM_Data& sfm_data, openMVG::sfm::SfM_Data& ch
+         parent_views_size++;
+     }
+ 
+-    std::cout << "Views with no poses: " << remove_track_ids.size() << std::endl;
++    OPENMVG_LOG_INFO << "Views with no poses: " << remove_track_ids.size();
+ 
+-    std::string root_directory = directory_output.substr(0, directory_output.find_last_of("/\\"));
+-    root_directory = root_directory.substr(0, root_directory.find_last_of("/\\"));
+-
+-    sfm_data.s_root_path = stlplus::create_filespec(root_directory, "Originals");
+     Landmarks child_tracks = child_sfm_data.GetLandmarks();
+ 
+     IndexT new_track_counter = sfm_data.structure.size();
+@@ -377,46 +408,45 @@ bool mergeSfMScenes(openMVG::sfm::SfM_Data& sfm_data, openMVG::sfm::SfM_Data& ch
+             IndexT id_view = iterOb.first;
+             // need to update the view_id to the most up to date
+             if(child_overlap_ids.find(id_view) != child_overlap_ids.end()){
+-                // it's one of the overlapping features
+-                for(auto id: common_ids){
+-                    if(id.second == id_view){//child observation is an overlap observation
+-                        id_view = id.first;
+-                        break;
+-                    }
+-                }
++                // check if the second view has any new information
++                auto it = std::find_if(common_ids.begin(), common_ids.end(),
++                [&](const Pair& val) -> bool {
++                    return val.second == id_view;
++                });
++                id_view = it->first;
+             }else{
+-                for( auto np: new_view_pairings){
+-                    if(np.first == id_view){
+-                        id_view = np.second;
+-                    }
+-                }
++                // else we want to use the first views pose if present
++                auto it = std::find_if(new_view_pairings.begin(), new_view_pairings.end(),
++                [&](const Pair& val) -> bool {
++                    return val.first == id_view;
++                });
++                id_view = it->second;
+             }
+ 
+             try{
+                 const View * view = sfm_data.views.at(id_view).get();
+                 if(!sfm_data.IsPoseAndIntrinsicDefined(view)){
+-                    std::cerr << "Pose not defined for view " << id_view << std::endl;
++                    OPENMVG_LOG_WARNING << "Pose not defined for view " << id_view;
+                     continue;
+                 }
+             }catch(...){
+-                std::cerr << "View id does not exist " << id_view << std::endl;
++                OPENMVG_LOG_WARNING << "View id does not exist " << id_view;
+                 continue;
+             }
+         
+ 
+             // view id will have been updated by now, just have to insert it
+-            //iterOb.second.id_feat
+-            new_observations.insert({id_view,Observation(iterOb.second.x, UndefinedIndexT)});
++            // iterOb.second.id_feat
++            new_observations.insert({id_view, Observation(iterOb.second.x, UndefinedIndexT)});
+             // new observations will have been added
+         }
+ 
+         Landmark new_landmark;
+-        new_landmark.X = S * R * ( landmark.X ) + t;
++        new_landmark.X = S * R * ( landmark.X ) + T;
+         new_landmark.obs = new_observations;
+ 
+         sfm_data.structure[new_track_counter++] = std::move( new_landmark );
+     }
+-    */
+ 
+     return true;
+ }
+diff --git a/src/openMVG/sfm/sfm_data_merge.hpp b/src/openMVG/sfm/sfm_data_merge.hpp
+index 1c458e938e..d17c363f32 100644
+--- a/src/openMVG/sfm/sfm_data_merge.hpp
++++ b/src/openMVG/sfm/sfm_data_merge.hpp
+@@ -11,9 +11,16 @@
+ 
+ #include "openMVG/geometry/rigid_transformation3D_srt.hpp"
+ #include "openMVG/sfm/sfm_data_transform.hpp"
++#include "openMVG/sfm/sfm_data_filters.hpp"
++#include "openMVG/sfm/sfm_data_BA_ceres.hpp"
+ 
+ #include "openMVG/system/logger.hpp"
+ 
++#include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
++
++#include "ceres/problem.h"
++#include "ceres/solver.h"
++
+ namespace openMVG {
+ namespace sfm {
+ 
+@@ -39,6 +46,8 @@ std::string printOverlapInformation(const std::map< std::string, std::pair<bool,
+ bool getOverlappingImages(const openMVG::sfm::SfM_Data& first, const openMVG::sfm::SfM_Data& second, 
+     std::map< std::string, std::pair<bool,std::vector<IndexT>> >& sfm_filenames_indexes);
+ 
++bool badTrackRejector(double dPrecision, size_t count, SfM_Data& scene);
++
+ bool getVecs2Align(const openMVG::sfm::SfM_Data& first, const openMVG::sfm::SfM_Data& second, 
+     std::vector<openMVG::Vec3> *parent_vecs,
+     std::vector<openMVG::Vec3> *child_vecs,
+diff --git a/src/software/SfM/main_MergeSfM.cpp b/src/software/SfM/main_MergeSfM.cpp
+index df56a94cca..7cc0e958ab 100644
+--- a/src/software/SfM/main_MergeSfM.cpp
++++ b/src/software/SfM/main_MergeSfM.cpp
+@@ -353,13 +353,95 @@ int main(int argc, char **argv)
+     return EXIT_FAILURE;
+   }
+ 
++  // fix a new directory for the accumulation of all the images
++  std::string root_directory = directory_output.substr(0, directory_output.find_last_of("/\\"));
++  root_directory = root_directory.substr(0, root_directory.find_last_of("/\\"));
++
++  sfm_data.s_root_path = stlplus::create_filespec(root_directory, "Originals");
++
+   // use the best camera for the scene
+   sfm_data.intrinsics[0] = best_camera;
+   // group the shared intrinsics
+   GroupSharedIntrinsics(sfm_data);
+ 
+   if(preform_final_ba){
+-    OPENMVG_LOG_INFO << "";
++    OPENMVG_LOG_INFO << "Starting final BA";
++
++    Bundle_Adjustment_Ceres::BA_Ceres_options options;
++    if ( sfm_data.GetPoses().size() > 100 &&
++      (ceres::IsSparseLinearAlgebraLibraryTypeAvailable(ceres::SUITE_SPARSE) ||
++       ceres::IsSparseLinearAlgebraLibraryTypeAvailable(ceres::EIGEN_SPARSE))
++      ){
++      // Enable sparse BA only if a sparse lib is available and if there more than 100 poses
++      options.preconditioner_type_ = ceres::JACOBI;
++      options.linear_solver_type_ = ceres::SPARSE_SCHUR;
++    }
++    else{
++      options.linear_solver_type_ = ceres::DENSE_SCHUR;
++    }
++
++    Bundle_Adjustment_Ceres bundle_adjustment_obj(options);
++
++    Optimize_Options ba_refine1_options(
++      Intrinsic_Parameter_Type::NONE, // Intrinsics are held as constant
++      Extrinsic_Parameter_Type::ADJUST_ALL,// rotations are constant ADJUST_TRANSLATION
++      Structure_Parameter_Type::ADJUST_ALL, // Adjust scene structure ADJUST_ALL
++      Control_Point_Parameter(),
++      b_use_motion_priors // Use motion priors
++    );
++
++    Optimize_Options ba_refine2_options(
++      Intrinsic_Parameter_Type::NONE,
++      Extrinsic_Parameter_Type::NONE,
++      Structure_Parameter_Type::ADJUST_ALL, // Adjust scene structure
++      Control_Point_Parameter(),
++      b_use_motion_priors // Use motion priors
++    );
++
++    // note : parameters copied from sequential sfm
++    const double requiredPixelResidualError = 4.0;
++    const double angle_error = 2.0;
++    const size_t outlierNumberThreshold = 100;
++
++    
++    if(engine_name=="GLOBAL"){
++      // do the initial adjustment with no changes to intrinsic to remove excess noise
++      bundle_adjustment_obj.Adjust(sfm_data,ba_refine1_options);
++
++      const size_t pointcount_initial = sfm_data.structure.size();
++      RemoveOutliers_PixelResidualError(sfm_data, requiredPixelResidualError);
++      const size_t pointcount_pixelresidual_filter = sfm_data.structure.size();
++      RemoveOutliers_AngleError(sfm_data, angle_error);
++      const size_t pointcount_angular_filter = sfm_data.structure.size();
++
++      // Check that poses & intrinsic cover some measures (after outlier removal)
++      const IndexT minPointPerPose = 6; // 6 min , 12
++      const IndexT minTrackLength = 2; // 2 min , 3
++      if (eraseUnstablePosesAndObservations(sfm_data, minPointPerPose, minTrackLength))
++      {
++        // TODO: must ensure that track graph is producing a single connected component
++        const size_t pointcount_cleaning = sfm_data.structure.size();
++        OPENMVG_LOG_INFO << "Point_cloud cleaning:\n"
++          << "\t #3DPoints: " << pointcount_cleaning << "\n";
++      }
++
++      bundle_adjustment_obj.Adjust(sfm_data,ba_refine2_options);
++      
++    }
++    else if(engine_name=="STELLAR"){
++      OPENMVG_LOG_WARNING << "INCREMENTALV2 not implemented yet";
++    }
++    else if(engine_name=="INCREMENTALV2"){
++      OPENMVG_LOG_WARNING << "INCREMENTALV2 not implemented yet";
++    }
++    else{
++      // sequential method for pose recitifcation
++      do{
++        bundle_adjustment_obj.Adjust(sfm_data,ba_refine1_options);
++      }
++      while (badTrackRejector(requiredPixelResidualError, outlierNumberThreshold, sfm_data));
++      eraseUnstablePosesAndObservations(sfm_data);
++    }
+   }
+   
+   OPENMVG_LOG_INFO << "...Export SfM_Data to disk.";
+
+From e8537b4418480a36b665ec3be3ba29feeb442366 Mon Sep 17 00:00:00 2001
+From: evanokeeffe <evanokeeffe@gmail.com>
+Date: Wed, 12 Mar 2025 18:29:22 -0300
+Subject: [PATCH 8/9] removed ccdw changes, should be ok for a test now
+
+---
+ src/openMVG/cameras/Camera_Intrinsics.hpp     |  16 +--
+ src/openMVG/cameras/Camera_Intrinsics_io.hpp  |   2 -
+ src/openMVG/cameras/Camera_Pinhole.hpp        |   8 +-
+ src/openMVG/cameras/Camera_Pinhole_Brown.hpp  |   4 +-
+ .../cameras/Camera_Pinhole_Fisheye.hpp        |   4 +-
+ src/openMVG/cameras/Camera_Pinhole_Radial.hpp |   7 +-
+ src/openMVG/cameras/Camera_Spherical.hpp      |   4 +-
+ src/openMVG/sfm/sfm_data_merge.cpp            | 101 ++++++++---------
+ src/openMVG/sfm/sfm_data_merge.hpp            |   4 +-
+ src/software/SfM/main_MergeSfM.cpp            | 103 ++++++++++--------
+ 11 files changed, 120 insertions(+), 137 deletions(-)
+
+diff --git a/src/openMVG/cameras/Camera_Intrinsics.hpp b/src/openMVG/cameras/Camera_Intrinsics.hpp
+index 5a412325ae..20ca9d3e13 100644
+--- a/src/openMVG/cameras/Camera_Intrinsics.hpp
++++ b/src/openMVG/cameras/Camera_Intrinsics.hpp
+@@ -40,18 +40,15 @@ struct IntrinsicBase : public Clonable<IntrinsicBase>
+   unsigned int w_;
+   /// Height of image
+   unsigned int h_;
+-  /// width of the ccd
+-  double ccdw_;
+ 
+   /**
+   * @brief Constructor
+   * @param w Width of the image
+   * @param h Height of the image
+   */
+-  IntrinsicBase( unsigned int w = 0, unsigned int h = 0 , double ccdw = -1.0)
++  IntrinsicBase( unsigned int w = 0, unsigned int h = 0 )
+     : w_( w ),
+-      h_( h ),
+-      ccdw_(ccdw)
++      h_( h )
+   {
+ 
+   }
+@@ -79,15 +76,6 @@ struct IntrinsicBase : public Clonable<IntrinsicBase>
+     return h_;
+   }
+ 
+-  /**
+-  * @brief Get width of the image ccd sensor
+-  * @return ccd width of the image
+-  */
+-  unsigned int ccdw() const
+-  {
+-    return ccdw_;
+-  }
+-
+   /**
+   * @brief Compute projection of a 3D point into the image plane
+   * (Apply disto (if any) and Intrinsics)
+diff --git a/src/openMVG/cameras/Camera_Intrinsics_io.hpp b/src/openMVG/cameras/Camera_Intrinsics_io.hpp
+index 160e4421d3..64bce8bc6b 100644
+--- a/src/openMVG/cameras/Camera_Intrinsics_io.hpp
++++ b/src/openMVG/cameras/Camera_Intrinsics_io.hpp
+@@ -16,7 +16,6 @@ void openMVG::cameras::IntrinsicBase::save( Archive & ar ) const
+ {
+   ar( cereal::make_nvp( "width", w_ ) );
+   ar( cereal::make_nvp( "height", h_ ) );
+-  ar( cereal::make_nvp( "ccdw", ccdw_ ) );
+ }
+ 
+ template <class Archive>
+@@ -24,7 +23,6 @@ void openMVG::cameras::IntrinsicBase::load( Archive & ar )
+ {
+   ar( cereal::make_nvp( "width", w_ ) );
+   ar( cereal::make_nvp( "height", h_ ) );
+-  ar( cereal::make_nvp( "ccdw", ccdw_ ) );
+ }
+ 
+ #endif // #ifndef OPENMVG_CAMERAS_CAMERA_INTRINSICS_IO_HPP
+diff --git a/src/openMVG/cameras/Camera_Pinhole.hpp b/src/openMVG/cameras/Camera_Pinhole.hpp
+index 93cf6f937d..10f353044a 100644
+--- a/src/openMVG/cameras/Camera_Pinhole.hpp
++++ b/src/openMVG/cameras/Camera_Pinhole.hpp
+@@ -48,17 +48,15 @@ class Pinhole_Intrinsic : public IntrinsicBase
+     * @brief Constructor
+     * @param w Width of the image plane
+     * @param h Height of the image plane
+-    * @param ccdw width of the ccd sensor
+     * @param focal_length_pix Focal length (in pixel) of the camera
+     * @param ppx Principal point on x-axis
+     * @param ppy Principal point on y-axis
+     */
+     Pinhole_Intrinsic(
+       unsigned int w = 0, unsigned int h = 0,
+-      double ccdw = 0.0,
+       double focal_length_pix = 0.0,
+       double ppx = 0.0, double ppy = 0.0 )
+-      : IntrinsicBase( w, h , ccdw)
++      : IntrinsicBase( w, h)
+     {
+       K_ << focal_length_pix, 0., ppx, 0., focal_length_pix, ppy, 0., 0., 1.;
+       Kinv_ = K_.inverse();
+@@ -84,15 +82,13 @@ class Pinhole_Intrinsic : public IntrinsicBase
+     * @brief Constructor
+     * @param w Width of the image plane
+     * @param h Height of the image plane
+-    * @param ccdw width of the ccd sensor
+     * @param K Intrinsic Matrix (3x3) {f,0,ppx; 0,f,ppy; 0,0,1}
+     */
+     Pinhole_Intrinsic(
+       unsigned int w,
+       unsigned int h,
+-      double ccdw,
+       const Mat3& K)
+-      : IntrinsicBase( w, h, ccdw), K_(K)
++      : IntrinsicBase( w, h), K_(K)
+     {
+       K_(0,0) = K_(1,1) = (K(0,0) + K(1,1)) / 2.0;
+       Kinv_ = K_.inverse();
+diff --git a/src/openMVG/cameras/Camera_Pinhole_Brown.hpp b/src/openMVG/cameras/Camera_Pinhole_Brown.hpp
+index 8583f146a2..038d43b883 100644
+--- a/src/openMVG/cameras/Camera_Pinhole_Brown.hpp
++++ b/src/openMVG/cameras/Camera_Pinhole_Brown.hpp
+@@ -39,7 +39,6 @@ class Pinhole_Intrinsic_Brown_T2 : public Pinhole_Intrinsic
+     * @brief Constructor
+     * @param w Width of image
+     * @param h Height of image
+-    * @param ccdw width of the ccd sensor
+     * @param focal Focal distance (in pixel)
+     * @param ppx Principal point on X-axis
+     * @param ppy Principal point on Y-axis
+@@ -51,11 +50,10 @@ class Pinhole_Intrinsic_Brown_T2 : public Pinhole_Intrinsic
+     */
+     Pinhole_Intrinsic_Brown_T2(
+       int w = 0, int h = 0,
+-      double ccdw = 0.0,
+       double focal = 0.0, double ppx = 0, double ppy = 0,
+       double k1 = 0.0, double k2 = 0.0, double k3 = 0.0,
+       double t1 = 0.0, double t2 = 0.0 )
+-      : Pinhole_Intrinsic( w, h, ccdw, focal, ppx, ppy ),
++      : Pinhole_Intrinsic( w, h, focal, ppx, ppy ),
+         params_({k1, k2, k3, t1, t2})
+     {
+     }
+diff --git a/src/openMVG/cameras/Camera_Pinhole_Fisheye.hpp b/src/openMVG/cameras/Camera_Pinhole_Fisheye.hpp
+index f838e42d7d..66851938d8 100644
+--- a/src/openMVG/cameras/Camera_Pinhole_Fisheye.hpp
++++ b/src/openMVG/cameras/Camera_Pinhole_Fisheye.hpp
+@@ -41,7 +41,6 @@ class Pinhole_Intrinsic_Fisheye : public Pinhole_Intrinsic
+     * @brief Constructor
+     * @param w Width of image plane
+     * @param h Height of image plane
+-    * @param ccdw width of the ccd sensor
+     * @param focal Focal distance in pixel
+     * @param ppx Principal point on X-axis
+     * @param ppy Principal point on Y-axis
+@@ -52,10 +51,9 @@ class Pinhole_Intrinsic_Fisheye : public Pinhole_Intrinsic
+     */
+     Pinhole_Intrinsic_Fisheye(
+       int w = 0, int h = 0,
+-      double ccdw = 0.0,
+       double focal = 0.0, double ppx = 0, double ppy = 0,
+       double k1 = 0.0, double k2 = 0.0, double k3 = 0.0, double k4 = 0.0 )
+-      : Pinhole_Intrinsic( w, h, ccdw, focal, ppx, ppy ),
++      : Pinhole_Intrinsic( w, h, focal, ppx, ppy ),
+         params_({k1, k2, k3, k4})
+     {
+     }
+diff --git a/src/openMVG/cameras/Camera_Pinhole_Radial.hpp b/src/openMVG/cameras/Camera_Pinhole_Radial.hpp
+index 9cd2664c31..71b13bc5a5 100644
+--- a/src/openMVG/cameras/Camera_Pinhole_Radial.hpp
++++ b/src/openMVG/cameras/Camera_Pinhole_Radial.hpp
+@@ -96,10 +96,9 @@ class Pinhole_Intrinsic_Radial_K1 : public Pinhole_Intrinsic
+     */
+     Pinhole_Intrinsic_Radial_K1(
+       int w = 0, int h = 0,
+-      double ccdw = 0.0,
+       double focal = 0.0, double ppx = 0, double ppy = 0,
+       double k1 = 0.0 )
+-      : Pinhole_Intrinsic( w, h, ccdw, focal, ppx, ppy ),
++      : Pinhole_Intrinsic( w, h, focal, ppx, ppy ),
+         params_({k1})
+     {
+ 
+@@ -297,7 +296,6 @@ class Pinhole_Intrinsic_Radial_K3 : public Pinhole_Intrinsic
+     * @brief Constructor
+     * @param w Width of image
+     * @param h Height of image
+-    * @param ccdw width of the ccd sensor
+     * @param focal Focal (in pixel) of the camera
+     * @param ppx Principal point on X-Axis
+     * @param ppy Principal point on Y-Axis
+@@ -307,10 +305,9 @@ class Pinhole_Intrinsic_Radial_K3 : public Pinhole_Intrinsic
+     */
+     Pinhole_Intrinsic_Radial_K3(
+       int w = 0, int h = 0,
+-      double ccdw = 0.0,
+       double focal = 0.0, double ppx = 0, double ppy = 0,
+       double k1 = 0.0, double k2 = 0.0, double k3 = 0.0 )
+-      : Pinhole_Intrinsic( w, h, ccdw, focal, ppx, ppy ),
++      : Pinhole_Intrinsic( w, h, focal, ppx, ppy ),
+         params_({k1, k2, k3})
+     {
+     }
+diff --git a/src/openMVG/cameras/Camera_Spherical.hpp b/src/openMVG/cameras/Camera_Spherical.hpp
+index a3f9558345..9a86876d61 100644
+--- a/src/openMVG/cameras/Camera_Spherical.hpp
++++ b/src/openMVG/cameras/Camera_Spherical.hpp
+@@ -29,15 +29,13 @@ using class_type = Intrinsic_Spherical;
+   * @brief Constructor
+   * @param w Width of the image plane
+   * @param h Height of the image plane
+-  * @param ccdw width of the ccd sensor
+   */
+   Intrinsic_Spherical
+   (
+     unsigned int w = 0,
+     unsigned int h = 0,
+-    double ccdw = 0.0
+   )
+-  : IntrinsicBase(w, h, ccdw)
++  : IntrinsicBase(w, h)
+   {
+   }
+ 
+diff --git a/src/openMVG/sfm/sfm_data_merge.cpp b/src/openMVG/sfm/sfm_data_merge.cpp
+index 9b8e1e0866..fccad6855d 100644
+--- a/src/openMVG/sfm/sfm_data_merge.cpp
++++ b/src/openMVG/sfm/sfm_data_merge.cpp
+@@ -68,7 +68,7 @@ std::shared_ptr<cameras::IntrinsicBase> findBestIntrinsic(const SfM_Data& sfm_da
+ 
+   RMSE_A = std::sqrt((RMSE_A)/(n_totalResiduals));
+   RMSE_B = std::sqrt((RMSE_B)/(n_totalResiduals));
+-  std::cout << "RMSE_A : " << RMSE_A << " RMSE_B : "  << RMSE_B << std::endl;
++  OPENMVG_LOG_INFO << "RMSE_A : " << RMSE_A << " RMSE_B : "  << RMSE_B ;
+ 
+   if (RMSE_A < RMSE_B){
+     return std::shared_ptr<cameras::IntrinsicBase>(intrinsicA->clone());
+@@ -212,8 +212,8 @@ bool badTrackRejector(double dPrecision, size_t count, SfM_Data& scene)
+ }
+ 
+ bool getVecs2Align(const openMVG::sfm::SfM_Data& first, const openMVG::sfm::SfM_Data& second, 
+-    std::vector<openMVG::Vec3> *parent_vecs,
+-    std::vector<openMVG::Vec3> *child_vecs,
++    std::vector<openMVG::Vec3> *first_vecs,
++    std::vector<openMVG::Vec3> *second_vecs,
+     std::map< std::string, std::pair<bool,std::vector<IndexT>> >& sfm_filenames_indexes)
+ {
+   
+@@ -235,26 +235,26 @@ bool getVecs2Align(const openMVG::sfm::SfM_Data& first, const openMVG::sfm::SfM_
+       const View * view2 = second.views.at(p2).get();
+ 
+       if(!first.IsPoseAndIntrinsicDefined(view1)){
+-        OPENMVG_LOG_INFO << view1->id_view << " has no pose associated in parent";
++        OPENMVG_LOG_INFO << view1->id_view << " has no pose associated in first";
+         unused_cameras.push_back(std::make_pair(p1,p2));
+       }
+       else if(!second.IsPoseAndIntrinsicDefined(view2)){
+-        OPENMVG_LOG_INFO << view2->id_view << " has no pose associated in child";
++        OPENMVG_LOG_INFO << view2->id_view << " has no pose associated in second";
+         unused_cameras.push_back(std::make_pair(p1,p2));
+       }
+       else{
+-        parent_vecs -> push_back(first.poses.at(view1->id_pose).center());
+-        child_vecs -> push_back( second.poses.at(view2->id_pose).center() );
++        first_vecs -> push_back(first.poses.at(view1->id_pose).center());
++        second_vecs -> push_back( second.poses.at(view2->id_pose).center() );
+         counter++;
+       }
+     }
+     catch(...){
+-      //std::cout << "Views not used in final reconstructions" << std::endl;
++      //OPENMVG_LOG_WARNING << "Views not used in final reconstructions" ;
+       unused_cameras.push_back(std::make_pair(p1,p2));
+     }
+   }
+ 
+-  if(parent_vecs->size() == child_vecs->size() && parent_vecs->size()>3){
++  if(first_vecs->size() == second_vecs->size() && first_vecs->size()>3){
+     return true;
+   }
+ 
+@@ -286,7 +286,7 @@ bool computeSimilarity(
+   Vec3 t;
+   Mat3 R;
+   openMVG::geometry::FindRTS(x1, x2, &S, &t, &R);
+-  //OPENMVG_LOG_INFO << "Non linear refinement" << std::endl;
++  //OPENMVG_LOG_INFO << "Non linear refinement" ;
+   openMVG::geometry::Refine_RTS(x1,x2,&S,&t,&R);
+ 
+   vec_camPosComputed_T.resize(vec_camPosGT.size());
+@@ -302,13 +302,13 @@ bool computeSimilarity(
+   return true;
+ }
+ 
+-bool mergeSfMScenes(openMVG::sfm::SfM_Data& sfm_data, openMVG::sfm::SfM_Data& child_sfm_data, 
++bool mergeSfMScenes(openMVG::sfm::SfM_Data& sfm_data, openMVG::sfm::SfM_Data& second_sfm_data, 
+    const double S, const openMVG::Mat3 R, const openMVG::Vec3 T,
+    const std::map< std::string, std::pair<bool,std::vector<IndexT>> >& sfm_filenames_indexes
+ ){
+ 
+     std::set<Pair> common_ids;
+-    std::set<openMVG::IndexT> child_overlap_ids;
++    std::set<openMVG::IndexT> second_overlap_ids;
+ 
+     for(auto pair: sfm_filenames_indexes){
+         std::pair<openMVG::IndexT, std::vector<openMVG::IndexT>> info = pair.second;
+@@ -319,85 +319,86 @@ bool mergeSfMScenes(openMVG::sfm::SfM_Data& sfm_data, openMVG::sfm::SfM_Data& ch
+         IndexT p2 = info.second[1];
+ 
+         common_ids.insert( Pair(p1,p2) );
+-        child_overlap_ids.insert(p2);
++        second_overlap_ids.insert(p2);
+     }
+     
+     // references
+-    Views & parent_views = sfm_data.views;
+-    Poses & parent_poses = sfm_data.poses;
++    Views & first_views = sfm_data.views;
++    Poses & first_poses = sfm_data.poses;
+ 
+-    Views & child_views = child_sfm_data.views;
+-    Poses & child_poses = child_sfm_data.poses;
++    Views & second_views = second_sfm_data.views;
++    Poses & second_poses = second_sfm_data.poses;
+ 
+-    IndexT parent_views_size = parent_views.size();
++    IndexT first_views_size = first_views.size();
+ 
+     std::set<IndexT> remove_track_ids = std::set<IndexT>();
+ 
+     std::set<Pair> new_view_pairings;
+   
+-    for(auto & iterV : child_views){
++    // This is where we add the poses from the second scene
++
++    for(auto & iterV : second_views){
+         ViewPriors *prior = dynamic_cast<sfm::ViewPriors*>(iterV.second.get());
+         IndexT id_view = prior->id_view;
+         IndexT id_pose = prior->id_pose;
+ 
+-        // if the pose for the parent exists then we skip, if the pose doesn't we use 
+-        // the child scenes pose and update the parents
+-        if(child_overlap_ids.find(id_view) != child_overlap_ids.end()){
+-
+-        for(auto p: common_ids){
+-            if(p.second!=id_view){continue;}
+-            const View * view1 = sfm_data.views.at(p.first).get();
+-            const View * view2 = child_sfm_data.views.at(p.second).get();
++        // if the pose for the first scene exists then we skip, if the pose doesn't we use 
++        // the second scenes pose and update the firsts
++        if(second_overlap_ids.find(id_view) != second_overlap_ids.end()){
++          for(auto p: common_ids){
++              if(p.second!=id_view){continue;}
++              const View * view1 = sfm_data.views.at(p.first).get();
++              const View * view2 = second_sfm_data.views.at(p.second).get();
+ 
+-            if(!sfm_data.IsPoseAndIntrinsicDefined(view1) && child_sfm_data.IsPoseAndIntrinsicDefined(view2)){
+-                std::cout << "Pose reinstiated from child sfm scene " << std::endl;
++              if(!sfm_data.IsPoseAndIntrinsicDefined(view1) && second_sfm_data.IsPoseAndIntrinsicDefined(view2)){
++                  OPENMVG_LOG_INFO << "Pose reinstiated from second sfm scene " ;
+ 
+-                Pose3 pose = child_poses.at(view2->id_pose);
+-                Vec3 nloc = S * R * ( pose.center() ) + T; // update the camera position to the reference scene
+-                Pose3 npose = Pose3(pose.rotation(),nloc);
++                  Pose3 pose = second_poses.at(view2->id_pose);
++                  Vec3 nloc = S * R * ( pose.center() ) + T; // update the camera position to the reference scene
++                  Pose3 npose = Pose3(pose.rotation(),nloc);
+ 
+-                parent_poses[view1->id_pose] = npose;
++                  first_poses[view1->id_pose] = npose;
+ 
+-                break;
+-            }
+-        }
+-
+-            continue;
++                  break;
++              }
++          }
++          continue;
+         }
+ 
+         // need to store the new view id to modify the observation ids
+-        new_view_pairings.insert(Pair(id_view,parent_views_size));
++        new_view_pairings.insert(Pair(id_view,first_views_size));
+ 
+         // if there's a pose then modify the pose position
+-        if (child_sfm_data.IsPoseAndIntrinsicDefined(prior)){
++        if (second_sfm_data.IsPoseAndIntrinsicDefined(prior)){
+             // image was not used in reconstruction
+             // use the similarity transform and generate the new poses
+-            Pose3 pose = child_poses.at(id_pose);
++            Pose3 pose = second_poses.at(id_pose);
+             Vec3 nloc = S * R * ( pose.center() ) + T; // update the camera position to the reference scene
+             Pose3 npose = Pose3(pose.rotation(),nloc);
+ 
+-            parent_poses[parent_views_size] = npose;
++            first_poses[first_views_size] = npose;
+ 
+         }else{
+             remove_track_ids.insert(id_view);
+         }
+ 
+-        prior->id_view = parent_views_size;// new view id 
+-        prior->id_pose = parent_views_size;// new pose id
++        prior->id_view = first_views_size;// new view id
++        prior->id_pose = first_views_size;// new pose id
+ 
+-        parent_views[parent_views_size] = std::make_shared<ViewPriors>(*prior);
++        first_views[first_views_size] = std::make_shared<ViewPriors>(*prior);
+ 
+-        parent_views_size++;
++        first_views_size++;
+     }
+ 
+     OPENMVG_LOG_INFO << "Views with no poses: " << remove_track_ids.size();
+ 
+-    Landmarks child_tracks = child_sfm_data.GetLandmarks();
++    Landmarks second_tracks = second_sfm_data.GetLandmarks();
+ 
+     IndexT new_track_counter = sfm_data.structure.size();
+     IndexT original_track_num = sfm_data.structure.size();
+-    // first update the landmarks in the child scene to the reference frame of the first
+-    for (auto& track: child_tracks)
++
++    // first update the landmarks in the second scene to the reference frame of the first
++    for (auto& track: second_tracks)
+     {
+         IndexT track_id = track.first;
+         Landmark landmark = track.second;
+@@ -407,7 +408,7 @@ bool mergeSfMScenes(openMVG::sfm::SfM_Data& sfm_data, openMVG::sfm::SfM_Data& ch
+         {
+             IndexT id_view = iterOb.first;
+             // need to update the view_id to the most up to date
+-            if(child_overlap_ids.find(id_view) != child_overlap_ids.end()){
++            if(second_overlap_ids.find(id_view) != second_overlap_ids.end()){
+                 // check if the second view has any new information
+                 auto it = std::find_if(common_ids.begin(), common_ids.end(),
+                 [&](const Pair& val) -> bool {
+diff --git a/src/openMVG/sfm/sfm_data_merge.hpp b/src/openMVG/sfm/sfm_data_merge.hpp
+index d17c363f32..0eab7d3699 100644
+--- a/src/openMVG/sfm/sfm_data_merge.hpp
++++ b/src/openMVG/sfm/sfm_data_merge.hpp
+@@ -50,7 +50,7 @@ bool badTrackRejector(double dPrecision, size_t count, SfM_Data& scene);
+ 
+ bool getVecs2Align(const openMVG::sfm::SfM_Data& first, const openMVG::sfm::SfM_Data& second, 
+     std::vector<openMVG::Vec3> *parent_vecs,
+-    std::vector<openMVG::Vec3> *child_vecs,
++    std::vector<openMVG::Vec3> *second_vecs,
+     std::map< std::string, std::pair<bool,std::vector<IndexT>> >& sfm_filenames_indexes);
+ 
+ bool computeSimilarity(
+@@ -59,7 +59,7 @@ bool computeSimilarity(
+   std::vector<openMVG::Vec3> & vec_camPosComputed_T,
+   double *Sout, openMVG::Mat3 * Rout, openMVG::Vec3 * tout);
+ 
+-bool mergeSfMScenes(openMVG::sfm::SfM_Data& sfm_data, openMVG::sfm::SfM_Data& child_sfm_data, 
++bool mergeSfMScenes(openMVG::sfm::SfM_Data& sfm_data, openMVG::sfm::SfM_Data& second_sfm_data, 
+    const double S, const openMVG::Mat3 R, const openMVG::Vec3 T,
+    const std::map< std::string, std::pair<bool,std::vector<IndexT>> >& sfm_filenames_indexes);
+ 
+diff --git a/src/software/SfM/main_MergeSfM.cpp b/src/software/SfM/main_MergeSfM.cpp
+index 7cc0e958ab..102ec4db44 100644
+--- a/src/software/SfM/main_MergeSfM.cpp
++++ b/src/software/SfM/main_MergeSfM.cpp
+@@ -95,8 +95,8 @@ int main(int argc, char **argv)
+ 
+   // Common options:
+   std::string
+-      filename_sfm_data,
+-      filename_sfm_data_child,
++      filename_first_sfm_scene,
++      filename_first_sfm_scene_child,
+       directory_match,
+       filename_match,
+       directory_output,
+@@ -122,8 +122,8 @@ int main(int argc, char **argv)
+ 
+ 
+   // Common options
+-  cmd.add( make_option('i', filename_sfm_data, "main_sfm_file") );
+-  cmd.add( make_option('c', filename_sfm_data_child, "second_sfm_file") );
++  cmd.add( make_option('i', filename_first_sfm_scene, "main_sfm_file") );
++  cmd.add( make_option('c', filename_first_sfm_scene_child, "second_sfm_file") );
+   cmd.add( make_option('o', directory_output, "output") );
+   
+   cmd.add( make_option('s', engine_name, "sfm_engine") );
+@@ -145,8 +145,8 @@ int main(int argc, char **argv)
+ 
+     OPENMVG_LOG_INFO << "Usage: " << argv[0] << '\n'
+       << "[Required]\n"
+-      << "[-i|--main_sfm_file] path to the parent SfM_Data scene\n"
+-      << "[-c|--second_sfm_file] path to the child SfM_Data scene to merge\n"
++      << "[-i|--main_sfm_file] path to the parent first_sfm_scene scene\n"
++      << "[-c|--second_sfm_file] path to the child first_sfm_scene scene to merge\n"
+       << "[-o|--output_dir] path where the output data will be stored\n"
+       << "[-s|--sfm_engine] Type of SfM Engine to use for the reconstruction\n"
+       << "\t GLOBAL    : initialize globally rotation and translations\n"
+@@ -252,17 +252,17 @@ int main(int argc, char **argv)
+   }
+ 
+   // SfM related
+-  OPENMVG_LOG_INFO << "main SfM:\n"<< filename_sfm_data;
+-  // Load input SfM_Data scene
+-  SfM_Data sfm_data,child_sfm_data;
+-  if (!Load(sfm_data, filename_sfm_data, openMVG::sfm::ESfM_Data(openMVG::sfm::ALL))) {
+-    OPENMVG_LOG_ERROR << "The input SfM_Data file \""<< filename_sfm_data << "\" cannot be read.";
++  OPENMVG_LOG_INFO << "main SfM:\n"<< filename_first_sfm_scene;
++  // Load input first_sfm_scene scene
++  SfM_Data first_sfm_scene,second_sfm_scene;
++  if (!Load(first_sfm_scene, filename_first_sfm_scene, openMVG::sfm::ESfM_Data(openMVG::sfm::ALL))) {
++    OPENMVG_LOG_ERROR << "The input first_sfm_scene file \""<< filename_first_sfm_scene << "\" cannot be read.";
+     return EXIT_FAILURE;
+   }
+-  OPENMVG_LOG_INFO << "second SfM:\n"<< filename_sfm_data_child;
++  OPENMVG_LOG_INFO << "second SfM:\n"<< filename_first_sfm_scene_child;
+ 
+-  if (!Load(child_sfm_data, filename_sfm_data_child, openMVG::sfm::ESfM_Data(openMVG::sfm::ALL))) {
+-    OPENMVG_LOG_ERROR << "The input SfM_Data file \""<< filename_sfm_data_child << "\" cannot be read.";
++  if (!Load(second_sfm_scene, filename_first_sfm_scene_child, openMVG::sfm::ESfM_Data(openMVG::sfm::ALL))) {
++    OPENMVG_LOG_ERROR << "The input first_sfm_scene file \""<< filename_first_sfm_scene_child << "\" cannot be read.";
+     return EXIT_FAILURE;
+   }
+ 
+@@ -279,15 +279,18 @@ int main(int argc, char **argv)
+   // GLOBAL reconstruction merging operation
+   //---------------------------------------
+ 
+-  IndexT start_views = sfm_data.views.size();
+-  IndexT start_poses = sfm_data.poses.size();
+-  IndexT start_tracks = sfm_data.structure.size();
++  IndexT start_views = first_sfm_scene.views.size();
++  IndexT start_poses = first_sfm_scene.poses.size();
++  IndexT start_tracks = first_sfm_scene.structure.size();
+ 
+-  std::cout << "#Main SfM Views:" << start_views  << " #Secondary SfM Views:" << child_sfm_data.views.size() << std::endl;
++  std::cout << "#Main SfM Views:" << start_views  << " #Secondary SfM Views:" << second_sfm_scene.views.size() << std::endl;
+ 
+   openMVG::system::Timer timer;
+   
+-  std::shared_ptr<cameras::IntrinsicBase> best_camera = findBestIntrinsic(sfm_data,child_sfm_data,0);
++  std::set<IndexT> first_scene_intrinsics = GetValidIntrinsicsIds(first_sfm_scene);
++  std::set<IndexT> second_scene_intrinsics = GetValidIntrinsicsIds(second_sfm_scene);
++
++  std::shared_ptr<cameras::IntrinsicBase> best_camera = findBestIntrinsic(first_sfm_scene,second_sfm_scene,0);
+ 
+   std::cout << "Best camera : " << best_camera << std::endl;
+ 
+@@ -295,7 +298,7 @@ int main(int argc, char **argv)
+   std::map< std::string, std::pair<bool,std::vector<IndexT>> > sfm_filenames_indexes;
+ 
+   // we'll read in the filenames and id's within the SfM scenes
+-  bool has_overlap = getOverlappingImages(sfm_data, child_sfm_data, sfm_filenames_indexes);
++  bool has_overlap = getOverlappingImages(first_sfm_scene, second_sfm_scene, sfm_filenames_indexes);
+   // first is do a simple overlap test
+   if(has_overlap){
+     std::cout << "Do datasets have overlap: true" << std::endl;
+@@ -319,7 +322,7 @@ int main(int argc, char **argv)
+ 
+   std::vector<openMVG::Vec3> first_vecs,second_vecs,result_vecs;
+ 
+-  bool has_alignableVecs = getVecs2Align(sfm_data, child_sfm_data, &first_vecs, &second_vecs, sfm_filenames_indexes);
++  bool has_alignableVecs = getVecs2Align(first_sfm_scene, second_sfm_scene, &first_vecs, &second_vecs, sfm_filenames_indexes);
+   
+   OPENMVG_LOG_INFO << first_vecs.size() << " " << second_vecs.size();
+ 
+@@ -342,11 +345,15 @@ int main(int argc, char **argv)
+     return EXIT_FAILURE;
+   }
+ 
++  OPENMVG_LOG_INFO << "Scale: " << S;
++  OPENMVG_LOG_INFO << "Rotation:" << R;
++  OPENMVG_LOG_INFO << "Translation:" << T;
++
+   OPENMVG_LOG_INFO << "SRT calculated";
+ 
+   OPENMVG_LOG_INFO << "Beginning the SRT transforms of views in scene two";
+ 
+-  bool merge_success = mergeSfMScenes(sfm_data, child_sfm_data, S, R, T, sfm_filenames_indexes);
++  bool merge_success = mergeSfMScenes(first_sfm_scene, second_sfm_scene, S, R, T, sfm_filenames_indexes);
+ 
+   if(!merge_success){
+     OPENMVG_LOG_ERROR << " Merging the scenes failed";
+@@ -354,21 +361,21 @@ int main(int argc, char **argv)
+   }
+ 
+   // fix a new directory for the accumulation of all the images
+-  std::string root_directory = directory_output.substr(0, directory_output.find_last_of("/\\"));
+-  root_directory = root_directory.substr(0, root_directory.find_last_of("/\\"));
++  //std::string root_directory = directory_output.substr(0, directory_output.find_last_of("/\\"));
++  //root_directory = root_directory.substr(0, root_directory.find_last_of("/\\"));
+ 
+-  sfm_data.s_root_path = stlplus::create_filespec(root_directory, "Originals");
++  //first_sfm_scene.s_root_path = stlplus::create_filespec(root_directory, "Originals");
+ 
+   // use the best camera for the scene
+-  sfm_data.intrinsics[0] = best_camera;
++  first_sfm_scene.intrinsics[0] = best_camera;
+   // group the shared intrinsics
+-  GroupSharedIntrinsics(sfm_data);
++  GroupSharedIntrinsics(first_sfm_scene);
+ 
+   if(preform_final_ba){
+     OPENMVG_LOG_INFO << "Starting final BA";
+ 
+     Bundle_Adjustment_Ceres::BA_Ceres_options options;
+-    if ( sfm_data.GetPoses().size() > 100 &&
++    if ( first_sfm_scene.GetPoses().size() > 100 &&
+       (ceres::IsSparseLinearAlgebraLibraryTypeAvailable(ceres::SUITE_SPARSE) ||
+        ceres::IsSparseLinearAlgebraLibraryTypeAvailable(ceres::EIGEN_SPARSE))
+       ){
+@@ -406,27 +413,29 @@ int main(int argc, char **argv)
+     
+     if(engine_name=="GLOBAL"){
+       // do the initial adjustment with no changes to intrinsic to remove excess noise
+-      bundle_adjustment_obj.Adjust(sfm_data,ba_refine1_options);
++      bundle_adjustment_obj.Adjust(first_sfm_scene,ba_refine1_options);
++
++      bundle_adjustment_obj.Adjust(first_sfm_scene,ba_refine2_options);
++      
+ 
+-      const size_t pointcount_initial = sfm_data.structure.size();
+-      RemoveOutliers_PixelResidualError(sfm_data, requiredPixelResidualError);
+-      const size_t pointcount_pixelresidual_filter = sfm_data.structure.size();
+-      RemoveOutliers_AngleError(sfm_data, angle_error);
+-      const size_t pointcount_angular_filter = sfm_data.structure.size();
++      /*
++      const size_t pointcount_initial = first_sfm_scene.structure.size();
++      RemoveOutliers_PixelResidualError(first_sfm_scene, requiredPixelResidualError);
++      const size_t pointcount_pixelresidual_filter = first_sfm_scene.structure.size();
++      RemoveOutliers_AngleError(first_sfm_scene, angle_error);
++      const size_t pointcount_angular_filter = first_sfm_scene.structure.size();
+ 
+       // Check that poses & intrinsic cover some measures (after outlier removal)
+       const IndexT minPointPerPose = 6; // 6 min , 12
+       const IndexT minTrackLength = 2; // 2 min , 3
+-      if (eraseUnstablePosesAndObservations(sfm_data, minPointPerPose, minTrackLength))
++      if (eraseUnstablePosesAndObservations(first_sfm_scene, minPointPerPose, minTrackLength))
+       {
+         // TODO: must ensure that track graph is producing a single connected component
+-        const size_t pointcount_cleaning = sfm_data.structure.size();
++        const size_t pointcount_cleaning = first_sfm_scene.structure.size();
+         OPENMVG_LOG_INFO << "Point_cloud cleaning:\n"
+           << "\t #3DPoints: " << pointcount_cleaning << "\n";
+       }
+-
+-      bundle_adjustment_obj.Adjust(sfm_data,ba_refine2_options);
+-      
++      */
+     }
+     else if(engine_name=="STELLAR"){
+       OPENMVG_LOG_WARNING << "INCREMENTALV2 not implemented yet";
+@@ -437,23 +446,23 @@ int main(int argc, char **argv)
+     else{
+       // sequential method for pose recitifcation
+       do{
+-        bundle_adjustment_obj.Adjust(sfm_data,ba_refine1_options);
++        bundle_adjustment_obj.Adjust(first_sfm_scene,ba_refine1_options);
+       }
+-      while (badTrackRejector(requiredPixelResidualError, outlierNumberThreshold, sfm_data));
+-      eraseUnstablePosesAndObservations(sfm_data);
++      while (badTrackRejector(requiredPixelResidualError, outlierNumberThreshold, first_sfm_scene));
++      eraseUnstablePosesAndObservations(first_sfm_scene);
+     }
+   }
+   
+-  OPENMVG_LOG_INFO << "...Export SfM_Data to disk.";
++  OPENMVG_LOG_INFO << "...Export first_sfm_scene to disk.";
+ 
+-  Generate_SfM_Report(sfm_data,
++  Generate_SfM_Report(first_sfm_scene,
+     stlplus::create_filespec(directory_output, "SfMReconstruction_Report.html"));
+ 
+-  Save(sfm_data,
+-    stlplus::create_filespec(directory_output, "sfm_data", ".bin"),
++  Save(first_sfm_scene,
++    stlplus::create_filespec(directory_output, "first_sfm_scene", ".bin"),
+     ESfM_Data(ALL));
+ 
+-  Save(sfm_data,
++  Save(first_sfm_scene,
+      stlplus::create_filespec(directory_output, "cloud_and_poses", "ply"),
+      ESfM_Data(ALL));
+ 
+

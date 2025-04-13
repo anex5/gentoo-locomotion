@@ -20,7 +20,7 @@ else
 	SLOT="0/$(ver_cut 1-2 ${PV})"
 fi
 
-LICENSE="BSD"
+LICENSE="BSD-2"
 
 IUSE="debug man mpi octave utils"
 RESTRICT="
