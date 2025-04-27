@@ -1,22 +1,27 @@
-# Copyright 1999-2023 Gentoo Foundation
+# Copyright 1999-2025 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
-PYTHON_COMPAT=( python3_{10..12} )
 
-inherit distutils-r1 git-r3
+PYTHON_COMPAT=( python3_{11..13} )
+
+DISTUTILS_USE_PEP517=hatchling
+
+inherit distutils-r1
 
 DESCRIPTION="A tiny library for Python text normalisation. Useful for ad-hoc text processing."
-HOMEPAGE="https://pypi.org/project/normality http://pudo.org friedrich@pudo.org "
-EGIT_REPO_URI="https://github.com/pudo/normality"
-EGIT_COMMIT="e23d4bd4b66254813adbc3b472919ab16a87e10b"
+HOMEPAGE="
+	https://github.com/pudo/normality/
+"
+SRC_URI="https://github.com/pudo/normality/archive/refs/tags/${PV}.tar.gz -> ${P}.tar.gz"
+
 
 LICENSE="MIT"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
-IUSE="icu test"
+IUSE+="icu test"
 
-RDEPEND="
+RDEPEND+="
 	>=dev-python/six-1.11.0[${PYTHON_USEDEP}]
 	>=dev-python/banal-0.4.1[${PYTHON_USEDEP}]
 	dev-python/text-unidecode[${PYTHON_USEDEP}]
@@ -24,9 +29,15 @@ RDEPEND="
 	icu? ( >=dev-python/pyicu-1.9.3[${PYTHON_USEDEP}] )
 "
 
-DEPEND="${RDEPEND}
-	dev-python/setuptools[${PYTHON_USEDEP}]
+DEPEND+="${RDEPEND}
+	>=dev-python/hatchling-1.24.2[${PYTHON_USEDEP}]
+	>=dev-python/hatch-vcs-0.3.0[${PYTHON_USEDEP}]
+	>=dev-python/hatch-fancy-pypi-readme-23.2.0[${PYTHON_USEDEP}]
+	dev-python/mypy[${PYTHON_USEDEP}]
+	dev-python/build[${PYTHON_USEDEP}]
 "
+
+RESTRICT="mirror test"
 
 python_prepare_all() {
 	rm -r "tests" || die

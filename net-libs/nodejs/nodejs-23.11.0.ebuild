@@ -27,7 +27,7 @@ else
 	S="${WORKDIR}/node-v${PV}"
 fi
 
-IUSE="asm +corepack cpu_flags_x86_sse2 debug doc fips +icu inspector +jit \
+IUSE="+asm +corepack cpu_flags_x86_sse2 debug doc fips +icu inspector +jit \
 lto lld man mold +npm pax-kernel pointer-compression +snapshot +ssl \
 system-icu +system-ssl test v8-sandbox"
 REQUIRED_USE="

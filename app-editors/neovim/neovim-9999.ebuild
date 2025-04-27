@@ -27,7 +27,7 @@ IUSE="doc lint +lto +nvimpager test"
 # https://github.com/neovim/neovim/blob/91109ffda23d0ce61cec245b1f4ffb99e7591b62/CMakeLists.txt#L377
 REQUIRED_USE="${LUA_REQUIRED_USE} test? ( lua_single_target_luajit )"
 # TODO: Get tests running
-RESTRICT="!test? ( test ) test"
+RESTRICT="!test? ( test ) mirror"
 
 # Upstream build scripts invoke the Lua interpreter
 BDEPEND="${LUA_DEPS}
@@ -41,7 +41,7 @@ BDEPEND="${LUA_DEPS}
 # new dependency bounds and so on on bumps (obviously adjust for right branch/tag).
 # List of required tree-sitter parsers is taken from cmake.deps/deps.txt
 DEPEND="${LUA_DEPS}
-	>=dev-lua/luv-1.45.0[${LUA_SINGLE_USEDEP}]
+	>=dev-lua/luv-1.50.0[${LUA_SINGLE_USEDEP}]
 	$(lua_gen_cond_dep '
 		dev-lua/lpeg[${LUA_USEDEP}]
 		dev-lua/mpack[${LUA_USEDEP}]
@@ -50,18 +50,18 @@ DEPEND="${LUA_DEPS}
 	$(lua_gen_cond_dep '
 		dev-lua/LuaBitOp[${LUA_USEDEP}]
 	' lua5-{1,2})
-	>=dev-libs/libutf8proc-2.9.0:=
-	>=dev-libs/libuv-1.46.0:=
+	>=dev-libs/libutf8proc-2.10.0:=[-cjk]
+	>=dev-libs/libuv-1.50.0:=
 	>=dev-libs/libvterm-0.3.3
 	>=dev-libs/msgpack-3.0.0:=
-	>=dev-libs/tree-sitter-0.22.6:=
-	=dev-libs/tree-sitter-c-0.21*
-	=dev-libs/tree-sitter-lua-0.1*
-	=dev-libs/tree-sitter-markdown-0.2*
-	=dev-libs/tree-sitter-query-0.4*
-	=dev-libs/tree-sitter-vim-0.4*
+	>=dev-libs/tree-sitter-0.25.3:=
+	=dev-libs/tree-sitter-c-0.23*
+	=dev-libs/tree-sitter-lua-0.3*
+	=dev-libs/tree-sitter-markdown-0.4*
+	=dev-libs/tree-sitter-query-0.5*
+	=dev-libs/tree-sitter-vim-0.5*
 	=dev-libs/tree-sitter-vimdoc-3*
-	>=dev-libs/unibilium-2.0.0:0=
+	>=dev-libs/unibilium-2.1.2:0=
 	lint? (
 		dev-util/shellcheck
 		dev-util/stylua

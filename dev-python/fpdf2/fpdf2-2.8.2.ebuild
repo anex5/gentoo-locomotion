@@ -1,18 +1,23 @@
-# Copyright 1999-2023 Gentoo Authors
+# Copyright 1999-2025 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{10..12} )
+PYTHON_COMPAT=( python3_{11..13} )
 
-inherit distutils-r1
+DISTUTILS_USE_PEP517=setuptools
+
+inherit distutils-r1 pypi
 
 DESCRIPTION="Simple PDF generation for Python"
-HOMEPAGE="https://github.com/reingart/pyfpdf"
-SRC_URI="
-https://github.com/PyFPDF/fpdf2/archive/${P}.tar.gz
-mirror://pypi/${P:0:1}/${PN}/${P}.tar.gz
+HOMEPAGE="
+	https://pypi.org/project/pypdf/
+	https://github.com/reingart/pyfpdf
 "
+#SRC_URI="
+#https://github.com/PyFPDF/fpdf2/archive/${P}.tar.gz
+#mirror://pypi/${P:0:1}/${PN}/${P}.tar.gz
+#"
 
 LICENSE="GPL-3"
 SLOT="0"
