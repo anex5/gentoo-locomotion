@@ -34,7 +34,7 @@ BDEPEND+="
 		dev-python/mypy[${PYTHON_USEDEP}]
 	)
 "
-S="${WORKDIR}/exif-py-${PV}"
+#S="${WORKDIR}/exif-py-${PV}"
 
 python_install() {
 	distutils-r1_python_install
