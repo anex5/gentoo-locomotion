@@ -15,7 +15,7 @@ HOMEPAGE="
 	https://pypi.org/project/exif-py/
 "
 
-LICENSE="BSD-3-clause"
+LICENSE="BSD"
 SLOT="0"
 KEYWORDS="~amd64 ~arm64 ~mips ~x86"
 IUSE+="test"
