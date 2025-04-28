@@ -1,4 +1,4 @@
-# Copyright 1999-2022 Gentoo Foundation
+# Copyright 1999-2025 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -27,7 +27,7 @@ IUSE=""
 
 DEPEND="
 	>=media-libs/libsfml-2.5.1
-	media-libs/glew:=
+	media-libs/glew:=[X(+)]
 	media-libs/glm:=
 	media-libs/openal:*
 	media-libs/anttweakbar:*

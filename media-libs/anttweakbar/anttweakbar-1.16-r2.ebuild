@@ -1,11 +1,10 @@
-# Copyright 1999-2022 Gentoo Foundation
+# Copyright 1999-2025 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI="8"
 
 DESCRIPTION="A library that adds an easy GUI into OpenGL applications"
 HOMEPAGE="http://www.antisphere.com/Wiki/tools:anttweakbar?sb=tools"
-
 
 SRC_URI="https://sourceforge.net/projects/anttweakbar/files/latest/download?source=dlp -> ${P}.zip"
 
@@ -21,20 +20,20 @@ DEPEND="
 	virtual/libc
 "
 RDEPEND="$DEPEND"
-RESTRICT="mirror"
+RESTRICT="mirror test"
 
 S="${WORKDIR}/AntTweakBar"
 
 src_configure() {
 	sed -i -e "s|^LIBS.*$|LIBS\t\t= -L/usr/lib64 -lGL -lX11 -lXxf86vm -lXext -lpthread -lm|g" \
-		-e "s|^INCPATH.*$||g" \
 		-e "s|^CXXCFG.*$||g" \
 		-e "s|\$(AR) \$(OUT_DIR)/lib\$(TARGET)\$(AR_EXT) \$(OBJS) \$(LIBS)|\$(AR) \$(OUT_DIR)/lib\$(TARGET)\$(AR_EXT) \$(OBJS)|g" src/Makefile || die
 }
 
 src_compile() {
 	cd src
-	emake || die "${P} could not be compiled"
+	emake CC="$(tc-getCC)" FLAGS="${CFLAGS}" \
+		LIBDIR="-L/usr/$(get_libdir)" || die "${P} could not be compiled"
 }
 
 src_install() {
