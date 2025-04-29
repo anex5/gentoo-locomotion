@@ -33,8 +33,10 @@ DEPEND+="${RDEPEND}
 	>=dev-python/hatchling-1.24.2[${PYTHON_USEDEP}]
 	>=dev-python/hatch-vcs-0.3.0[${PYTHON_USEDEP}]
 	>=dev-python/hatch-fancy-pypi-readme-23.2.0[${PYTHON_USEDEP}]
-	dev-python/mypy[${PYTHON_USEDEP}]
-	dev-python/build[${PYTHON_USEDEP}]
+	test? (
+		dev-python/mypy[${PYTHON_USEDEP}]
+		dev-python/build[${PYTHON_USEDEP}]
+	)
 "
 
 RESTRICT="mirror test"

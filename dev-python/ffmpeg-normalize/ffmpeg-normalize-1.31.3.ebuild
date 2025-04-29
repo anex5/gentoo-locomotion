@@ -31,7 +31,7 @@ RDEPEND+="
 
 BDEPEND+="
 	dev-python/setuptools[${PYTHON_USEDEP}]
-	dev-python/mypy[${PYTHON_USEDEP}]
+	test? ( dev-python/mypy[${PYTHON_USEDEP}] )
 "
 
 RESTRICT="
