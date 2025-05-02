@@ -1,14 +1,14 @@
-# Copyright 1999-2024 Gentoo Foundation
+# Copyright 1999-2025 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
 inherit linux-mod-r1
 
-MODULES_KERNEL_MAX=6.12
-MODULES_KERNEL_MIN=2.6.19
+MODULES_KERNEL_MAX=6.14
+MODULES_KERNEL_MIN=2.6.33
 
-COMMIT="213db3aa999e9cb14d8b9a7f84d711e15d2619f6"
+COMMIT="4bff981a91bf9209b52e30ee24ca39df163a8bcd"
 
 DESCRIPTION="Driver for it87/it86 series hardware monitoring chips."
 HOMEPAGE="https://github.com/frankcrawford/it87"
@@ -29,8 +29,7 @@ RESTRICT="mirror bindist"
 pkg_setup() {
 	linux-mod-r1_pkg_setup
 
-	CONFIG_CHECK=""
-	CONFIG_CHECK2=""
+	CONFIG_CHECK="~MODULES ~HWMON ~I2C_CHARDEV ~I2C"
 }
 
 src_compile() {

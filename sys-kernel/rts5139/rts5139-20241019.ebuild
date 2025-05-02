@@ -1,18 +1,18 @@
-# Copyright 1999-2024 Gentoo Foundation
+# Copyright 1999-2025 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
 inherit linux-mod-r1
 
-MODULES_KERNEL_MAX=6.9
-MODULES_KERNEL_MIN=3.16
+MODULES_KERNEL_MAX=6.10
+MODULES_KERNEL_MIN=3.17
 
-COMMIT="6dd73fd9f877b01ad5a0ba3e26d564384e54935f"
+COMMIT="2564f4c9d1db4089dd08d453465c033fc10852df"
 
 DESCRIPTION="Driver for Realtek rts5139 USB cardreader"
 HOMEPAGE="https://realtek.com"
-SRC_URI="https://github.com/ljmf00/rts5139/archive/${COMMIT}.tar.gz"
+SRC_URI="https://github.com/asymingt/rts5139/archive/${COMMIT}.tar.gz"
 
 SLOT="0"
 LICENSE="GPL-2"
@@ -28,7 +28,7 @@ RESTRICT="mirror bindist"
 
 pkg_setup() {
 	linux-mod-r1_pkg_setup
-	CONFIG_CHECK=""
+	CONFIG_CHECK="~MODULES ~CONFIG_RTS_PSTOR !~CONFIG_RTS5139"
 }
 
 src_compile() {
