@@ -58,13 +58,13 @@ BDEPEND="
 
 src_prepare() {
 	default
-	# disable the systemd dep, we install the unit file manually
 	echo -e "Name[ru_RU]=Фут" >> "${PN}.desktop"
 	echo -e "GenericName[ru_RU]=Терминал" >> "${PN}.desktop"
 	echo -e "Name[ru_RU]=Фут Клиент" >> "${PN}client.desktop"
 	echo -e "GenericName[ru_RU]=Терминал" >> "${PN}client.desktop"
 	echo -e "Name[ru_RU]=Фут Сервер" >> "${PN}-server.desktop"
 	echo -e "GenericName[ru_RU]=Терминал" >> "${PN}-server.desktop"
+	# disable the systemd dep, we install the unit file manually
 	sed -i "s/systemd', required: false)$/', required: false)/" "${S}"/meson.build || die
 	tc-is-cross-compiler && ( sed "/find_program(wayland_scanner/s@native\: true@native\: false@" -i meson.build || die "Sed failed..." )
 }

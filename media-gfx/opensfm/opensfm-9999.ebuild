@@ -9,7 +9,7 @@ MY_PN="OpenSfM"
 
 inherit cmake distutils-r1 flag-o-matic
 
-DISTUTILS_USE_SETUPTOOLS=no
+#DISTUTILS_USE_SETUPTOOLS=no
 DISTUTILS_USE_PEP517=setuptools
 DISTUTILS_EXT=1
 
