@@ -1,8 +1,8 @@
-# Copyright 1999-2024 Gentoo Authors
+# Copyright 1999-2025 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
-PYTHON_COMPAT=( python3_{10..12} )
+PYTHON_COMPAT=( python3_{11..13} )
 
 inherit python-single-r1 systemd
 
@@ -14,7 +14,7 @@ if [[ ${PV} = *9999 ]]; then
 	EGIT_BRANCH="master"
 	KEYWORDS=""
 else
-	COMMIT="6ce6fbbce07605010c0d4fa8eaa0ebcde01e53db"
+	COMMIT="1cc63980747b80516f8fc4f022eedf18ae739086"
 	SRC_URI="https://github.com/Klipper3d/${PN}/archive/${COMMIT}.tar.gz -> ${P}.tar.gz
 	dict? ( https://github.com/Klipper3d/klipper/files/7491378/klipper-dict-20211106.tar.gz )"
 	KEYWORDS="~amd64 ~x86 ~arm ~arm64"
@@ -53,7 +53,7 @@ DOCS=( COPYING )
 
 PATCHES=(
 	${FILESDIR}/ecf4266cc71f52045460c4021fdd7b971f119562.patch
-	${FILESDIR}/klipper-fix-arm-firmware-build.patch
+	#${FILESDIR}/klipper-fix-arm-firmware-build.patch
 )
 
 # set_config <file> <option name> <yes value> <no value> test

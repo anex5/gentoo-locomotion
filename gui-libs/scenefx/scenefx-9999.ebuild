@@ -52,6 +52,10 @@ BDEPEND+="man? ( >=app-text/scdoc-1.9.2 )"
 
 RESTRICT="mirror"
 
+PATCHES=(
+	"${FILESDIR}/${PN}-0.2.1-corner-passing-logic.patch"
+)
+
 src_configure() {
 	local emesonargs=(
 		-Drenderers=auto
