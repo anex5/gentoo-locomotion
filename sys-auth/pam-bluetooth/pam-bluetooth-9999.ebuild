@@ -17,7 +17,7 @@ KEYWORDS="~amd64 ~x86 ~arm ~arm64 ~mips"
 IUSE="doc"
 
 RDEPEND="
-	net-wireless/bluez-tools
+	net-wireless/bluez
 	sys-libs/pam
 "
 DEPEND="${RDEPEND}"

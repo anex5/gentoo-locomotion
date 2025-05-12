@@ -1,4 +1,4 @@
-# Copyright 1999-2024 Gentoo Authors
+# Copyright 1999-2025 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -15,7 +15,7 @@ if [[ ${PV} = *9999 ]]; then
 	EGIT_BRANCH="wayland"
 	KEYWORDS=""
 else
-	MY_PV="${PV}+wayland${PR##r}"
+	MY_PV="$(ver_cut 1-3)+wayland$(ver_cut 5)"
 	SRC_URI="https://github.com/lbonn/rofi/releases/download/${MY_PV}/${PN}-${MY_PV}.tar.xz"
 	KEYWORDS="~amd64 ~x86 ~arm ~arm64"
 	S=${WORKDIR}/${PN}-${MY_PV}
