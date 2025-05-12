@@ -70,7 +70,7 @@ RDEPEND="
 		dev-qt/qtwidgets:5
 		dev-qt/qtxml:5
 	)
-	ffmpeg? ( <media-video/ffmpeg-5:= )
+	ffmpeg? ( <media-video/ffmpeg-8:= )
 	freeimage? ( media-libs/freeimage )
 	inspector? (
 		dev-qt/qtcore:6

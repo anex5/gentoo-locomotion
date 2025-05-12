@@ -1,17 +1,18 @@
-# Copyright 1999-2021 Gentoo Authors
+# Copyright 1999-2025 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-inherit flag-o-matic toolchain-funcs git-r3
+inherit flag-o-matic toolchain-funcs
 
 DESCRIPTION="libopenaptx library without the additional license restriction"
 HOMEPAGE="https://github.com/iamthehorker/libfreeaptx"
 
 if [[ ${PV} == "9999" ]] ; then
+	inherit git-r3
 	EGIT_REPO_URI="https://github.com/iamthehorker/${PN}"
 else
-	SRC_URI="https://github.com/iamthehorker/${PN}/archive/${PV}.tar.gz -> ${P}.tar.gz"
+	SRC_URI="https://github.com/iamthehorker/${PN}/archive/v${PV}.tar.gz -> ${P}.tar.gz"
 	KEYWORDS="~amd64"
 	RESTRICT="mirror"
 fi
