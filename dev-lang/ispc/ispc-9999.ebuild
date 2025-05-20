@@ -3,10 +3,10 @@
 
 EAPI=8
 
-LLVM_COMPAT=( {17..19} )
-PYTHON_COMPAT=( python3_{10..12} )
+LLVM_COMPAT=( {17..20} )
+PYTHON_COMPAT=( python3_{11..14} )
 
-inherit cmake llvm-r1 multiprocessing python-any-r1 toolchain-funcs
+inherit cmake dot-a llvm-r1 multiprocessing python-any-r1 toolchain-funcs
 
 DESCRIPTION="Intel SPMD Program Compiler"
 HOMEPAGE="
@@ -27,7 +27,7 @@ fi
 
 LICENSE="BSD BSD-2 UoI-NCSA"
 SLOT="0"
-IUSE="doc examples gpu openmp sanitize test utils"
+IUSE="doc examples javascript gpu openmp test utils xe"
 RESTRICT="!test? ( test ) mirror"
 
 DEPEND="
@@ -35,6 +35,7 @@ DEPEND="
 		llvm-core/clang:${LLVM_SLOT}
 		llvm-core/llvm:${LLVM_SLOT}
 	')
+	javascript? ( dev-util/emscripten[llvm_targets_WebAssembly(+)] )
 	sys-libs/ncurses:=
 	gpu? ( dev-libs/level-zero:= )
 	!openmp? ( dev-cpp/tbb:= )
@@ -51,12 +52,6 @@ BDEPEND="
 	app-alternatives/lex
 	${PYTHON_DEPS}
 "
-
-PATCHES+=(
-	"${FILESDIR}"/0001-Fix-QA-Issues.patch
-	#"${FILESDIR}"/0002-cmake-don-t-build-for-32-bit-targets.patch
-	"${FILESDIR}"/0001-CMakeLists.txt-link-with-libclang-cpp-library-instea.patch
-)
 
 DOCS=( README.md "${S}"/docs/{ReleaseNotes.txt,faq.rst,ispc.rst,perf.rst,perfguide.rst} )
 
@@ -84,17 +79,19 @@ src_prepare() {
 	cat > ispcrt/tests/vendor/google/googletest/CMakeLists.txt <<-EOF || die
 		find_package(GTest)
 	EOF
-	# remove hacks that break unbinding
+	# remove hacks that break unbundling
 	sed -i -e '/gmock/d' -e '/install/,$d' ispcrt/tests/CMakeLists.txt || die
 
 	cmake_src_prepare
 }
 
 src_configure() {
-	CMAKE_BUILD_TYPE="Release"
+	lto-guarantee-fat
 	local mycmakeargs=(
-		-DCMAKE_CXX_STANDARD=17
-		-DARM_ENABLED=$(usex arm)
+		-DX86_ENABLED=$(usex amd64 ON $(usex x86))
+		-DARM_ENABLED=$(usex arm ON OFF)
+		-DXE_ENABLED=$(usex xe ON OFF)
+		-DWASM_ENABLED=$(usex javascript ON OFF)
 		-DCMAKE_SKIP_RPATH=ON
 		#-DNVPTX_ENABLED=OFF
 		-DISPC_INCLUDE_EXAMPLES=$(usex examples)
@@ -106,11 +103,11 @@ src_configure() {
 		-DISPC_STATIC_LINK=OFF
 		-DISPCRT_BUILD_GPU=$(usex gpu)
 		-DISPCRT_BUILD_TASK_MODEL=$(usex openmp OpenMP TBB)
-		-DISPC_USE_ASAN=$(usex sanitize)
-		-DPython3_EXECUTABLE="${PYTHON}"
+		-DISPC_USE_ASAN=OFF
 		# prevent it from trying to find the git repo
 		-DGIT_BINARY=GIT_BINARY-NOTFOUND
 	)
+	CMAKE_BUILD_TYPE="Release"
 	cmake_src_configure
 }
 
@@ -134,6 +131,7 @@ src_compile(){
 
 src_install() {
 	cmake_src_install
+	strip-lto-bytecode
 
 	if use doc; then
 		local HTML_DOCS=( docs/doxygen/html/. )
@@ -141,9 +139,7 @@ src_install() {
 	einstalldocs
 
 	if use examples; then
-		#insinto "/usr/share/doc/${PF}/examples"
 		docompress -x "/usr/share/doc/${PF}/examples"
-		#doins -r "${BUILD_DIR}"/examples/*
 		dodoc -r examples
 	fi
 }

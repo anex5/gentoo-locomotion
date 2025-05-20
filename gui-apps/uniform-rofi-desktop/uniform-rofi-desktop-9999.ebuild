@@ -80,7 +80,7 @@ src_install() {
 	use bluetooth && SNS+=( "urd-bluetooth-connections,bluetooth-symbolic" )
 	use calendar && SNS+=( "urd-date-picker,x-office-calendar-symbolic" )
 	use fonts && SNS+=( "urd-font-picker,font-select-symbolic" )
-	use pipewire && SNS+=( "urd-pipewire-sink,audio-speakers-symbolic" "urd-pipewire-source,audio-input-microphone-symbolic" )
+	use pipewire && SNS+=( "urd-pipewire-sinks,audio-speakers-symbolic" "urd-pipewire-sources,audio-input-microphone-symbolic" )
 	use usb-storage && SNS+=( "urd-usbstor-mounter,drive-harddisk-usb-symbolic" )
 	use sway && SNS+=( "urd-logout-menu,system-shutdown-symbolic" "urd-sway-display,video-display-symbolic" )
 	use wifi && SNS+=( "urd-wifi-networks,network-wireless-symbolic" )

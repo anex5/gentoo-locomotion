@@ -100,6 +100,8 @@ src_configure() {
 
 src_install() {
 	meson_src_install
+	insinto /usr/share/xdg-desktop-portal
+	doins "${FILESDIR}/sway-portals.conf"
 
 	if use grimshot; then
 		use man && doman contrib/grimshot.1
@@ -117,7 +119,7 @@ pkg_postinst() {
 	optfeature "lightweight notification daemon" gui-apps/mako
 	echo
 	einfo "For a list of additional addons and tools usable with sway please"
-	einfo "visit the offical wiki at:"
+	einfo "visit the official wiki at:"
 	einfo "https://github.com/swaywm/sway/wiki/Useful-add-ons-for-sway"
 	einfo "Please note that some of them might not (yet) available on gentoo"
 }
