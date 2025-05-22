@@ -1,26 +1,62 @@
---- a/moonraker/components/machine.py	2022-09-28 01:10:23.989193046 +0300
-+++ b/moonraker/components/machine.py	2022-09-28 10:33:56.724917989 +0300
-@@ -104,7 +104,7 @@ class Machine:
+--- a/moonraker/components/machine.py
++++ b/moonraker/components/machine.py
+@@ -484,7 +484,7 @@ class Machine:
+ 
+     async def check_sudo_access(self, cmds: List[str] = []) -> bool:
+         if not cmds:
+-            cmds = ["systemctl --version", "ls /root"]
++            cmds = ["loginctl --version", "ls /root"]
+         shell_cmd: SCMDComp = self.server.lookup_component("shell_command")
+         for cmd in cmds:
+             try:
+@@ -952,10 +952,10 @@ class BaseProvider:
+         return await machine.exec_sudo_command(command)
+ 
+     async def shutdown(self) -> None:
+-        await self._exec_sudo_command(f"systemctl {self.shutdown_action}")
++        await self._exec_sudo_command(f"loginctl {self.shutdown_action}")
+ 
+     async def reboot(self) -> None:
+-        await self._exec_sudo_command("systemctl reboot")
++        await self._exec_sudo_command("loginctl reboot")
+ 
+     async def do_service_action(self,
+                                 action: str,
+@@ -1000,7 +1000,7 @@ class SystemdCliProvider(BaseProvider):
+                                 action: str,
                                  service_name: str
                                  ) -> None:
-         await self._execute_cmd(
--            f'sudo systemctl {action} {service_name}')
-+            f'sudo /etc/init.d/{service_name} {action}')
+-        await self._exec_sudo_command(f"systemctl {action} {service_name}")
++        await self._exec_sudo_command(f"rc-service {service_name} {action}")
  
-     async def _handle_service_request(self, web_request: WebRequest) -> str:
-         name: str = web_request.get('service')
-@@ -249,12 +249,11 @@ class Machine:
-     async def _find_active_services(self):
-         shell_cmd: SCMDComp = self.server.lookup_component('shell_command')
-         scmd = shell_cmd.build_shell_command(
--            "systemctl list-units --type=service")
-+            "rc-status -s")
+     async def check_virt_status(self) -> Dict[str, Any]:
+         # Fallback virtualization check
+@@ -1095,7 +1095,7 @@ class SystemdCliProvider(BaseProvider):
+             properties = SERVICE_PROPERTIES
          try:
-             resp = await scmd.run_with_response()
-             lines = resp.split('\n')
--            services = [line.split()[0].strip() for line in lines
--                        if ".service" in line.strip()]
-+            services = [line.split()[0].strip() for line in lines]
-         except Exception:
-             services = []
-         for svc in services:
+             resp: str = await self.shell_cmd.exec_cmd(
+-                f"systemctl status {pid}"
++                f"rc-service -C {service_name} status | sed -e 's/^ \* status: \(.*\)/\1/'"
+             )
+             unit_name = resp.split(maxsplit=2)[1]
+             service_info["unit_name"] = unit_name
+@@ -1239,8 +1239,8 @@ class SystemdDbusProvider(BaseProvider):
+         if not self.dbus_mgr.is_connected():
+             raise self.server.error("DBus Not Connected, ", 503)
+         mgr = self.systemd_mgr
+-        if not service_name.endswith(".service"):
+-            service_name += ".service"
++        # if not service_name.endswith(".service"):
++        #    service_name += ".service"
+         if action == "start":
+             await mgr.call_start_unit(service_name, "replace")  # type: ignore
+         elif action == "stop":
+@@ -1352,7 +1352,7 @@ class SystemdDbusProvider(BaseProvider):
+             return {}
+         mgr = self.systemd_mgr
+         service_info: Dict[str, Any] = {}
+-        expected_name = f"{service_name}.service"
++        expected_name = f"{service_name}"
+         if properties is None:
+             properties = SERVICE_PROPERTIES
+         try:
