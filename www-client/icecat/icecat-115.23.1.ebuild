@@ -911,6 +911,13 @@ src_prepare() {
 	# use the build information for 64-bit linking, which should be 32-bit.
 
 	#eapply "${DISTDIR}/${PN}-d4f5769.patch"
+	eapply "${FILESDIR}/extra-patches/firefox-115e-remove-distutils-PR-18d19413472f.patch"
+	eapply "${FILESDIR}/extra-patches/firefox-115e-python3.12-bug1874280.patch"
+	eapply "${FILESDIR}/extra-patches/firefox-115e-python3.12-bug1866829.patch"
+	eapply "${FILESDIR}/extra-patches/firefox-115e-python3.12-bug1860051.patch"
+	eapply "${FILESDIR}/extra-patches/firefox-115e-python3.12-bug1831512.patch"
+	eapply "${FILESDIR}/extra-patches/firefox-115e-PR-b1cc62489fae.patch"
+	[[ "${EPYTHON//python}" == "3.13" ]] && eapply "${FILESDIR}/extra-patches/firefox-115e-python3.13-build-fix.patch"
 
 	# Allow to use system-ffmpeg completely.
 	eapply "${FILESDIR}/extra-patches/firefox-115e-allow-ffmpeg-decode-av1.patch"

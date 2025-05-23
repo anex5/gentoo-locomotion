@@ -1,0 +1,17 @@
+--- a/tools/esmify/mach_commands.py
++++ b/tools/esmify/mach_commands.py
+@@ -15,12 +15,12 @@ from mach.decorators import Command, Com
+ 
+ def path_sep_to_native(path_str):
+     """Make separators in the path OS native."""
+-    return pathlib.os.sep.join(path_str.split("/"))
++    return os.sep.join(path_str.split("/"))
+ 
+ 
+ def path_sep_from_native(path):
+     """Make separators in the path OS native."""
+-    return "/".join(str(path).split(pathlib.os.sep))
++    return "/".join(str(path).split(os.sep))
+ 
+ 
+ excluded_from_convert_prefix = list(
