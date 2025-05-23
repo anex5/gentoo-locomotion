@@ -17,7 +17,7 @@ if [[ ${PV} = *9999 ]]; then
 	KEYWORDS=""
 else
 	SRC_URI="https://github.com/Arksine/${PN}/archive/v${PV}.tar.gz -> ${P}.tar.gz"
-	KEYWORDS="~amd64 ~x86 ~arm ~arm64 ~mips"
+	KEYWORDS="~amd64 ~x86 ~arm ~arm64 mips"
 fi
 
 LICENSE="GPL-3"
