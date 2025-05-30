@@ -1,4 +1,4 @@
-# Copyright 1999-2020 Gentoo Authors
+# Copyright 1999-2025 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -16,7 +16,7 @@ IUSE=""
 
 DEPEND=""
 RDEPEND="${DEPEND}
-	>=x11-drivers/nvidia-drivers-460.27[${MULTILIB_USEDEP}]
+	>=x11-drivers/nvidia-drivers-570.0[${MULTILIB_USEDEP}]
 "
 
 RESTRICT="mirror"

@@ -89,7 +89,10 @@ REQUIRED_USE="
 	video_cards_nvk? ( vulkan video_cards_nouveau )
 	vdpau? ( X )
 	xa? ( X )
-	X? ( gles1? ( opengl ) gles2? ( opengl ) )
+	gles1? ( opengl )
+	gles2? ( opengl )
+	egl? ( opengl )
+	gbm? ( opengl )
 "
 
 LIBDRM_DEPSTRING=">=x11-libs/libdrm-2.4.121"

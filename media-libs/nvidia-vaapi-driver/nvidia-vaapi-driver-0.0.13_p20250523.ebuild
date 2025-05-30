@@ -1,12 +1,12 @@
-# Copyright 1999-2024 Gentoo Authors
+# Copyright 1999-2025 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
 inherit meson-multilib
 
-NV_VER="560.35.03"
-COMMIT_HASH="68efa33131745f1b2d530c64f6692f3993f3d53c"
+NV_VER="575.57.08"
+COMMIT_HASH="effa3af05da4525d850a525ae2dedf5eb80351d7"
 
 DESCRIPTION="A VA-API implemention using NVIDIA's NVDEC, specifically designed to be used by Firefox"
 HOMEPAGE="https://github.com/elFarto/nvidia-vaapi-driver"
@@ -36,8 +36,6 @@ BDEPEND="
 
 RESTRICT="mirror"
 
-PATCHES=( "${FILESDIR}/${PN}-wayland-fix.patch" )
-
 S=${WORKDIR}/${PN}-${COMMIT_HASH}
 
 src_prepare() {
@@ -52,7 +50,7 @@ pkg_postinst() {
 	elog "This library requires special configuration! See "
 	elog "${HOMEPAGE}"
 
-	# Source: https://github.com/elFarto/nvidia-vaapi-driver/blob/v0.0.12/src/backend-common.c#L13
+	# Source: https://github.com/elFarto/nvidia-vaapi-driver/blob/v0.0.13/src/backend-common.c#L13
 	elog "If vaapi drivers fail to load, then make sure that you are"
 	elog "passing the correct parameters to the kernel."
 	elog "nvidia_drm.modeset should be set to 1."
