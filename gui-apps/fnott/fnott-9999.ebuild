@@ -33,6 +33,7 @@ DEPEND="
 	media-libs/fcft
 	media-libs/freetype
 	media-libs/fontconfig
+	>=media-libs/nanosvg-20241219
 "
 RDEPEND="${DEPEND}
 "
@@ -57,7 +58,7 @@ src_prepare() {
 src_configure() {
 	local emesonargs=(
 		$(meson_feature man docs)
-		-Dsystem-nanosvg=disabled
+		-Dsystem-nanosvg=enabled
 	)
 	meson_src_configure
 
