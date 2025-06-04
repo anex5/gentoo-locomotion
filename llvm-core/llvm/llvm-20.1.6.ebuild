@@ -3,7 +3,7 @@
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{10..13} )
+PYTHON_COMPAT=( python3_{11..14} )
 
 inherit cmake flag-o-matic llvm.org multilib-minimal pax-utils python-any-r1
 inherit toolchain-funcs git-r3 ninja-utils
@@ -196,8 +196,8 @@ check_distribution_components() {
 					# shared libs
 					LLVM|LLVMgold)
 						;;
-					# TableGen/mlir lib + deps
-					LLVMCodeGenTypes|LLVMDemangle|LLVMSupport|LLVMTableGen)
+					# TableGen lib + deps
+					LLVMDemangle|LLVMSupport|LLVMTableGen)
 						;;
 					# for mlir-tblgen
 					LLVMCodeGenTypes)
@@ -268,11 +268,6 @@ src_prepare() {
 
 
 	llvm.org_src_prepare
-
-	if has_version ">=sys-libs/glibc-2.40"; then
-		# https://github.com/llvm/llvm-project/issues/100791
-		rm -r test/tools/llvm-exegesis/X86/latency || die
-	fi
 }
 
 get_distribution_components() {
@@ -440,6 +435,12 @@ multilib_src_configure() {
 		# Workaround for bug #880677
 		append-flags $(test-flags-CXX -fno-ipa-sra -fno-ipa-modref -fno-ipa-icf)
 	fi
+
+	# ODR violations (bug #917536, bug #926529). Just do it for GCC for now
+	# to avoid people grumbling. GCC is, anecdotally, more likely to miscompile
+	# LLVM with LTO anyway (which is not necessarily its fault).
+	tc-is-gcc && filter-lto
+
 	local ffi_cflags ffi_ldflags
 	if use libffi; then
 		ffi_cflags=$($(tc-getPKG_CONFIG) --cflags-only-I libffi)

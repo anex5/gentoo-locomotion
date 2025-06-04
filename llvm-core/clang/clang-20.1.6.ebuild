@@ -3,7 +3,7 @@
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{10..13} )
+PYTHON_COMPAT=( python3_{11..14} )
 
 inherit cmake llvm.org llvm-utils multilib multilib-minimal
 inherit prefix python-single-r1 toolchain-funcs
@@ -17,7 +17,7 @@ HOMEPAGE="https://llvm.org/"
 
 LICENSE="Apache-2.0-with-LLVM-exceptions UoI-NCSA MIT"
 SLOT="${LLVM_MAJOR}/${LLVM_SOABI}"
-KEYWORDS="~amd64 ~arm ~arm64 ~loong ~ppc ~ppc64 ~riscv ~sparc ~x86 ~amd64-linux ~x64-macos"
+KEYWORDS="~amd64 ~arm ~arm64 ~loong ~mips ~ppc ~ppc64 ~riscv ~sparc ~x86 ~amd64-linux ~arm64-macos ~x64-macos"
 
 IUSE="debug doc +extra ieee-long-double +pie static-analyzer test xml \
 default-fortify-source-2 default-fortify-source-3 default-full-relro \
@@ -90,24 +90,24 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}
 		!test
 	)
 "
-RDEPEND+="
+RESTRICT="!test? ( test )"
+
+DEPEND="
+	~llvm-core/llvm-${PV}:${LLVM_MAJOR}=[debug=,${MULTILIB_USEDEP}]
+	static-analyzer? ( dev-lang/perl:* )
+	xml? ( dev-libs/libxml2:2=[${MULTILIB_USEDEP}] )
+"
+
+RDEPEND="
 	${PYTHON_DEPS}
+	${DEPEND}
 	>=llvm-core/clang-common-${PV}
-	rocm? (
-		dev-libs/rocm-device-libs:0/5.7
-	)
-	static-analyzer? (
-		dev-lang/perl:*
-	)
-	xml? (
-		dev-libs/libxml2:2=[${MULTILIB_USEDEP}]
-	)
+	rocm? ( dev-libs/rocm-device-libs:0/5.7 )
+	static-analyzer? ( dev-lang/perl:* )
+	xml? ( dev-libs/libxml2:2=[${MULTILIB_USEDEP}] )
 	~llvm-core/llvm-${PV}:${LLVM_MAJOR}=[${MULTILIB_USEDEP},debug=]
 "
 
-DEPEND="
-	${RDEPEND}
-"
 BDEPEND="
 	${PYTHON_DEPS}
 	>=dev-build/cmake-3.16
@@ -124,9 +124,7 @@ PDEPEND="
 	~llvm-core/clang-runtime-${PV}
 	llvm-core/clang-toolchain-symlinks:${LLVM_MAJOR}
 "
-RESTRICT="
-	!test? ( test )
-"
+
 LLVM_COMPONENTS=(
 	"clang"
 	"clang-tools-extra"
@@ -418,9 +416,9 @@ check_distribution_components() {
 		done
 
 		if [[ ${#add[@]} -gt 0 || ${#remove[@]} -gt 0 ]]; then
-			eqawarn "get_distribution_components() is outdated!"
-			eqawarn "   Add: ${add[*]}"
-			eqawarn "Remove: ${remove[*]}"
+			eerror "get_distribution_components() is outdated!"
+			eerror "   Add: ${add[*]}"
+			eerror "Remove: ${remove[*]}"
 		fi
 		cd - >/dev/null || die
 	fi
@@ -639,7 +637,7 @@ multilib_src_configure() {
 		-DCMAKE_INSTALL_PREFIX="${EPREFIX}/usr/lib/llvm/${LLVM_MAJOR}"
 		-DCMAKE_INSTALL_MANDIR="${EPREFIX}/usr/lib/llvm/${LLVM_MAJOR}/share/man"
 		-DLLVM_ROOT="${EPREFIX}/usr/lib/llvm/${LLVM_MAJOR}"
-		-DCLANG_CONFIG_FILE_SYSTEM_DIR="${EPREFIX}/etc/clang"
+		-DCLANG_CONFIG_FILE_SYSTEM_DIR="${EPREFIX}/etc/clang/${LLVM_MAJOR}"
 		-DCLANG_CONFIG_FILE_USER_DIR="~/.config/clang"
 		# relative to bindir
 		-DCLANG_RESOURCE_DIR="../../../../lib/clang/${LLVM_MAJOR}"
