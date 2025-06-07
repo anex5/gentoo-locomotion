@@ -1,0 +1,16 @@
+#!/sbin/openrc-run
+# Copyright 1999-2025 Gentoo Authors
+# Distributed under the terms of the GNU General Public License, v2 or later
+
+name="Foot server"
+description="Foot terminal daemon"
+
+depend() {
+	need dbus 
+	after xdg-desktop-portal-wlr
+}
+
+supervisor=supervise-daemon
+command="/usr/bin/foot"
+command_args="--server --hold"
+command_background="yes"

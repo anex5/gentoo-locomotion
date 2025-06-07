@@ -1,9 +1,9 @@
-# Copyright 1999-2024 Gentoo Authors
+# Copyright 1999-2025 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-inherit linux-mod-r1 toolchain-funcs
+inherit linux-mod-r1 toolchain-funcs flag-o-matic
 
 case ${PV} in
 9999)
@@ -22,6 +22,7 @@ HOMEPAGE="https://github.com/umlaeute/v4l2loopback"
 LICENSE="GPL-2"
 SLOT="0"
 IUSE="examples"
+RESTRICT="mirror"
 
 CONFIG_CHECK="VIDEO_DEV"
 
@@ -36,6 +37,10 @@ src_prepare() {
 }
 
 src_compile() {
+	filter-flags -fno-plt #912949
+	filter-lto
+	CC=${KERNEL_CC} CXX=${KERNEL_CXX} strip-unsupported-flags
+
 	local modlist=(
 		v4l2loopback=video:::all
 	)

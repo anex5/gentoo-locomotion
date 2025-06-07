@@ -3,7 +3,7 @@
 
 EAPI=8
 
-inherit pam git-r3
+inherit pam git-r3 toolchain-funcs flag-o-matic
 
 DESCRIPTION="PAM module to authenticate users via bluetooth device"
 HOMEPAGE="https://github.com/Taumille/pam-bluetooth"
@@ -27,11 +27,9 @@ DEPEND="${RDEPEND}"
 #)
 
 _emake() {
+	strip-unsupported-flags
 	local myemakeargs=(
 		"PREFIX=${EPREFIX}/usr"
-		"HOST_CC=$(tc-getBUILD_CC)"
-		"HOST_CFLAGS=${BUILD_CPPFLAGS} ${BUILD_CFLAGS}"
-		"HOST_LDFLAGS=${BUILD_LDFLAGS}"
 		"CC=$(tc-getCC)"
 		"LD=$(tc-getLD)"
 	)
@@ -41,8 +39,8 @@ _emake() {
 
 src_configure() {
 	default
-	sed -e "s/gcc/\$\{CC\} \$\{CFLAGS\}/" \
-		-e "s/ld -x --shared -o \/lib64\/security\/pam_bluetooth\.so/\$\{CC\} \$\{LDFLAGS\} -Wl,-x,\$\{XLDFLAGS\} -o pam_bluetooth\.so/" \
+	sed -e "s/gcc/\$\{CC\} \$\{CFLAGS\} -nostartfiles -o pam_bluetooth\.o /" \
+		-e "s/ld -x --shared -o \/lib64\/security\/pam_bluetooth\.so/\$\{CC\} \$\{LDFLAGS\} -Wl,-x,--shared -o pam_bluetooth\.so/" \
 		-e "/touch \/etc\/security\/authorized_bluetooth\.conf/d" \
 		-i Makefile || die
 }

@@ -1,0 +1,15 @@
+#!/sbin/openrc-run
+# Copyright 1999-2025 Gentoo Authors
+# Distributed under the terms of the GNU General Public License, v2 or later
+
+name="Fnott"
+description="Fnott notification daemon"
+
+depend() {
+	need dbus 
+	after xdg-desktop-portal-wlr
+}
+
+supervisor=supervise-daemon
+command="/usr/bin/fnott"
+command_background="true"

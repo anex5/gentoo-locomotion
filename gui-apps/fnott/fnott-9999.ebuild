@@ -17,31 +17,31 @@ else
 	KEYWORDS="~amd64 ~x86 ~arm ~arm64"
 fi
 
-IUSE="man zsh-completion systemd test"
+IUSE="man +completions systemd test"
+LICENSE="MIT ZLIB"
+SLOT="0"
 RESTRICT="
 	!test? ( test )
 	mirror
 "
-LICENSE="MIT ZLIB"
-SLOT="0"
 
 DEPEND="
+	dev-libs/wayland
+	<media-libs/fcft-4.0.0
+	>=media-libs/fcft-3.0.0
+	media-libs/fontconfig
 	x11-libs/pixman
 	media-libs/libpng
-	dev-libs/wayland
 	sys-apps/dbus
-	media-libs/fcft
 	media-libs/freetype
-	media-libs/fontconfig
 	>=media-libs/nanosvg-20241219
 "
-RDEPEND="${DEPEND}
-"
+RDEPEND="${DEPEND}"
 BDEPEND="
-	dev-util/wayland-scanner
-	dev-libs/wayland-protocols
 	man? ( app-text/scdoc )
-	dev-libs/tllist
+	>=dev-libs/tllist-1.1.0
+	>=dev-libs/wayland-protocols-1.32
+	dev-util/wayland-scanner
 "
 
 src_prepare() {
@@ -52,7 +52,7 @@ src_prepare() {
 	tc-is-cross-compiler && ( sed -e "/wscanner\./s@native\: true@native\: false@" -i meson.build || die "Sed failed..." )
 	use systemd || ( sed -e "/subdir('systemd')/d" -i meson.build || die "Sed failed..." )
 	use man || ( sed -e "/subdir('doc')/d" -i meson.build || die "Sed failed..." )
-	use zsh-completion || ( sed -e "/subdir('completions')/d" -i meson.build || die "Sed failed..." )
+	use completions || ( sed -e "/subdir('completions')/d" -i meson.build || die "Sed failed..." )
 }
 
 src_configure() {
@@ -65,10 +65,14 @@ src_configure() {
 	use systemd && ( sed 's|@bindir@|/usr/bin|g' "${S}"/dbus/${PN}.service.in > ${PN}.service || die )
 }
 
-
 src_install() {
 	local DOCS=( CHANGELOG.md README.md LICENSE )
 	meson_src_install
 
-	use systemd && systemd_douserunit ${PN}.service
+	if use systemd; then
+		systemd_douserunit ${PN}.service
+	else
+		exeinto /etc/user/init.d
+		newexe "${FILESDIR}"/${PN}.user.initd ${PN}
+	fi
 }
