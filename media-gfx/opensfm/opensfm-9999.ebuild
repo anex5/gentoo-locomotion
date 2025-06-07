@@ -7,11 +7,10 @@ PYTHON_COMPAT=( python3_{10..13} )
 
 MY_PN="OpenSfM"
 
-inherit cmake distutils-r1 flag-o-matic
-
 #DISTUTILS_USE_SETUPTOOLS=no
 DISTUTILS_USE_PEP517=setuptools
 DISTUTILS_EXT=1
+inherit cmake distutils-r1 flag-o-matic
 
 DESCRIPTION="Open source Structure-from-Motion pipeline"
 HOMEPAGE="https://www.opensfm.org"

@@ -2,8 +2,8 @@
 # Copyright 1999-2025 Gentoo Authors
 # Distributed under the terms of the GNU General Public License, v2 or later
 
-name="Foot server"
-description="Foot terminal daemon"
+name="Wlsunset"
+description="Day/night gamma adjustments for Wayland daemon"
 
 depend() {
 	need dbus 
@@ -16,6 +16,6 @@ export DBUS_SESSION_BUS_ADDRESS="unix:path=${XDG_RUNTIME_DIR}/bus"
 export WAYLAND_DISPLAY=${WAYLAND_DISPLAY:-wayland-1}
 
 supervisor=supervise-daemon
-command="/usr/bin/foot"
-command_args="--server --hold --log-no-syslog"
-command_background="yes"
+command="/usr/bin/wlsunset"
+command_args="-l 39.7 -L 47.2"
+command_background="true"

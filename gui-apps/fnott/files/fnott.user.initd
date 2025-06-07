@@ -10,6 +10,12 @@ depend() {
 	after xdg-desktop-portal-wlr
 }
 
+export USER=${USER}
+export XDG_RUNTIME_DIR=/run/user/${UID}
+export DBUS_SESSION_BUS_ADDRESS="unix:path=${XDG_RUNTIME_DIR}/bus"
+export WAYLAND_DISPLAY=${WAYLAND_DISPLAY:-wayland-1}
+
 supervisor=supervise-daemon
 command="/usr/bin/fnott"
+command_args="--log-no-syslog"
 command_background="true"

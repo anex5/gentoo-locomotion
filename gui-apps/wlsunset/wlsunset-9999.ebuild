@@ -10,12 +10,15 @@ if [[ "${PV}" == 9999 ]]; then
 	EGIT_REPO_URI="https://github.com/kennylevinsen/wlsunset"
 else
 	KEYWORDS="~amd64"
-	SRC_URI="https://github.com/kennylevinsen/wlsunset/archive/${PV}.tar.gz -> ${P}.tar.gz"
+	SRC_URI="
+		https://github.com/kennylevinsen/wlsunset/archive/${PV}.tar.gz -> ${P}.tar.gz
+		https://git.sr.ht/~kennylevinsen/wlsunset/archive/${PV}.tar.gz -> ${P}.tar.gz
+	"
 fi
 
 DESCRIPTION="Day/night gamma adjustments for Wayland"
 HOMEPAGE="https://sr.ht/~kennylevinsen/wlsunset/"
-IUSE="man"
+IUSE="man systemd"
 LICENSE="MIT"
 SLOT="0"
 RESTRICT="mirror"
@@ -38,4 +41,14 @@ src_configure() {
 	)
 
 	meson_src_configure
+}
+
+src_install() {
+	local DOCS=( README.md LICENSE )
+	meson_src_install
+
+	if ! use systemd; then
+		exeinto /etc/user/init.d
+		newexe "${FILESDIR}"/${PN}.user.initd ${PN}
+	fi
 }
