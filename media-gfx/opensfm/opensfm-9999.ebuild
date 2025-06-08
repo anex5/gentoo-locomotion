@@ -40,6 +40,7 @@ IUSE="debug doc test lto"
 #media-libs/opengv[python,${PYTHON_USEDEP}]
 DEPEND="
 	dev-libs/boost[${PYTHON_USEDEP}]
+	net-misc/curl
 	>=media-libs/opencv-4.8.0:=[contrib,contribsfm,contribxfeatures2d,eigen,features2d,openmp,python,${PYTHON_USEDEP}]
 	<=sci-libs/ceres-solver-${CERES_PV}:=
 	>=sci-libs/suitesparseconfig-7.6.0:=
@@ -72,8 +73,8 @@ DEPEND="
 	>=dev-python/xmltodict-0.10.2[${PYTHON_USEDEP}]
 	dev-python/wheel[${PYTHON_USEDEP}]
 	media-libs/vlfeat
-	media-libs/akaze
 "
+#media-libs/akaze
 RDEPEND="${PYTHON_DEPS}"
 BDEPEND="
 	${PYTHON_DEPS}
