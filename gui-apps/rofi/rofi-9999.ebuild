@@ -31,10 +31,7 @@ BDEPEND="
 	app-alternatives/ninja
 	virtual/pkgconfig
 	virtual/libc
-	man? (
-		>=dev-go/go-md2man-2.0.3
-		app-text/doxygen[dot]
-	)
+	man? ( app-text/doxygen[dot] )
 	wayland? ( >=dev-libs/wayland-protocols-1.17 )
 "
 RDEPEND="
