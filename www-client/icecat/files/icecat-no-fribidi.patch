@@ -3,10 +3,10 @@ index a1b58eb59b..d35da57db3 100644
 --- a/config/system-headers.mozbuild
 +++ b/config/system-headers.mozbuild
 @@ -267,7 +267,6 @@ system_headers = [
-     'freetype/t1tables.h',
-     'freetype/ttnameid.h',
-     'freetype/tttables.h',
--    'fribidi/fribidi.h',
-     'FSp_fopen.h',
-     'fstream',
-     'fstream.h',
+     "freetype/t1tables.h",
+     "freetype/ttnameid.h",
+     "freetype/tttables.h",
+-    "fribidi/fribidi.h",
+     "FSp_fopen.h",
+     "fstream",
+     "fstream.h",
