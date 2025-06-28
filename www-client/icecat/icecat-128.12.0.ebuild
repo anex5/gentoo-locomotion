@@ -1394,7 +1394,6 @@ _src_configure() {
 		--without-ccache \
 		--with-intl-api \
 		--with-system-ffi \
-		--with-ffvpx="no" \
 		--with-l10n-base="${s}/l10n" \
 		--with-system-nspr \
 		--with-system-nss \
