@@ -75,7 +75,7 @@ RESTRICT="mirror"
 
 src_prepare() {
 	default
-	use x11-backend || ( eapply "${FILESDIR}/swayfx-9999-disable-xwayland.patch" || die )
+	#use x11-backend || ( eapply "${FILESDIR}/swayfx-9999-disable-xwayland.patch" || die )
 }
 
 src_configure() {

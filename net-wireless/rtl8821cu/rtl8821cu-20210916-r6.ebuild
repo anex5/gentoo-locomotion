@@ -39,6 +39,10 @@ src_prepare() {
 }
 
 src_compile() {
+	filter-flags -O3 -fno-plt #912949
+	filter-lto
+	CC=${KERNEL_CC} CXX=${KERNEL_CXX} strip-unsupported-flags
+
 	local modlist=( 8821cu=kernel/drivers/net/wireless/realtek/rtlwifi/rtl8821cu:. )
 
 	local modargs=(

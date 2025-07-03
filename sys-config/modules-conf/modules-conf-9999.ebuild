@@ -1,10 +1,10 @@
-# Copyright 1999-2024 Gentoo Authors
+# Copyright 1999-2025 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
 DESCRIPTION="A configuration files for kernel modules"
-HOMEPAGE="https://github.com/anex5"
+HOMEPAGE="https://github.com/anex5/gentoo-locomotion"
 KEYWORDS="*"
 
 LICENSE="GPL-2+"

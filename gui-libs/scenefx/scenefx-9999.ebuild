@@ -36,8 +36,8 @@ DEPEND="
 "
 # Check this on every update
 DEPEND+="
-	>=gui-libs/wlroots-0.18:=[X?]
-	<gui-libs/wlroots-0.19:=[X?]
+	>=gui-libs/wlroots-0.19:=[X?]
+	<gui-libs/wlroots-0.20:=[X?]
 "
 RDEPEND="${DEPEND}"
 BDEPEND="
