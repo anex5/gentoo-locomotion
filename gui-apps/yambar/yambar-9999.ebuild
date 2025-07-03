@@ -10,7 +10,8 @@ if [[ ${PV} == *9999* ]]; then
 	EGIT_REPO_URI="https://codeberg.org/dnkl/${PN}.git"
 	EGIT_SUBMODULES=()
 else
-	SRC_URI="https://codeberg.org/dnkl/${PN}/archive/${PV}.tar.gz -> ${P}.tar.gz"
+	COMMIT="abeffbd9a9fd0b2133343e1149e65d4a795a43d0"
+	SRC_URI="https://codeberg.org/dnkl/${PN}/archive/${COMMIT}.tar.gz -> ${P}-${COMMIT}.tar.gz"
 	S="${WORKDIR}/${PN}"
 	KEYWORDS="~amd64 ~arm64 ~arm ~x86"
 fi
