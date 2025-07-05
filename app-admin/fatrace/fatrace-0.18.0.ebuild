@@ -13,7 +13,7 @@ SRC_URI="https://github.com/martinpitt/${PN}/archive/${PV}.tar.gz -> ${P}.tar.gz
 
 LICENSE="GPL-3"
 SLOT="0"
-KEYWORDS="~amd64 ~x86"
+KEYWORDS="~amd64 ~x86 ~arm ~arm64 ~mips ~mipsel"
 IUSE="man doc powertop"
 
 RDEPEND="powertop? ( ${PYTHON_DEPS} )"
