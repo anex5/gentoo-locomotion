@@ -111,7 +111,7 @@ CHECKREQS_DISK_BUILD="3G"
 CHECKREQS_DISK_USR="4G"
 
 IUSE_FLAGS=(${FONTS[*],,})
-IUSE="+nerdfontssymbolsonly ${IUSE_FLAGS[*]//nerdfontssymbolsonly}"
+IUSE="+nerdfontssymbolsonly ${IUSE_FLAGS[*]//nerdfontssymbolsonly} +otf +ttf"
 REQUIRED_USE="X || ( ${IUSE_FLAGS[*]} )"
 
 S="${WORKDIR}"
@@ -125,17 +125,12 @@ pkg_pretend() {
 	check-reqs_pkg_setup
 }
 
-src_prepare() {
-	default
-	cp "${DISTDIR}/${P}-10-nerd-font-symbols.conf" "10-nerd-font-symbols.conf"
-}
-
 src_install() {
 	declare -A font_filetypes
-	local otf_file_number ttf_file_number
+	local otf_file_number=0 ttf_file_number=0
 
-	otf_file_number=$(ls "${S}" | grep -i otf | wc -l)
-	ttf_file_number=$(ls "${S}" | grep -i ttf | wc -l)
+	use otf && otf_file_number=$(ls "${S}" | grep -i otf | wc -l)
+	use ttf && ttf_file_number=$(ls "${S}" | grep -i ttf | wc -l)
 
 	if [[ ${otf_file_number} != 0 ]]; then
 		font_filetypes[otf]=
