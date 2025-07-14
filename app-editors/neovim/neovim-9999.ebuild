@@ -103,6 +103,8 @@ src_configure() {
 		#-DLUA_GEN_PRG="${ELUA}"
 		-DUSE_BUNDLED_BUSTED=0
 		-DCOMPILE_LUA=0
+		# bug 906019: fix hardcoded usage of ccache
+		-DCACHE_PRG=OFF
 		-DCI_LINT=$(usex lint)
 	)
 	cmake_src_configure
@@ -123,7 +125,7 @@ src_install() {
 
 	# conditionally install a symlink for nvimpager
 	if use nvimpager; then
-		dosym ../share/nvim/runtime/macros/less.sh /usr/bin/nvimpager
+		dosym ../share/nvim/runtime/scripts/less.sh /usr/bin/nvimpager
 	fi
 }
 
