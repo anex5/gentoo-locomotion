@@ -50,18 +50,18 @@ RDEPEND="
 	>=app-arch/brotli-1.1.0
 	>=app-eselect/eselect-nodejs-20250106
 	dev-db/sqlite:3
-	>=dev-libs/libuv-1.50.0:=
+	>=dev-libs/libuv-1.51.0:=
 	>=dev-libs/simdjson-3.9.4:=
-	>=net-dns/c-ares-1.34.4
+	>=net-dns/c-ares-1.34.5
 	>=net-libs/nghttp2-1.62.1:=
-	>=sys-libs/zlib-1.3
+	>=sys-libs/zlib-1.3.1
 	corepack? ( sys-apps/yarn )
 	system-icu? (
-		>=dev-libs/icu-76.1:=
+		>=dev-libs/icu-77.1:=
 	)
 	system-ssl? (
 		>=net-libs/ngtcp2-1.3.0:=
-		>=dev-libs/openssl-3.0.16:0=[asm?,fips?]
+		>=dev-libs/openssl-3.0.16:0[asm?,fips?]
 	)
 "
 BDEPEND="${PYTHON_DEPS}
@@ -89,12 +89,10 @@ CHECKREQS_DISK_BUILD="22G"
 PATCHES=(
 	"${FILESDIR}/${PN}-12.22.5-shared_c-ares_nameser_h.patch"
 	"${FILESDIR}/${PN}-22.2.0-global-npm-config.patch"
-	"${FILESDIR}/${PN}-22.2.0-lto-update.patch"
-	"${FILESDIR}/${PN}-20.1.0-support-clang-pgo.patch"
+	"${FILESDIR}/${PN}-24.2.0-lto-update.patch"
+	"${FILESDIR}/${PN}-24.2.0-support-clang-pgo.patch"
 	"${FILESDIR}/${PN}-19.3.0-v8-oflags.patch"
-	"${FILESDIR}/${PN}-23.5.0-split-pointer-compression-and-v8-sandbox-options.patch"
-	"${FILESDIR}/${PN}-23.10.0-allow-unbundling-deps-55903.patch"
-	"${FILESDIR}/${PN}-23.10.0-use-v8-localvector-57578.patch"
+	"${FILESDIR}/${PN}-24.2.0-split-pointer-compression-and-v8-sandbox-options.patch"
 )
 
 pkg_pretend() {
@@ -144,7 +142,7 @@ src_prepare() {
 
 	# https://github.com/nodejs/node/issues/51339
 	use pointer-compression && PATCHES+=(
-		"${FILESDIR}/${PN}-23.10.0-fix-v8-external-code-space.patch"
+		"${FILESDIR}/${PN}-24.4.0-fix-v8-external-code-space.patch"
 	)
 
 	default
@@ -232,6 +230,7 @@ src_configure() {
 		--shared-cares
 		--shared-libuv
 		--shared-nghttp2
+		--shared-nghttp3
 		--shared-ngtcp2
 		--shared-simdjson
 		# sindutf is not packaged yet
@@ -283,19 +282,26 @@ src_configure() {
 		myconf+=( --v8-enable-hugepage )
 	fi
 
-	local myarch
-	myarch="${ABI/amd64/x64}"
-	myarch="${myarch/x86/ia32}"
-	[[ "${ARCH}:${ABI}" =~ "loong:lp64" ]] && myarch="loong64"
-	[[ "${ARCH}:${ABI}" =~ "riscv:lp64" ]] && myarch="riscv64"
+	local myarch=""
+	case "${ARCH}:${ABI}" in
+		*:amd64) myarch="x64";;
+		*:arm) myarch="arm";;
+		*:arm64) myarch="arm64";;
+		loong:lp64*) myarch="loong64";;
+		riscv:lp64*) myarch="riscv64";;
+		*:ppc64) myarch="ppc64";;
+		*:x32) myarch="x32";;
+		*:x86) myarch="ia32";;
+		*) myarch="${ABI}";;
+	esac
 
 	GYP_DEFINES="linux_use_gold_flags=0
 		linux_use_bundled_binutils=0
 		linux_use_bundled_gold=0" \
 	"${EPYTHON}" configure.py \
-		--prefix="${EPREFIX}/usr" \
-		--dest-cpu="${myarch}" \
-		${myconf[@]} || die
+		--prefix="${EPREFIX}"/usr \
+		--dest-cpu=${myarch} \
+		"${myconf[@]}" || die
 
 	# Prevent double build on install.
 	sed -i -e "s|^install: all|install: |g" "Makefile" || die
@@ -316,7 +322,7 @@ src_install() {
 
 	${EPYTHON} "tools/install.py" install \
 		--dest-dir "${D}" \
-		--prefix "${EPREFIX}/usr" \
+		--prefix "${EPREFIX}"/usr \
 		|| die
 
 	mv "${ED}/usr/bin/node" "${ED}/usr/bin/node${SLOT_MAJOR}" || die
@@ -339,11 +345,7 @@ src_install() {
 
 	if use doc; then
 		docinto html
-		dodoc -r "${S}/doc/"*
-	fi
-
-	if ! use man ; then
-		rm -rf "${ED}//usr/share/man/man1/node.1"* || die
+		dodoc -r "${S}"/doc/*
 	fi
 
 	# Use tarball instead.
@@ -372,7 +374,7 @@ src_install() {
 		doenvd "${T}"/50npm
 
 		dosym "/usr/$(get_libdir)/corepack/node${SLOT_MAJOR}/shims/npm" "/usr/bin/npm"
-		sed -e "/^dirname /s|\$(.+)|\$(readlink -q \$0)|g" -i "${ED}/usr/$(get_libdir)/corepack/node${SLOT_MAJOR}/shims/npm" || die
+		sed -e "/^dirname /s|\$\(.\+\)|\$(readlink -q \$0)|g" -i "${ED}/usr/$(get_libdir)/corepack/node${SLOT_MAJOR}/shims/npm" || die
 
 		# Install bash completion for `npm`
 		local tmp_npm_completion_file="$(TMPDIR="${T}" mktemp -t npm.XXXXXXXXXX)"
@@ -380,7 +382,7 @@ src_install() {
 		newbashcomp "${tmp_npm_completion_file}" npm
 
 		# Move man pages
-		#use man && doman "${LIBDIR}"/node_modules/npm/man/man{1,5,7}/*
+		use man && doman "${LIBDIR}"/node_modules/npm/man/man{1,5,7}/*
 
 		# Clean up
 		rm -f "${LIBDIR}"/node_modules/npm/{.mailmap,.npmignore,Makefile}
@@ -390,7 +392,7 @@ src_install() {
 		local find_name=()
 		for match in "AUTHORS*" "CHANGELOG*" "CONTRIBUT*" "README*" \
 			".travis.yml" ".eslint*" ".wercker.yml" ".npmignore" \
-			"*.md" "*.markdown" "*.bat" "*.cmd"; do
+			"*.bat" "*.cmd"; do
 			find_name+=( ${find_exp} "${match}" )
 		done
 

@@ -1,0 +1,162 @@
+From 04472206cd96736d0724d5070e35e0749c526315 Mon Sep 17 00:00:00 2001
+From: Joyee Cheung <joyeec9h3@gmail.com>
+Date: Sun, 4 May 2025 20:58:06 +0200
+Subject: [PATCH 1/2] build: fix pointer compression builds
+
+- Remove usage of deprecated V8::InitializeSandbox().
+- External code space and pointer compression shared cage must
+  be enabled when pointer compression builds are enabled.
+- We cannot enable the sandbox because that requires allocating
+  the array buffer backing stores in the sandbox - we currently
+  have many backing stores tied to pointers from C++ land that
+  are not even necessarily dynamic (e.g. in static storage).
+  Until we manage to get rid of all those, sandbox cannot be
+  enabled. Note that enabling pointer compression without
+  enabling sandbox is unsupported by V8, and can be broken
+  at any time.
+---
+ common.gypi                      |  5 +++++
+ configure.py                     | 10 +++++++++-
+ test/cctest/node_test_fixture.cc |  3 ---
+ tools/v8_gypfiles/features.gypi  |  8 ++++++++
+ 4 files changed, 22 insertions(+), 4 deletions(-)
+
+diff --git a/common.gypi b/common.gypi
+index ed8fbbeaf20944..be6e03f1402fe2 100644
+--- a/common.gypi
++++ b/common.gypi
+@@ -82,6 +82,7 @@
+     'v8_enable_direct_local%': 0,
+     'v8_enable_map_packing%': 0,
+     'v8_enable_pointer_compression_shared_cage%': 0,
++    'v8_enable_external_code_space%': 0,
+     'v8_enable_sandbox%': 0,
+     'v8_enable_v8_checks%': 0,
+     'v8_enable_zone_compression%': 0,
+@@ -115,6 +116,7 @@
+       ['target_arch in "arm ia32 mips mipsel"', {
+         'v8_enable_pointer_compression': 0,
+         'v8_enable_31bit_smis_on_64bit_arch': 0,
++        'v8_enable_external_code_space': 0,
+         'v8_enable_sandbox': 0
+       }],
+       ['target_arch in "ppc64 s390x"', {
+@@ -455,6 +457,9 @@
+       ['v8_enable_sandbox == 1', {
+         'defines': ['V8_ENABLE_SANDBOX',],
+       }],
++      ['v8_enable_external_code_space == 1', {
++        'defines': ['V8_EXTERNAL_CODE_SPACE',],
++      }],
+       ['v8_deprecation_warnings == 1', {
+         'defines': ['V8_DEPRECATION_WARNINGS',],
+       }],
+diff --git a/configure.py b/configure.py
+index 64ab723d006695..969c74e0917e03 100755
+--- a/configure.py
++++ b/configure.py
+@@ -1712,7 +1712,15 @@ def configure_v8(o, configs):
+   o['variables']['v8_enable_maglev'] = B(not options.v8_disable_maglev and
+                                          o['variables']['target_arch'] in maglev_enabled_architectures)
+   o['variables']['v8_enable_pointer_compression'] = 1 if options.enable_pointer_compression else 0
+-  o['variables']['v8_enable_sandbox'] = 1 if options.enable_pointer_compression else 0
++  # Using the sandbox requires always allocating array buffer backing stores in the sandbox.
++  # We currently have many backing stores tied to pointers from C++ land that are not
++  # even necessarily dynamic (e.g. in static storage) for fast communication between JS and C++.
++  # Until we manage to get rid of all those, v8_enable_sandbox cannot be used.
++  # Note that enabling pointer compression without enabling sandbox is unsupported by V8,
++  # so this can be broken at any time.
++  o['variables']['v8_enable_sandbox'] = 0
++  o['variables']['v8_enable_pointer_compression_shared_cage'] = 1 if options.enable_pointer_compression else 0
++  o['variables']['v8_enable_external_code_space'] = 1 if options.enable_pointer_compression else 0
+   o['variables']['v8_enable_31bit_smis_on_64bit_arch'] = 1 if options.enable_pointer_compression else 0
+   o['variables']['v8_enable_extensible_ro_snapshot'] = 0
+   o['variables']['v8_trace_maps'] = 1 if options.trace_maps else 0
+diff --git a/test/cctest/node_test_fixture.cc b/test/cctest/node_test_fixture.cc
+index cae9c7b76aee88..6b75e88d14c2b0 100644
+--- a/test/cctest/node_test_fixture.cc
++++ b/test/cctest/node_test_fixture.cc
+@@ -21,9 +21,6 @@ void NodeTestEnvironment::SetUp() {
+   NodeZeroIsolateTestFixture::platform.reset(
+       new node::NodePlatform(kV8ThreadPoolSize, tracing_controller));
+   v8::V8::InitializePlatform(NodeZeroIsolateTestFixture::platform.get());
+-#ifdef V8_ENABLE_SANDBOX
+-  ASSERT_TRUE(v8::V8::InitializeSandbox());
+-#endif
+   cppgc::InitializeProcess(
+       NodeZeroIsolateTestFixture::platform->GetPageAllocator());
+ 
+diff --git a/tools/v8_gypfiles/features.gypi b/tools/v8_gypfiles/features.gypi
+index 0214bec80dd4d1..b12ac1fa9cfddf 100644
+--- a/tools/v8_gypfiles/features.gypi
++++ b/tools/v8_gypfiles/features.gypi
+@@ -248,6 +248,11 @@
+     # Sets -DV8_ENABLE_SANDBOX.
+     'v8_enable_sandbox%': 0,
+ 
++    # Enable support for external code range relative to the pointer compression
++    # cage.
++    # Sets -DV8_EXTERNAL_CODE_SPACE.
++    'v8_enable_external_code_space%': 0,
++
+     # Experimental feature for collecting per-class zone memory stats.
+     # Requires use_rtti = true
+     'v8_enable_precise_zone_stats%': 0,
+@@ -380,6 +385,9 @@
+       ['v8_enable_sandbox==1', {
+         'defines': ['V8_ENABLE_SANDBOX',],
+       }],
++      ['v8_enable_external_code_space==1', {
++        'defines': ['V8_EXTERNAL_CODE_SPACE',],
++      }],
+       ['v8_enable_object_print==1', {
+         'defines': ['OBJECT_PRINT',],
+       }],
+
+From a3fab01641b863222631700d65ee6d8f176f910d Mon Sep 17 00:00:00 2001
+From: Joyee Cheung <joyeec9h3@gmail.com>
+Date: Sun, 4 May 2025 21:38:34 +0200
+Subject: [PATCH 2/2] test: skip wasm-allocation tests for pointer compression
+ builds
+
+V8 isolate group initialization forces allocation of the virtual
+memory cage with pointer compression builds and simply would not
+work when there is a smaller hard limit on the virtual memory.
+---
+ test/wasm-allocation/wasm-allocation.status | 2 +-
+ tools/test.py                               | 4 ++++
+ 2 files changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/test/wasm-allocation/wasm-allocation.status b/test/wasm-allocation/wasm-allocation.status
+index cf67fe9d67f20f..4663809cbd327a 100644
+--- a/test/wasm-allocation/wasm-allocation.status
++++ b/test/wasm-allocation/wasm-allocation.status
+@@ -6,5 +6,5 @@ prefix wasm-allocation
+ 
+ [true] # This section applies to all platforms
+ 
+-[$system!=linux || $asan==on]
++[$system!=linux || $asan==on || $pointer_compression==on]
+ test-wasm-allocation: SKIP
+diff --git a/tools/test.py b/tools/test.py
+index ad3d0feb4edc17..f273b86c80d0f2 100755
+--- a/tools/test.py
++++ b/tools/test.py
+@@ -1619,6 +1619,9 @@ def get_asan_state(vm, context):
+   asan = Execute([vm, '-p', 'process.config.variables.asan'], context).stdout.strip()
+   return "on" if asan == "1" else "off"
+ 
++def get_pointer_compression_state(vm, context):
++  pointer_compression = Execute([vm, '-p', 'process.config.variables.v8_enable_pointer_compression'], context).stdout.strip()
++  return "on" if pointer_compression == "1" else "off"
+ 
+ def Main():
+   parser = BuildOptions()
+@@ -1717,6 +1720,7 @@ def Main():
+           'arch': vmArch,
+           'type': get_env_type(vm, options.type, context),
+           'asan': get_asan_state(vm, context),
++          'pointer_compression': get_pointer_compression_state(vm, context),
+         }
+         test_list = root.ListTests([], path, context, arch, mode)
+         unclassified_tests += test_list
