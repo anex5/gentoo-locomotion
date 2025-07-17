@@ -4,9 +4,9 @@
 EAPI=8
 
 # Using Gentoos firefox patches as system libraries and lto are quite nice
-FIREFOX_PATCHSET="firefox-${PV%%.*}esr-patches-11.tar.xz"
+FIREFOX_PATCHSET="firefox-${PV%%.*}esr-patches-12.tar.xz"
 
-LLVM_COMPAT=( 18 19 )
+LLVM_COMPAT=( 18 19 20 )
 PP="1"
 GV="1"
 PYTHON_COMPAT=( python3_{10..13} )
@@ -52,7 +52,7 @@ HOMEPAGE="https://www.gnu.org/software/gnuzilla/"
 
 LICENSE="MPL-2.0 GPL-2 LGPL-2.1"
 SLOT="0"
-KEYWORDS="amd64 ~arm64 ~ppc64 ~riscv ~x86"
+KEYWORDS="amd64 arm64 ~ppc64 ~riscv ~x86"
 
 CODEC_IUSE="
 -aac
