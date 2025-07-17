@@ -18,6 +18,7 @@ RDEPEND="!sys-libs/glibc"
 src_configure() {
 	local mycmakeargs=(
 		-DCMAKE_POLICY_DEFAULT_CMP0175="OLD" # add_custom_command
+		-DCMAKE_POLICY_DEFAULT_CMP0115="NEW"
 		-DLOCALE_PROFILE=OFF
 	)
 	CMAKE_BUILD_TYPE="Release"
@@ -26,6 +27,7 @@ src_configure() {
 
 src_install() {
 	echo "MUSL_LOCPATH=\"/usr/share/i18n/locales/musl\"" | newenvd - 00locale
+	cmake_src_install
 }
 
 pkg_postinst() {
