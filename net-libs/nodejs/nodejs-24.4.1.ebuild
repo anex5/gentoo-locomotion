@@ -382,7 +382,7 @@ src_install() {
 		newbashcomp "${tmp_npm_completion_file}" npm
 
 		# Move man pages
-		use man && doman "${LIBDIR}"/node_modules/npm/man/man{1,5,7}/*
+		#use man && doman "${LIBDIR}"/node_modules/npm/man/man{1,5,7}/*
 
 		# Clean up
 		rm -f "${LIBDIR}"/node_modules/npm/{.mailmap,.npmignore,Makefile}
