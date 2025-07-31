@@ -10,16 +10,16 @@ inherit python-any-r1
 DESCRIPTION="Script for creating GNU Icecat tarball"
 HOMEPAGE="https://www.gnu.org/software/gnuzilla/"
 
-COMMIT="7286181cbff5c4b98ed9246366a85ae1fbc8f54d"
+COMMIT="b73acfe395ea849fcd15c9886a7f4631f2b6f82b"
 
 PP="1"
 GV="1"
 COMPARE_LOCALES_PV="9.0.4"
 SRC_URI="
-	https://git.savannah.gnu.org/cgit/gnuzilla.git/snapshot/gnuzilla-${COMMIT}.tar.gz
-	https://archive.mozilla.org/pub/firefox/releases/${PV}esr/source/firefox-${PV}esr.source.tar.xz
-	https://github.com/mozilla/compare-locales/archive/refs/tags/RELEASE_${COMPARE_LOCALES_PV//./_}.tar.gz
-		-> compare-locales-${COMPARE_LOCALES_PV}.tar.gz
+    https://git.savannah.gnu.org/cgit/gnuzilla.git/snapshot/gnuzilla-${COMMIT}.tar.gz
+    https://archive.mozilla.org/pub/firefox/releases/${PV}esr/source/firefox-${PV}esr.source.tar.xz
+    https://github.com/mozilla/compare-locales/archive/refs/tags/RELEASE_${COMPARE_LOCALES_PV//./_}.tar.gz
+        -> compare-locales-${COMPARE_LOCALES_PV}.tar.gz
 "
 
 LICENSE="GPL-3"
@@ -32,13 +32,13 @@ IUSE="+buildtarball"
 
 RDEPEND="${BDEPEND}"
 BDEPEND="
-	${PYTHON_DEPS}
-	app-arch/unzip
-	app-crypt/gnupg
-	dev-vcs/mercurial
-	$(python_gen_any_dep '
-		dev-python/jsonschema[${PYTHON_USEDEP}]
-	')
+    ${PYTHON_DEPS}
+    app-arch/unzip
+    app-crypt/gnupg
+    dev-vcs/mercurial
+    $(python_gen_any_dep '
+        dev-python/jsonschema[${PYTHON_USEDEP}]
+    ')
 "
 
 S="${WORKDIR}/gnuzilla-${COMMIT}"
@@ -248,79 +248,79 @@ LANG_COMMIT[zh-TW]="bdede5e586d2288b0a3d4bf0c27744cd682ee1ba" # 2024-07-09 11:12
 LANG_COMMIT[zu]="2f8eb432efd5660f5e1ab85164858a949f27b4b9" # 2024-07-09 12:16
 
 fetch_l10n() {
-	local lang
-	for lang in "${!LANG_COMMIT[@]}" ; do
-		#en_US is handled internally
-		if [[ ${lang} == en-US ]] ; then
-			continue
-		fi
-		SRC_URI+=" https://hg.mozilla.org/l10n-central/${lang}/archive/${LANG_COMMIT[${lang}]}.zip -> icecat-lang-${lang}-${LANG_COMMIT[${lang}]}.zip"
-	done
+    local lang
+    for lang in "${!LANG_COMMIT[@]}" ; do
+        #en_US is handled internally
+        if [[ ${lang} == en-US ]] ; then
+            continue
+        fi
+        SRC_URI+=" https://hg.mozilla.org/l10n-central/${lang}/archive/${LANG_COMMIT[${lang}]}.zip -> icecat-lang-${lang}-${LANG_COMMIT[${lang}]}.zip"
+    done
 }
 fetch_l10n
 
 python_check_deps() {
-	python_has_version "dev-python/jsonschema[${PYTHON_USEDEP}]"
+    python_has_version "dev-python/jsonschema[${PYTHON_USEDEP}]"
 }
 
 src_unpack() {
-	unpack "gnuzilla-${COMMIT}.tar.gz"
-	for langpack in $(cd "${DISTDIR}"; ls icecat-lang-*.zip); do
-		unpack ${langpack}
-	done
-	unpack "compare-locales-${COMPARE_LOCALES_PV}.tar.gz"
-	unpack "firefox-${PV}esr.source.tar.xz"
+    unpack "gnuzilla-${COMMIT}.tar.gz"
+    for langpack in $(cd "${DISTDIR}"; ls icecat-lang-*.zip); do
+        unpack ${langpack}
+    done
+    unpack "compare-locales-${COMPARE_LOCALES_PV}.tar.gz"
+    unpack "firefox-${PV}esr.source.tar.xz"
 }
 
 src_prepare() {
-	default_src_prepare
+    default_src_prepare
 
-	# Remove the minimum necessary for script to work offline
-	sed -i '/^verify_sources$/d' makeicecat || die
-	sed -i '/^fetch_l10n$/d' makeicecat || die
-	sed -i '/^fetch_source$/d' makeicecat || die
-	sed -i '/^extract_sources$/d' makeicecat || die
-	sed -i '/^prepare_env$/d' makeicecat || die
+    # Remove the minimum necessary for script to work offline
+    sed -i '/^verify_sources$/d' makeicecat || die
+    sed -i '/^fetch_l10n$/d' makeicecat || die
+    sed -i '/^fetch_source$/d' makeicecat || die
+    sed -i '/^extract_sources$/d' makeicecat || die
+    sed -i '/^prepare_env$/d' makeicecat || die
 
-	#mkdir "${S}/output" || die
-	#cp "${DISTDIR}/firefox-${PV}esr.source.tar.xz" "${S}/output" || die
-	mv "${WORKDIR}/firefox-${PV}" "${S}/icecat-${PV}" || die
+    #mkdir "${S}/output" || die
+    #cp "${DISTDIR}/firefox-${PV}esr.source.tar.xz" "${S}/output" || die
+    mv "${WORKDIR}/firefox-${PV}" "${S}/icecat-${PV}" || die
 
-	L10N_DIR="${S}/icecat-${PV}/l10n"
-	mkdir -p "${L10N_DIR}" || die
-	for lang in "${!LANG_COMMIT[@]}"; do
-		#en_US is handled internally
-		[[ "${lang}" == "en-US" ]] && continue
-		mv "${WORKDIR}/${lang}-${LANG_COMMIT[${lang}]}" "${L10N_DIR}/${lang}" || die
-		mkdir -p "${L10N_DIR}/${lang}/browser/chrome/browser/preferences" || die
-		touch "${L10N_DIR}/${lang}/browser/chrome/browser/preferences/advanced-scripts.dtd" || die
-		rm -rf "${L10N_DIR}/${lang}/.hg*" || die
-	done
-	mv "${WORKDIR}/compare-locales-RELEASE_${COMPARE_LOCALES_PV//./_}" "${L10N_DIR}/compare-locales" || die
+    L10N_DIR="${S}/icecat-${PV}/l10n"
+    mkdir -p "${L10N_DIR}" || die
+    for lang in "${!LANG_COMMIT[@]}"; do
+        #en_US is handled internally
+        [[ "${lang}" == "en-US" ]] && continue
+        mv "${WORKDIR}/${lang}-${LANG_COMMIT[${lang}]}" "${L10N_DIR}/${lang}" || die
+        mkdir -p "${L10N_DIR}/${lang}/browser/chrome/browser/preferences" || die
+        touch "${L10N_DIR}/${lang}/browser/chrome/browser/preferences/advanced-scripts.dtd" || die
+        rm -rf "${L10N_DIR}/${lang}/.hg*" || die
+    done
+    mv "${WORKDIR}/compare-locales-RELEASE_${COMPARE_LOCALES_PV//./_}" "${L10N_DIR}/compare-locales" || die
 }
 
 src_compile() {
-	if use buildtarball; then
-		./makeicecat || die
-	fi
+    if use buildtarball; then
+        ./makeicecat || die
+    fi
 }
 
 src_install() {
-	insinto "/usr/src/makeicecat-${PV}"
-	doins -r "${S}/"{artwork,CHANGELOG,COPYING,data,makeicecat,README,tools}
-	fperms +x "/usr/src/makeicecat-${PV}"/{makeicecat,tools/{AddonsScraper.py,buildbinaries,createdebsrcrepo,gnupload}}
-	if use buildtarball; then
-		#insinto /usr/src/makeicecat-"${PV}"
-		insinto "${PORTAGE_ACTUAL_DISTDIR}"
-		doins "${S}/icecat-${PV}-${PP}gnu${GV}.tar.bz2"
-	fi
+    insinto "/usr/src/makeicecat-${PV}"
+    doins -r "${S}/"{artwork,CHANGELOG,COPYING,data,makeicecat,README,tools}
+    fperms +x "/usr/src/makeicecat-${PV}"/{makeicecat,tools/{AddonsScraper.py,buildbinaries,createdebsrcrepo,gnupload}}
+    if use buildtarball; then
+        #insinto /usr/src/makeicecat-"${PV}"
+        insinto "${PORTAGE_ACTUAL_DISTDIR}"
+        doins "${S}/icecat-${PV}-${PP}gnu${GV}.tar.bz2"
+    fi
 }
 
 pkg_postinst() {
-	if ! use buildtarball; then
-		einfo "You haven't enabled buildtarball, therefore you have to create the tarball yourself."
-		einfo "You can create the tarball in /usr/share/makeicecat-${PV} by starting the script manually."
-		einfo "   ./makeicecat"
-		einfo "It will take a while so be prepared."
-	fi
+    if ! use buildtarball; then
+        einfo "You haven't enabled buildtarball, therefore you have to create the tarball yourself."
+        einfo "You can create the tarball in /usr/share/makeicecat-${PV} by starting the script manually."
+        einfo "   ./makeicecat"
+        einfo "It will take a while so be prepared."
+    fi
 }
