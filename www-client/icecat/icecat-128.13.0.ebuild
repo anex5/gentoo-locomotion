@@ -6,7 +6,7 @@ EAPI=8
 # Using Gentoos firefox patches as system libraries and lto are quite nice
 FIREFOX_PATCHSET="firefox-${PV%%.*}esr-patches-12.tar.xz"
 
-LLVM_COMPAT=( 18 19 20 )
+LLVM_COMPAT=( 18 19 )
 PP="1"
 GV="1"
 PYTHON_COMPAT=( python3_{10..13} )
@@ -935,11 +935,11 @@ src_prepare() {
 	# Prevent video seek bug
 	eapply "${FILESDIR}/extra-patches/firefox-128.3.0e-disable-broken-flags-ipc-chromium-chromium-config.patch"
 
-	# Build with clang-19
-	#if [[ "${LLVM_SLOT}" == "19" ]]; then
-#		eapply "${FILESDIR}/extra-patches/firefox-115e-fix-build-with-clang-19.patch"
-#		sed -e '/CXXFLAGS += \["-Werror=implicit-int-conversion"\]/d' -i "${S}/dom/canvas/moz.build" -i "${S}/dom/webgpu/moz.build" || die
-#	fi
+	# Build with clang-20
+	if [[ "${LLVM_SLOT}" == "20" ]]; then
+		#eapply "${FILESDIR}/extra-patches/firefox-128e-llvm-20-ServoBindings.patch"
+		sed -e '/CXXFLAGS += \["-Werror=implicit-int-conversion"\]/d' -i "${S}/dom/canvas/moz.build" -i "${S}/dom/webgpu/moz.build" || die
+	fi
 
 	#eapply "${FILESDIR}/extra-patches/firefox-128.3.0e-allow-flac-no-ffvpx.patch"
 	eapply "${FILESDIR}/extra-patches/firefox-128.3.0e-big-endian-image-decoders.patch"

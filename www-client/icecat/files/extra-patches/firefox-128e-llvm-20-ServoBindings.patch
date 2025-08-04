@@ -1,0 +1,10 @@
+--- a/layout/style/ServoBindings.toml	2025-07-05 13:26:56.523872287 +0200
++++ b/layout/style/ServoBindings.toml	2025-07-05 13:27:13.217871951 +0200
+@@ -315,6 +315,7 @@
+     "mozilla::gfx::(.{0,4}|.{6,12}|.{14,}|([^F][^o][^n][^t][^V][^a][^r][^i][^a][^t][^i][^o][^n])|([^F][^l][^o][^a][^t]))",
+     "mozilla::dom::Sequence",
+     "mozilla::SmallPointerArray",
++    "mozilla::SmallPointerArray_Element",
+     "mozilla::dom::Optional",
+     "mozilla::dom::OwningNodeOrString_Value",
+     "mozilla::dom::Nullable",
