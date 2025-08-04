@@ -49,7 +49,6 @@ eselect repository add gentoo-locomotion git https://github.com/anex5/gentoo-loc
 ```
 layman -o https://raw.githubusercontent.com/anex5/gentoo-locomotion/master/layman.xml -fa gentoo-locomotion
 ```
-
 > **Note:** To use the testing branch for particular packages, you must add the
 package category and name (e.g., foo-bar/xyz) in `/etc/portage/package.accept_keywords`.
 It is also possible to create a directory (with the same name) and list the
@@ -59,3 +58,5 @@ overview of ebuilds and unofficial repositories for Gentoo.
 
 To contribute bug reports for this overlay, you can open up a GitHub issue or send
 me a pull request.
+
+[![Anurag's GitHub stats](https://github-readme-stats.vercel.app/api?username=anuraghazra)](https://github.com/anuraghazra/github-readme-stats)
