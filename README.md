@@ -59,4 +59,4 @@ overview of ebuilds and unofficial repositories for Gentoo.
 To contribute bug reports for this overlay, you can open up a GitHub issue or send
 me a pull request.
 
-[![Anurag's GitHub stats](https://github-readme-stats.vercel.app/api?username=anuraghazra)](https://github.com/anuraghazra/github-readme-stats)
+[![Anurag's GitHub stats](https://github-readme-stats.vercel.app/api?username=anex5)](https://github.com/anuraghazra/github-readme-stats)
