@@ -12,17 +12,13 @@ SRC_URI="https://github.com/USCiLab/${PN}/archive/v${PV}.tar.gz -> ${P}.tar.gz"
 LICENSE="BSD"
 SLOT="0"
 KEYWORDS="amd64 ~arm arm64 ~loong ~ppc64 ~riscv x86"
-IUSE="doc libcxx test"
+IUSE="doc examples libcxx test"
 RESTRICT="!test? ( test )"
 
 BDEPEND="doc? ( app-text/doxygen )"
 DEPEND="dev-libs/rapidjson"
 
 src_prepare() {
-	if ! use doc ; then
-		sed -i -e '/add_subdirectory(doc/d' CMakeLists.txt || die
-	fi
-
 	# remove bundled rapidjson
 	rm -r include/cereal/external/rapidjson || die 'could not remove bundled rapidjson'
 	sed -e '/rapidjson/s|cereal/external/||' \
@@ -42,20 +38,24 @@ src_prepare() {
 src_configure() {
 	# TODO: drop bundled doctest, rapidxml (bug #792444)
 
-	tc-is-clang && append-cppflags "-Wno-error=c++11-narrowing-const-reference"
+	tc-is-clang && append-cflags "-Wno-error=c++11-narrowing-const-reference"
 
 	local mycmakeargs=(
+		#-DCMAKE_CXX_STANDARD=11
 		-DBUILD_TESTS=$(usex test)
+		-DBUILD_DOC=$(usex doc)
+		-DBUILD_SANDBOX=$(usex examples)
 
 		# Avoid Boost dependency
 		-DSKIP_PERFORMANCE_COMPARISON=ON
 		-DWITH_WERROR=OFF
 	)
 
-	tc-is-clang && mycmakeargs+="-DCLANG_USE_LIBCPP=$(usex libcxx)"
+	tc-is-clang && mycmakeargs+=( -DCLANG_USE_LIBCPP=$(usex libcxx) )
 
 	# TODO: Enable if multilib?
 	use test && mycmakeargs+=( -DSKIP_PORTABILITY_TEST=ON )
 
-	CMAKE_BULD_TYPE='Release' cmake_src_configure
+	CMAKE_BUILD_TYPE='Release'
+	cmake_src_configure
 }
