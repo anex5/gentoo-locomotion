@@ -1,0 +1,196 @@
+From 2cd32403ad3a62faacb30255d4c3466dd9de2089 Mon Sep 17 00:00:00 2001
+From: Mark Menzynski <mmenzyns@redhat.com>
+Date: Thu, 8 Aug 2019 15:05:37 +0200
+Subject: [PATCH 1/4] nvafakebios: Fix typo
+
+Signed-off-by: Mark Menzynski <mmenzyns@redhat.com>
+---
+ nva/nvafakebios.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/nva/nvafakebios.c b/nva/nvafakebios.c
+index af0a9980..7964d2eb 100644
+--- a/nva/nvafakebios.c
++++ b/nva/nvafakebios.c
+@@ -314,7 +314,7 @@ int main(int argc, char **argv) {
+ 			break;
+ 		case EUNK:
+ 		default:
+-			fprintf(stderr, "An unknown error hapenned.\n");
++			fprintf(stderr, "An unknown error happened.\n");
+ 			break;
+ 	}
+ 
+
+From e2c2c9a58aac128e62119b1e89457c1751663b00 Mon Sep 17 00:00:00 2001
+From: Mark Menzynski <mmenzyns@redhat.com>
+Date: Thu, 8 Aug 2019 15:07:01 +0200
+Subject: [PATCH 2/4] nvafakebios: Add error return code
+
+Currently, nvafakebios always returns 0, even when it meets error.
+
+Signed-off-by: Mark Menzynski <mmenzyns@redhat.com>
+---
+ nva/nvafakebios.c | 15 +++++++++------
+ 1 file changed, 9 insertions(+), 6 deletions(-)
+
+diff --git a/nva/nvafakebios.c b/nva/nvafakebios.c
+index 7964d2eb..4d0ae861 100644
+--- a/nva/nvafakebios.c
++++ b/nva/nvafakebios.c
+@@ -289,7 +289,7 @@ int main(int argc, char **argv) {
+ 	/* Read the vbios */
+ 	result = vbios_read(argv[optind], &vbios, &vbios_length);
+ 	if (result != EOK)
+-		goto out;
++		goto err;
+ 
+ 	/* do the edits */
+ 	for (i = 0; i < e; i++)
+@@ -297,12 +297,15 @@ int main(int argc, char **argv) {
+ 
+ 	/* Upload */
+ 	result = vbios_upload_pramin(cnum, vbios, vbios_length);
++	if (result != EOK)
++		goto err;
++
++	fprintf(stderr, "Upload done.\n");
++
++	return 0;
+ 
+-out:
++err:
+ 	switch (result) {
+-		case EOK:
+-			fprintf(stderr, "Upload done.\n");
+-			break;
+ 		case EIOFAIL:
+ 			fprintf(stderr, "Cannot read the vbios \"%s\".\n", argv[optind]);
+ 			break;
+@@ -318,5 +321,5 @@ int main(int argc, char **argv) {
+ 			break;
+ 	}
+ 
+-	return 0;
++	return 1;
+ }
+
+From e6559878cdfc5ea9f578b39906d6937539fd337f Mon Sep 17 00:00:00 2001
+From: Mark Menzynski <mmenzyns@redhat.com>
+Date: Fri, 30 Aug 2019 14:47:09 +0200
+Subject: [PATCH 3/4] pm/gf100_pclock: Fix typo
+
+Signed-off-by: Mark Menzynski <mmenzyns@redhat.com>
+---
+ rnndb/pm/gf100_pclock.xml | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/rnndb/pm/gf100_pclock.xml b/rnndb/pm/gf100_pclock.xml
+index b203cdd7..d67cfd8a 100644
+--- a/rnndb/pm/gf100_pclock.xml
++++ b/rnndb/pm/gf100_pclock.xml
+@@ -128,7 +128,7 @@
+ 	<reg32 offset="0x128" name="CLK2_PLL_REF_DIV_SRC" type="gf100_pll_ref_div_src"/>
+ 	<reg32 offset="0x13c" name="CLK7_PLL_REF_DIV_SRC" type="gf100_pll_ref_div_src"/>
+ 
+-	<reg32 offset="0x140" name="CLK0_PLL_REF_DIV_CRTL" type="gf100_div_ctrl"/>
++	<reg32 offset="0x140" name="CLK0_PLL_REF_DIV_CTRL" type="gf100_div_ctrl"/>
+ 	<reg32 offset="0x148" name="CLK2_PLL_REF_DIV_CTRL" type="gf100_div_ctrl"/>
+ 	<reg32 offset="0x15c" name="CLK7_PLL_REF_DIV_CTRL" type="gf100_div_ctrl"/>
+ 
+
+From 3b8f0ecc62430112fda59db965ae0afef467f537 Mon Sep 17 00:00:00 2001
+From: Mark Menzynski <mmenzyns@redhat.com>
+Date: Tue, 13 Aug 2019 12:33:11 +0200
+Subject: [PATCH 4/4] nvafakebios: Add option to choose upload dest address
+ from vram size
+
+Currently, it is needed to save vbios vram address into 0x619f04 or
+0x1700 before using nvafakebios. With this option, it is no longer needed on old cards.
+
+Note: Modern graphics can use more than 128 kB bios, but currently there is no
+      way how to upload them without signing the vbios.
+
+Signed-off-by: Mark Menzynski <mmenzyns@redhat.com>
+---
+ nva/nvafakebios.c | 24 +++++++++++++++++-------
+ 1 file changed, 17 insertions(+), 7 deletions(-)
+
+diff --git a/nva/nvafakebios.c b/nva/nvafakebios.c
+index 4d0ae861..b5c38cfa 100644
+--- a/nva/nvafakebios.c
++++ b/nva/nvafakebios.c
+@@ -63,7 +63,7 @@ static void chksum(uint8_t *data, unsigned int length)
+ }
+ 
+ /* vbios should at least be NV_PROM_SIZE bytes long */
+-int vbios_upload_pramin(int cnum, uint8_t *vbios, int length)
++int vbios_upload_pramin(int cnum, uint8_t *vbios, int length, uint64_t vbios_vram)
+ {
+ 	uint64_t old_bar0_pramin = 0;
+ 	uint32_t ret = EUNK;
+@@ -80,8 +80,12 @@ int vbios_upload_pramin(int cnum, uint8_t *vbios, int length)
+ 			cnum, nva_cards[cnum]->chipset.chipset);
+ 
+ 	if (nva_cards[cnum]->chipset.card_type >= 0x50) {
+-		uint64_t vbios_vram = (uint64_t)(nva_rd32(cnum, 0x619f04) & ~0xff) << 8;
+-
++		if (vbios_vram)
++			/* If vbios vram addr was already chosen, save the addr into 0x619f04
++			 * 0x1 tells it's vram and 0x8 enables it */
++			nva_wr32(cnum, 0x619f04, ((vbios_vram >> 8) & ~0xff) | 0x09);
++		if (!vbios_vram)
++			vbios_vram = (uint64_t)(nva_rd32(cnum, 0x619f04) & ~0xff) << 8;
+ 		if (!vbios_vram)
+ 			vbios_vram =((uint64_t)nva_rd32(cnum, 0x1700) << 16) + 0xf0000;
+ 
+@@ -143,7 +147,7 @@ int vbios_read(const char *filename, uint8_t **vbios, size_t *length)
+ 
+ void usage(int error_code)
+ {
+-	fprintf(stderr, "\nUsage: nvafakebios [-c card_number] [-e offset:value] vbios.rom\n");
++	fprintf(stderr, "\nUsage: nvafakebios [-c card_number] [-m vram_size_mb] [-e offset:value] vbios.rom\n");
+ 	exit(error_code);
+ }
+ 
+@@ -214,8 +218,9 @@ void edit_bios(uint8_t *vbios, size_t vbios_length, struct edit_offset *edit)
+ 
+ int main(int argc, char **argv) {
+ 	uint8_t *vbios = NULL;
++	uint64_t vbios_vram = 0;
+ 	size_t vbios_length = 0;
+-	int c, i, cnum = 0, result = 0;
++	int c, i, cnum = 0, result = 0, vram_size_mb = 0;
+ 
+ 	struct edit_offset edits[100] = { { 0, 0, HEX } };
+ 	int e = 0;
+@@ -226,7 +231,7 @@ int main(int argc, char **argv) {
+ 	}
+ 
+ 	/* Arguments parsing */
+-	while ((c = getopt (argc, argv, "hc:e:E:w:W:l:L:")) != -1)
++	while ((c = getopt (argc, argv, "hc:m:e:E:w:W:l:L:")) != -1)
+ 		switch (c) {
+ 			case 'h':
+ 				usage(0);
+@@ -234,6 +239,11 @@ int main(int argc, char **argv) {
+ 			case 'c':
+ 				sscanf(optarg, "%d", &cnum);
+ 				break;
++			case 'm':
++				sscanf(optarg, "%d", &vram_size_mb);
++				/* Calculate the physical address for a 128 kB chunk on the end of the vram */
++				vbios_vram = (((uint64_t)vram_size_mb * 1024) - 128) * 1024;
++				break;
+ 			case 'e':
+ 				sscanf(optarg, "%hx:%x", &edits[e].offset, &edits[e].val);
+ 				edits[e].size = 8;
+@@ -296,7 +306,7 @@ int main(int argc, char **argv) {
+ 		edit_bios(vbios, vbios_length, &edits[i]);
+ 
+ 	/* Upload */
+-	result = vbios_upload_pramin(cnum, vbios, vbios_length);
++	result = vbios_upload_pramin(cnum, vbios, vbios_length, vbios_vram);
+ 	if (result != EOK)
+ 		goto err;
+ 

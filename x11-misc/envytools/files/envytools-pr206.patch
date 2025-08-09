@@ -1,0 +1,221 @@
+From 4b06fb15dfffa34c4d3fcacb7f91604d4d8d9e30 Mon Sep 17 00:00:00 2001
+From: Emil Velikov <emil.l.velikov@gmail.com>
+Date: Mon, 18 May 2020 22:54:00 +0100
+Subject: [PATCH 1/5] nvbios: minor codying style polish
+
+Signed-off-by: Emil Velikov <emil.l.velikov@gmail.com>
+---
+ nvbios/bios.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/nvbios/bios.c b/nvbios/bios.c
+index d5b262c6..c55080f5 100644
+--- a/nvbios/bios.c
++++ b/nvbios/bios.c
+@@ -167,7 +167,8 @@ static unsigned int find_string(struct envy_bios *bios, const uint8_t *str, int
+ 	return 0;
+ }
+ 
+-static void parse_bmp_nv03(struct envy_bios *bios) {
++static void parse_bmp_nv03(struct envy_bios *bios)
++{
+ 	int err = 0;
+ 	err |= bios_u8(bios, bios->bmp_offset + 5, &bios->bmp_ver_major);
+ 	err |= bios_u8(bios, bios->bmp_offset + 6, &bios->bmp_ver_minor);
+@@ -184,7 +185,8 @@ static void parse_bmp_nv03(struct envy_bios *bios) {
+ 	/* XXX: add block for init script */
+ }
+ 
+-int envy_bios_parse (struct envy_bios *bios) {
++int envy_bios_parse(struct envy_bios *bios)
++{
+ 	uint16_t vendor, device;
+ 	parse_pcir(bios);
+ 	if (bios->partsnum) {
+
+From 697845e2ce25772f354b185f20393e2507bd02a8 Mon Sep 17 00:00:00 2001
+From: Emil Velikov <emil.l.velikov@gmail.com>
+Date: Mon, 18 May 2020 22:56:23 +0100
+Subject: [PATCH 2/5] nvbios/dcb: detect number of dcb entries
+
+DCB v0x30 or earlier (confirmed with 0x22) do _not_ have a fixed number
+of entries. A terminator "entry" is one which starts with 0xff.
+
+Signed-off-by: Emil Velikov <emil.l.velikov@gmail.com>
+---
+ nvbios/dcb.c | 25 +++++++++++++++++++++++--
+ 1 file changed, 23 insertions(+), 2 deletions(-)
+
+diff --git a/nvbios/dcb.c b/nvbios/dcb.c
+index f423ea12..9bb238d8 100644
+--- a/nvbios/dcb.c
++++ b/nvbios/dcb.c
+@@ -73,7 +73,7 @@ int envy_bios_parse_dcb (struct envy_bios *bios) {
+ 		case 0x20:
+ 		case 0x21:
+ 			wanthlen = dcb->hlen = 8;
+-			dcb->entriesnum = 16;
++			dcb->entriesnum = 16; // dummy placeholder
+ 			wantrlen = dcb->rlen = 8;
+ 			err |= bios_u8(bios, dcb->offset+1, &defs);
+ 			err |= bios_u16(bios, dcb->offset+2, &bios->i2c.offset);
+@@ -120,6 +120,7 @@ int envy_bios_parse_dcb (struct envy_bios *bios) {
+ 			return -EINVAL;
+ 	}
+ 	envy_bios_block(bios, dcb->offset, dcb->hlen + dcb->rlen * dcb->entriesnum, "DCB", -1);
++	// what does this ^^ do again? do we need correct entriesnum?
+ 	if (dcb->version >= 0x14 && dcb->version < 0x30) {
+ 		uint8_t dev_rec[7];
+ 		int j;
+@@ -151,10 +152,30 @@ int envy_bios_parse_dcb (struct envy_bios *bios) {
+ 	if (dcb->rlen > wantrlen) {
+ 		ENVY_BIOS_WARN("DCB table record longer than expected [%d > %d]\n", dcb->rlen, wantrlen);
+ 	}
++	int i;
++
++	for (i = 0; i < dcb->entriesnum; i++) {
++		uint16_t offset = dcb->offset + dcb->hlen + dcb->rlen * i;
++		uint8_t type;
++
++		if (dcb->version >= 0x30) // Educated guess, confirmed on 0x22
++			break;
++
++		err |= bios_u8(bios, offset, &type);
++		if (err)
++			return -EFAULT;
++
++		if (type == 0xff) { // only [0] or ff ff ff ff ff ff ff ff
++			dcb->entriesnum = i + 1;
++			// let's print the terminating entry
++			break;
++		}
++	}
++
+ 	dcb->entries = calloc(dcb->entriesnum, sizeof *dcb->entries);
+ 	if (!dcb->entries)
+ 		return -ENOMEM;
+-	int i;
++
+ 	for (i = 0; i < dcb->entriesnum; i++) {
+ 		struct envy_bios_dcb_entry *entry = &dcb->entries[i];
+ 		entry->offset = dcb->offset + dcb->hlen + dcb->rlen * i;
+
+From 4d6b5ec2be088cec6a7bc0ff0f19f474d35c363c Mon Sep 17 00:00:00 2001
+From: Emil Velikov <emil.l.velikov@gmail.com>
+Date: Mon, 18 May 2020 23:01:45 +0100
+Subject: [PATCH 3/5] nvbios/dcb: don't print ODCB table for RDCB 0x15
+
+Based on observations, the current magic is off. In particular the area
+which is claimed to be ODCB is populated by init scripts.
+
+Signed-off-by: Emil Velikov <emil.l.velikov@gmail.com>
+---
+ nvbios/dcb.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/nvbios/dcb.c b/nvbios/dcb.c
+index 9bb238d8..708b6a82 100644
+--- a/nvbios/dcb.c
++++ b/nvbios/dcb.c
+@@ -329,7 +329,7 @@ int envy_bios_parse_rdcb (struct envy_bios *bios) {
+ 	if (err)
+ 		return -EFAULT;
+ 	envy_bios_block(bios, dcb->offset - dcb->rdcb_len, dcb->rdcb_len, "RDCB", -1);
+-	if (dcb->rdcb_version < 0x16) {
++	if (dcb->rdcb_version < 0x15) { // no table for a nv34 0x15 device
+ 		bios->odcb_offset = dcb->offset - dcb->rdcb_len - 0x80;
+ 		envy_bios_block(bios, bios->odcb_offset, 0x80, "ODCB", -1);
+ 	}
+
+From 0040caf4e43a36ed6ab838c26c8f3d6d472eff92 Mon Sep 17 00:00:00 2001
+From: Emil Velikov <emil.l.velikov@gmail.com>
+Date: Mon, 18 May 2020 23:08:13 +0100
+Subject: [PATCH 4/5] nvbios/dcb: disable RDCB parsing for 0x15
+
+Based on observations, the table contents is off. In particular, it
+contains pointers to other data - the GPIO table.
+
+Signed-off-by: Emil Velikov <emil.l.velikov@gmail.com>
+---
+ nvbios/dcb.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/nvbios/dcb.c b/nvbios/dcb.c
+index 708b6a82..a3060f32 100644
+--- a/nvbios/dcb.c
++++ b/nvbios/dcb.c
+@@ -333,7 +333,8 @@ int envy_bios_parse_rdcb (struct envy_bios *bios) {
+ 		bios->odcb_offset = dcb->offset - dcb->rdcb_len - 0x80;
+ 		envy_bios_block(bios, bios->odcb_offset, 0x80, "ODCB", -1);
+ 	}
+-	dcb->rdcb_valid = 1;
++	// Doesn't seem like a valid table
++	dcb->rdcb_valid = dcb->rdcb_version != 0x15;
+ 	return 0;
+ }
+ 
+
+From 41d66cf4ed96efe8c33e56a1be89275b55667f93 Mon Sep 17 00:00:00 2001
+From: Emil Velikov <emil.l.velikov@gmail.com>
+Date: Mon, 18 May 2020 22:56:23 +0100
+Subject: [PATCH 5/5] nvbios/i2c: detect number of i2c entries
+
+I2C v0x30 or earlier (confirmed with 0x22) do _not_ have a fixed number
+of entries. A terminator "entry" is one which ends with 0xff.
+
+Signed-off-by: Emil Velikov <emil.l.velikov@gmail.com>
+---
+ nvbios/i2c.c | 25 +++++++++++++++++++++++--
+ 1 file changed, 23 insertions(+), 2 deletions(-)
+
+diff --git a/nvbios/i2c.c b/nvbios/i2c.c
+index 18d41a6d..e90c6e42 100644
+--- a/nvbios/i2c.c
++++ b/nvbios/i2c.c
+@@ -43,12 +43,13 @@ int envy_bios_parse_i2c (struct envy_bios *bios) {
+ 	} else {
+ 		i2c->version = bios->dcb.version;
+ 		wanthlen = i2c->hlen = 0;
+-		i2c->entriesnum = 16;
++		i2c->entriesnum = 16; // dummy placeholder
+ 		i2c->rlen = 4;
+ 	}
+ 	if (err)
+ 		return -EFAULT;
+ 	envy_bios_block(bios, i2c->offset, i2c->hlen + i2c->rlen * i2c->entriesnum, "I2C", -1);
++	// what does this ^^ do again? do we need correct entriesnum?
+ 	switch (i2c->version) {
+ 		case 0x12:
+ 		case 0x14:
+@@ -78,10 +79,30 @@ int envy_bios_parse_i2c (struct envy_bios *bios) {
+ 	if (i2c->rlen > wantrlen) {
+ 		ENVY_BIOS_WARN("I2C table record longer than expected [%d > %d]\n", i2c->rlen, wantrlen);
+ 	}
++	int i;
++
++	for (i = 0; i < i2c->entriesnum; i++) {
++		uint16_t offset = i2c->offset + i2c->hlen + i2c->rlen * i;
++		uint8_t type;
++
++		if (i2c->version >= 0x30) // Educated guess, confirmed on 0x22
++			break;
++
++		err |= bios_u8(bios, offset + 3, &type);
++		if (err)
++			return -EFAULT;
++
++		if (type == 0xff) { // only [3] or 00 00 00 ff
++			i2c->entriesnum = i + 1;
++			// let's print the terminating entry
++			break;
++		}
++	}
++
+ 	i2c->entries = calloc(i2c->entriesnum, sizeof *i2c->entries);
+ 	if (!i2c->entries)
+ 		return -ENOMEM;
+-	int i;
++
+ 	for (i = 0; i < i2c->entriesnum; i++) {
+ 		struct envy_bios_i2c_entry *entry = &i2c->entries[i];
+ 		entry->offset = i2c->offset + i2c->hlen + i2c->rlen * i;

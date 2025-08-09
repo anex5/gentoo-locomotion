@@ -1,0 +1,22 @@
+From 6b292b61c4845ea30fbc496eea2e3e7fc0a83d75 Mon Sep 17 00:00:00 2001
+From: SamoZ256 <96914946+SamoZ256@users.noreply.github.com>
+Date: Sat, 7 Jun 2025 08:59:26 +0200
+Subject: [PATCH] envydis/gm107: change u64 to s64
+
+---
+ envydis/gm107.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/envydis/gm107.c b/envydis/gm107.c
+index 8122adec..427e78f1 100644
+--- a/envydis/gm107.c
++++ b/envydis/gm107.c
+@@ -1288,7 +1288,7 @@ static struct insn tab5cb0_2[] = {
+ 	{ 0x0000000000001000ull, 0x0000000000001300ull, N("s8") },
+ 	{ 0x0000000000001100ull, 0x0000000000001300ull, N("s16") },
+ 	{ 0x0000000000001200ull, 0x0000000000001300ull, N("s32") },
+-	{ 0x0000000000001300ull, 0x0000000000001300ull, N("u64") },
++	{ 0x0000000000001300ull, 0x0000000000001300ull, N("s64") },
+ 	{ 0, 0, OOPS },
+ };
+ 
