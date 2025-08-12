@@ -65,3 +65,9 @@ src_configure() {
 	cmake_src_configure
 }
 
+src_install() {
+	default
+	cmake_src_install
+	dolib.so ${BUILD_DIR}/cgen/libcgen.so
+	dolib.so ${BUILD_DIR}/rnn/libseq.so
+}
