@@ -369,7 +369,7 @@ PATCHES=(
 	"${FILESDIR}/${PN}-3.4.1-cuda-add-relaxed-constexpr.patch"
 	"${FILESDIR}/${PN}-4.1.2-opencl-license.patch"
 	"${FILESDIR}/${PN}-4.4.0-disable-native-cpuflag-detect.patch"
-	"${FILESDIR}/${PN}-4.5.0-link-with-cblas-for-lapack.patch"
+	"${FILESDIR}/${PN}-4.12.0-link-with-cblas-for-lapack.patch"
 	"${FILESDIR}/${PN}-4.8.1-use-system-flatbuffers.patch"
 	"${FILESDIR}/${PN}-4.8.1-use-system-opencl.patch"
 	"${FILESDIR}/${PN}-4.9.0-drop-python2-detection.patch"
@@ -378,15 +378,15 @@ PATCHES=(
 	"${FILESDIR}/${PN}-4.10.0-dnn-explicitly-include-abseil-cpp.patch"
 	"${FILESDIR}/${PN}-4.10.0-tbb-detection.patch"
 	"${FILESDIR}/${PN}-4.11.0-ade-0.1.2e.tar.gz.patch"
-	"${FILESDIR}/${PN}-4.11.0-cmake-CMP0175.patch"
-	"${FILESDIR}/${PN}-4.11.0-cmake-CMP0177.patch"
+	#"${FILESDIR}/${PN}-4.11.0-cmake-CMP0175.patch"
+	#"${FILESDIR}/${PN}-4.11.0-cmake-CMP0177.patch"
 
-	"${FILESDIR}/${PN}-4.10.0-cmake4.patch" # PR pending #27192
+	#"${FILESDIR}/${PN}-4.10.0-cmake4.patch" # PR pending #27192
 	"${FILESDIR}/${PN}-4.11.0-qt-6.9.patch" # https://github.com/opencv/opencv/issues/27223
 
-	"${FILESDIR}"/${PN}-4.11.0-fix-libspng-link.patch #  PR pending #27314
+	#"${FILESDIR}"/${PN}-4.11.0-fix-libspng-link.patch #  PR pending #27314
 
-	"${FILESDIR}/${PN}-4.11.0-cuda-12.9.patch" # PR 27288
+	#"${FILESDIR}/${PN}-4.11.0-cuda-12.9.patch" # PR 27288
 
 	# TODO applied in src_prepare
 	# "${FILESDIR}/${PN}_contrib-4.8.1-rgbd.patch"
