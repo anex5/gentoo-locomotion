@@ -1,11 +1,11 @@
-# Copyright 1999-2023 Gentoo Authors
+# Copyright 1999-2025 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
 inherit cmake
 
-COMMIT_HASH="6eb62e1515072827db992c2befd80b71b2d04329"
+COMMIT_HASH="1076b348abd17859a116f4b111c43d58a588a086"
 
 DESCRIPTION="Easy to integrate Vulkan memory allocation library"
 HOMEPAGE="https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator"
@@ -24,12 +24,11 @@ RESTRICT="mirror"
 
 S="${WORKDIR}/VulkanMemoryAllocator-${COMMIT_HASH}"
 
-CMAKE_BUILD_TYPE=Release
-
 src_configure() {
 	local mycmakeargs=(
 		-DVMA_BUILD_DOCUMENTATION="$(usex doc)"
 		-DVMA_BUILD_SAMPLES=OFF
 	)
+	CMAKE_BUILD_TYPE=Release
 	cmake_src_configure
 }
