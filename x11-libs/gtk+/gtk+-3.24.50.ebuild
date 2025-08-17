@@ -111,7 +111,7 @@ PATCHES=(
 	# https://bugs.gentoo.org/624960
 	"${FILESDIR}"/0001-gdk-add-a-poison-macro-to-hide-GDK_WINDOWING_.patch
 	# bug #952006
-	"${FILESDIR}"/${PN}-3.24.49-java-crash.patch
+	#"${FILESDIR}"/${PN}-3.24.49-java-crash.patch
 )
 
 src_prepare() {
