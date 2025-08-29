@@ -112,7 +112,7 @@ CHECKREQS_DISK_USR="4G"
 
 IUSE_FLAGS=(${FONTS[*],,})
 IUSE="+nerdfontssymbolsonly ${IUSE_FLAGS[*]//nerdfontssymbolsonly} +otf +ttf"
-REQUIRED_USE="X || ( ${IUSE_FLAGS[*]} )"
+REQUIRED_USE="|| ( ${IUSE_FLAGS[*]} )"
 
 S="${WORKDIR}"
 

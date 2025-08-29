@@ -26,10 +26,7 @@ IUSE="+otf ttf"
 REQUIRED_USE="|| ( otf ttf )"
 
 src_install() {
-	if use otf; then
-		FONT_S="${S}/otfs" FONT_SUFFIX="otf" font_src_install
-	fi
-	if use ttf; then
-		FONT_S="${S}/webfonts" FONT_SUFFIX="ttf" font_src_install
-	fi
+	use otf && { FONT_S="${S}/otfs"; FONT_SUFFIX="otf "; }
+	use ttf && { FONT_S="${S}/webfonts"; FONT_SUFFIX+="ttf"; }
+	font_src_install
 }
