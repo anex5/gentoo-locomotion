@@ -5,15 +5,15 @@ EAPI=8
 
 inherit font
 
-DESCRIPTION="Sans serif font designed by Philipp Hubert and Sebastian Fischer"
-HOMEPAGE="https://github.com/googlefonts/rubik"
-FONT_FACES=(Black BlackItalic Bold BoldItalic Italic Light LightItalic Medium MediumItalic Regular)
-COMMON_URI="https://github.com/googlefonts/rubik/raw/refs/heads/main/old/version-2/fonts"
+DESCRIPTION="Serif font designed by Jacques Le Bailly"
+HOMEPAGE="https://github.com/googlefonts/Crimson"
+FONT_FACES=(Bold BoldItalic Italic Regular SemiBold SemiBoldItalic)
+COMMON_URI="https://github.com/googlefonts/Crimson/raw/refs/heads/master/fonts"
 
 gen_src_uri() {
 	for f in ${FONT_FACES[*]}; do
-		echo "otf? ( ${COMMON_URI}/otf/Rubik-${f}.otf )"
-		echo "ttf? ( ${COMMON_URI}/ttf/Rubik-${f}.ttf )"
+		echo "otf? ( ${COMMON_URI}/otf/CrimsonText-${f}.otf )"
+		echo "ttf? ( ${COMMON_URI}/ttf/CrimsonText-${f}.ttf )"
 	done
 }
 
