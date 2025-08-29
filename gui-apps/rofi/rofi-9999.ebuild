@@ -6,32 +6,44 @@ EAPI=8
 inherit meson toolchain-funcs xdg-utils
 
 DESCRIPTION="A window switcher, run dialog and dmenu replacement (fork with Wayland support)"
-HOMEPAGE="https://github.com/lbonn/rofi"
+HOMEPAGE="https://github.com/davatorium/rofi"
 
 if [[ ${PV} = *9999 ]]; then
 	inherit git-r3
-	EGIT_REPO_URI="https://github.com/lbonn/rofi"
+	EGIT_REPO_URI="https://github.com/davatorium/rofi"
 	#EGIT_SUBMODULES=()
-	EGIT_BRANCH="wayland"
+	EGIT_BRANCH="next"
 	KEYWORDS=""
 else
-	MY_PV="$(ver_cut 1-3)+wayland$(ver_cut 5)"
-	SRC_URI="https://github.com/lbonn/rofi/releases/download/${MY_PV}/${PN}-${MY_PV}.tar.xz"
+	MY_PV="${PV/_/-}"
+	LIBGWATER_COMMIT="d86f9903efb9c490c0e3b0316d7f2da5b5a5632c"
+	LIBNKUTILS_COMMIT="2f220a40ad32cf51b6b7d7ae83ab641a3ae76693"
+	SRC_URI="
+		https://github.com/davatorium/rofi/archive/refs/tags/${MY_PV}.tar.gz -> ${P}.tar.gz
+		https://github.com/sardemff7/libgwater/archive/${LIBGWATER_COMMIT}.tar.gz
+		https://github.com/sardemff7/libnkutils/archive/${LIBNKUTILS_COMMIT}.tar.gz
+	"
 	KEYWORDS="~amd64 ~x86 ~arm ~arm64"
 	S=${WORKDIR}/${PN}-${MY_PV}
+	RESTRICT="mirror"
 fi
 
 LICENSE="MIT"
 SLOT="0"
-IUSE="X +drun examples imdkit man test wayland +windowmode"
-RESTRICT="!test? ( test )"
+IUSE="X doc +drun examples imdkit man test wayland +windowmode"
+REQUIRED_USE="
+	|| ( X wayland )
+	imdkit? ( X )
+"
+RESTRICT+="!test? ( test )"
 
 BDEPEND="
 	dev-build/meson
 	app-alternatives/ninja
 	virtual/pkgconfig
 	virtual/libc
-	man? ( app-text/doxygen[dot] )
+	doc? ( app-text/doxygen[dot] )
+	man? ( virtual/pandoc )
 	wayland? ( >=dev-libs/wayland-protocols-1.17 )
 "
 RDEPEND="
@@ -70,12 +82,29 @@ PATCHES=(
 )
 
 src_prepare() {
-	use man || ( sed -i -e '/install_man(/{:1;/)/!{N;b1};d}' -e "/subdir('doc')/d" meson.build || die )
-	use test || ( sed -i -e '/test(/{:1;/))/!{N;b1};d}' meson.build || die )
+	if use !man && use !doc; then
+		sed -e "/subdir('doc')/d" -i meson.build || die
+	fi
+	use !man && ( sed -e '/install_man(/{:1;/)/!{N;b1};d}' -i doc/meson.build || die )
+	use !doc && ( sed -e '/if doxygen.found(/{:1;/endif/!{N;b1};d}' -i doc/meson.build || die )
+	use !test && ( sed -i -e '/test(/{:1;/))/!{N;b1};d}' meson.build || die )
+	#use touch && eapply "${FILESDIR}"/rofi-2.0.0-touch-support-pr143.patch
+	if [[ ${PV} != *9999 ]]; then
+		rm -rf subprojects/libgwater
+		ln -sv "${WORKDIR}"/libgwater-${LIBGWATER_COMMIT} subprojects/libgwater
+		rm -rf subprojects/libnkutils
+		ln -sv "${WORKDIR}"/libnkutils-${LIBNKUTILS_COMMIT} subprojects/libnkutils
+	fi
 	default
 }
 
 src_configure() {
+	# Doesn't work with reflex, bug #887049
+	export LEX=flex
+
+	# Requires bison, see https://bugs.gentoo.org/894634.
+	unset YACC
+
 	tc-export CC CXX LD
 	local emesonargs=(
 		$(meson_use drun)
@@ -92,7 +121,6 @@ src_configure() {
 src_install() {
 	meson_src_install
 	use examples && ( insinto /usr/share/rofi/examples/; doins Examples/*.sh || die "Examples install failed.")
-	use man && ( doman doc/${PN}*.1 doc/${PN}*.5 || die "Manpages install failed.")
 	cp "${FILESDIR}/rofi.svg" "${D}/usr/share/icons/hicolor/scalable/apps/" || die "Rofi default icon install failed."
 }
 
