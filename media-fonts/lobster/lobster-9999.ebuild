@@ -13,7 +13,7 @@ SRC_URI="
 	ttf? ( https://github.com/googlefonts/lobster/raw/refs/heads/main/fonts/ttf/Lobster-Regular.ttf )
 "
 
-LICENSE="|| ( LGPL-2.1 OFL-1.1 )"
+LICENSE="OFL-1.1"
 SLOT="0"
 KEYWORDS="*"
 IUSE="+otf ttf"

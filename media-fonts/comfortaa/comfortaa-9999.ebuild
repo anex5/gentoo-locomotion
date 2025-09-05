@@ -19,7 +19,7 @@ gen_src_uri() {
 
 SRC_URI="$(gen_src_uri)"
 
-LICENSE="|| ( LGPL-2.1 OFL-1.1 )"
+LICENSE="OFL-1.1"
 SLOT="0"
 KEYWORDS="*"
 IUSE="+otf ttf"

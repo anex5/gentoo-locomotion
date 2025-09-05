@@ -12,7 +12,7 @@ SRC_URI="https://github.com/googlefonts/${PN}/archive/${EGIT_COMMIT}.tar.gz -> $
 IUSE="+otf ttf"
 REQUIRED_USE="|| ( otf ttf )"
 
-LICENSE="|| ( LGPL-2.1 OFL-1.1 )"
+LICENSE="OFL-1.1"
 SLOT="0"
 KEYWORDS="*"
 

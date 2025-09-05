@@ -13,7 +13,7 @@ SRC_URI="
 	ttf? ( https://github.com/googlefonts/allura/raw/refs/heads/main/fonts/ttf/Allura-Regular.ttf )
 "
 
-LICENSE="|| ( LGPL-2.1 OFL-1.1 )"
+LICENSE="OFL-1.1"
 SLOT="0"
 KEYWORDS="*"
 IUSE="+otf ttf"
