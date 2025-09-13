@@ -11,7 +11,7 @@ DISTUTILS_EXT=1
 inherit distutils-r1
 
 DESCRIPTION="Streaming multipart/form-data parser"
-HOMEPAGE="https://github.com/siddhantgoel/${PN}"
+HOMEPAGE="https://github.com/siddhantgoel/streaming-form-data"
 SRC_URI="https://github.com/siddhantgoel/${PN}/archive/refs/tags/v${PV}.tar.gz -> ${P}.tar.gz"
 
 LICENSE="MIT"

@@ -3,7 +3,7 @@
 
 EAPI=8
 
-DISTUTILS_USE_PEP517=setuptools
+DISTUTILS_USE_PEP517=standalone
 
 PYTHON_COMPAT=( python3_{11..13} )
 
@@ -27,8 +27,7 @@ RDEPEND+="
 "
 
 BDEPEND+="
-	dev-python/setuptools[${PYTHON_USEDEP}]
-	dev-python/setuptools-scm[${PYTHON_USEDEP}]
+	dev-python/uv-build[${PYTHON_USEDEP}]
 	test? (
 		>=dev-python/pytest-7.0.1[${PYTHON_USEDEP}]
 		dev-python/mypy[${PYTHON_USEDEP}]
