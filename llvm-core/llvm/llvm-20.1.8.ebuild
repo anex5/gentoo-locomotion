@@ -210,7 +210,6 @@ check_distribution_components() {
 						;;
 					# static libs
 					LLVM*)
-						continue
 						;;
 					# meta-targets
 					distribution|llvm-libraries)
@@ -297,12 +296,9 @@ get_distribution_components() {
 		LLVMTargetParser
 		LLVMBinaryFormat
 		LLVMMC
-		LLVMAArch64Info
 		LLVMBitstreamReader
 		LLVMRemarks
 		LLVMCore
-		LLVMAArch64Utils
-		LLVMAArch64Desc
 		LLVMBitReader
 		LLVMAsmParser
 		LLVMIRReader
@@ -332,13 +328,7 @@ get_distribution_components() {
 		LLVMGlobalISel
 		LLVMSandboxIR
 		LLVMVectorize
-		LLVMAArch64CodeGen
-		LLVMAArch64AsmParser
 		LLVMMCDisassembler
-		LLVMAArch64Disassembler
-		LLVMAMDGPUInfo
-		LLVMAMDGPUUtils
-		LLVMAMDGPUDesc
 		LLVMHipStdPar
 		LLVMFrontendOffloading
 		LLVMFrontendAtomic
@@ -350,87 +340,176 @@ get_distribution_components() {
 		LLVMMIRParser
 		LLVMCoroutines
 		LLVMPasses
-		LLVMAMDGPUCodeGen
-		LLVMAMDGPUAsmParser
-		LLVMAMDGPUDisassembler
 		LLVMMCA
-		LLVMAMDGPUTargetMCA
-		LLVMARMInfo
-		LLVMARMUtils
-		LLVMARMDesc
-		LLVMARMCodeGen
-		LLVMARMAsmParser
-		LLVMARMDisassembler
-		LLVMAVRInfo
-		LLVMAVRDesc
-		LLVMAVRCodeGen
-		LLVMAVRAsmParser
-		LLVMAVRDisassembler
-		LLVMBPFInfo
-		LLVMBPFDesc
-		LLVMBPFCodeGen
-		LLVMBPFAsmParser
-		LLVMBPFDisassembler
 		LLVMCoverage
-		LLVMHexagonInfo
-		LLVMHexagonDesc
-		LLVMHexagonAsmParser
-		LLVMHexagonCodeGen
-		LLVMHexagonDisassembler
-		LLVMLoongArchInfo
-		LLVMLoongArchDesc
-		LLVMLoongArchCodeGen
-		LLVMLoongArchAsmParser
-		LLVMLoongArchDisassembler
 		LLVMExtensions
 		LLVMLTO
-		LLVMMipsInfo
-		LLVMMipsDesc
-		LLVMMipsCodeGen
-		LLVMMipsAsmParser
-		LLVMMipsDisassembler
-		LLVMMSP430Info
-		LLVMMSP430Desc
-		LLVMMSP430CodeGen
-		LLVMMSP430AsmParser
-		LLVMMSP430Disassembler
-		LLVMNVPTXInfo
-		LLVMNVPTXDesc
-		LLVMNVPTXCodeGen
-		LLVMPowerPCInfo
-		LLVMPowerPCDesc
-		LLVMPowerPCCodeGen
-		LLVMPowerPCAsmParser
-		LLVMPowerPCDisassembler
-		LLVMRISCVInfo
-		LLVMRISCVDesc
-		LLVMRISCVCodeGen
-		LLVMRISCVAsmParser
-		LLVMRISCVDisassembler
-		LLVMRISCVTargetMCA
-		LLVMSparcInfo
-		LLVMSparcDesc
-		LLVMSparcCodeGen
-		LLVMSparcAsmParser
-		LLVMSparcDisassembler
-		LLVMSystemZInfo
-		LLVMSystemZDesc
-		LLVMSystemZCodeGen
-		LLVMSystemZAsmParser
-		LLVMSystemZDisassembler
-		LLVMWebAssemblyInfo
-		LLVMWebAssemblyDesc
-		LLVMWebAssemblyUtils
-		LLVMWebAssemblyCodeGen
-		LLVMWebAssemblyAsmParser
-		LLVMWebAssemblyDisassembler
-		LLVMX86Info
-		LLVMX86Desc
-		LLVMX86CodeGen
-		LLVMX86AsmParser
-		LLVMX86Disassembler
-		LLVMX86TargetMCA
 	)
+
+	if use llvm_targets_AArch64; then
+		out+=(
+			LLVMAArch64Info
+			LLVMAArch64Utils
+			LLVMAArch64Desc
+			LLVMAArch64CodeGen
+			LLVMAArch64AsmParser
+			LLVMAArch64Disassembler
+			LLVMAMDGPUTargetMCA
+		)
+	fi
+
+	if use llvm_targets_AMDGPU; then
+		out+=(
+			LLVMAMDGPUInfo
+			LLVMAMDGPUUtils
+			LLVMAMDGPUDesc
+			LLVMAMDGPUCodeGen
+			LLVMAMDGPUAsmParser
+			LLVMAMDGPUDisassembler
+		)
+	fi
+
+	if use llvm_targets_ARM; then
+		out+=(
+			LLVMARMInfo
+			LLVMARMUtils
+			LLVMARMDesc
+			LLVMARMCodeGen
+			LLVMARMAsmParser
+			LLVMARMDisassembler
+		)
+	fi
+
+	if use llvm_targets_AVR; then
+		out+=(
+			LLVMAVRInfo
+			LLVMAVRDesc
+			LLVMAVRCodeGen
+			LLVMAVRAsmParser
+			LLVMAVRDisassembler
+		)
+	fi
+
+	if use llvm_targets_BPF; then
+		out+=(
+			LLVMBPFInfo
+			LLVMBPFDesc
+			LLVMBPFCodeGen
+			LLVMBPFAsmParser
+			LLVMBPFDisassembler
+		)
+	fi
+
+	if use llvm_targets_Hexagon; then
+		out+=(
+			LLVMHexagonInfo
+			LLVMHexagonDesc
+			LLVMHexagonAsmParser
+			LLVMHexagonCodeGen
+			LLVMHexagonDisassembler
+		)
+	fi
+
+	if use llvm_targets_LoongArch; then
+		out+=(
+			LLVMLoongArchInfo
+			LLVMLoongArchDesc
+			LLVMLoongArchCodeGen
+			LLVMLoongArchAsmParser
+			LLVMLoongArchDisassembler
+		)
+	fi
+
+	if use llvm_targets_Mips; then
+		out+=(
+			LLVMMipsInfo
+			LLVMMipsDesc
+			LLVMMipsCodeGen
+			LLVMMipsAsmParser
+			LLVMMipsDisassembler
+		)
+	fi
+
+	if use llvm_targets_MSP430; then
+		out+=(
+			LLVMMSP430Info
+			LLVMMSP430Desc
+			LLVMMSP430CodeGen
+			LLVMMSP430AsmParser
+			LLVMMSP430Disassembler
+		)
+	fi
+
+	if use llvm_targets_NVPTX; then
+		out+=(
+			LLVMNVPTXInfo
+			LLVMNVPTXDesc
+			LLVMNVPTXCodeGen
+		)
+	fi
+
+	if use llvm_targets_PowerPC; then
+		out+=(
+			LLVMPowerPCInfo
+			LLVMPowerPCDesc
+			LLVMPowerPCCodeGen
+			LLVMPowerPCAsmParser
+			LLVMPowerPCDisassembler
+		)
+	fi
+
+	if use llvm_targets_RISCV; then
+		out+=(
+			LLVMRISCVInfo
+			LLVMRISCVDesc
+			LLVMRISCVCodeGen
+			LLVMRISCVAsmParser
+			LLVMRISCVDisassembler
+			LLVMRISCVTargetMCA
+		)
+	fi
+
+	if use llvm_targets_Sparc; then
+		out+=(
+			LLVMSparcInfo
+			LLVMSparcDesc
+			LLVMSparcCodeGen
+			LLVMSparcAsmParser
+			LLVMSparcDisassembler
+		)
+	fi
+
+	if use llvm_targets_SystemZ; then
+		out+=(
+			LLVMSystemZInfo
+			LLVMSystemZDesc
+			LLVMSystemZCodeGen
+			LLVMSystemZAsmParser
+			LLVMSystemZDisassembler
+		)
+	fi
+
+	if use llvm_targets_WebAssembly; then
+		out+=(
+			LLVMWebAssemblyInfo
+			LLVMWebAssemblyDesc
+			LLVMWebAssemblyUtils
+			LLVMWebAssemblyCodeGen
+			LLVMWebAssemblyAsmParser
+			LLVMWebAssemblyDisassembler
+		)
+	fi
+
+	if use llvm_targets_X86; then
+		out+=(
+			LLVMX86Info
+			LLVMX86Desc
+			LLVMX86CodeGen
+			LLVMX86AsmParser
+			LLVMX86Disassembler
+			LLVMX86TargetMCA
+		)
+	fi
 
 	if use test; then
 		out+=(
