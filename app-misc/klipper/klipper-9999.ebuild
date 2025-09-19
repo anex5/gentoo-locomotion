@@ -4,7 +4,7 @@
 EAPI=8
 PYTHON_COMPAT=( python3_{11..13} )
 
-inherit python-single-r1 systemd
+inherit python-single-r1 systemd toolchain-funcs
 
 DESCRIPTION="Klipper is a 3d-Printer firmware"
 HOMEPAGE="https://www.klipper3d.org/"
@@ -14,7 +14,7 @@ if [[ ${PV} = *9999 ]]; then
 	EGIT_BRANCH="master"
 	KEYWORDS=""
 else
-	COMMIT="1cc63980747b80516f8fc4f022eedf18ae739086"
+	COMMIT="8db5d254e077e10583cfaff0d9e70e08263383e5"
 	SRC_URI="https://github.com/Klipper3d/${PN}/archive/${COMMIT}.tar.gz -> ${P}.tar.gz
 	dict? ( https://github.com/Klipper3d/klipper/files/7491378/klipper-dict-20211106.tar.gz )"
 	KEYWORDS="~amd64 ~x86 ~arm ~arm64"
@@ -81,9 +81,16 @@ pkg_pretend() {
 	fi
 }
 
+src_prepare() {
+	default
+	sed -e "s/\(\!\/usr\/bin\/env \)python2/\1${EPYTHON}/" -i klippy/klippy.py || die "Sed failed"
+	sed -e "s/gcc/$(tc-getCC)/g" -i klippy/chelper/__init__.py || die "Sed failed"
+}
+
 src_compile() {
-	sed -i -r -e "s/(\!\/usr\/bin\/env )python2/\1${EPYTHON}/" klippy/klippy.py || die
+	# Build klippy
 	${EPYTHON} -m compileall klippy
+	# Build chelper
 	${EPYTHON} klippy/chelper/__init__.py
 }
 
@@ -118,9 +125,9 @@ src_install() {
 
 	# UPSTREAM-ISSUE https://github.com/KevinOConnor/klipper/issues/3689
 	for f in ${python_scripts[@]}; do
-		sed -i -r -e "s/(\!\/usr\/bin\/env )python.*$/\1${EPYTHON}/" "scripts/${f}" || die
+		sed -e "s/\(\!\/usr\/bin\/env \)python.*$/\1${EPYTHON}/" -i "scripts/${f}" || die
 	done
-	sed -i -e '1i #!/usr/bin/env python' scripts/test_klippy.py || die
+	sed -e '1i #!/usr/bin/env python' -i scripts/test_klippy.py || die
 	python_fix_shebang scripts/*.py
 
 	insinto "/usr/$(get_libdir)/${PN}"

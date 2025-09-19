@@ -1,29 +1,64 @@
 #!/sbin/openrc-run
-# Copyright 2022 Gentoo Authors
+# Copyright 2025 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-name="Moonraker daemon"
-description="Moonraker Klipper HTTP Server"
-
+description="API Web Server for Klipper"
+command="/usr/bin/moonraker"
+command_background="true"
+command_args="-c ${moonraker_config} -l ${moonraker_logfile} -d /var/lib/moonraker/"
+command_user="klipper:klipper"
 pidfile=${pidfile:-"/run/${RC_SVCNAME}.pid"}
 user=${user:-klipper}
 group=${group:-klipper}
+extra_commands="checkconfig"
+description_checkconfig="Validates service configuration file."
+start_stop_daemon_args="--user ${user} --group ${group}"
 
-command="/opt/${RC_SVCNAME}/${RC_SVCNAME}.py"
-command_args="${command_args:--c /etc/klipper/${RC_SVCNAME}.conf}"
-command_background="true"
+checkconfig() {
+    if [ -z "$moonraker_config" ]; then
+        eerror "You must to setup 'moonraker_config' in /etc/conf.d/mooraker first!"
+        exit 1
+    fi;
+
+    if [ -z "$moonraker_logfile" ]; then
+        eerror "You must setup 'mooraker_logfile' in /etc/conf.d/moonraker first!"
+        exit 1
+    fi;
+
+    checkpath -f "$moonraker_config"
+}
 
 start_pre() {
-	# We need to test if /run/klipper exists, since script will fail if it does not
+  # If this isn't a restart, make sure that the user's config isn't
+  # busted before we try to start the daemon (this will produce
+  # better error messages than if we just try to start it blindly).
+  #
+  # If, on the other hand, this *is* a restart, then the stop_pre
+  # action will have ensured that the config is usable and we don't
+  # need to do that again.
+  if [ "${RC_CMD}" != "restart" ] ; then
+    checkconfig || return $?
+
+    logdir="$(dirname "$moonraker_logfile")"
+    if [ ! -d "$logdir" ]; then
+        mkdir -p "${logdir}" || eerror "Could not create logs directory ${logdir}"
+        chown klipper:klipper "$logdir"
+    fi
+  fi
+	
 	checkpath -q -d "/run/${RC_SVCNAME}"
 }
 
-depend()
-{
-	need localmount
-	after net
+stop_pre() {
+  # If this is a restart, check to make sure the user's config
+  # isn't busted before we stop the running daemon.
+  if [ "${RC_CMD}" = "restart" ] ; then
+      checkconfig || return $?
+  fi
 }
 
-start_stop_daemon_args="--user ${user} --group ${group} \
-	--stdout /var/log/${RC_SVCNAME}/${RC_SVCNAME}.log \
-	--stderr /var/log/${RC_SVCNAME}/${RC_SVCNAME}.log"
+depend() {
+    need localmount
+    after udev klipper net
+    use logger
+}

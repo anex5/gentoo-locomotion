@@ -3,16 +3,16 @@
 
 EAPI=8
 
-inherit linux-mod-r1
+inherit linux-mod-r1 flag-o-matic
 
-MODULES_KERNEL_MAX=6.14
+MODULES_KERNEL_MAX=6.16
 MODULES_KERNEL_MIN=6.1
 
-COMMIT="d256c2ae282b70f03629e36900da54905ab4187c"
+COMMIT="07fa9cf0fa8b0c08920c359c725dfc250e91422b"
 
 DESCRIPTION="Realtek RTL8811CU/RTL8821CU USB wifi adapter driver"
-HOMEPAGE="https://github.com/lwfinger/rtw8852cu"
-SRC_URI="https://github.com/lwfinger/rtw8852cu/archive/${COMMIT}.tar.gz -> rtw8852cu-${PV}-${COMMIT}.tar.gz"
+HOMEPAGE="https://github.com/morrownr/8821cu-20210916"
+SRC_URI="https://github.com/morrownr/8821cu-${PV}/archive/${COMMIT}.tar.gz -> rtl8821cu-${PV}-${COMMIT}.tar.gz"
 
 SLOT="0"
 LICENSE="GPL-2"
@@ -20,9 +20,9 @@ KEYWORDS="~x86 ~amd64 ~arm ~arm64"
 
 DEPEND="virtual/linux-sources"
 
-RDEPEND="!<net-wireless/rtw8852cu-${PV}"
+RDEPEND="!<net-wireless/rtl8821cu-${PV}"
 
-S="${WORKDIR}/rtw8852cu-${COMMIT}"
+S="${WORKDIR}/8821cu-${PV}-${COMMIT}"
 
 RESTRICT="mirror bindist"
 
@@ -35,10 +35,7 @@ pkg_setup() {
 
 src_prepare() {
 	default
-	sed -e '/^\# gcc-1[0-9]/,/^$/ s:^:\#:' -i Makefile || die "Failed to patch Makefile."
-	if [[ -n ${KV_FULL} ]] && kernel_is -gt 6 12; then
-		eapply "${FILESDIR}/rtl-fix-kernel-6.13-build-4c0f3cf.patch"
-	fi
+	sed -e '/^\# gcc-13/,/^$/ s:^:\#:' -i Makefile || die "Failed to patch Makefile."
 }
 
 src_compile() {
@@ -46,7 +43,7 @@ src_compile() {
 	filter-lto
 	CC=${KERNEL_CC} CXX=${KERNEL_CXX} strip-unsupported-flags
 
-	local modlist=( 8852cu=kernel/drivers/net/wireless/realtek/rtlwifi/rtw8852cu:. )
+	local modlist=( 8821cu=kernel/drivers/net/wireless/realtek/rtlwifi/rtl8821cu:. )
 
 	local modargs=(
 		KERNELDIR="${KV_OUT_DIR}"

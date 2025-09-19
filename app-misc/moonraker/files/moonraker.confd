@@ -1,0 +1,5 @@
+# Path to moonraker config
+moonraker_config="/etc/moonraker/moonraker.conf"
+
+# Path to moonraker file
+moonraker_logfile="/var/log/klipper/moonraker.log"

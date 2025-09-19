@@ -5,6 +5,7 @@ EAPI=8
 
 DISTUTILS_USE_PEP517=pdm-backend
 PYTHON_COMPAT=( python3_{11..14} pypy3_11 )
+PDM_BUILD_SCM_VERSION="${PV}"
 
 inherit distutils-r1 pypi systemd
 
@@ -22,7 +23,7 @@ fi
 
 LICENSE="GPL-3"
 SLOT="0"
-IUSE="systemd doc"
+IUSE="doc policykit systemd test"
 
 DEPEND="
 	acct-group/klipper
@@ -50,7 +51,18 @@ RDEPEND="${DEPEND}
 
 RESTRICT="mirror test"
 
-DOCS=( LICENSE docs/api_changes.md )
+DOCS=(
+	LICENSE
+	docs/api_changes.md
+	docs/configuration.md
+	docs/changelog.md
+	docs/components.md
+	docs/contributing.md
+	docs/dev_changelog.md
+	docs/printer_objects.md
+	docs/user_changes.md
+	docs/web_api.md
+)
 
 src_prepare() {
 	sed -i -e 's|^DEFAULT_KLIPPY_LOG_PATH.*|DEFAULT_KLIPPY_LOG_PATH = "/var/log/klipper/klipper.log"|g' moonraker/components/application.py || die
@@ -67,30 +79,37 @@ src_compile() {
 
 src_install() {
 	if use doc; then
-		dodoc -r ${DOCS[@]} docs/api_changes.md docs/configuration.md docs/dev_changelog.md docs/plugins.md docs/printer_objects.md docs/user_changes.md docs/web_api.md
+		dodoc -r ${DOCS[@]}
 	fi
 
     distutils-r1_src_install
 
-	insinto "/etc/klipper"
-	doins "${FILESDIR}/${PN}.conf"
-	insinto "/usr/share/polkit-1/rules.d"
-	doins "${FILESDIR}/${PN}.rules"
+	if use policykit ; then
+		insinto "/usr/share/polkit-1/rules.d"
+		doins "${FILESDIR}/${PN}.rules"
+	fi
 
 	dodir var/log/${PN}
 	keepdir var/log/${PN}
 	fperms 0755 "var/log/${PN}"
 	fowners klipper:klipper "var/log/${PN}"
 
-	use systemd && systemd_newunit "${FILESDIR}/${PN}.service" "${PN}.service" || newinitd "${FILESDIR}/${PN}.initd" ${PN}
+	dodir /etc/moonraker
+	fowners klipper:klipper /etc/moonraker
+	insinto /etc/moonraker
+	newins "${FILESDIR}/${PN}.conf" ${PN}.conf
+	fowners klipper:klipper /etc/moonraker/moonraker.conf
+
+	newconfd "${FILESDIR}/${PN}.confd" "${PN}"
+	use systemd && systemd_newunit "${FILESDIR}/${PN}.service" "${PN}.service" || newinitd "${FILESDIR}/${PN}.initd" "${PN}"
 }
 
 pkg_postinst() {
-	echo
+	elog
 	elog "Moonraker depends on the following configuration items in the printer.cfg of klipper for full functionality:"
 	elog "    [display_status]"
 	elog "    [pause_resume]"
 	elog "    [virtual_sdcard]"
-	echo
+	elog
 	elog "Provide an API Key at /etc/klipper/api_key with owner and group klipper and permissions 0640"
 }

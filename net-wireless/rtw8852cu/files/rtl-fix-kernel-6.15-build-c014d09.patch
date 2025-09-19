@@ -1,0 +1,37 @@
+From c014d0970c8052e8b2306e24ccc92f6fe738458d Mon Sep 17 00:00:00 2001
+From: clnhub <daveholden2010@gmail.com>
+Date: Thu, 10 Apr 2025 02:07:19 +0200
+Subject: [PATCH] Add kernel 6.15(+) support
+
+---
+ Makefile                      | 787 +++++++++++++++++-----------------
+ README.md                     |   2 +-
+ include/osdep_service_linux.h |  10 +-
+ 3 files changed, 404 insertions(+), 395 deletions(-)
+
+diff --git a/include/osdep_service_linux.h b/include/osdep_service_linux.h
+index c3ffe47..1be792e 100644
+--- a/include/osdep_service_linux.h
++++ b/include/osdep_service_linux.h
+@@ -378,12 +378,20 @@ __inline static void _set_timer(_timer *ptimer, u32 delay_time)
+ 
+ __inline static void _cancel_timer(_timer *ptimer, u8 *bcancelled)
+ {
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 15, 0))
++	*bcancelled = timer_delete_sync(&ptimer->timer) == 1 ? 1 : 0;
++#else
+ 	*bcancelled = del_timer_sync(&ptimer->timer) == 1 ? 1 : 0;
++#endif
+ }
+ 
+ __inline static void _cancel_timer_async(_timer *ptimer)
+ {
+-	del_timer(&ptimer->timer);
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 15, 0))
++	timer_delete(&ptimer->timer);
++#else
++	del_timer(&ptimer->timer);	
++#endif
+ }
+ 
+ static inline void _init_workitem(_workitem *pwork, void *pfunc, void *cntx)
