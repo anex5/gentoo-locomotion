@@ -1,22 +1,19 @@
-# Copyright 1999-2024 Gentoo Authors
+# Copyright 1999-2025 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
 inherit autotools flag-o-matic prefix
 
-if [[ ${PV} == 9999* ]] ; then
+if [[ ${PV} == *9999 ]]; then
 	inherit git-r3
 	EGIT_REPO_URI="https://git.code.sf.net/p/zsh/code"
 else
-	KEYWORDS="~alpha ~amd64 ~arm ~arm64 ~hppa ~ia64 ~loong ~m68k ~mips ~ppc ~ppc64 ~riscv ~s390 ~sparc ~x86 ~amd64-linux ~x86-linux ~ppc-macos ~x64-macos ~sparc-solaris ~sparc64-solaris ~x64-solaris ~x86-solaris"
-	SRC_URI="https://www.zsh.org/pub/${P}.tar.xz
-		https://www.zsh.org/pub/old/${P}.tar.xz
-		mirror://sourceforge/${PN}/${P}.tar.xz
-		doc? (
-			https://www.zsh.org/pub/${P}-doc.tar.xz
-			mirror://sourceforge/${PN}/${P}-doc.tar.xz
-		)"
+	MY_PN="zsh-test"
+	SRC_URI="https://downloads.sourceforge.net/zsh/zsh-test/${PV}-test/${P}-test.tar.xz
+		doc? ( https://downloads.sourceforge.net/zsh/zsh-test/${P}-test-doc.tar.xz )"
+	S="${WORKDIR}/${P}-test"
+	KEYWORDS="~alpha ~amd64 ~arm ~arm64 ~hppa ~loong ~m68k ~mips ~ppc ~ppc64 ~riscv ~s390 ~sparc ~x86 ~amd64-linux ~x86-linux ~arm64-macos ~ppc-macos ~x64-macos ~x64-solaris"
 fi
 
 DESCRIPTION="UNIX Shell similar to the Korn shell"
@@ -24,48 +21,42 @@ HOMEPAGE="https://www.zsh.org/"
 
 LICENSE="ZSH gdbm? ( GPL-2 )"
 SLOT="0"
-IUSE="caps debug doc examples gdbm maildir pcre static valgrind"
+IUSE="caps debug doc examples gdbm maildir man pcre static valgrind"
 
 RDEPEND="
 	>=sys-libs/ncurses-5.1:0=
 	static? ( >=sys-libs/ncurses-5.7-r4:0=[static-libs] )
 	caps? ( sys-libs/libcap )
 	pcre? (
-		>=dev-libs/libpcre-3.9
-		static? ( >=dev-libs/libpcre-3.9[static-libs] )
+		dev-libs/libpcre2
+		static? ( dev-libs/libpcre2[static-libs] )
 	)
 	gdbm? (
 		sys-libs/gdbm:=
 		static? ( sys-libs/gdbm:=[static-libs] )
 	)
 "
+DEPEND="${RDEPEND}
+	valgrind? ( dev-debug/valgrind )
+"
 PDEPEND="
 	examples? ( app-doc/zsh-lovers )
 "
-DEPEND="
-	doc? (
-		app-text/yodl
-		sys-apps/texinfo
-		sys-apps/groff
-		app-text/texi2html
-		virtual/latex-base
-	)"
+BDEPEND="
+	sys-apps/groff
+"
 
 PATCHES=(
 	# Add openrc specific options for init.d completion
 	"${FILESDIR}"/${PN}-5.3-init.d-gentoo.diff
 	# Please refer gentoo bug #833981
 	"${FILESDIR}"/${PN}-5.9-musl-V09datetime-test-fix.patch
-	# bug #869539
-	"${FILESDIR}"/${PN}-5.9-clang-15-configure.patch
-	"${FILESDIR}"/${PN}-5.9-do-not-use-egrep-in-tests.patch
 	# bug #919001
-	"${FILESDIR}"/${PN}-5.9-c99.patch
-	"${FILESDIR}"/${PN}-5.9-relro.patch
+	"${FILESDIR}"/${PN}-5.9-c99-fpurge.patch
 )
 
 src_prepare() {
-	if use doc; then
+	if use man; then
 		# fix zshall problem with soelim
 		ln -s Doc man1 || die
 		mv Doc/zshall.1 Doc/zshall.1.soelim || die
@@ -90,7 +81,6 @@ src_configure() {
 		--enable-fndir="${EPREFIX}"/usr/share/zsh/${PV%_*}/functions
 		--enable-site-fndir="${EPREFIX}"/usr/share/zsh/site-functions
 		--enable-function-subdirs
-		--with-tcsetpgrp
 		--enable-multibyte
 		--with-term-lib='tinfow ncursesw'
 		$(use_enable maildir maildir-support)
@@ -138,8 +128,8 @@ src_configure() {
 src_compile() {
 	default
 
-	if use doc ; then
-		emake -C Doc everything pdf dvi
+	if [[ ${PV} == *9999 ]] && use doc ; then
+		emake -C Doc everything
 	fi
 }
 
@@ -170,11 +160,14 @@ src_test() {
 }
 
 src_install() {
-	emake DESTDIR="${D}" install $(usex doc "install.info" "")
+	emake DESTDIR="${D}" install
+	if use doc; then
+		emake -C Doc DESTDIR="${D}" install.html install.html
+	fi
 
 	insinto /etc/zsh
 	export PREFIX_QUOTE_CHAR='"' PREFIX_EXTRA_REGEX="/EUID/s,0,${EUID},"
-	newins "$(prefixify_ro "${FILESDIR}"/zprofile-5)" zprofile
+	newins "$(prefixify_ro "${FILESDIR}"/zprofile-6)" zprofile
 
 	keepdir /usr/share/zsh/site-functions
 	insinto /usr/share/zsh/${PV%_*}/functions/Prompts
@@ -203,12 +196,8 @@ src_install() {
 
 	dodoc ChangeLog* META-FAQ NEWS README config.modules
 
-	if use doc ; then
-		pushd "${WORKDIR}/${PN}-${PV%_*}" >/dev/null
-		dodoc Doc/zsh.{dvi,pdf}
-		docinto html
-		dodoc Doc/*.html
-		popd >/dev/null
+	if use doc; then
+		dodoc Doc/intro.{a4,us}.pdf Doc/zsh.{dvi,pdf}
 	fi
 
 	docinto StartupFiles

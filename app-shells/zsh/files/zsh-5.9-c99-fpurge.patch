@@ -1,0 +1,34 @@
+--- a/Src/utils.c
++++ b/Src/utils.c
+@@ -29,6 +29,8 @@
+ 
+ #include "zsh.mdh"
+ #include "utils.pro"
++#include <stdio.h>
++#include <stdio_ext.h>
+ 
+ /* name of script being sourced */
+ 
+@@ -2030,17 +2030,17 @@ redup(int x, int y)
+      * and at worst squirt out something unexpected.
+      */
+     if (stdout && y == fileno(stdout))
+-	fpurge(stdout);
++	__fpurge(stdout);
+     if (stderr && y == fileno(stderr))
+-	fpurge(stderr);
++	__fpurge(stderr);
+     if (shout && y == fileno(shout))
+-	fpurge(shout);
++	__fpurge(shout);
+     if (xtrerr && y == fileno(xtrerr))
+-	fpurge(xtrerr);
++	__fpurge(xtrerr);
+ #ifndef _IONBF
+     /* See init.c setupshin() -- stdin otherwise unbuffered */
+     if (stdin && y == fileno(stdin))
+-	fpurge(stdin);
++	__fpurge(stdin);
+ #endif
+ #endif
+ 
