@@ -19,7 +19,7 @@
 +            ['clang==1 and with_thinlto=="true"', {
 +              'lto': ' -flto=thin', # Clang ThinLTO
 +            }],
-+            ['clang==1 and with_goldlto=="false" and with_thinlto=="false" and with_mold=="false"', {
++            ['clang==1 and with_goldlto=="false" and with_thinlto=="false"', {
 +              'lto': ' -flto', # Clang with system default
 +            }],
            ],

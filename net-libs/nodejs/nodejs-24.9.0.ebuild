@@ -20,7 +20,7 @@ SLOT="${SLOT_MAJOR}/$(ver_cut 1-2 ${PV})"
 if [[ ${PV} == *9999 ]]; then
 	inherit git-r3
 	EGIT_REPO_URI="https://github.com/nodejs/node"
-	SLOT="23/0"
+	SLOT="24/0"
 else
 	SRC_URI="https://nodejs.org/dist/v${PV}/node-v${PV}.tar.xz"
 	KEYWORDS="~amd64 ~arm ~arm64 ~loong ~ppc64 ~riscv ~x86 ~amd64-linux ~x64-macos"
@@ -71,7 +71,7 @@ BDEPEND="${PYTHON_DEPS}
 	virtual/pkgconfig
 	test? ( net-misc/curl )
 	pax-kernel? ( sys-apps/elfix )
-	mold? ( sys-devel/mold )
+	mold? ( >=sys-devel/mold-2.0 )
 	lld? ( llvm-core/lld )
 "
 
@@ -209,6 +209,12 @@ src_configure() {
 
 	# LTO compiler flags are handled by configure.py itself
 	filter-lto
+
+	# LTO compiler flags are handled by configure.py itself
+	filter-flags \
+		'-flto*' \
+		'-fprofile*' \
+		'-fuse-ld*'
 	# GCC with -ftree-vectorize miscompiles node's exception handling code
 	# causing it to fail to catch exceptions sometimes
 	# https://gcc.gnu.org/bugzilla/show_bug.cgi?id=116057
@@ -244,9 +250,14 @@ src_configure() {
 		myconf+=( --openssl-no-asm )
 	fi
 	use debug && myconf+=( --debug )
-	use lto && myconf+=( --enable-lto )
-	use mold && myconf+=( --with-moldlto )
-	use lld && myconf+=( --with-thinlto )
+	if use lto; then
+		myconf+=( --enable-lto )
+		use lld && myconf+=( --with-thinlto )
+		use mold && myconf+=( --with-moldlto )
+	else
+		use mold && append-ldflags -fuse-ld=mold
+		use lld && append-ldflags -fuse-ld=lld
+	fi
 	if use system-icu; then
 		myconf+=( --with-intl=system-icu )
 	elif use icu; then
@@ -438,6 +449,11 @@ src_test() {
 		test/sequential/test-util-debug.js
 	)
 	[[ "$(nice)" -gt 10 ]] && drop_tests+=( "test/parallel/test-os.js" )
+	# https://bugs.gentoo.org/963649
+	has_version '>=dev-libs/openssl-3.6' &&
+		drop_tests+=(
+			test/parallel/test-tls-ocsp-callback
+		)
 	use inspector ||
 		drop_tests+=(
 			test/parallel/test-inspector-emit-protocol-event.js
