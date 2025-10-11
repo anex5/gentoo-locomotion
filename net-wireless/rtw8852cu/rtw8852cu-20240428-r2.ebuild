@@ -5,7 +5,7 @@ EAPI=8
 
 inherit linux-mod-r1 flag-o-matic
 
-MODULES_KERNEL_MAX=6.16
+MODULES_KERNEL_MAX=6.17
 MODULES_KERNEL_MIN=6.1
 
 COMMIT="d256c2ae282b70f03629e36900da54905ab4187c"
@@ -42,9 +42,9 @@ src_prepare() {
 	if [[ -n ${KV_FULL} ]] && kernel_is -gt 6 14; then
 		eapply "${FILESDIR}/rtl-fix-kernel-6.15-build-c014d09.patch"
 	fi
-	if [[ -n ${KV_FULL} ]] && kernel_is -gt 6 15; then
-		eapply "${FILESDIR}/rtl-fix-kernel-6.16-build-efd68a7.patch"
-	fi
+	#if [[ -n ${KV_FULL} ]] && kernel_is -gt 6 15; then
+	#	eapply "${FILESDIR}/rtl-fix-kernel-6.16-build-efd68a7.patch"
+	#fi
 }
 
 src_compile() {

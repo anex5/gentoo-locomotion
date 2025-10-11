@@ -4,42 +4,41 @@
 EAPI=8
 
 # Using Gentoos firefox patches as system libraries and lto are quite nice
-FIREFOX_PATCHSET="firefox-${PV%%.*}esr-patches-12.tar.xz"
+FIREFOX_PATCHSET="firefox-${PV%%.*}esr-patches-03.tar.xz"
+FIREFOX_LOONG_PATCHSET="firefox-139-loong-patches-02.tar.xz"
 
-LLVM_COMPAT=( 18 19 )
+LLVM_COMPAT=( 19 20 )
 PP="1"
 GV="1"
-PYTHON_COMPAT=( python3_{10..13} )
-PYTHON_REQ_USE="ncurses,sqlite,ssl"
 
 # This will also filter rust versions that don't match LLVM_COMPAT in the non-clang path; this is fine.
 RUST_NEEDS_LLVM=1
 # If not building with clang we need at least rust 1.76
-RUST_MIN_VER=1.77.1
+RUST_MIN_VER=1.82.0
 
-WANT_AUTOCONF="2.1"
+PYTHON_COMPAT=( python3_{11..14} )
+PYTHON_REQ_USE="ncurses,sqlite,ssl"
 
 VIRTUALX_REQUIRED="manual"
 
 # Information about the bundled wasi toolchain from
 # https://github.com/WebAssembly/wasi-sdk/
-WASI_SDK_VER=25.0
-WASI_SDK_LLVM_VER=19
+WASI_SDK_VER=27.0
+WASI_SDK_LLVM_VER=20
 
 MOZ_ESR=yes
 
 inherit autotools check-reqs desktop flag-o-matic gnome2-utils linux-info llvm-r1 multiprocessing \
-	multilib-minimal optfeature pax-utils python-any-r1 readme.gentoo-r1 rust toolchain-funcs virtualx xdg
-
-PATCH_URIS=(
-	https://dev.gentoo.org/~juippis/mozilla/patchsets/${FIREFOX_PATCHSET}
-)
+	multilib-minimal optfeature pax-utils python-any-r1 readme.gentoo-r1 rust toolchain-funcs unpacker virtualx xdg
 
 SRC_URI="
 	!buildtarball? (
-		icecat-${PV}-${PP}gnu${GV}.tar.bz2
+		https://gitlab.com/api/v4/projects/32909921/packages/generic/${PN}/${PV}-gnu${GV}/${P}-${PP}gnu${GV}.tar.zst
 	)
-	${PATCH_URIS[@]}
+	https://dev.gentoo.org/~juippis/mozilla/patchsets/${FIREFOX_PATCHSET}
+	loong? (
+		https://dev.gentoo.org/~xen0n/distfiles/www-client/firefox/${FIREFOX_LOONG_PATCHSET}
+	)
 	wasm-sandbox? (
 		amd64? ( https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_SDK_VER/.*/}/wasi-sdk-${WASI_SDK_VER}-x86_64-linux.tar.gz )
 		arm64? ( https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_SDK_VER/.*/}/wasi-sdk-${WASI_SDK_VER}-arm64-linux.tar.gz )
@@ -117,6 +116,7 @@ REQUIRED_USE="
 	wayland? (
 		dbus
 	)
+	pgo? ( jumbo-build )
 "
 
 # Firefox-only REQUIRED_USE flags
@@ -251,7 +251,7 @@ CDEPEND="
 		>=media-libs/libaom-1.0.0:=[${MULTILIB_USEDEP}]
 	)
 	system-harfbuzz? (
-		!wasm-sandbox? ( >=media-gfx/graphite2-1.3.13 )
+		!wasm-sandbox? ( >=media-gfx/graphite2-1.3.14 )
 		>=media-libs/harfbuzz-7.3.0:0=[${MULTILIB_USEDEP}]
 	)
 	system-icu? (
@@ -538,7 +538,8 @@ moz_clear_vendor_checksums() {
 
 	sed -i \
 		-e 's/\("files":{\)[^}]*/\1/' \
-		"${s}"/third_party/rust/${1}/.cargo-checksum.json || die
+		"${S}"/third_party/rust/${1}/.cargo-checksum.json \
+		|| die
 }
 
 moz_build_xpi() {
@@ -690,9 +691,9 @@ pkg_pretend() {
 
 		# Ensure we have enough disk space to compile
 		if use pgo || use lto || use debug ; then
-			CHECKREQS_DISK_BUILD="13500M"
+			CHECKREQS_DISK_BUILD="14300M"
 		else
-			CHECKREQS_DISK_BUILD="6600M"
+			CHECKREQS_DISK_BUILD="7400M"
 		fi
 
 		check-reqs_pkg_pretend
@@ -716,9 +717,9 @@ pkg_setup() {
 
 		# Ensure we have enough disk space to compile
 		if use pgo || use lto || use debug ; then
-			CHECKREQS_DISK_BUILD="13500M"
+			CHECKREQS_DISK_BUILD="14300M"
 		else
-			CHECKREQS_DISK_BUILD="6400M"
+			CHECKREQS_DISK_BUILD="7400M"
 		fi
 
 		check-reqs_pkg_setup
@@ -865,9 +866,9 @@ pkg_setup() {
 
 src_unpack() {
 	if use buildtarball; then
-		unpack "/usr/src/makeicecat-${PV}/output/icecat-${PV}-${PP}gnu${GV}.tar.bz2" || eerror "Tarball is missing, check that www-client/makeicecat has use flag buildtarball enabled."
+		unpack "icecat-${PV}-${PP}gnu${GV}.tar.bz2" || eerror "Tarball is missing, check that www-client/makeicecat has use flag buildtarball enabled."
 	else
-		unpack "icecat-${PV}-${PP}gnu${GV}.tar.bz2"
+		unpacker "icecat-${PV}-${PP}gnu${GV}.tar.zst" || eerror "Failed to unpack."
 	fi
 	unpack "${FIREFOX_PATCHSET}"
 }
@@ -890,18 +891,18 @@ src_prepare() {
 
 	if use lto; then
 		rm -v "${WORKDIR}"/firefox-patches/*-LTO-Only-enable-LTO-*.patch || die
-		rm -v "${WORKDIR}"/firefox-patches/*-gcc-lto-gentoo.patch || die
+		rm -v "${WORKDIR}"/firefox-patches/*-gcc-lto-pgo-gentoo.patch || die
 	fi
 
-	if ! use ppc64; then
-		rm -v "${WORKDIR}"/firefox-patches/*ppc64*.patch
-	fi
+	#if ! use ppc64; then
+	#	rm -v "${WORKDIR}"/firefox-patches/*ppc64*.patch
+	#fi
 
 	if use x86 && use elibc_glibc ; then
 		rm -v "${WORKDIR}"/firefox-patches/*-musl-non-lfs64-api-on-audio_thread_priority-crate.patch || die
 	fi
 
-	eapply "${FILESDIR}/extra-patches/firefox-128.3.0e-disallow-store-data-races.patch"
+	eapply "${FILESDIR}/extra-patches/firefox-140.2.0e-disallow-store-data-races.patch"
 
 	# Flicker prevention with -Ofast
 	eapply "${FILESDIR}/extra-patches/firefox-106.0.2-disable-broken-flags-gfx-layers.patch"
@@ -930,7 +931,7 @@ src_prepare() {
 	# eapply "${FILESDIR}/icecat-128e-disable-ffvpx.patch"
 
 	# Prevent tab crash
-	eapply "${FILESDIR}/extra-patches/firefox-106.0.2-disable-broken-flags-dom-bindings.patch"
+	eapply "${FILESDIR}/extra-patches/firefox-140.3.1-disable-broken-flags-dom-bindings.patch"
 
 	# Prevent video seek bug
 	eapply "${FILESDIR}/extra-patches/firefox-128.3.0e-disable-broken-flags-ipc-chromium-chromium-config.patch"
@@ -944,24 +945,16 @@ src_prepare() {
 	#eapply "${FILESDIR}/extra-patches/firefox-128.3.0e-allow-flac-no-ffvpx.patch"
 	eapply "${FILESDIR}/extra-patches/firefox-128.3.0e-big-endian-image-decoders.patch"
 
-	# Workaround for bgo#917599
-	if has_version ">=dev-libs/icu-74.1" && use system-icu ; then
-		eapply "${WORKDIR}"/firefox-patches/*-bmo-1862601-system-icu-74.patch
-	fi
-	rm -v "${WORKDIR}"/firefox-patches/*-bmo-1862601-system-icu-74.patch || die
-
 	# Workaround for bgo#915651 on musl
 	if use elibc_glibc ; then
 		rm -v "${WORKDIR}"/firefox-patches/*bgo-748849-RUST_TARGET_override.patch || die
 	fi
 
 	# Modify patch to apply correctly
-	# sed -i -e 's/firefox/icecat/' "${WORKDIR}"/firefox-patches/0033-bmo-1882209-update-crates-for-rust-1.78-stripped-patch-from-bugs.freebsd.org-bug278834.patch || die
-	# sed -i -e 's/880c982df0843cbdff38b9f9c3829a2d863a224e4de2260c41c3ac69e9148ad4/239b3e4d20498f69ed5f94481ed932340bd58cb485b26c35b09517f249d20d11/' "${S}"/third_party/rust/bindgen/.cargo-checksum.json || die
+	sed -i -e 's/Firefox/IceCat/' "${WORKDIR}"/firefox-patches/0016-bgo-929967-fix-pgo-on-musl.patch || die
 
 	eapply "${WORKDIR}/firefox-patches"
-
-	# eapply "${FILESDIR}/icecat-115.18.0-python3.12-fix.patch"
+	use loong && eapply "${WORKDIR}/firefox-loong-patches"
 
 	# Allow user to apply any additional patches without modifing ebuild
 	eapply_user
@@ -1022,11 +1015,11 @@ src_prepare() {
 		"${S}"/build/moz.configure/lto-pgo.configure \
 		"${S}"/intl/icu_sources_data.py \
 		"${S}"/python/mozbuild/mozbuild/base.py \
-		"${S}"/third_party/libwebrtc/build/toolchain/get_cpu_count.py \
-		"${S}"/third_party/libwebrtc/build/toolchain/get_concurrent_links.py \
+		"${S}"/third_party/chromium/build/toolchain/get_cpu_count.py \
+		"${S}"/third_party/chromium/build/toolchain/get_concurrent_links.py \
 		"${S}"/third_party/python/gyp/pylib/gyp/input.py \
 		"${S}"/python/mozbuild/mozbuild/code_analysis/mach_commands.py \
-		|| die "sed failed to set num_cores"
+		|| die "Sed failed."
 
 	# sed-in toolchain prefix
 	sed -i \
@@ -1043,6 +1036,26 @@ src_prepare() {
 
 	find "${S}"/third_party -type f \( -name '*.so' -o -name '*.o' \) -print -delete || die
 
+	# Clear checksums from cargo crates we've manually patched.
+	# moz_clear_vendor_checksums crate
+
+	# Respect choice for "jumbo-build"
+	# Changing the value for FILES_PER_UNIFIED_FILE may not work, see #905431
+	if [[ -n ${FILES_PER_UNIFIED_FILE} ]] && use jumbo-build; then
+		local my_files_per_unified_file=${FILES_PER_UNIFIED_FILE:=16}
+		elog ""
+		elog "jumbo-build defaults modified to ${my_files_per_unified_file}."
+		elog "if you get a build failure, try undefining FILES_PER_UNIFIED_FILE,"
+		elog "if that fails try -jumbo-build before opening a bug report."
+		elog ""
+
+		sed -i -e "s/\"FILES_PER_UNIFIED_FILE\", 16/\"FILES_PER_UNIFIED_FILE\", "${my_files_per_unified_file}"/" \
+			python/mozbuild/mozbuild/frontend/data.py ||
+				die "Failed to adjust FILES_PER_UNIFIED_FILE in python/mozbuild/mozbuild/frontend/data.py"
+		sed -i -e "s/FILES_PER_UNIFIED_FILE = 6/FILES_PER_UNIFIED_FILE = "${my_files_per_unified_file}"/" \
+			js/src/moz.build ||
+				die "Failed to adjust FILES_PER_UNIFIED_FILE in js/src/moz.build"
+	fi
 	# Removed creation of a single build dir
 
 	# Clear cargo checksums from crates we have patched
@@ -1371,7 +1384,6 @@ _src_configure() {
 		--disable-disk-remnant-avoidance \
 		--disable-geckodriver \
 		--disable-eme \
-		--disable-gpsd \
 		--disable-install-strip \
 		--disable-legacy-profile-creation \
 		--disable-parental-controls \
@@ -1399,9 +1411,7 @@ _src_configure() {
 		--with-system-nss \
 		--with-system-zlib \
 		--with-toolchain-prefix="${CHOST}-" \
-		--with-unsigned-addon-scopes="app,system" \
-		--x-includes="${ESYSROOT}/usr/include" \
-		--x-libraries="${ESYSROOT}/usr/$(get_libdir)"
+		--with-unsigned-addon-scopes="app,system"
 
 	if use system-ffmpeg ; then
 		mozconfig_add_options_ac \
@@ -1521,6 +1531,8 @@ _src_configure() {
 
 	mozconfig_use_enable wifi necko-wifi
 
+	! use jumbo-build && mozconfig_add_options_ac '--disable-unified-build' --disable-unified-build
+
 	use debug && mozconfig_add_options_ac \
 		'--disable-unified-build' \
 		--disable-unified-build
@@ -1530,7 +1542,7 @@ _src_configure() {
 	elif ! use X && use wayland ; then
 		mozconfig_add_options_ac '+wayland' --enable-default-toolkit="cairo-gtk3-wayland-only"
 	else
-		mozconfig_add_options_ac '+x11' --enable-default-toolkit="cairo-gtk3"
+		mozconfig_add_options_ac '+x11' --enable-default-toolkit="cairo-gtk3-x11-only"
 	fi
 
 	# wasm-sandbox
@@ -1538,7 +1550,7 @@ _src_configure() {
 	if use wasm-sandbox ; then
 		mozconfig_add_options_ac '+wasm-sandbox' --with-wasi-sysroot="${WORKDIR}/wasi-sdk-${WASI_SDK_VER}-${wasi_arch}-linux/share/wasi-sysroot/"
 	else
-		mozconfig_add_options_ac '-wasm-sandbox' --without-wasm-sandboxed-libraries
+		mozconfig_add_options_ac 'no wasm-sandbox' --without-wasm-sandboxed-libraries
 		mozconfig_use_with system-harfbuzz system-graphite2
 	fi
 
@@ -1704,7 +1716,7 @@ _src_configure() {
 	if use ppc64 || use riscv ; then
 		:;
 	else
-		mozconfig_add_options_ac 'elf-hack disabled' --disable-elf-hack
+		mozconfig_add_options_ac 'disable elf-hack on non-supported arches' --disable-elf-hack
 	fi
 
 	if (is_flagq_last "-O3" || is_flagq_last "-Ofast") \

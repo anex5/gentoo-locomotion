@@ -12,7 +12,7 @@ inherit bash-completion-r1 check-reqs flag-o-matic linux-info ninja-utils pax-ut
 
 DESCRIPTION="A JavaScript runtime built on Chrome's V8 JavaScript engine"
 HOMEPAGE="https://nodejs.org/"
-LICENSE="Apache-1.1 Apache-2.0 BSD BSD-2 MIT"
+LICENSE="Apache-1.1 Apache-2.0 BSD BSD-2 MIT npm? ( Artistic-2 )"
 
 SLOT_MAJOR="$(ver_cut 1 ${PV})"
 SLOT="${SLOT_MAJOR}/$(ver_cut 1-2 ${PV})"
@@ -34,7 +34,7 @@ REQUIRED_USE="
 	^^ ( mold lld )
 	corepack
 	inspector? ( icu ssl )
-	npm? ( corepack )
+	npm? ( corepack ssl )
 	system-icu? ( icu )
 	system-ssl? ( ssl )
 	v8-sandbox? ( pointer-compression )
@@ -51,16 +51,17 @@ RDEPEND="
 	>=app-eselect/eselect-nodejs-20250106
 	dev-db/sqlite:3
 	>=dev-libs/libuv-1.51.0:=
-	>=dev-libs/simdjson-3.9.4:=
-	>=net-dns/c-ares-1.34.5
-	>=net-libs/nghttp2-1.62.1:=
+	>=dev-libs/simdjson-3.10.1:=
+	>=net-dns/c-ares-1.34.4:=
+	>=net-libs/nghttp2-1.64.0:=
+	>=net-libs/nghttp3-1.7.0:=
 	>=sys-libs/zlib-1.3.1
 	corepack? ( sys-apps/yarn )
 	system-icu? (
 		>=dev-libs/icu-77.1:=
 	)
 	system-ssl? (
-		>=net-libs/ngtcp2-1.3.0:=
+		>=net-libs/ngtcp2-1.9.1:=
 		>=dev-libs/openssl-3.0.16:0[asm?,fips?]
 	)
 "
@@ -418,9 +419,13 @@ src_test() {
 		test/parallel/test-dns.js
 		test/parallel/test-dns-resolveany-bad-ancount.js
 		test/parallel/test-dns-setserver-when-querying.js
+		test/parallel/test-dotenv.js
+		test/parallel/test-fs-mkdir.js
 		test/parallel/test-fs-read-stream.js
 		test/parallel/test-fs-utimes-y2K38.js
 		test/parallel/test-fs-watch-recursive-add-file.js
+		test/parallel/test-http2-client-set-priority.js
+		test/parallel/test-http2-priority-event.js
 		test/parallel/test-process-euid-egid.js
 		test/parallel/test-process-get-builtin.mjs
 		test/parallel/test-process-initgroups.js
@@ -429,13 +434,17 @@ src_test() {
 		test/parallel/test-release-npm.js
 		test/parallel/test-socket-write-after-fin-error.js
 		test/parallel/test-strace-openat-openssl.js
+		test/sequential/test-tls-session-timeout.js
 		test/sequential/test-util-debug.js
 	)
 	[[ "$(nice)" -gt 10 ]] && drop_tests+=( "test/parallel/test-os.js" )
 	use inspector ||
 		drop_tests+=(
 			test/parallel/test-inspector-emit-protocol-event.js
+			test/parallel/test-inspector-network-arbitrary-data.js
 			test/parallel/test-inspector-network-domain.js
+			test/parallel/test-inspector-network-fetch.js
+			test/parallel/test-inspector-network-http.js
 			test/sequential/test-watch-mode.mjs
 		)
 	rm -f "${drop_tests[@]}" || die "disabling tests failed"
