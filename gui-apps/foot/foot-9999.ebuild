@@ -29,13 +29,13 @@ RESTRICT="
 COMMON_DEPEND="
 	dev-libs/wayland
 	<media-libs/fcft-4.0.0
-	>=media-libs/fcft-3.0.0
+	>=media-libs/fcft-3.3.1
 	media-libs/fontconfig
 	x11-libs/libxkbcommon
 	x11-libs/pixman
 	systemd? ( sys-apps/systemd:= )
 	grapheme-clustering? (
-		dev-libs/libutf8proc:=
+		dev-libs/libutf8proc:=[-cjk]
 		media-libs/fcft[harfbuzz]
 	)
 "
@@ -85,7 +85,7 @@ src_configure() {
 		-Dterminfo=disabled
 		$(meson_feature man docs)
 		$(meson_feature grapheme-clustering)
-$(meson_use test tests)
+		$(meson_use test tests)
 		$(meson_use themes)
 		$(meson_use ime)
 		-Dutmp-backend=$(usex utempter libutempter none)
