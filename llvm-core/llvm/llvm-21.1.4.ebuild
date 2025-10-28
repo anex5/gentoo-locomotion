@@ -310,8 +310,11 @@ get_distribution_components() {
 		LLVMMCParser
 		LLVMTextAPI
 		LLVMObject
+		LLVMObjectYAML
 		LLVMDebugInfoDWARF
+		LLVMDebugInfoDWARFLowLevel
 		LLVMDebugInfoCodeView
+		LLVMDebugInfoGSYM
 		LLVMDebugInfoMSF
 		LLVMDebugInfoPDB
 		LLVMDebugInfoBTF
@@ -335,6 +338,7 @@ get_distribution_components() {
 		LLVMVectorize
 		LLVMMCDisassembler
 		LLVMHipStdPar
+		LLVMFrontendDirective
 		LLVMFrontendOffloading
 		LLVMFrontendAtomic
 		LLVMFrontendOpenMP
@@ -349,6 +353,46 @@ get_distribution_components() {
 		LLVMCoverage
 		LLVMExtensions
 		LLVMLTO
+
+		LLVMCFIVerify
+		LLVMDWARFCFIChecker
+		LLVMDWARFLinker
+		LLVMDWARFLinkerClassic
+		LLVMDWARFLinkerParallel
+		LLVMDWP
+		LLVMDXILBitWriter
+		LLVMDebugInfoLogicalView
+		LLVMDiff
+		LLVMDlltoolDriver
+		LLVMExecutionEngine
+		LLVMExegesis
+		LLVMFileCheck
+		LLVMFrontendDriver
+		LLVMFrontendHLSL
+		LLVMFrontendOpenACC
+		LLVMFuzzMutate
+		LLVMFuzzerCLI
+		LLVMInterfaceStub
+		LLVMInterpreter
+		LLVMJITLink
+		LLVMLibDriver
+		LLVMLineEditor
+		LLVMMCJIT
+		LLVMObjCopy
+		LLVMOptDriver
+		LLVMOption
+		LLVMOrcDebugging
+		LLVMOrcJIT
+		LLVMOrcShared
+		LLVMOrcTargetProcess
+		LLVMRuntimeDyld
+		LLVMTableGenBasic
+		LLVMTableGenCommon
+		LLVMTelemetry
+		LLVMTextAPIBinaryReader
+		LLVMWindowsDriver
+		LLVMWindowsManifest
+		LLVMXRay
 	)
 
 	if use llvm_targets_AArch64; then
@@ -360,6 +404,7 @@ get_distribution_components() {
 			LLVMAArch64AsmParser
 			LLVMAArch64Disassembler
 			LLVMAMDGPUTargetMCA
+			LLVMExegesisAArch64
 		)
 	fi
 
@@ -405,6 +450,15 @@ get_distribution_components() {
 		)
 	fi
 
+	if use llvm_targets_DirectX; then
+		out+=(
+			LLVMDirectXCodeGen
+			LLVMDirectXDesc
+			LLVMDirectXInfo
+			LLVMDirectXPointerTypeAnalysis
+		)
+	fi
+
 	if use llvm_targets_Hexagon; then
 		out+=(
 			LLVMHexagonInfo
@@ -417,21 +471,32 @@ get_distribution_components() {
 
 	if use llvm_targets_LoongArch; then
 		out+=(
-			LLVMLoongArchInfo
-			LLVMLoongArchDesc
-			LLVMLoongArchCodeGen
 			LLVMLoongArchAsmParser
+			LLVMLoongArchCodeGen
+			LLVMLoongArchDesc
 			LLVMLoongArchDisassembler
+			LLVMLoongArchInfo
+		)
+	fi
+
+	if use llvm_targets_Lanai; then
+		out+=(
+			LLVMLanaiAsmParser
+			LLVMLanaiCodeGen
+			LLVMLanaiDesc
+			LLVMLanaiDisassembler
+			LLVMLanaiInfo
 		)
 	fi
 
 	if use llvm_targets_Mips; then
 		out+=(
-			LLVMMipsInfo
-			LLVMMipsDesc
-			LLVMMipsCodeGen
 			LLVMMipsAsmParser
+			LLVMMipsCodeGen
+			LLVMMipsDesc
 			LLVMMipsDisassembler
+			LLVMMipsInfo
+			LLVMExegesisMips
 		)
 	fi
 
@@ -460,6 +525,7 @@ get_distribution_components() {
 			LLVMPowerPCCodeGen
 			LLVMPowerPCAsmParser
 			LLVMPowerPCDisassembler
+			LLVMExegesisPowerPC
 		)
 	fi
 
@@ -471,6 +537,7 @@ get_distribution_components() {
 			LLVMRISCVAsmParser
 			LLVMRISCVDisassembler
 			LLVMRISCVTargetMCA
+			LLVMExegesisRISCV
 		)
 	fi
 
@@ -484,6 +551,15 @@ get_distribution_components() {
 		)
 	fi
 
+	if use llvm_targets_SPIRV; then
+		out+=(
+			LLVMSPIRVAnalysis
+			LLVMSPIRVCodeGen
+			LLVMSPIRVDesc
+			LLVMSPIRVInfo
+		)
+	fi
+
 	if use llvm_targets_SystemZ; then
 		out+=(
 			LLVMSystemZInfo
@@ -491,6 +567,16 @@ get_distribution_components() {
 			LLVMSystemZCodeGen
 			LLVMSystemZAsmParser
 			LLVMSystemZDisassembler
+		)
+	fi
+
+	if use llvm_targets_VE; then
+		out+=(
+			LLVMVEAsmParser
+			LLVMVECodeGen
+			LLVMVEDesc
+			LLVMVEDisassembler
+			LLVMVEInfo
 		)
 	fi
 
@@ -513,6 +599,16 @@ get_distribution_components() {
 			LLVMX86AsmParser
 			LLVMX86Disassembler
 			LLVMX86TargetMCA
+			LLVMExegesisX86
+		)
+	fi
+
+	if use llvm_targets_XCore; then
+		out+=(
+			LLVMXCoreCodeGen
+			LLVMXCoreDesc
+			LLVMXCoreDisassembler
+			LLVMXCoreInfo
 		)
 	fi
 
@@ -719,8 +815,8 @@ multilib_src_configure() {
 	einfo
 
 	local libdir=$(get_libdir)
+	CMAKE_BUILD_TYPE=$(usex debug RelWithDebInfo Release)
 	local mycmakeargs=(
-		-DCMAKE_BUILD_TYPE=$(usex debug RelWithDebInfo Release)
 		# disable appending VCS revision to the version to improve
 		# direct cache hit ratio
 		-DLLVM_APPEND_VC_REV=OFF
