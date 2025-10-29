@@ -79,6 +79,10 @@ RESTRICT="mirror"
 PATCHES=(
 	"${FILESDIR}"/rofi-9999-filebrowser-mesg-path.patch
 	"${FILESDIR}"/rofi-9999-filebrowser-regex.patch
+	"${FILESDIR}"/rofi-9999-fix-theme-selector-home.patch
+	"${FILESDIR}"/rofi-2.0.0-allow-icons-tint.patch
+	"${FILESDIR}"/rofi-2.0.0-fix-async-mode-multiselect.patch
+	"${FILESDIR}"/rofi-2.0.0-fix-missing-and-wrong-free.patch
 )
 
 src_prepare() {

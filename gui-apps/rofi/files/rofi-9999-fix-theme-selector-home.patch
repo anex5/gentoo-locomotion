@@ -1,0 +1,22 @@
+From 228388ca480ea23c4af0127139b9c17b34684f07 Mon Sep 17 00:00:00 2001
+From: Yusuf Aktepe <yusuf@yusufaktepe.com>
+Date: Mon, 23 Jan 2023 09:18:18 +0300
+Subject: [PATCH] [rofi-theme-selector] Replace `$HOME` with a tilde
+
+---
+ script/rofi-theme-selector | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/script/rofi-theme-selector b/script/rofi-theme-selector
+index 5a01729d8..45dcfe6b8 100755
+--- a/script/rofi-theme-selector
++++ b/script/rofi-theme-selector
+@@ -199,7 +199,7 @@ set_theme()
+        touch "${get_link}"
+     fi
+     ${SED} -i '/^\s*@theme/ s,^,//,' "${get_link}"
+-    echo -e "\n@theme \"${1}\"" >> "${get_link}"
++    echo -e "\n@theme \"${1/$HOME/\~}\"" >> "${get_link}"
+ }
+ 
+ ############################################################################################################

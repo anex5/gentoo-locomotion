@@ -351,6 +351,7 @@ get_distribution_components() {
 		LLVMPasses
 		LLVMMCA
 		LLVMCoverage
+		LLVMExegesis
 		LLVMExtensions
 		LLVMLTO
 
@@ -365,7 +366,6 @@ get_distribution_components() {
 		LLVMDiff
 		LLVMDlltoolDriver
 		LLVMExecutionEngine
-		LLVMExegesis
 		LLVMFileCheck
 		LLVMFrontendDriver
 		LLVMFrontendHLSL
