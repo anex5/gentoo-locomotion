@@ -18,13 +18,14 @@ else
 	MY_PV="${PV/_/-}"
 	LIBGWATER_COMMIT="d86f9903efb9c490c0e3b0316d7f2da5b5a5632c"
 	LIBNKUTILS_COMMIT="2f220a40ad32cf51b6b7d7ae83ab641a3ae76693"
+	ROFI_COMMIT="63b74c76f594fe622fbab35e60feca3ffd60f991"
 	SRC_URI="
-		https://github.com/davatorium/rofi/archive/refs/tags/${MY_PV}.tar.gz -> ${P}.tar.gz
-		https://github.com/sardemff7/libgwater/archive/${LIBGWATER_COMMIT}.tar.gz
-		https://github.com/sardemff7/libnkutils/archive/${LIBNKUTILS_COMMIT}.tar.gz
+		https://github.com/davatorium/rofi/archive/${ROFI_COMMIT}.tar.gz -> ${P}-${COMMIT}.gh.tar.gz
+		https://github.com/sardemff7/libgwater/archive/${LIBGWATER_COMMIT}.tar.gz -> libgwater-${LIBGWATER_COMMIT}.gh.tar.gz
+		https://github.com/sardemff7/libnkutils/archive/${LIBNKUTILS_COMMIT}.tar.gz -> libnkutils-${LIBNKUTILS_COMMIT}.gh.tar.gz
 	"
 	KEYWORDS="~amd64 ~x86 ~arm ~arm64"
-	S=${WORKDIR}/${PN}-${MY_PV}
+	S=${WORKDIR}/${PN}-${ROFI_COMMIT}
 	RESTRICT="mirror"
 fi
 
@@ -80,9 +81,6 @@ PATCHES=(
 	"${FILESDIR}"/rofi-9999-filebrowser-mesg-path.patch
 	"${FILESDIR}"/rofi-9999-filebrowser-regex.patch
 	"${FILESDIR}"/rofi-9999-fix-theme-selector-home.patch
-	"${FILESDIR}"/rofi-2.0.0-allow-icons-tint.patch
-	"${FILESDIR}"/rofi-2.0.0-fix-async-mode-multiselect.patch
-	"${FILESDIR}"/rofi-2.0.0-fix-missing-and-wrong-free.patch
 )
 
 src_prepare() {
