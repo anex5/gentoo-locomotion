@@ -7,8 +7,8 @@ EAPI=8
 FIREFOX_PATCHSET="firefox-${PV%%.*}esr-patches-03.tar.xz"
 FIREFOX_LOONG_PATCHSET="firefox-139-loong-patches-02.tar.xz"
 
-LLVM_COMPAT=( 19 20 )
-PP="1"
+LLVM_COMPAT=( {19..21} )
+PP="2"
 GV="1"
 
 # This will also filter rust versions that don't match LLVM_COMPAT in the non-clang path; this is fine.
@@ -24,7 +24,7 @@ VIRTUALX_REQUIRED="manual"
 # Information about the bundled wasi toolchain from
 # https://github.com/WebAssembly/wasi-sdk/
 WASI_SDK_VER=27.0
-WASI_SDK_LLVM_VER=20
+WASI_SDK_LLVM_VER=${LLVM_SLOT}
 
 MOZ_ESR=yes
 
@@ -33,7 +33,7 @@ inherit autotools check-reqs desktop flag-o-matic gnome2-utils linux-info llvm-r
 
 SRC_URI="
 	!buildtarball? (
-		https://gitlab.com/api/v4/projects/32909921/packages/generic/${PN}/${PV}-gnu${GV}/${P}-${PP}gnu${GV}.tar.zst
+		https://gitlab.com/api/v4/projects/32909921/packages/generic/${PN}/${PV}-${PP}gnu${GV}/${P}-${PP}gnu${GV}.tar.zst
 	)
 	https://dev.gentoo.org/~juippis/mozilla/patchsets/${FIREFOX_PATCHSET}
 	loong? (
@@ -66,7 +66,7 @@ ${CODEC_IUSE}
 alsa atk buildtarball clang cpu_flags_arm_neon cups +dbus debug hardened hwaccel
 jack -jemalloc libcanberra libnotify libproxy libsecret lld lto mold pgo
 pulseaudio sndio selinux speech +system-av1 +system-ffmpeg +system-harfbuzz
-+system-icu +system-jpeg +system-libevent +system-libvpx +system-png
++system-icu +system-jpeg +system-libevent +system-libvpx +system-png system-pipewire
 +system-python-libs +system-webp vaapi wayland +webrtc wifi webspeech X
 "
 
@@ -268,6 +268,9 @@ CDEPEND="
 	)
 	system-libvpx? (
 		>=media-libs/libvpx-1.13.0:=[${MULTILIB_USEDEP},postproc]
+	)
+	system-pipewire? (
+		>=media-video/pipewire-1.4.7-r2:=[${MULTILIB_USEDEP}]
 	)
 	system-png? (
 		>=media-libs/libpng-1.6.39:=[${MULTILIB_USEDEP},apng]
@@ -538,8 +541,7 @@ moz_clear_vendor_checksums() {
 
 	sed -i \
 		-e 's/\("files":{\)[^}]*/\1/' \
-		"${S}"/third_party/rust/${1}/.cargo-checksum.json \
-		|| die
+		"${S}"/third_party/rust/${1}/.cargo-checksum.json || die
 }
 
 moz_build_xpi() {
@@ -690,8 +692,10 @@ pkg_pretend() {
 		fi
 
 		# Ensure we have enough disk space to compile
-		if use pgo || use lto || use debug ; then
+		if use pgo || use debug ; then
 			CHECKREQS_DISK_BUILD="14300M"
+		elif use lto ; then
+			CHECKREQS_DISK_BUILD="10600M"
 		else
 			CHECKREQS_DISK_BUILD="7400M"
 		fi
@@ -701,7 +705,6 @@ pkg_pretend() {
 }
 
 pkg_setup() {
-
 	if [[ ${MERGE_TYPE} != binary ]] ; then
 
 		if use pgo ; then
@@ -712,42 +715,22 @@ pkg_setup() {
 		if use lto; then
 			# -Werror=lto-type-mismatch -Werror=odr are going to fail with GCC,
 			# bmo#1516758, bgo#942288
-			filter-flags -Werror=lto-type-mismatch -Werror=odr -ftree-vectorize -fslp-vectorize
+			filter-lto
+			filter-flags -Werror=lto-type-mismatch -Werror=odr
 		fi
 
 		# Ensure we have enough disk space to compile
-		if use pgo || use lto || use debug ; then
+		if use pgo || use debug ; then
 			CHECKREQS_DISK_BUILD="14300M"
+		elif use lto ; then
+			CHECKREQS_DISK_BUILD="10600M"
 		else
 			CHECKREQS_DISK_BUILD="7400M"
 		fi
 
 		check-reqs_pkg_setup
-
 		llvm-r1_pkg_setup
 		rust_pkg_setup
-
-		if use clang && use lto && use lld ; then
-			local version_lld=$(ld.lld --version 2>/dev/null | awk '{ print $2 }')
-			[[ -n ${version_lld} ]] && version_lld=$(ver_cut 1 "${version_lld}")
-			[[ -z ${version_lld} ]] && die "Failed to read ld.lld version!"
-
-			local version_llvm_rust=$(rustc -Vv 2>/dev/null | grep -F -- 'LLVM version:' | awk '{ print $3 }')
-			[[ -n ${version_llvm_rust} ]] && version_llvm_rust=$(ver_cut 1 "${version_llvm_rust}")
-			[[ -z ${version_llvm_rust} ]] && die "Failed to read used LLVM version from rustc!"
-
-			if ver_test "${version_lld}" -ne "${version_llvm_rust}" ; then
-				eerror "Rust is using LLVM version ${version_llvm_rust} but ld.lld version belongs to LLVM version ${version_lld}."
-				eerror "You will be unable to link ${CATEGORY}/${PN}. To proceed you have the following options:"
-				eerror "  - Manually switch rust version using 'eselect rust' to match used LLVM version"
-				eerror "  - Switch to dev-lang/rust[system-llvm] which will guarantee matching version"
-				eerror "  - Build ${CATEGORY}/${PN} without USE=lto"
-				eerror "  - Rebuild lld with llvm that was used to build rust (may need to rebuild the whole "
-				eerror "    llvm/clang/lld/rust chain depending on your @world updates)"
-				die "LLVM version used by Rust (${version_llvm_rust}) does not match with ld.lld version (${version_lld})!"
-			fi
-		fi
-
 		python-any-r1_pkg_setup
 
 		# Avoid PGO profiling problems due to enviroment leakage
@@ -882,7 +865,6 @@ _get_s() {
 }
 
 src_prepare() {
-	use elibc_musl && eapply "${FILESDIR}/icecat-musl-sandbox.patch"
 	use atk || eapply "${FILESDIR}/icecat-no-atk.patch"
 	use dbus || eapply "${FILESDIR}/icecat-no-dbus.patch"
 	eapply "${FILESDIR}/icecat-no-fribidi.patch"
@@ -937,8 +919,8 @@ src_prepare() {
 	eapply "${FILESDIR}/extra-patches/firefox-128.3.0e-disable-broken-flags-ipc-chromium-chromium-config.patch"
 
 	# Build with clang-20
-	if [[ "${LLVM_SLOT}" == "20" ]]; then
-		#eapply "${FILESDIR}/extra-patches/firefox-128e-llvm-20-ServoBindings.patch"
+	if [[ "${LLVM_SLOT}" =~ ("20"|"21") ]]; then
+		#eapply "${FILESDIR}/icecat-128.12.0-clang21.patch"
 		sed -e '/CXXFLAGS += \["-Werror=implicit-int-conversion"\]/d' -i "${S}/dom/canvas/moz.build" -i "${S}/dom/webgpu/moz.build" || die
 	fi
 
@@ -950,8 +932,12 @@ src_prepare() {
 		rm -v "${WORKDIR}"/firefox-patches/*bgo-748849-RUST_TARGET_override.patch || die
 	fi
 
+	# Use modified patch that isn't mangled
+	for patch in 0013-gcc-lto-pgo-gentoo.patch 0016-bgo-929967-fix-pgo-on-musl.patch; do
+		cp "${FILESDIR}/${patch}" "${WORKDIR}/firefox-patches/${patch}" || die
+	done
 	# Modify patch to apply correctly
-	sed -i -e 's/Firefox/IceCat/' "${WORKDIR}"/firefox-patches/0016-bgo-929967-fix-pgo-on-musl.patch || die
+	#sed -i -e 's/Firefox/IceCat/' "${WORKDIR}"/firefox-patches/0016-bgo-929967-fix-pgo-on-musl.patch || die
 
 	eapply "${WORKDIR}/firefox-patches"
 	use loong && eapply "${WORKDIR}/firefox-loong-patches"
@@ -1395,6 +1381,7 @@ _src_configure() {
 		--enable-negotiateauth \
 		--enable-new-pass-manager \
 		--enable-official-branding \
+		--enable-packed-relative-relocs \
 		--enable-release \
 		--enable-system-ffi \
 		--enable-system-pixman \
@@ -1405,10 +1392,13 @@ _src_configure() {
 		--target="${CHOST}" \
 		--without-ccache \
 		--with-intl-api \
-		--with-system-ffi \
 		--with-l10n-base="${s}/l10n" \
+		--with-system-ffi \
+		--with-system-gbm \
+		--with-system-libdrm \
 		--with-system-nspr \
 		--with-system-nss \
+		--with-system-pixman \
 		--with-system-zlib \
 		--with-toolchain-prefix="${CHOST}-" \
 		--with-unsigned-addon-scopes="app,system"
@@ -1499,6 +1489,7 @@ _src_configure() {
 	mozconfig_use_with system-jpeg
 	mozconfig_use_with system-libevent
 	mozconfig_use_with system-libvpx
+	mozconfig_use_with system-pipewire
 	mozconfig_use_with system-png
 	mozconfig_use_with system-webp
 
@@ -2013,8 +2004,7 @@ _src_install() {
 		-e "s:@NAME@:${app_name}:" \
 		-e "s:@EXEC@:${exec_command}:" \
 		-e "s:@ICON@:${icon}:" \
-		"${WORKDIR}/${PN}.desktop-template" \
-		|| die
+		"${WORKDIR}/${PN}.desktop-template" || die
 
 	newmenu "${WORKDIR}/${PN}.desktop-template" "${desktop_filename}"
 
@@ -2032,8 +2022,9 @@ _src_install() {
 		-e "s:@MOZ_FIVE_HOME@:${MOZILLA_FIVE_HOME}:" \
 		-e "s:@APULSELIB_DIR@:${apulselib}:" \
 		-e "s:@DEFAULT_WAYLAND@:${use_wayland}:" \
-		"${ED}/usr/bin/${PN}-${ABI}" \
-		|| die
+		"${ED}/usr/bin/${PN}-${ABI}" || die
+
+	readme.gentoo_create_doc
 }
 
 src_install() {
