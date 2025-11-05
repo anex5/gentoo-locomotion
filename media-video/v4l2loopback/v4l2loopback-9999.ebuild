@@ -13,7 +13,7 @@ case ${PV} in
 *)
 	KEYWORDS="~amd64 ~x86"
 	SRC_URI="https://github.com/umlaeute/${PN}/archive/v${PV}.tar.gz -> ${P}.tar.gz"
-	#RESTRICT="mirror"
+	RESTRICT="mirror"
 	;;
 esac
 
