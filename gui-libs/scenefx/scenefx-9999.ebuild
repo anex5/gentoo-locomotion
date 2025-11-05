@@ -9,7 +9,8 @@ if [[ ${PV} == 9999 ]]; then
 	inherit git-r3
 	EGIT_REPO_URI="https://github.com/wlrfx/scenefx"
 else
-	MY_PV=${PV/_rc/-rc}
+	#MY_PV=${PV/_rc/-rc}
+	MY_PV="7490662894305924840129be0b70cb5183f6287f"
 	SRC_URI="https://github.com/wlrfx/scenefx/archive/${MY_PV}.tar.gz -> ${P}.tar.gz"
 	S="${WORKDIR}/${PN}-${MY_PV}"
 	KEYWORDS="~amd64 ~arm64 ~arm ~loong ~ppc64 ~riscv ~x86"
