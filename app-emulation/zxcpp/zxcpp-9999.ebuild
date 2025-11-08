@@ -3,21 +3,22 @@
 
 EAPI=8
 
-inherit toolchain-funcs
+inherit toolchain-funcs xdg-utils desktop
 
 DESCRIPTION="Very simple Sinclair ZX Spectrum emulator"
 HOMEPAGE="https://github.com/kiltum/zxcpp"
 if [[ ${PV} == 9999 ]]; then
 	inherit git-r3
 	EGIT_REPO_URI="https://github.com/kiltum/zxcpp.git"
+	KEYWORDS=""
 else
 	SRC_URI="https://github.com/kiltum/zxcpp/archive/v${PV}.tar.gz -> ${P}.tar.gz"
+	KEYWORDS="~amd64 ~arm ~arm64 ~loong ~ppc ~ppc64 ~riscv ~sparc ~x86"
 fi
 #S="${WORKDIR}/iotop-${PV}"
 
 LICENSE="GPL-2+"
 SLOT="0"
-KEYWORDS="amd64 arm arm64 ~loong ppc ppc64 ~riscv ~sparc x86"
 
 DEPEND="
 	dev-libs/libzip
@@ -44,5 +45,15 @@ src_compile() {
 
 src_install() {
 	mv emulator zxcpp
+	doicon -s scalable "${FILESDIR}"/zx.svg
+	domenu "${FILESDIR}/zxcpp.desktop"
 	dobin zxcpp
+}
+
+pkg_postinst() {
+	xdg_icon_cache_update
+}
+
+pkg_postrm() {
+	xdg_icon_cache_update
 }
