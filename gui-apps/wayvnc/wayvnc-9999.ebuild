@@ -13,7 +13,7 @@ if [[ ${PV} == 9999 ]]; then
 	EGIT_REPO_URI="https://github.com/any1/wayvnc.git"
 	KEYWORDS=""
 else
-	COMMIT="5b26ba2c29aaa33781a6797e2a7369caea7171a8"
+	COMMIT="e12cb689f3afb333f0678de03ff25a431ffd2207"
 	SRC_URI="https://github.com/any1/wayvnc/archive/${COMMIT}.tar.gz -> ${P}.tar.gz"
 	KEYWORDS="~amd64 ~arm ~arm64 ~loong ~ppc64 ~riscv ~x86"
 	S=${WORKDIR}/${PN}-${COMMIT}

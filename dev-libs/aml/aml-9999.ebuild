@@ -13,7 +13,7 @@ if [[ ${PV} == 9999 ]]; then
 	EGIT_REPO_URI="https://github.com/any1/aml.git"
 	KEYWORDS=""
 else
-	COMMIT=f6086bca136ddad96d67121ecfece59899b91f6a
+	COMMIT=f7e3e84faf9fb3337a71d54217b116af3d07de3a
 	SRC_URI="https://github.com/any1/aml/archive/${COMMIT}.tar.gz -> ${P}.tar.gz"
 	KEYWORDS="~amd64 ~arm ~arm64 ~loong ~ppc ~riscv ~x86"
 	S=${WORKDIR}/${PN}-${COMMIT}
