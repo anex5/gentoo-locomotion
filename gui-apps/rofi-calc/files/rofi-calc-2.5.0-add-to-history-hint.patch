@@ -1,0 +1,50 @@
+--- a/src/calc.c	2025-10-13 03:59:34.000000000 +0300
++++ b/src/calc.c	2025-11-13 02:10:16.384224829 +0300
+@@ -56,6 +56,7 @@ typedef struct {
+     char *cmd;
+     char *hint_result;
+     char *hint_welcome;
++    char *hint_history;
+     char *calc_error_color;
+     char *last_result;
+     char *previous_input;
+@@ -98,6 +99,10 @@ typedef struct {
+ #define HINT_WELCOME_OPTION "hint-welcome"
+ #define HINT_WELCOME_STR "Calculator"
+ 
++// Option to specify history hint
++#define HINT_HISTORY_OPTION "-hint-history"
++#define HINT_HISTORY_STR "Add to history"
++
+ // Option to specify error color
+ #define CALC_ERROR_COLOR "calc-error-color"
+ #define CALC_ERROR_COLOR_STR "PaleVioletRed"
+@@ -274,6 +279,7 @@ static void set_config(Mode *sw) {
+ 
+     pd->hint_result = HINT_RESULT_STR;
+     pd->hint_welcome = HINT_WELCOME_STR;
++    pd->hint_history = HINT_HISTORY_STR;
+     pd->calc_error_color = CALC_ERROR_COLOR_STR;
+ 
+     if (config_file != NULL) {
+@@ -402,6 +408,11 @@ static void set_config(Mode *sw) {
+         pd->hint_welcome = g_strdup(hint_welcome);
+     }
+ 
++    char *hint_history = NULL;
++    if (find_arg_str("-" HINT_HISTORY_OPTION, &hint_history)) {
++        pd->hint_history = g_strdup(hint_history);
++    }
++
+     char *calc_error_color = NULL;
+     if (find_arg_str(CALC_ERROR_COLOR, &calc_error_color)) {
+         pd->calc_error_color = g_strdup(calc_error_color);
+@@ -681,7 +692,7 @@ static char *calc_get_display_value(cons
+ 
+     if (selected_line == 0) {
+         if (!pd->config.no_history)
+-            return g_strdup("Add to history");
++            return g_strdup(pd->hint_history);
+         else
+             return g_strdup("");
+     }
