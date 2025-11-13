@@ -403,7 +403,6 @@ get_distribution_components() {
 			LLVMAArch64CodeGen
 			LLVMAArch64AsmParser
 			LLVMAArch64Disassembler
-			LLVMAMDGPUTargetMCA
 			LLVMExegesisAArch64
 		)
 	fi
@@ -416,6 +415,7 @@ get_distribution_components() {
 			LLVMAMDGPUCodeGen
 			LLVMAMDGPUAsmParser
 			LLVMAMDGPUDisassembler
+			LLVMAMDGPUTargetMCA
 		)
 	fi
 
