@@ -13,7 +13,7 @@
  #define HINT_WELCOME_STR "Calculator"
  
 +// Option to specify history hint
-+#define HINT_HISTORY_OPTION "-hint-history"
++#define HINT_HISTORY_OPTION "hint-history"
 +#define HINT_HISTORY_STR "Add to history"
 +
  // Option to specify error color
