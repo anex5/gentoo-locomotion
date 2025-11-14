@@ -3,7 +3,7 @@
 
 EAPI=8
 
-inherit meson
+inherit meson desktop xdg-utils
 
 DESCRIPTION="Do live calculations in rofi!"
 HOMEPAGE="https://github.com/svenstaro/rofi-calc"
@@ -25,7 +25,8 @@ SLOT="0"
 RESTRICT="mirror"
 
 DEPEND="
-	gui-apps/rofi
+	x11-libs/cairo
+	>=gui-apps/rofi-1.7.6
 	>=dev-libs/glib-2.40:2
 "
 RDEPEND="${DEPEND}
@@ -37,3 +38,16 @@ PATCHES=(
 )
 
 DOCS=( CHANGELOG.md README.md )
+
+src_install() {
+	meson_src_install
+	domenu "${FILESDIR}/calc.desktop"
+}
+
+pkg_postinst() {
+	xdg_icon_cache_update
+}
+
+pkg_postrm() {
+	xdg_icon_cache_update
+}
