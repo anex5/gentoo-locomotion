@@ -6,7 +6,7 @@ EAPI=8
 inherit meson-multilib
 
 NV_VER="575.64.05"
-COMMIT_HASH="e02b9c5c714f35a7576f0c1e549327e060fc7903"
+COMMIT_HASH="57a476b0e55f015759d9c50cc1f13159c6cd8f95"
 
 DESCRIPTION="A VA-API implemention using NVIDIA's NVDEC, specifically designed to be used by Firefox"
 HOMEPAGE="https://github.com/elFarto/nvidia-vaapi-driver"

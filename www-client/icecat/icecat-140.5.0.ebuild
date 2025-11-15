@@ -23,7 +23,7 @@ VIRTUALX_REQUIRED="manual"
 
 # Information about the bundled wasi toolchain from
 # https://github.com/WebAssembly/wasi-sdk/
-WASI_SDK_VER=27.0
+WASI_SDK_VER=28.0
 WASI_SDK_LLVM_VER=${LLVM_SLOT}
 
 MOZ_ESR=yes
@@ -63,11 +63,11 @@ CODEC_IUSE="
 "
 IUSE+="
 ${CODEC_IUSE}
-alsa atk buildtarball clang cpu_flags_arm_neon cups +dbus debug hardened hwaccel
-jack -jemalloc libcanberra libnotify libproxy libsecret lld lto mold pgo
+alsa atk buildtarball clang cpu_flags_arm_neon cups +dbus debug firejail hardened hwaccel
+jack -jemalloc +jit libcanberra libnotify libproxy libsecret lld lto mold pgo
 pulseaudio sndio selinux speech +system-av1 +system-ffmpeg +system-harfbuzz
 +system-icu +system-jpeg +system-libevent +system-libvpx +system-png system-pipewire
-+system-python-libs +system-webp vaapi wayland +webrtc wifi webspeech X
++system-python-libs +system-webp test vaapi wayland +webrtc wifi webspeech X
 "
 
 # Firefox-only IUSE
@@ -118,13 +118,13 @@ REQUIRED_USE="
 	)
 	pgo? ( jumbo-build )
 "
-
+RESTRICT="!test? ( test ) mirror"
 # Firefox-only REQUIRED_USE flags
 REQUIRED_USE+=" screencast? ( wayland )"
 
 DBUS_PV="0.60"
 DBUS_GLIB_PV="0.60"
-FFMPEG_PV="4.4.1" # This corresponds to y in x.y.z from the subslot.
+FFMPEG_PV="6.1.3" # This corresponds to y in x.y.z from the subslot.
 GTK3_PV="3.14.5"
 NASM_PV="2.14.02"
 SPEECH_DISPATCHER_PV="0.11.4-r1"
@@ -261,7 +261,7 @@ CDEPEND="
 		>=media-libs/libjpeg-turbo-2.1.5.1[${MULTILIB_USEDEP}]
 	)
 	system-ffmpeg? (
-		>=media-video/ffmpeg-${FFMPEG_PV}[${MULTILIB_USEDEP},dav1d?,openh264?,opus?,vaapi?,vpx?]
+		<=media-video/ffmpeg-compat-${FFMPEG_PV}[${MULTILIB_USEDEP},dav1d?,openh264?,opus?,vaapi?,vpx?]
 	)
 	system-libevent? (
 		>=dev-libs/libevent-2.1.12:=[${MULTILIB_USEDEP},threads(+)]
@@ -360,6 +360,10 @@ RDEPEND+="
 			)
 		)
 	)
+	hwaccel? (
+		media-video/libva-utils
+		sys-apps/pciutils
+	)
 	vaapi? (
 		media-libs/libva[${MULTILIB_USEDEP},drm(+),X?,wayland?]
 	)
@@ -382,15 +386,14 @@ DEPEND+="
 BDEPEND+="
 	${PYTHON_DEPS}
 	${GAMEPAD_BDEPEND}
-	>=dev-lang/perl-5.006
 	>=dev-util/cbindgen-0.24.3
 	>=dev-util/pkgconf-1.8.0[${MULTILIB_USEDEP},pkg-config(+)]
 	>=net-libs/nodejs-21[${MULTILIB_USEDEP}]
 	|| (
 		>=dev-lang/rust-1.83.0[${MULTILIB_USEDEP}]
 		>=dev-lang/rust-bin-1.83.0[${MULTILIB_USEDEP}]
-		<dev-lang/rust-1.85.0[${MULTILIB_USEDEP}]
-		<dev-lang/rust-bin-1.85.0[${MULTILIB_USEDEP}]
+		<dev-lang/rust-1.92.0[${MULTILIB_USEDEP}]
+		<dev-lang/rust-bin-1.92.0[${MULTILIB_USEDEP}]
 	)
 	app-alternatives/awk
 	app-arch/unzip
@@ -413,15 +416,21 @@ BDEPEND+="
 			x11-apps/xhost
 		)
 		wayland? (
-			|| (
-				gui-wm/tinywl
-				<gui-libs/wlroots-0.17.3[tinywl(-)]
-			)
+			gui-wm/tinywl
 			x11-misc/xkeyboard-config
 		)
 	)
 	x86? (
 		>=dev-lang/nasm-${NASM_PV}
+	)
+"
+PDEPEND+="
+	firejail? (
+		sys-apps/firejail[X?,firejail_profiles_firefox]
+	)
+	screencast? (
+		>=media-video/pipewire-0.3.52[${MULTILIB_USEDEP}]
+		sys-apps/xdg-desktop-portal
 	)
 "
 
@@ -913,10 +922,10 @@ src_prepare() {
 	# eapply "${FILESDIR}/icecat-128e-disable-ffvpx.patch"
 
 	# Prevent tab crash
-	eapply "${FILESDIR}/extra-patches/firefox-140.3.1-disable-broken-flags-dom-bindings.patch"
+	#eapply "${FILESDIR}/extra-patches/firefox-140.3.1-disable-broken-flags-dom-bindings.patch"
 
 	# Prevent video seek bug
-	eapply "${FILESDIR}/extra-patches/firefox-128.3.0e-disable-broken-flags-ipc-chromium-chromium-config.patch"
+	#eapply "${FILESDIR}/extra-patches/firefox-128.3.0e-disable-broken-flags-ipc-chromium-chromium-config.patch"
 
 	# Build with clang-20
 	if [[ "${LLVM_SLOT}" =~ ("20"|"21") ]]; then
@@ -1096,7 +1105,7 @@ _fix_paths() {
 
 	# For rust crates libloading and glslopt
 	if tc-is-clang ; then
-		local version_clang=$(clang --version 2>/dev/null \
+		local version_clang=$(${CC} --version 2>/dev/null \
 			| grep -F -- 'clang version' \
 			| awk '{ print $3 }')
 		if [[ -n "${version_clang}" ]] ; then
@@ -1327,7 +1336,7 @@ _src_configure() {
 	export HOST_CXX="$(tc-getBUILD_CXX)"
 	export AS="$(tc-getCC) -c"
 
-	if tc-is-clang ; then
+	if use clang ; then
 		# Configuration tests expect llvm-readelf output, bug 913130
 		READELF="llvm-readelf"
 	fi
@@ -1374,7 +1383,6 @@ _src_configure() {
 		--disable-legacy-profile-creation \
 		--disable-parental-controls \
 		--disable-strip \
-		--disable-tests \
 		--disable-updater \
 		--disable-valgrind \
 		--disable-wmf \
@@ -1442,9 +1450,11 @@ _src_configure() {
 		mozconfig_add_options_ac '' --enable-sandbox
 	fi
 
-	# Enable JIT on riscv64 explicitly
-	# Can be removed once upstream enable it by default in the future.
-	use riscv && mozconfig_add_options_ac 'Enable JIT for RISC-V 64' --enable-jit
+	if use jit ; then
+		mozconfig_add_options_ac 'Enabling JIT' --enable-jit
+	else
+		mozconfig_add_options_ac 'Disabling JIT' --disable-jit
+	fi
 
 	if [[ -s "${s}/api-google.key" ]] ; then
 		local key_origin="Gentoo default"
@@ -1515,18 +1525,12 @@ _src_configure() {
 	use pulseaudio && myaudiobackends+="pulseaudio,"
 	! use pulseaudio && myaudiobackends+="alsa,"
 
-	mozconfig_add_options_ac \
-		'--enable-audio-backends' \
-		--enable-audio-backends=$(echo "${myaudiobackends}" \
-			| sed -e "s|,$||g") # Cannot be empty
+	mozconfig_add_options_ac '--enable-audio-backends' \
+		--enable-audio-backends=$(echo "${myaudiobackends}" | sed -e "s|,$||g") # Cannot be empty
 
 	mozconfig_use_enable wifi necko-wifi
 
 	! use jumbo-build && mozconfig_add_options_ac '--disable-unified-build' --disable-unified-build
-
-	use debug && mozconfig_add_options_ac \
-		'--disable-unified-build' \
-		--disable-unified-build
 
 	if use X && use wayland ; then
 		mozconfig_add_options_ac '+x11+wayland' --enable-default-toolkit="cairo-gtk3-x11-wayland"
@@ -1589,50 +1593,35 @@ _src_configure() {
 
 	mozconfig_use_enable debug
 	if use debug ; then
-		mozconfig_add_options_ac \
-			'+debug' \
-			--disable-optimize
-		mozconfig_add_options_ac \
-			'+debug' \
-			--enable-real-time-tracing
+		mozconfig_add_options_ac '+debug' --disable-optimize
+		mozconfig_add_options_ac '+debug' --enable-jemalloc
+		mozconfig_add_options_ac '+debug' --enable-real-time-tracing
 	else
-		mozconfig_add_options_ac \
-			'Gentoo defaults' \
-			--disable-real-time-tracing
-
-		mozconfig_add_options_ac \
-			'Gentoo default' \
-			--disable-debug-symbols
-
-	# Fork ebuild or set USE=debug if you want -Og
-		if is_flagq_last '-Ofast' || [[ "${OFLAG}" == "-Ofast" ]] ; then
-		einfo "Using -Ofast"
-			OFLAG="-Ofast"
-			mozconfig_add_options_ac \
-				"from CFLAGS" \
-				--enable-optimize="-Ofast"
-		elif is_flagq_last '-O4' || [[ "${OFLAG}" == "-O4" ]] ; then
-	# O4 is the same as O3.
-			OFLAG="-O4"
-			mozconfig_add_options_ac \
-				"from CFLAGS" \
-				--enable-optimize="-O4"
-		elif is_flagq_last '-O3' || [[ "${OFLAG}" == "-O3" ]] ; then
-	# Repeated for multiple Oflags
-			OFLAG="-O3"
-			mozconfig_add_options_ac \
-				"from CFLAGS" \
-				--enable-optimize="-O3"
-		elif is_flagq_last '-O2' || [[ "${OFLAG}" == "-O2" ]] ; then
-			OFLAG="-O2"
-			mozconfig_add_options_ac \
-				"from CFLAGS" \
-				--enable-optimize="-O2"
+		mozconfig_add_options_ac 'Gentoo default' --disable-real-time-tracing
+		if is-flag '-g*' ; then
+			if use clang ; then
+				mozconfig_add_options_ac 'from CFLAGS' --enable-debug-symbols=$(get-flag '-g*')
+			else
+				mozconfig_add_options_ac 'from CFLAGS' --enable-debug-symbols
+			fi
 		else
-			OFLAG="-O3"
-			mozconfig_add_options_ac \
-				"Upstream default" \
-				--enable-optimize="-O3"
+			mozconfig_add_options_ac 'Gentoo default' --disable-debug-symbols
+		fi
+
+		if is_flagq_last '-Ofast' ; then
+			mozconfig_add_options_ac "from CFLAGS" --enable-optimize="-Ofast"
+		elif is-flag '-O0' ; then
+			mozconfig_add_options_ac "from CFLAGS" --enable-optimize=-O0
+		elif is-flag '-O4' ; then
+			mozconfig_add_options_ac "from CFLAGS" --enable-optimize=-O4
+		elif is-flag '-O3' ; then
+			mozconfig_add_options_ac "from CFLAGS" --enable-optimize=-O3
+		elif is-flag '-O1' ; then
+			mozconfig_add_options_ac "from CFLAGS" --enable-optimize=-O1
+		elif is-flag '-Os' ; then
+			mozconfig_add_options_ac "from CFLAGS" --enable-optimize=-Os
+		else
+			mozconfig_add_options_ac "Gentoo default" --enable-optimize=-O2
 		fi
 	fi
 
@@ -1774,6 +1763,8 @@ _src_configure() {
 		export MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE="none"
 	fi
 
+	mozconfig_use_enable test tests
+
 	# Disable notification when build system has finished
 	export MOZ_NOSPAM=1
 
@@ -1873,6 +1864,29 @@ _src_compile() {
 	moz_build_xpi
 }
 
+src_test() {
+	# https://firefox-source-docs.mozilla.org/testing/automated-testing/index.html
+	local -a failures=()
+
+	# Some tests respect this
+	local -x MOZ_HEADLESS=1
+
+	# Check testing/mach_commands.py
+	einfo "Testing with cppunittest ..."
+	./mach cppunittest
+	local ret=$?
+	if [[ ${ret} -ne 0 ]]; then
+		eerror "Test suite cppunittest failed with error code ${ret}"
+		failures+=( cppunittest )
+	fi
+
+	if [[ ${#failures} -eq 0 ]]; then
+		einfo "Test suites succeeded"
+	else
+		die "Test suites failed: ${failures[@]}"
+	fi
+}
+
 src_compile() {
 	multilib_foreach_abi _src_compile
 }
@@ -1945,12 +1959,12 @@ _src_install() {
 
 		# Install the vaapitest binary on supported arches (122.0 supports all platforms, bmo#1865969)
 		exeinto "${MOZILLA_FIVE_HOME}"
-		doexe "${BUILD_DIR}"/dist/bin/vaapitest
+		doexe "${BUILD_DIR}/dist/bin/vaapitest"
 
 		# Install the v4l2test on supported arches (+ arm, + riscv64 when keyworded)
 		if use arm64 ; then
 			exeinto "${MOZILLA_FIVE_HOME}"
-			doexe "${BUILD_DIR}"/dist/bin/v4l2test
+			doexe "${BUILD_DIR}/dist/bin/v4l2test"
 		fi
 	fi
 
@@ -1962,7 +1976,8 @@ _src_install() {
 	fi
 
 	# Install language packs
-	local langpacks=( $(find "${BUILD_DIR}/dist/linux-x86_64/xpi" -type f -name '*.xpi') )
+	#dexlare -A suffix=( [amd64]="x86_64" [arm64]="arm" )
+	local langpacks=( $(find "${BUILD_DIR}/dist/linux-${ELIBC//elibc_}-${MULTILIB_ABI_FLAG//abi_}/xpi" -type f -name '*.xpi') )
 	if [[ -n "${langpacks}" ]] ; then
 		moz_install_xpi "${MOZILLA_FIVE_HOME}/distribution/extensions" "${langpacks[@]}"
 	fi
