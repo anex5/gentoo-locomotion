@@ -10,13 +10,13 @@ inherit python-any-r1
 DESCRIPTION="Script for creating GNU Icecat tarball"
 HOMEPAGE="https://www.gnu.org/software/gnuzilla/"
 
-#COMMIT="ba161be3de71bb556be951ac4dbb81c807f68770"
+COMMIT="5897aee761cc6d179bd8632f085c3c14ccf7db6c"
 
-PP="1"
+PP="2"
 GV="1"
 COMPARE_LOCALES_PV="9.0.4"
 SRC_URI="
-    https://cgit.git.savannah.gnu.org/cgit/gnuzilla.git/snapshot/gnuzilla-${PV}-gnu${GV}.tar.gz
+    https://cgit.git.savannah.gnu.org/cgit/gnuzilla.git/snapshot/gnuzilla-${COMMIT}.tar.gz
     https://archive.mozilla.org/pub/firefox/releases/${PV}esr/source/firefox-${PV}esr.source.tar.xz
     https://github.com/mozilla/compare-locales/archive/refs/tags/RELEASE_${COMPARE_LOCALES_PV//./_}.tar.gz
         -> compare-locales-${COMPARE_LOCALES_PV}.tar.gz
@@ -41,7 +41,7 @@ BDEPEND="
     ')
 "
 
-S="${WORKDIR}/gnuzilla-${PV}-gnu${GV}"
+S="${WORKDIR}/gnuzilla-${COMMIT}"
 
 declare -A LANG_COMMIT
 LANG_COMMIT[ach]="4c5fea93f2624411412afc90cda054f7d645e71e" # 2024-07-09 12:14
@@ -264,7 +264,7 @@ python_check_deps() {
 }
 
 src_unpack() {
-    unpack "gnuzilla-${PV}-gnu${GV}.tar.gz"
+    unpack "gnuzilla-${COMMIT}.tar.gz"
     for langpack in $(cd "${DISTDIR}"; ls icecat-lang-*.zip); do
         unpack ${langpack}
     done

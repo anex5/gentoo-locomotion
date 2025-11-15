@@ -71,7 +71,7 @@ pulseaudio sndio selinux speech +system-av1 +system-ffmpeg +system-harfbuzz
 "
 
 # Firefox-only IUSE
-IUSE+=" screencast +jumbo-build wasm-sandbox"
+IUSE+=" gnome-shell screencast +jumbo-build wasm-sandbox"
 
 REQUIRED_USE="
 	aac? (
@@ -2009,6 +2009,26 @@ _src_install() {
 	newmenu "${WORKDIR}/${PN}.desktop-template" "${desktop_filename}"
 
 	rm "${WORKDIR}/${PN}.desktop-template" || die
+
+	if use gnome-shell ; then
+		# Install search provider for Gnome
+		insinto /usr/share/gnome-shell/search-providers/
+		doins browser/components/shell/search-provider-files/org.gnu.icecat.search-provider.ini
+
+		insinto /usr/share/dbus-1/services/
+		doins browser/components/shell/search-provider-files/org.gnu.icecat.SearchProvider.service
+
+		# Make the dbus service aware of a previous session, bgo#939196
+		sed -e \
+			"s/Exec=\/usr\/bin\/icecat/Exec=\/usr\/$(get_libdir)\/icecat\/icecat --dbus-service \/usr\/bin\/icecat/g" \
+			-i "${ED}/usr/share/dbus-1/services/org.gnu.icecat.SearchProvider.service" ||
+				die "Failed to sed org.gnu.icecat.SearchProvider.service dbus file"
+
+		# Update prefs to enable Gnome search provider
+		cat >>"${GENTOO_PREFS}" <<-EOF || die "failed to enable gnome-search-provider via prefs"
+		pref("browser.gnome-search-provider.enabled", true);
+		EOF
+	fi
 
 	# Install wrapper script
 	[[ -f "${ED}/usr/bin/${PN}" ]] && rm "${ED}/usr/bin/${PN}"
