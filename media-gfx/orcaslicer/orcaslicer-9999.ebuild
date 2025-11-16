@@ -7,14 +7,14 @@ WX_GTK_VER="3.2-gtk3"
 MY_PN="OrcaSlicer"
 MY_PV="$(ver_rs 3 -)"
 
-inherit cmake wxwidgets xdg
+inherit cmake wxwidgets desktop xdg-utils
 
 if [[ ${PV} == *9999* ]]; then
 	inherit git-r3
 	EGIT_REPO_URI="https://github.com/SoftFever/OrcaSlicer"
 else
 	SRC_URI="https://github.com/SoftFever/OrcaSlicer/archive/refs/tags/v${MY_PV}.tar.gz -> ${P}.tar.gz"
-	KEYWORDS="~amd64 ~arm64 ~x86"
+	#KEYWORDS="~amd64 ~arm64 ~x86"
 	S="${WORKDIR}/${MY_PN}-${MY_PV}"
 fi
 
@@ -66,25 +66,15 @@ DEPEND="${RDEPEND}
 "
 
 PATCHES=(
-#	"${FILESDIR}/${PN}-2.6.0-dont-force-link-to-wayland-and-x11.patch"
-#	"${FILESDIR}/${PN}-2.8.1-cgal-6.0.patch"
-#	"${FILESDIR}/${PN}-2.8.1-fstream.patch"
-#	"${FILESDIR}/${PN}-2.8.1-fix-libsoup-double-linking.patch"
-#	"${FILESDIR}/${PN}-2.8.1-boost-1.87.patch"
-#	"${FILESDIR}/${PN}-2.9.2-boost-1.88.patch"
+	"${FILESDIR}/${PN}-2.9.2-slic3r-fixes.patch"
+	"${FILESDIR}/${PN}-2.9.2-LLVM-fixes.patch"
+	"${FILESDIR}/${PN}-2.9.2-headless-fixes.patch"
 )
 
 src_prepare() {
 	use gui || ( sed -e '/find_package(OpenGL REQUIRED)/d' -i CMakeLists.txt || die )
 
-	#if has_version ">=sci-libs/opencascade-7.8.0"; then
-#		eapply "${FILESDIR}/${PN}-2.8.1-opencascade-7.8.0.patch"
-#	fi
-
-	#sed -i -e 's/PrusaSlicer-${SLIC3R_VERSION}+UNKNOWN/PrusaSlicer-${SLIC3R_VERSION}+Gentoo/g' version.inc || die
-
-	#sed -i -e 's/find_package(OpenCASCADE 7.6.[0-9] REQUIRED)/find_package(OpenCASCADE REQUIRED)/g' \
-#		src/occt_wrapper/CMakeLists.txt || die
+	cp "${FILESDIR}/BoostProcessCompat.hpp" "${S}/src/libslic3r/BoostProcessCompat.hpp" || die
 
 	cmake_src_prepare
 }
@@ -97,6 +87,7 @@ src_configure() {
 	use gui && setup-wxwidgets
 
 	local mycmakeargs=(
+		-DCMAKE_POLICY_VERSION_MINIMUM=3.5
 		-DOPENVDB_FIND_MODULE_PATH="/usr/$(get_libdir)/cmake/OpenVDB"
 		-DSLIC3R_BUILD_TESTS=$(usex test)
 		-DSLIC3R_ENABLE_FORMAT_STEP=$(usex step)
@@ -107,7 +98,10 @@ src_configure() {
 		-DSLIC3R_PCH=OFF
 		-DSLIC3R_STATIC=$(usex static-libs)
 		-DSLIC3R_WX_STABLE=ON
-		-DORCA_TOOLS=1
+		-DSLIC3R_PRECOMPILED_HEADERS=ON
+		-DORCA_TOOLS=0
+		-DBBL_RELEASE_TO_PUBLIC=1
+		-DBBL_INTERNAL_TESTING=0
 		#-Wno-dev
 	)
 	tc-is-cross-compiler && mycmakeargs+=(

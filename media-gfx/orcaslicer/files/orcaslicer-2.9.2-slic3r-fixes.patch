@@ -1,0 +1,627 @@
+diff --git a/deps_src/imgui/imgui_widgets.cpp b/deps_src/imgui/imgui_widgets.cpp
+index 65f0bc526..f30abf302 100644
+--- a/deps_src/imgui/imgui_widgets.cpp
++++ b/deps_src/imgui/imgui_widgets.cpp
+@@ -267,7 +267,7 @@ void ImGui::Text(const char* fmt, ...)
+ void ImGui::TextCentered(const char* text, ...)
+ {
+     va_list vaList;
+-    va_start(vaList,&text);
++    va_start(vaList,text);
+ 
+     float font_size = ImGui::GetFontSize() * strlen(text) / 2;
+     ImGui::SameLine(ImGui::GetCursorPos().x / 2 - font_size + (font_size / 2));
+diff --git a/deps_src/mcut/include/mcut/internal/cdt/kdtree.h b/deps_src/mcut/include/mcut/internal/cdt/kdtree.h
+index 0517fa777..d68de3d67 100644
+--- a/deps_src/mcut/include/mcut/internal/cdt/kdtree.h
++++ b/deps_src/mcut/include/mcut/internal/cdt/kdtree.h
+@@ -338,10 +338,10 @@ private:
+ 
+     // used for nearest query
+     struct NearestTask {
+-        std::uint32_t node;
+-        point_type min, max;
+-        NodeSplitDirection::Enum dir;
+-        coord_type distSq;
++        std::uint32_t node = 0;
++        point_type min, max = point_type();
++        NodeSplitDirection::Enum dir = NodeSplitDirection::Enum::X;
++        coord_type distSq = 0.0;
+         NearestTask()
+         {
+         }
+diff --git a/deps_src/mcut/source/frontend.cpp b/deps_src/mcut/source/frontend.cpp
+index 467e11177..97f7dd9e3 100644
+--- a/deps_src/mcut/source/frontend.cpp
++++ b/deps_src/mcut/source/frontend.cpp
+@@ -14,6 +14,7 @@
+ #include <numeric> // iota
+ #include <stdio.h>
+ #include <string.h>
++#include <stdint.h>
+ #include <unordered_map>
+ 
+ #include "mcut/internal/cdt/cdt.h"
+@@ -137,22 +138,19 @@ void get_debug_message_log_impl(McContext context,
+ // http://graphics.stanford.edu/~seander/bithacks.html#ZerosOnRightLinear
+ inline int trailing_zeroes(uint32_t v)
+ {
+-    int r; // the result goes here
+-#ifdef _WIN32
+-#pragma warning(disable : 4146) // "unary minus operator applied to unsigned type, result still unsigned"
+-#endif // #ifdef _WIN32
+-    float f = (float)(v & -v); // cast the least significant bit in v to a float
+-#ifdef _WIN32
+-#pragma warning(default : 4146)
+-#endif // #ifdef _WIN32
+-
+-// dereferencing type-punned pointer will break strict-aliasing rules
++    
++    // dereferencing type-punned pointer will break strict-aliasing rules
+ #if __linux__
+ #pragma GCC diagnostic push
+ #pragma GCC diagnostic ignored "-Wstrict-aliasing"
+ #endif
++    int r; // the result goes here
++    // cast the least significant bit in v to a float
+ 
+-    r = (*(uint32_t*)&f >> 23) - 0x7f;
++    union FV { float f; uint32_t v; };
++    FV fv;
++    fv.f = (float)(v & -v);
++    r = (fv.v >> 23) - 0x7f;
+ 
+ #if __linux__
+ #pragma GCC diagnostic pop
+@@ -3469,4 +3467,4 @@ void release_context_impl(
+     }
+ 
+     g_contexts.remove_if([=](const std::shared_ptr<context_t> cptr) { return cptr->m_user_handle == contextHandle; });
+-}
+\ No newline at end of file
++}
+diff --git a/src/libslic3r/CMakeLists.txt b/src/libslic3r/CMakeLists.txt
+index d85c65fd5..1bcd46635 100644
+--- a/src/libslic3r/CMakeLists.txt
++++ b/src/libslic3r/CMakeLists.txt
+@@ -75,6 +75,7 @@ set(lisbslic3r_sources
+     Arrange.hpp
+     BlacklistedLibraryCheck.cpp
+     BlacklistedLibraryCheck.hpp
++    BoostProcessCompat.hpp
+     BoundingBox.cpp
+     BoundingBox.hpp
+     BridgeDetector.cpp
+@@ -475,6 +476,7 @@ cmake_policy(PUSH)
+ cmake_policy(SET CMP0011 NEW)
+ find_package(CGAL REQUIRED)
+ find_package(OpenCV REQUIRED core)
++include_directories(${OpenCV_INCLUDE_DIRS})
+ cmake_policy(POP)
+ 
+ add_library(libslic3r_cgal STATIC 
+@@ -521,12 +523,13 @@ target_include_directories(libslic3r SYSTEM PUBLIC ${OpenCASCADE_INCLUDE_DIR})
+ 
+ find_package(JPEG REQUIRED)
+ 
++find_package( OpenCV REQUIRED )
++
++
++
+ set(OCCT_LIBS
+-    TKXDESTEP
+-    TKSTEP
+-    TKSTEP209
+-    TKSTEPAttr
+-    TKSTEPBase
++    TKXSDRAWSTEP
++    TKDESTEP
+     TKXCAF
+     TKXSBase
+     TKVCAF
+@@ -557,7 +560,7 @@ target_link_libraries(libslic3r
+         libigl
+         libnest2d
+         miniz
+-        opencv_world
++        ${OpenCV_LIBS}
+     PRIVATE
+         ${CMAKE_DL_LIBS}
+         ${EXPAT_LIBRARIES}
+diff --git a/src/libslic3r/CutSurface.cpp b/src/libslic3r/CutSurface.cpp
+index 01a5a8383..b59f8e725 100644
+--- a/src/libslic3r/CutSurface.cpp
++++ b/src/libslic3r/CutSurface.cpp
+@@ -29,6 +37,7 @@ using namespace Slic3r;
+ #include <CGAL/Exact_integer.h>
+ #include <CGAL/Surface_mesh.h>
+ #include <CGAL/Cartesian_converter.h>
++#include <CGAL/AABB_traits.h>
+ #include <tbb/parallel_for.h>
+ 
+ // libslic3r
+@@ -1409,8 +1409,8 @@ priv::CutAOIs priv::cut_from_model(CutMesh                &cgal_model,
+     // detect anomalities in visitor.
+     bool is_valid = true;
+     // NOTE: map are created when convert shapes to cgal model
+-    const EdgeShapeMap& edge_shape_map = cgal_shape.property_map<EI, IntersectingElement>(edge_shape_map_name).first;
+-    const FaceShapeMap& face_shape_map = cgal_shape.property_map<FI, IntersectingElement>(face_shape_map_name).first;
++    const EdgeShapeMap& edge_shape_map = cgal_shape.property_map<EI, IntersectingElement>(edge_shape_map_name).value();
++    const FaceShapeMap& face_shape_map = cgal_shape.property_map<FI, IntersectingElement>(face_shape_map_name).value();
+     Visitor visitor{cgal_model, cgal_shape, edge_shape_map, face_shape_map, vert_shape_map, &is_valid};
+ 
+     // a property map containing the constrained-or-not status of each edge
+@@ -1559,8 +1559,8 @@ void priv::collect_surface_data(std::queue<FI>  &process,
+ 
+ void priv::create_reduce_map(ReductionMap &reduction_map, const CutMesh &mesh)
+ {
+-    const VertexShapeMap &vert_shape_map = mesh.property_map<VI, const IntersectingElement*>(vert_shape_map_name).first;
+-    const EdgeBoolMap &ecm = mesh.property_map<EI, bool>(is_constrained_edge_name).first;
++    const VertexShapeMap &vert_shape_map = mesh.property_map<VI, const IntersectingElement*>(vert_shape_map_name).value();
++    const EdgeBoolMap &ecm = mesh.property_map<EI, bool>(is_constrained_edge_name).value();
+ 
+     // check if vertex was made by edge_2 which is diagonal of quad
+     auto is_reducible_vertex = [&vert_shape_map](VI reduction_from) -> bool {
+@@ -1745,10 +1745,10 @@ priv::VDistances priv::calc_distances(const SurfacePatches &patches,
+     for (const SurfacePatch &patch : patches) {
+         // map is created during intersection by corefine visitor
+         const VertexShapeMap &vert_shape_map = 
+-            models[patch.model_id].property_map<VI, const IntersectingElement *>(vert_shape_map_name).first;
++            models[patch.model_id].property_map<VI, const IntersectingElement *>(vert_shape_map_name).value();
+         uint32_t patch_index = &patch - &patches.front();
+         // map is created during patch creation / dividing
+-        const CvtVI2VI& cvt = patch.mesh.property_map<VI, VI>(patch_source_name).first;
++        const CvtVI2VI& cvt = patch.mesh.property_map<VI, VI>(patch_source_name).value();
+         // for each point on outline
+         for (const Loop &loop : patch.loops) 
+         for (const VI &vi_patch : loop) {
+@@ -2909,7 +2909,7 @@ bool priv::is_patch_inside_of_model(const SurfacePatch &patch,
+ uint32_t priv::get_shape_point_index(const CutAOI &cut, const CutMesh &model)
+ {
+     // map is created during intersection by corefine visitor
+-    const VertexShapeMap &vert_shape_map = model.property_map<VI, const IntersectingElement *>(vert_shape_map_name).first;
++    const VertexShapeMap &vert_shape_map = model.property_map<VI, const IntersectingElement *>(vert_shape_map_name).value();
+     // for each half edge of outline
+     for (HI hi : cut.second) {
+         VI vi = model.source(hi);
+@@ -2934,7 +2934,7 @@ priv::SurfacePatch priv::separate_patch(const std::vector<FI>& fis,
+     patch_new.model_id     = patch.model_id;
+     patch_new.shape_id     = patch.shape_id;
+     // fix cvt
+-    CvtVI2VI cvt = patch_new.mesh.property_map<VI, VI>(patch_source_name).first;
++    CvtVI2VI cvt = patch_new.mesh.property_map<VI, VI>(patch_source_name).value();
+     for (VI &vi : cvt) {
+         if (!vi.is_valid()) continue;
+         vi = cvt_from[vi];
+@@ -2954,7 +2954,7 @@ void priv::divide_patch(size_t i, SurfacePatchesEx &patches)
+     std::string patch_number_name = "f:patch_number";
+     CutMesh::Property_map<FI,bool> is_processed = cm.add_property_map<FI, bool>(patch_number_name, false).first;
+     
+-    const CvtVI2VI& cvt_from = patch.mesh.property_map<VI, VI>(patch_source_name).first;
++    const CvtVI2VI& cvt_from = patch.mesh.property_map<VI, VI>(patch_source_name).value();
+ 
+     std::vector<FI> fis;
+     fis.reserve(cm.faces().size());
+@@ -3141,7 +3141,7 @@ bool priv::is_over_whole_expoly(const CutAOI    &cutAOI,
+                                 const CutMesh   &mesh)
+ {
+     // NonInterupted contour is without other point and contain all from shape    
+-    const VertexShapeMap &vert_shape_map = mesh.property_map<VI, const IntersectingElement*>(vert_shape_map_name).first;
++    const VertexShapeMap &vert_shape_map = mesh.property_map<VI, const IntersectingElement*>(vert_shape_map_name).value();
+     for (HI hi : cutAOI.second) { 
+         const IntersectingElement *ie_s = vert_shape_map[mesh.source(hi)];
+         const IntersectingElement *ie_t = vert_shape_map[mesh.target(hi)];
+diff --git a/src/libslic3r/GCode/PostProcessor.cpp b/src/libslic3r/GCode/PostProcessor.cpp
+index 1e084cd35..f4f224566 100644
+--- a/src/libslic3r/GCode/PostProcessor.cpp
++++ b/src/libslic3r/GCode/PostProcessor.cpp
+@@ -149,40 +149,11 @@ static int run_script(const std::string &script, const std::string &gcode, std::
+ 
+ #include <cstdlib>   // getenv()
+ #include <sstream>
+-#include <boost/process.hpp>
++#include "BoostProcessCompat.hpp"
+ 
+-namespace process = boost::process;
+-
+-static int run_script(const std::string &script, const std::string &gcode, std::string &std_err)
++static int run_script(const std::string &shell, const std::string &command_line, std::string &std_err)
+ {
+-    // Try to obtain user's default shell
+-    const char *shell = ::getenv("SHELL");
+-    if (shell == nullptr) { shell = "/bin/sh"; }
+-
+-    // Quote and escape the gcode path argument
+-    std::string command { script };
+-    command.append(" '");
+-    for (char c : gcode) {
+-        if (c == '\'') { command.append("'\\''"); }
+-        else { command.push_back(c); }
+-    }
+-    command.push_back('\'');
+-
+-    BOOST_LOG_TRIVIAL(debug) << boost::format("Executing script, shell: %1%, command: %2%") % shell % command;
+-
+-    process::ipstream istd_err;
+-    process::child child(shell, "-c", command, process::std_err > istd_err);
+-
+-    std_err.clear();
+-    std::string line;
+-
+-    while (child.running() && std::getline(istd_err, line)) {
+-        std_err.append(line);
+-        std_err.push_back('\n');
+-    }
+-
+-    child.wait();
+-    return child.exit_code();
++   return process_compat::run_script(shell, command_line, std_err);
+ }
+ 
+ #endif
+diff --git a/src/libslic3r/ObjColorUtils.hpp b/src/libslic3r/ObjColorUtils.hpp
+index ea4418adf..bde0cfc0c 100644
+--- a/src/libslic3r/ObjColorUtils.hpp
++++ b/src/libslic3r/ObjColorUtils.hpp
+@@ -2,7 +2,7 @@
+ #include <iostream>
+ #include <ctime>
+ 
+-#include "opencv2/opencv.hpp"
++#include <opencv2/opencv.hpp>
+ 
+ class QuantKMeans
+ {
+diff --git a/src/slic3r/CMakeLists.txt b/src/slic3r/CMakeLists.txt
+index 7f0e1e2b1..9607bb114 100644
+--- a/src/slic3r/CMakeLists.txt
++++ b/src/slic3r/CMakeLists.txt
+@@ -685,6 +685,11 @@ if (SLIC3R_PCH AND NOT SLIC3R_SYNTAXONLY)
+     add_precompiled_header(libslic3r_gui pchheader.hpp FORCEINCLUDE)
+ endif ()
+ 
++find_package(X11 REQUIRED)
++find_package(PkgConfig REQUIRED)
++pkg_check_modules(webkit2gtk REQUIRED webkit2gtk-4.1)
++target_link_libraries (libslic3r_gui ${X11_LIBRARIES} ${webkit2gtk_LIBRARIES})
++
+ # We need to implement some hacks for wxWidgets and touch the underlying GTK
+ # layer and sub-libraries. This forces us to use the include locations and
+ # link these libraries.
+diff --git a/src/slic3r/GUI/HttpServer.hpp b/src/slic3r/GUI/HttpServer.hpp
+index 5c1547f01..268556a69 100644
+--- a/src/slic3r/GUI/HttpServer.hpp
++++ b/src/slic3r/GUI/HttpServer.hpp
+@@ -115,7 +115,7 @@ private:
+     {
+     public:
+         HttpServer&                        server;
+-        boost::asio::io_service            io_service;
++        boost::asio::io_context            io_service;
+         boost::asio::ip::tcp::acceptor     acceptor;
+         std::set<std::shared_ptr<session>> sessions;
+ 
+diff --git a/src/slic3r/GUI/MediaPlayCtrl.cpp b/src/slic3r/GUI/MediaPlayCtrl.cpp
+index 047c057d1..4e976c2ec 100644
+--- a/src/slic3r/GUI/MediaPlayCtrl.cpp
++++ b/src/slic3r/GUI/MediaPlayCtrl.cpp
+@@ -14,6 +14,12 @@
+ #include <boost/nowide/utf8_codecvt.hpp>
+ #undef pid_t
+ #include <boost/process.hpp>
++#include <boost/process/v1/child.hpp>
++#include <boost/process/v1/pipe.hpp>
++#include <boost/process/v1/start_dir.hpp>
++#include <boost/process/v1/io.hpp>
++#include <boost/process/v1/handles.hpp>
++#include <boost/asio.hpp>
+ #ifdef __WIN32__
+ #include <boost/process/windows.hpp>
+ #else
+@@ -749,7 +755,7 @@ bool MediaPlayCtrl::start_stream_service(bool *need_install)
+         std::vector<std::string> configss;
+         boost::algorithm::split(configss, configs, boost::algorithm::is_any_of("\r\n"));
+         configss.erase(std::remove(configss.begin(), configss.end(), std::string()), configss.end());
+-        boost::process::pipe intermediate;
++        boost::process::v1::pipe intermediate;
+         boost::filesystem::path start_dir(boost::filesystem::path(data_dir()) / "plugins");
+ #ifdef __WXMSW__
+         auto plugins_dir = boost::nowide::widen(data_dir()) + L"\\plugins\\";
+@@ -759,17 +765,17 @@ bool MediaPlayCtrl::start_stream_service(bool *need_install)
+             if (!boost::filesystem::exists(file_dll) || boost::filesystem::last_write_time(file_dll) != boost::filesystem::last_write_time(file_dll2))
+                 boost::filesystem::copy_file(file_dll2, file_dll, boost::filesystem::copy_option::overwrite_if_exists);
+         }
+-        boost::process::child process_source(file_source, file_url2.ToStdWstring(), boost::process::start_dir(tools_dir), 
++        boost::process::v1::child process_source(file_source, file_url2.ToStdWstring(), boost::process::start_dir(tools_dir), 
+                                              boost::process::windows::create_no_window, 
+                                              boost::process::std_out > intermediate, boost::process::limit_handles);
+-        boost::process::child process_ffmpeg(file_ffmpeg, configss, boost::process::windows::create_no_window, 
++        boost::process::v1::child process_ffmpeg(file_ffmpeg, configss, boost::process::windows::create_no_window, 
+                                              boost::process::std_in < intermediate, boost::process::limit_handles);
+ #else
+         boost::filesystem::permissions(file_source, boost::filesystem::owner_exe | boost::filesystem::add_perms);
+         boost::filesystem::permissions(file_ffmpeg, boost::filesystem::owner_exe | boost::filesystem::add_perms);
+-        boost::process::child process_source(file_source, file_url2.data().AsInternal(), boost::process::start_dir(start_dir), 
+-                                             boost::process::std_out > intermediate, boost::process::limit_handles);
+-        boost::process::child process_ffmpeg(file_ffmpeg, configss, boost::process::std_in < intermediate, boost::process::limit_handles);
++        boost::process::v1::child process_source(file_source, file_url2.data().AsInternal(), boost::process::v1::start_dir(start_dir), 
++                                             boost::process::v1::std_out > intermediate, boost::process::v1::limit_handles);
++        boost::process::v1::child process_ffmpeg(file_ffmpeg, configss, boost::process::v1::std_in < intermediate, boost::process::v1::limit_handles);
+ #endif
+         process_source.detach();
+         process_ffmpeg.detach();
+diff --git a/src/slic3r/GUI/PhysicalPrinterDialog.cpp b/src/slic3r/GUI/PhysicalPrinterDialog.cpp
+index bbc4d9e5e..c77479b30 100644
+--- a/src/slic3r/GUI/PhysicalPrinterDialog.cpp
++++ b/src/slic3r/GUI/PhysicalPrinterDialog.cpp
+@@ -373,7 +373,8 @@ void PhysicalPrinterDialog::build_printhost_settings(ConfigOptionsGroup* m_optgr
+     // Always fill in the "printhost_port" combo box from the config and select it.
+     {
+         Choice* choice = dynamic_cast<Choice*>(m_optgroup->get_field("printhost_port"));
+-        choice->set_values({ m_config->opt_string("printhost_port") });
++        wxArrayString a = { m_config->opt_string("printhost_port") };
++        choice->set_values(a);
+         choice->set_selection();
+     }
+ 
+diff --git a/src/slic3r/GUI/RemovableDriveManager.cpp b/src/slic3r/GUI/RemovableDriveManager.cpp
+index 83ec4695c..aa42860b2 100644
+--- a/src/slic3r/GUI/RemovableDriveManager.cpp
++++ b/src/slic3r/GUI/RemovableDriveManager.cpp
+@@ -22,7 +22,9 @@
+ #include <pwd.h>
+ #include <boost/filesystem.hpp>
+ #include <boost/system/error_code.hpp>
+-#include <boost/process.hpp>
++#include <boost/process/v1/child.hpp>
++#include <boost/process/v1/search_path.hpp>
++#include <boost/process/v1/io.hpp>
+ #endif
+ 
+ namespace Slic3r {
+@@ -302,15 +304,15 @@ void RemovableDriveManager::eject_drive()
+ 		// but neither triggers "succesful safe removal messege"
+ 		
+ 		BOOST_LOG_TRIVIAL(info) << "Ejecting started";
+-		boost::process::ipstream istd_err;
+-    	boost::process::child child(
++		boost::process::v1::ipstream istd_err;
++    	boost::process::v1::child child(
+ #if __APPLE__		
+-			boost::process::search_path("diskutil"), "eject", correct_path.c_str(), (boost::process::std_out & boost::process::std_err) > istd_err);
++			boost::process::v1::search_path("diskutil"), "eject", correct_path.c_str(), (boost::process::v1::std_out & boost::process::v1::std_err) > istd_err);
+ 		//Another option how to eject at mac. Currently not working.
+ 		//used insted of system() command;
+ 		//this->eject_device(correct_path);
+ #else
+-    		boost::process::search_path("umount"), correct_path.c_str(), (boost::process::std_out & boost::process::std_err) > istd_err);
++    		boost::process::v1::search_path("umount"), correct_path.c_str(), (boost::process::v1::std_out & boost::process::v1::std_err) > istd_err);
+ #endif
+ 		std::string line;
+ 		while (child.running() && std::getline(istd_err, line)) {
+diff --git a/src/slic3r/GUI/Tab.cpp b/src/slic3r/GUI/Tab.cpp
+index 33f441d2f..a19238541 100644
+--- a/src/slic3r/GUI/Tab.cpp
++++ b/src/slic3r/GUI/Tab.cpp
+@@ -5016,7 +5016,7 @@ void Tab::rebuild_page_tree()
+     if (sel_item == m_last_select_item)
+         m_last_select_item = item;
+     else
+-        m_last_select_item = NULL;
++        m_last_select_item = (int)NULL;
+ 
+     // allow activate page before selection of a page_tree item
+     m_disable_tree_sel_changed_event = false;
+diff --git a/src/slic3r/GUI/Widgets/StateColor.cpp b/src/slic3r/GUI/Widgets/StateColor.cpp
+index f2881b9fa..7a22f12da 100644
+--- a/src/slic3r/GUI/Widgets/StateColor.cpp
++++ b/src/slic3r/GUI/Widgets/StateColor.cpp
+@@ -1,5 +1,7 @@
+ #include "StateColor.hpp"
+ #include <cmath>
++#include <iostream>
++#include <wx/log.h> 
+ 
+ static bool gDarkMode = false;
+ 
+@@ -42,7 +44,7 @@ static std::map<wxColour, wxColour> gDarkColors{
+     {"#2B3436", "#808080"}, // rgb(43, 52, 54)     Not Used anymore // Leftover from BBS. Was used as main fill color of icons
+     {"#ABABAB", "#ABABAB"},
+     {"#D9D9D9", "#2D2D32"}, // rgb(217, 217, 217)  Sidebar > Toggle button track color
+-    //{"#F0F0F0", "#4C4C54"},
++    {"#F0F0F0", "#4C4C54"},
+     // ORCA
+     {"#BFE1DE", "#223C3C"}, // rgb(191, 225, 222)  Dropdown checked item background color > ORCA color with %25 opacity
+     {"#E5F0EE", "#283232"}, // rgb(229, 240, 238)  Combo / Dropdown focused background color > ORCA color with %10 opacity
+@@ -189,8 +191,13 @@ inline wxColour darkModeColorFor2(wxColour const &color)
+     if (!gDarkMode)
+         return color;
+     auto iter = gDarkColors.find(color);
+-    wxASSERT(iter != gDarkColors.end());
+-    if (iter != gDarkColors.end()) return iter->second;
++    //wxASSERT(iter != gDarkColors.end());
++    if (iter == gDarkColors.end()) {
++        wxLogMessage("a %d, %d, %d",color.GetRed(),color.GetGreen(),color.GetBlue());
++        
++    }else{
++        return iter->second;
++    }
+     return color;
+ }
+ 
+@@ -205,8 +212,13 @@ wxColour StateColor::lightModeColorFor(wxColour const &color)
+ {
+     static std::map<wxColour, wxColour> gLightColors = revert(gDarkColors);
+     auto iter = gLightColors.find(color);
+-    wxASSERT(iter != gLightColors.end());
+-    if (iter != gLightColors.end()) return iter->second;
++    //wxASSERT(iter != gLightColors.end());
++    if (iter == gLightColors.end()) {
++        wxLogMessage("t %d, %d, %d",color.GetRed(),color.GetGreen(),color.GetBlue());
++        
++    }else{
++        return iter->second;
++    }
+     return color;
+ }
+ 
+diff --git a/src/slic3r/Utils/Bonjour.cpp b/src/slic3r/Utils/Bonjour.cpp
+index 0701695ef..66ad4f9eb 100644
+--- a/src/slic3r/Utils/Bonjour.cpp
++++ b/src/slic3r/Utils/Bonjour.cpp
+@@ -620,7 +620,7 @@ UdpSession::UdpSession(Bonjour::ReplyFn rfn) : replyfn(rfn)
+ 	buffer.resize(DnsMessage::MAX_SIZE);
+ }
+ 
+-UdpSocket::UdpSocket( Bonjour::ReplyFn replyfn, const asio::ip::address& multicast_address, const asio::ip::address& interface_address, std::shared_ptr< boost::asio::io_service > io_service)
++UdpSocket::UdpSocket( Bonjour::ReplyFn replyfn, const asio::ip::address& multicast_address, const asio::ip::address& interface_address, std::shared_ptr< boost::asio::io_context > io_service)
+ 	: replyfn(replyfn)
+ 	, multicast_address(multicast_address)
+ 	, socket(*io_service)
+@@ -654,7 +654,7 @@ UdpSocket::UdpSocket( Bonjour::ReplyFn replyfn, const asio::ip::address& multica
+ }
+ 
+ 
+-UdpSocket::UdpSocket( Bonjour::ReplyFn replyfn, const asio::ip::address& multicast_address, std::shared_ptr< boost::asio::io_service > io_service)
++UdpSocket::UdpSocket( Bonjour::ReplyFn replyfn, const asio::ip::address& multicast_address, std::shared_ptr< boost::asio::io_context > io_service)
+ 	: replyfn(replyfn)
+ 	, multicast_address(multicast_address)
+ 	, socket(*io_service)
+@@ -710,7 +710,9 @@ void UdpSocket::receive_handler(SharedSession session, const boost::system::erro
+ 	// let io_service to handle the datagram on session
+ 	// from boost documentation io_service::post:
+ 	// The io_service guarantees that the handler will only be called in a thread in which the run(), run_one(), poll() or poll_one() member functions is currently being invoked.
+-	io_service->post(boost::bind(&UdpSession::handle_receive, session, error, bytes));
++	boost::asio::post(io_service->get_executor(),
++		boost::bind(&UdpSession::handle_receive, session, error, bytes)
++	);
+ 	// immediately accept new datagrams
+ 	async_receive();
+ }
+@@ -867,7 +869,7 @@ void Bonjour::priv::lookup_perform()
+ {
+ 	service_dn = (boost::format("_%1%._%2%.local") % service % protocol).str();
+ 
+-	std::shared_ptr< boost::asio::io_service > io_service(new boost::asio::io_service);
++	std::shared_ptr< boost::asio::io_context > io_service(new boost::asio::io_context);
+ 
+ 	std::vector<LookupSocket*> sockets;
+ 
+@@ -962,7 +964,7 @@ void Bonjour::priv::resolve_perform()
+ 			rpls.push_back(reply);
+ 	};
+ 
+-	std::shared_ptr< boost::asio::io_service > io_service(new boost::asio::io_service);
++	std::shared_ptr< boost::asio::io_context > io_service(new boost::asio::io_context);
+ 	std::vector<ResolveSocket*> sockets;
+ 
+ 	// resolve interfaces - from PR#6646
+diff --git a/src/slic3r/Utils/Bonjour.hpp b/src/slic3r/Utils/Bonjour.hpp
+index 50b71791f..f77a7bba7 100644
+--- a/src/slic3r/Utils/Bonjour.hpp
++++ b/src/slic3r/Utils/Bonjour.hpp
+@@ -151,11 +151,11 @@ public:
+ 	UdpSocket(Bonjour::ReplyFn replyfn
+ 		, const boost::asio::ip::address& multicast_address
+ 		, const boost::asio::ip::address& interface_address
+-		, std::shared_ptr< boost::asio::io_service > io_service);
++		, std::shared_ptr< boost::asio::io_context > io_service);
+ 
+ 	UdpSocket(Bonjour::ReplyFn replyfn
+ 		, const boost::asio::ip::address& multicast_address
+-		, std::shared_ptr< boost::asio::io_service > io_service);
++		, std::shared_ptr< boost::asio::io_context > io_service);
+ 
+ 	void send();
+ 	void async_receive();
+@@ -168,7 +168,7 @@ protected:
+ 	boost::asio::ip::address					    multicast_address;
+ 	boost::asio::ip::udp::socket					socket;
+ 	boost::asio::ip::udp::endpoint					mcast_endpoint;
+-	std::shared_ptr< boost::asio::io_service >	io_service;
++	std::shared_ptr< boost::asio::io_context >	io_service;
+ 	std::vector<BonjourRequest>						requests;
+ };
+ 
+@@ -182,7 +182,7 @@ public:
+ 		, Bonjour::ReplyFn replyfn
+ 		, const boost::asio::ip::address& multicast_address
+ 		, const boost::asio::ip::address& interface_address
+-		, std::shared_ptr< boost::asio::io_service > io_service)
++		, std::shared_ptr< boost::asio::io_context > io_service)
+ 		: UdpSocket(replyfn, multicast_address, interface_address, io_service)
+ 		, txt_keys(txt_keys)
+ 		, service(service)
+@@ -199,7 +199,7 @@ public:
+ 		, std::string protocol
+ 		, Bonjour::ReplyFn replyfn
+ 		, const boost::asio::ip::address& multicast_address
+-		, std::shared_ptr< boost::asio::io_service > io_service)
++		, std::shared_ptr< boost::asio::io_context > io_service)
+ 		: UdpSocket(replyfn, multicast_address, io_service)
+ 		, txt_keys(txt_keys)
+ 		, service(service)
+@@ -237,7 +237,7 @@ public:
+ 		, Bonjour::ReplyFn replyfn
+ 		, const boost::asio::ip::address& multicast_address
+ 		, const boost::asio::ip::address& interface_address
+-		, std::shared_ptr< boost::asio::io_service > io_service)
++		, std::shared_ptr< boost::asio::io_context > io_service)
+ 		: UdpSocket(replyfn, multicast_address, interface_address, io_service)
+ 		, hostname(hostname)
+ 
+@@ -249,7 +249,7 @@ public:
+ 	ResolveSocket(const std::string& hostname
+ 		, Bonjour::ReplyFn replyfn
+ 		, const boost::asio::ip::address& multicast_address
+-		, std::shared_ptr< boost::asio::io_service > io_service)
++		, std::shared_ptr< boost::asio::io_context > io_service)
+ 		: UdpSocket(replyfn, multicast_address, io_service)
+ 		, hostname(hostname)
+ 
+diff --git a/src/slic3r/Utils/Serial.cpp b/src/slic3r/Utils/Serial.cpp
+index 4db1acc6b..6bf2bb0f2 100644
+--- a/src/slic3r/Utils/Serial.cpp
++++ b/src/slic3r/Utils/Serial.cpp
+@@ -278,11 +278,11 @@ std::vector<std::string> scan_serial_ports()
+ namespace asio = boost::asio;
+ using boost::system::error_code;
+ 
+-Serial::Serial(asio::io_service& io_service) :
++Serial::Serial(asio::io_context& io_service) :
+ 	asio::serial_port(io_service)
+ {}
+ 
+-Serial::Serial(asio::io_service& io_service, const std::string &name, unsigned baud_rate) :
++Serial::Serial(asio::io_context& io_service, const std::string &name, unsigned baud_rate) :
+ 	asio::serial_port(io_service, name)
+ {
+ 	set_baud_rate(baud_rate);
+diff --git a/src/slic3r/Utils/Serial.hpp b/src/slic3r/Utils/Serial.hpp
+index 8bad75b31..3eebc771b 100644
+--- a/src/slic3r/Utils/Serial.hpp
++++ b/src/slic3r/Utils/Serial.hpp
+@@ -39,8 +39,8 @@ extern std::vector<SerialPortInfo> 	scan_serial_ports_extended();
+ class Serial : public boost::asio::serial_port
+ {
+ public:
+-	Serial(boost::asio::io_service &io_service);
+-	Serial(boost::asio::io_service &io_service, const std::string &name, unsigned baud_rate);
++	Serial(boost::asio::io_context &io_service);
++	Serial(boost::asio::io_context &io_service, const std::string &name, unsigned baud_rate);
+ 	Serial(const Serial &) = delete;
+ 	Serial &operator=(const Serial &) = delete;
+ 	~Serial();
+diff --git a/src/slic3r/Utils/TCPConsole.cpp b/src/slic3r/Utils/TCPConsole.cpp
+index 25802e390..63fd0a4b5 100644
+--- a/src/slic3r/Utils/TCPConsole.cpp
++++ b/src/slic3r/Utils/TCPConsole.cpp
+@@ -170,7 +170,7 @@ bool TCPConsole::run_queue()
+ 
+         auto endpoints = m_resolver.resolve(m_host_name, m_port_name);
+ 
+-        m_socket.async_connect(endpoints->endpoint(),
++        m_socket.async_connect(endpoints.begin()->endpoint(),
+             boost::bind(&TCPConsole::handle_connect, this, boost::placeholders::_1)
+         );
+ 

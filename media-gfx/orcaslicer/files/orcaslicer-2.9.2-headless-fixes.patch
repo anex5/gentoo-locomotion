@@ -1,0 +1,33 @@
+--- a/src/OrcaSlicer.cpp
++++ b/src/OrcaSlicer.cpp
+@@ -71,26 +71,25 @@ using namespace nlohmann;
+ 
+ #include "OrcaSlicer.hpp"
+ //BBS: add exception handler for win32
+-#include <wx/stdpaths.h>
+ #ifdef WIN32
+ #include "dev-utils/BaseException.h"
+ #endif
++#ifdef SLIC3R_GUI
+ #include "slic3r/GUI/PartPlate.hpp"
+ #include "slic3r/GUI/BitmapCache.hpp"
+ #include "slic3r/GUI/OpenGLManager.hpp"
+ #include "slic3r/GUI/GLCanvas3D.hpp"
+ #include "slic3r/GUI/Camera.hpp"
+ #include "slic3r/GUI/Plater.hpp"
+ #include <GLFW/glfw3.h>
++#include <wx/stdpaths.h>
++#include "slic3r/GUI/GUI_Init.hpp"
++#endif /* SLIC3R_GUI */
+ 
+ #ifdef __WXGTK__
+ #include <X11/Xlib.h>
+ #endif
+ 
+-#ifdef SLIC3R_GUI
+-    #include "slic3r/GUI/GUI_Init.hpp"
+-#endif /* SLIC3R_GUI */
+-
+ using namespace Slic3r;
+ 
+ /*typedef struct _error_message{

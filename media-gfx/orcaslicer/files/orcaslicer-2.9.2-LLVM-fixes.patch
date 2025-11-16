@@ -1,0 +1,20 @@
+--- a/src/libslic3r/CutSurface.hpp
++++ b/src/libslic3r/CutSurface.hpp
+@@ -2,6 +2,7 @@
+ #define slic3r_CutSurface_hpp_
+ 
+ #include <vector>
++#include <sstream>
+ #include <admesh/stl.h> // indexed_triangle_set
+ #include "ExPolygon.hpp"
+ #include "Emboss.hpp" // IProjection
+--- a/src/libslic3r/LocalesUtils.hpp
++++ b/src/libslic3r/LocalesUtils.hpp
+@@ -2,6 +2,7 @@
+ #define slic3r_LocalesUtils_hpp_
+ 
+ #include <string>
++#include <sstream>
+ #include <clocale>
+ #include <iomanip>
+ #include <cassert>

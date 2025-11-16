@@ -7,8 +7,7 @@ updated for 2.8.1
 
 --- a/src/libslic3r/CutSurface.cpp
 +++ b/src/libslic3r/CutSurface.cpp
-@@ -4,6 +4,14 @@
- ///|/
+@@ -1,5 +1,13 @@
  #include "CutSurface.hpp"
  
 +template <typename T>
@@ -22,14 +21,14 @@ updated for 2.8.1
  /// models_input.obj - Check transormation of model to each others
  /// projection_center.obj - circle representing center of projection with correct distance
  /// {M} .. model index
-@@ -31,6 +39,7 @@ using namespace Slic3r;
+@@ -29,6 +37,7 @@ using namespace Slic3r;
  #include <CGAL/Exact_integer.h>
  #include <CGAL/Surface_mesh.h>
  #include <CGAL/Cartesian_converter.h>
 +#include <CGAL/AABB_traits.h>
- #include <oneapi/tbb/blocked_range.h>
- #include <oneapi/tbb/parallel_for.h>
- #include <boost/property_map/property_map.hpp>
+ #include <tbb/parallel_for.h>
+ 
+ // libslic3r
 @@ -1021,8 +1030,8 @@ priv::CutMesh priv::to_cgal(const ExPolygons  &shapes,
      if (shapes.empty()) return {};
          
@@ -189,3 +188,4 @@ updated for 2.8.1
      // initialize to gray color
      for (VI vi: mesh.vertices())
          vertex_colors[vi] = CGAL::Color{127, 127, 127};
+
