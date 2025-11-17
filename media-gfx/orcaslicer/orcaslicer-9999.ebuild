@@ -27,6 +27,10 @@ IUSE="X debug -gui -step static-libs -spacenav test"
 
 RESTRICT="!test? ( test ) mirror"
 
+REQUIRED_USE="
+	X? ( gui )
+"
+
 RDEPEND="
 	dev-cpp/eigen:3
 	dev-cpp/tbb:=
@@ -36,14 +40,13 @@ RDEPEND="
 	dev-libs/glib:2
 	dev-libs/gmp:=
 	dev-libs/mpfr:=
-	media-gfx/openvdb:=
+	media-gfx/openvdb:=[blosc]
 	media-gfx/libbgcode
 	net-misc/curl[adns]
 	media-libs/glew:0=
 	media-libs/libjpeg-turbo:=
 	media-libs/libnoise:=
 	media-libs/libpng:0=
-	media-libs/qhull:=
 	media-gfx/opencsg
 	sci-libs/libigl
 	sci-libs/nlopt
@@ -66,6 +69,7 @@ DEPEND="${RDEPEND}
 "
 
 PATCHES=(
+	"${FILESDIR}/${PN}-2.0.0_wxgtk3-wayland-fix.patch"
 	"${FILESDIR}/${PN}-2.9.2-slic3r-fixes.patch"
 	"${FILESDIR}/${PN}-2.9.2-LLVM-fixes.patch"
 	"${FILESDIR}/${PN}-2.9.2-headless-fixes.patch"
