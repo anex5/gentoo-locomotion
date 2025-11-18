@@ -66,8 +66,8 @@ ${CODEC_IUSE}
 alsa atk buildtarball clang cpu_flags_arm_neon cups +dbus debug firejail hardened hwaccel
 jack -jemalloc +jit libcanberra libnotify libproxy libsecret lld lto mold pgo
 pulseaudio sndio selinux speech +system-av1 +system-ffmpeg +system-harfbuzz
-+system-icu +system-jpeg +system-libevent +system-libvpx +system-png system-pipewire
-+system-python-libs +system-webp test vaapi wayland +webrtc wifi webspeech X
++system-icu +system-jpeg +system-libevent +system-libvpx +system-png +system-pipewire
+-system-python-libs +system-webp test vaapi wayland +webrtc wifi webspeech X
 "
 
 # Firefox-only IUSE
@@ -947,14 +947,16 @@ src_prepare() {
 	#[[ "${EPYTHON//python}" == "3.13" ]] && eapply "${FILESDIR}/extra-patches/firefox-115e-python3.13-build-fix.patch"
 
 	# Allow to use system-ffmpeg completely.
-	# eapply "${FILESDIR}/extra-patches/firefox-115e-allow-ffmpeg-decode-av1.patch"
-	# eapply "${FILESDIR}/icecat-128e-disable-ffvpx.patch"
+	if use system-ffmpeg; then
+		#eapply "${FILESDIR}/extra-patches/firefox-115e-allow-ffmpeg-decode-av1.patch"
+		eapply "${FILESDIR}/extra-patches/firefox-128e-disable-ffvpx.patch"
+	fi
 
 	# Prevent tab crash
 	eapply "${FILESDIR}/extra-patches/firefox-140.3.1-disable-broken-flags-dom-bindings.patch"
 
 	# Prevent video seek bug
-	eapply "${FILESDIR}/extra-patches/firefox-128.3.0e-disable-broken-flags-ipc-chromium-chromium-config.patch"
+	#eapply "${FILESDIR}/extra-patches/firefox-128.3.0e-disable-broken-flags-ipc-chromium-chromium-config.patch"
 
 	# Build with clang-20
 	if [[ "${LLVM_SLOT}" =~ ("20"|"21") ]]; then
