@@ -161,48 +161,77 @@ SYSTEM_PYTHON_LIBS="
 		${PYTHON_DEPS}
 		$(python_gen_any_dep '
 			dev-python/zstandard[${PYTHON_USEDEP}]
-			dev-python/aiohttp[${PYTHON_USEDEP}]
-			dev-python/appdirs[${PYTHON_USEDEP}]
-			dev-python/attrs[${PYTHON_USEDEP}]
-			dev-python/cbor2[${PYTHON_USEDEP}]
-			dev-python/certifi[${PYTHON_USEDEP}]
-			dev-python/chardet[${PYTHON_USEDEP}]
-			dev-python/click[${PYTHON_USEDEP}]
-			dev-python/colorama[${PYTHON_USEDEP}]
-			dev-python/cookies[${PYTHON_USEDEP}]
-			dev-python/diskcache[${PYTHON_USEDEP}]
-			dev-python/distro[${PYTHON_USEDEP}]
-			dev-python/ecdsa[${PYTHON_USEDEP}]
-			dev-python/idna[${PYTHON_USEDEP}]
-			dev-python/importlib-metadata[${PYTHON_USEDEP}]
-			dev-python/iso8601[${PYTHON_USEDEP}]
-			dev-python/jinja2[${PYTHON_USEDEP}]
-			dev-python/jsmin[${PYTHON_USEDEP}]
-			dev-python/jsonschema[${PYTHON_USEDEP}]
-			dev-python/packaging[${PYTHON_USEDEP}]
-			dev-python/pathspec[${PYTHON_USEDEP}]
-			dev-python/pip[${PYTHON_USEDEP}]
-			dev-python/ply[${PYTHON_USEDEP}]
-			dev-python/pyasn1[${PYTHON_USEDEP}]
-			dev-python/pylru[${PYTHON_USEDEP}]
-			dev-python/pyparsing[${PYTHON_USEDEP}]
-			dev-python/requests[${PYTHON_USEDEP}]
-			dev-python/responses[${PYTHON_USEDEP}]
-			dev-python/rsa[${PYTHON_USEDEP}]
-			dev-python/setuptools[${PYTHON_USEDEP}]
-			dev-python/six[${PYTHON_USEDEP}]
-			dev-python/tomli[${PYTHON_USEDEP}]
-			dev-python/tqdm[${PYTHON_USEDEP}]
-			dev-python/typing-extensions[${PYTHON_USEDEP}]
-			dev-python/urllib3[${PYTHON_USEDEP}]
-			dev-python/voluptuous[${PYTHON_USEDEP}]
-			dev-python/wcwidth[${PYTHON_USEDEP}]
-			dev-python/wheel[${PYTHON_USEDEP}]
-			dev-python/yarl[${PYTHON_USEDEP}]
-			dev-python/zipp[${PYTHON_USEDEP}]
+			>=dev-python/aiohttp-3.10.11[${PYTHON_USEDEP}]
+			>=dev-python/aiosignal-1.3.1[${PYTHON_USEDEP}]
+			>=dev-python/appdirs-1.4.4[${PYTHON_USEDEP}]
+			>=dev-python/arrow-1.3.0[${PYTHON_USEDEP}]
+			>=dev-python/async-timeout-5.0.1[${PYTHON_USEDEP}]
+			>=dev-python/attrs-23.1.0[${PYTHON_USEDEP}]
+			>=dev-python/binaryornot-0.4.4[${PYTHON_USEDEP}]
+			>=dev-python/blessed-1.19.1[${PYTHON_USEDEP}]
+			>=dev-python/build-1.2.2[${PYTHON_USEDEP}]
+			>=dev-python/cbor2-4.0.1[${PYTHON_USEDEP}]
+			>=dev-python/certifi-2024.7.4[${PYTHON_USEDEP}]
+			>=dev-python/chardet-5.2.0[${PYTHON_USEDEP}]
+			>=dev-python/charset-normalizer-3.4.2[${PYTHON_USEDEP}]
+			>=dev-python/click-8.1.7[${PYTHON_USEDEP}]
+			>=dev-python/colorama-0.4.6[${PYTHON_USEDEP}]
+			>=dev-util/cookiecutter-2.6.0[${PYTHON_USEDEP}]
+			>=dev-python/cookies-2.2.1[${PYTHON_USEDEP}]
+			>=dev-python/diskcache-5.6.3[${PYTHON_USEDEP}]
+			>=dev-python/distro-1.8.0[${PYTHON_USEDEP}]
+			>=dev-python/ecdsa-0.19.1[${PYTHON_USEDEP}]
+			>=dev-python/filelock-3.16.1[${PYTHON_USEDEP}]
+			>=dev-python/frozenlist-1.5.0[${PYTHON_USEDEP}]
+			>=dev-python/idna-3.10[${PYTHON_USEDEP}]
+			>=dev-python/importlib-metadata-6.0.0[${PYTHON_USEDEP}]
+			>=dev-python/iniparse-0.5[${PYTHON_USEDEP}]
+			>=dev-python/jinja2-3.1.6[${PYTHON_USEDEP}]
+			>=dev-python/jsmin-3.0.0[${PYTHON_USEDEP}]
+			>=dev-python/jsonschema-4.17.3[${PYTHON_USEDEP}]
+			>=dev-python/looseversion-1.0.1[${PYTHON_USEDEP}]
+			>=dev-python/mako-1.2.2[${PYTHON_USEDEP}]
+			>=dev-python/markdown-it-py-3.0.0[${PYTHON_USEDEP}]
+			>=dev-python/markupsafe-2.0.1[${PYTHON_USEDEP}]
+			>=dev-python/mdurl-0.1.2[${PYTHON_USEDEP}]
+			>=dev-python/multidict-6.1.0[${PYTHON_USEDEP}]
+			>=dev-python/packaging-23.1[${PYTHON_USEDEP}]
+			>=dev-python/pathspec-0.9.0[${PYTHON_USEDEP}]
+			>=dev-python/pip-24.0[${PYTHON_USEDEP}]
+			>=dev-python/platformdirs-4.3.6[${PYTHON_USEDEP}]
+			>=dev-python/ply-3.10[${PYTHON_USEDEP}]
+			>=dev-python/polib-1.2.0[${PYTHON_USEDEP}]
+			>=dev-python/propcache-0.2.0[${PYTHON_USEDEP}]
+			>=dev-python/pyasn1-0.4.8[${PYTHON_USEDEP}]
+			>=dev-python/pyasn1-modules-0.2.8[${PYTHON_USEDEP}]
+			>=dev-python/pygments-2.19.1[${PYTHON_USEDEP}]
+			>=dev-python/pylru-1.0.9[${PYTHON_USEDEP}]
+			>=dev-python/pyproject-hooks-1.2.0[${PYTHON_USEDEP}]
+			>=dev-python/pyrsistent-0.20.0[${PYTHON_USEDEP}]
+			>=dev-python/python-dateutil-2.9.0[${PYTHON_USEDEP}]
+			>=dev-python/python-slugify-8.0.4[${PYTHON_USEDEP}]
+			>=dev-python/pyyaml-6.0.1[${PYTHON_USEDEP}]
+			>=dev-python/requests-2.32.3[${PYTHON_USEDEP}]
+			>=dev-python/requests-unixsocket-0.2.0[${PYTHON_USEDEP}]
+			>=dev-python/responses-0.10.6[${PYTHON_USEDEP}]
+			>=dev-python/rich-14.0.0[${PYTHON_USEDEP}]
+			>=dev-python/rsa-4.9[${PYTHON_USEDEP}]
+			>=dev-python/six-1.16.0[${PYTHON_USEDEP}]
+			>=dev-python/toml-0.10.2[${PYTHON_USEDEP}]
+			>=dev-python/tomli-2.2.1[${PYTHON_USEDEP}]
+			>=dev-python/tomlkit-0.12.3[${PYTHON_USEDEP}]
+			>=dev-python/tqdm-4.66.3[${PYTHON_USEDEP}]
+			>=dev-python/typing-extensions-4.12.2[${PYTHON_USEDEP}]
+			>=dev-python/urllib3-1.26.19[${PYTHON_USEDEP}]
+			>=dev-python/voluptuous-0.12.1[${PYTHON_USEDEP}]
+			>=dev-python/wcwidth-0.2.13[${PYTHON_USEDEP}]
+			>=dev-python/wheel-0.43.0[${PYTHON_USEDEP}]
+			>=dev-python/yarl-1.15.2[${PYTHON_USEDEP}]
+			>=dev-python/zipp-3.20.2[${PYTHON_USEDEP}]
 		')
 	)
 "
+
 CDEPEND="
 	${FF_ONLY_DEPEND}
 	${SYSTEM_PYTHON_LIBS}
@@ -261,7 +290,7 @@ CDEPEND="
 		>=media-libs/libjpeg-turbo-2.1.5.1[${MULTILIB_USEDEP}]
 	)
 	system-ffmpeg? (
-		<=media-video/ffmpeg-compat-${FFMPEG_PV}[${MULTILIB_USEDEP},dav1d?,openh264?,opus?,vaapi?,vpx?]
+		>=media-video/ffmpeg-${FFMPEG_PV}[${MULTILIB_USEDEP},dav1d?,openh264?,opus?,vaapi?,vpx?]
 	)
 	system-libevent? (
 		>=dev-libs/libevent-2.1.12:=[${MULTILIB_USEDEP},threads(+)]
@@ -426,7 +455,7 @@ BDEPEND+="
 "
 PDEPEND+="
 	firejail? (
-		sys-apps/firejail[X?,firejail_profiles_firefox]
+		sys-apps/firejail[X?]
 	)
 	screencast? (
 		>=media-video/pipewire-0.3.52[${MULTILIB_USEDEP}]
@@ -922,10 +951,10 @@ src_prepare() {
 	# eapply "${FILESDIR}/icecat-128e-disable-ffvpx.patch"
 
 	# Prevent tab crash
-	#eapply "${FILESDIR}/extra-patches/firefox-140.3.1-disable-broken-flags-dom-bindings.patch"
+	eapply "${FILESDIR}/extra-patches/firefox-140.3.1-disable-broken-flags-dom-bindings.patch"
 
 	# Prevent video seek bug
-	#eapply "${FILESDIR}/extra-patches/firefox-128.3.0e-disable-broken-flags-ipc-chromium-chromium-config.patch"
+	eapply "${FILESDIR}/extra-patches/firefox-128.3.0e-disable-broken-flags-ipc-chromium-chromium-config.patch"
 
 	# Build with clang-20
 	if [[ "${LLVM_SLOT}" =~ ("20"|"21") ]]; then
