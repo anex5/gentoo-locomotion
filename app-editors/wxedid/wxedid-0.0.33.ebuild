@@ -4,7 +4,7 @@
 EAPI=8
 
 WX_GTK_VER=3.2-gtk3
-inherit toolchain-funcs wxwidgets desktop
+inherit autotools toolchain-funcs wxwidgets desktop
 
 DESCRIPTION="wxWidgets-based EDID (Extended Display Identification Data) editor"
 HOMEPAGE="https://wxedid.sourceforge.io"
@@ -28,6 +28,29 @@ PATCHES=(
 
 pkg_setup() {
 	setup-wxwidgets
+}
+
+src_prepare() {
+	default
+	eautoreconf
+	if use elibc_musl; then
+		sed -e '/echo -en \"#include <sys\/cdefs\.h>\\n\" >> \$out_scp_src/d' \
+			-e 's/__BEGIN_DECLS\\n\\n/#ifdef __cplusplus\\nextern "C" {\\n#endif/g' \
+			-e 's/__END_DECLS\\n\\n/#ifdef __cplusplus\\n}\\n#endif/g' \
+			-i src/rcode/rcd_autogen || die "Sed failed."
+		sed -e '/#include <sys\/cdefs\.h>/d' \
+			-e 's/__BEGIN_DECLS/#ifdef __cplusplus\nextern "C" {\n#endif/g' \
+			-e 's/__END_DECLS/#ifdef __cplusplus\n}\n#endif/g' \
+			-i src/rcode/{rcode.h,rcd_alias.h,rcode_scp.h,rcd_scp.tmp.c,rcd_scp.tmp.h,rcd_fn.tmp.c} || die "Sed failed."
+	fi
+}
+
+src_configure() {
+	tc-export CC CXX
+	tc-export_build_env BUILD_CXX
+	export RCDGEN_CXXCPP="${BUILD_CXX}"
+	econf --enable-shared
+	default
 }
 
 src_install() {
