@@ -24,20 +24,20 @@ case ${MOZ_ARCH} in
 		;;
 esac
 
-MOZ_FIREFOX_FILE="zen"
+MOZ_FIREFOX_FILE="zen-browser"
 
-if [[ ! -r ${MOZ_LIB_DIR}/zen/${MOZ_FIREFOX_FILE} ]]; then
-	if [[ ! -r ${SECONDARY_LIB_DIR}/zen/${MOZ_FIREFOX_FILE} ]]; then
-		echo "Error: ${MOZ_LIB_DIR}/zen/${MOZ_FIREFOX_FILE} not found" >&2
+if [[ ! -r ${MOZ_LIB_DIR}/zen-browser/${MOZ_FIREFOX_FILE} ]]; then
+	if [[ ! -r ${SECONDARY_LIB_DIR}/zen-browser/${MOZ_FIREFOX_FILE} ]]; then
+		echo "Error: ${MOZ_LIB_DIR}/zen-browser/${MOZ_FIREFOX_FILE} not found" >&2
 		if [[ -d ${SECONDARY_LIB_DIR} ]]; then
-			echo "       ${SECONDARY_LIB_DIR}/zen/${MOZ_FIREFOX_FILE} not found" >&2
+			echo "${SECONDARY_LIB_DIR}/zen-browser/${MOZ_FIREFOX_FILE} not found" >&2
 		fi
 		exit 1
 	fi
 	MOZ_LIB_DIR="${SECONDARY_LIB_DIR}"
 fi
-MOZILLA_FIVE_HOME="${MOZ_LIB_DIR}/zen"
-MOZ_EXTENSIONS_PROFILE_DIR="${HOME}/.mozilla/extensions/{ec8030f7-c20a-464f-9b0e-13a3a9e97384}"
+MOZILLA_FIVE_HOME="${MOZ_LIB_DIR}/zen-browser"
+MOZ_EXTENSIONS_PROFILE_DIR="${HOME}/.zen/extensions/{ec8030f7-c20a-464f-9b0e-13a3a9e97384}"
 MOZ_PROGRAM="${MOZILLA_FIVE_HOME}/${MOZ_FIREFOX_FILE}"
 
 ##

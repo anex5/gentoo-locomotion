@@ -7,8 +7,6 @@ EAPI=8
 FIREFOX_PATCHSET="firefox-145-patches-01.tar.xz"
 
 LLVM_COMPAT=( {19..21} )
-PP="2"
-GV="1"
 
 # This will also filter rust versions that don't match LLVM_COMPAT in the non-clang path; this is fine.
 RUST_NEEDS_LLVM=1
@@ -22,12 +20,28 @@ VIRTUALX_REQUIRED="manual"
 
 # Information about the bundled wasi toolchain from
 # https://github.com/WebAssembly/wasi-sdk/
-WASI_SDK_VER=28.0
+WASI_SDK_VER=29.0
 WASI_SDK_LLVM_VER=${LLVM_SLOT}
 
-MOZ_ESR=no
+MOZ_ESR=
 
-inherit autotools check-reqs desktop git-r3 flag-o-matic gnome2-utils linux-info llvm-r1 multiprocessing \
+MOZ_PV=145.0.1
+MOZ_PV_SUFFIX=
+if [[ ${PV} =~ (_(alpha|beta|rc).*)$ ]] ; then
+	MOZ_PV_SUFFIX=${BASH_REMATCH[1]}
+
+	# Convert the ebuild version to the upstream Mozilla version
+	MOZ_PV="${MOZ_PV/_alpha/a}" # Handle alpha for SRC_URI
+	MOZ_PV="${MOZ_PV/_beta/b}"  # Handle beta for SRC_URI
+	MOZ_PV="${MOZ_PV%%_rc*}"    # Handle rc for SRC_URI
+fi
+
+MOZ_PN="firefox"
+MOZ_P="${MOZ_PN}-${MOZ_PV}"
+MOZ_PV_DISTFILES="${MOZ_PV}${MOZ_PV_SUFFIX}"
+MOZ_P_DISTFILES="${MOZ_PN}-${MOZ_PV_DISTFILES}"
+
+inherit autotools check-reqs desktop flag-o-matic gnome2-utils linux-info llvm-r1 multiprocessing \
 	multilib-minimal optfeature pax-utils python-any-r1 readme.gentoo-r1 rust toolchain-funcs unpacker virtualx xdg
 
 SRC_URI="
@@ -496,14 +510,57 @@ llvm_check_deps() {
 }
 
 MOZ_LANGS=(
-	ar ca cs cy da de el en-GB es-ES et fa fi fr ga-IE he hu id
-	is it ja ko lt nl nn-NO pl pt-BR pt-PT ru sv-SE th tr uk vi zh-CN zh-TW
+	af ar ast be bg br ca cak cs cy da de dsb
+	el en-CA en-GB en-US es-AR es-ES et eu
+	fi fr fy-NL ga-IE gd gl he hr hsb hu
+	id is it ja ka kab kk ko lt lv ms nb-NO nl nn-NO
+	pa-IN pl pt-BR pt-PT rm ro ru
+	sk sl sq sr sv-SE th tr uk uz vi zh-CN zh-TW
 )
+
+# Firefox-only LANGS
+MOZ_LANGS+=( ach )
+MOZ_LANGS+=( an )
+MOZ_LANGS+=( az )
+MOZ_LANGS+=( bn )
+MOZ_LANGS+=( bs )
+MOZ_LANGS+=( ca-valencia )
+MOZ_LANGS+=( eo )
+MOZ_LANGS+=( es-CL )
+MOZ_LANGS+=( es-MX )
+MOZ_LANGS+=( fa )
+MOZ_LANGS+=( ff )
+MOZ_LANGS+=( fur )
+MOZ_LANGS+=( gn )
+MOZ_LANGS+=( gu-IN )
+MOZ_LANGS+=( hi-IN )
+MOZ_LANGS+=( hy-AM )
+MOZ_LANGS+=( ia )
+MOZ_LANGS+=( km )
+MOZ_LANGS+=( kn )
+MOZ_LANGS+=( lij )
+MOZ_LANGS+=( mk )
+MOZ_LANGS+=( mr )
+MOZ_LANGS+=( my )
+MOZ_LANGS+=( ne-NP )
+MOZ_LANGS+=( oc )
+MOZ_LANGS+=( sc )
+MOZ_LANGS+=( sco )
+MOZ_LANGS+=( si )
+MOZ_LANGS+=( skr )
+MOZ_LANGS+=( son )
+MOZ_LANGS+=( szl )
+MOZ_LANGS+=( ta )
+MOZ_LANGS+=( te )
+MOZ_LANGS+=( tl )
+MOZ_LANGS+=( trs )
+MOZ_LANGS+=( ur )
+MOZ_LANGS+=( xh )
 
 mozilla_set_globals() {
 	# https://bugs.gentoo.org/587334
 	local MOZ_TOO_REGIONALIZED_FOR_L10N=(
-		ga-IE nn-NO sv-SE
+		fy-NL ga-IE gu-IN hi-IN hy-AM nb-NO ne-NP nn-NO pa-IN sv-SE
 	)
 
 	local lang xflag
@@ -520,6 +577,9 @@ mozilla_set_globals() {
 			xflag=${lang}
 		fi
 
+		SRC_URI+=" l10n_${xflag/[_@]/-}? ("
+		SRC_URI+=" https://archive.mozilla.org/pub/${MOZ_PN}/releases/${MOZ_PV}/linux-x86_64/xpi/${lang}.xpi -> ${MOZ_P_DISTFILES}-${lang}.xpi"
+		SRC_URI+=" )"
 		IUSE+=" l10n_${xflag/[_@]/-}"
 	done
 }
@@ -844,13 +904,23 @@ pkg_setup() {
 
 src_unpack() {
 	unpack "${FIREFOX_PATCHSET}"
+	local _lp_dir="${WORKDIR}/language_packs"
+	local _src_file
+
+	if [[ ! -d "${_lp_dir}" ]] ; then
+		mkdir "${_lp_dir}" || die
+	fi
+
+	for _src_file in ${A} ; do
+		if [[ ${_src_file} == *.xpi ]]; then
+			cp "${DISTDIR}/${_src_file}" "${_lp_dir}" || die "Failed to copy '${_src_file}' to '${_lp_dir}'!"
+		else
+			unpack ${_src_file}
+		fi
+	done
 	mkdir "${S}" || die
 	cd ${S}
 	unpacker "${P}.tar.zst" || eerror "Failed to unpack."
-
-	EGIT_REPO_URI="https://github.com/zen-browser/l10n-packs"
-	EGIT_CHECKOUT_DIR=${S}/l10n
-	git-r3_src_unpack
 }
 
 _get_s() {
@@ -927,6 +997,7 @@ src_prepare() {
 	# Workaround for bgo#915651 on musl
 	if use elibc_glibc ; then
 		rm -v "${WORKDIR}"/firefox-patches/*bgo-748849-RUST_TARGET_override.patch || die
+		rm -v "${WORKDIR}"/firefox-patches/*bmo-1988166-musl-remove-nonexisting-system-header-req.patch || die
 	fi
 	rm -v "${WORKDIR}"/firefox-patches/0019-bgo-928126-enable-jxl.patch || die
 
@@ -1375,7 +1446,6 @@ _src_configure() {
 		--target="${CHOST}" \
 		--without-ccache \
 		--with-intl-api \
-		--with-l10n-base="${s}/l10n" \
 		--with-system-ffi \
 		--with-system-gbm \
 		--with-system-libdrm \
@@ -1835,9 +1905,6 @@ _src_compile() {
 	fi
 
 	${virtx_cmd} ./mach build --verbose || die
-
-	# Build language packs
-	moz_build_xpi
 }
 
 src_test() {
@@ -1953,7 +2020,9 @@ _src_install() {
 
 	# Install language packs
 	#dexlare -A suffix=( [amd64]="x86_64" [arm64]="arm" )
-	local langpacks=( $(find "${BUILD_DIR}/dist/linux-${ELIBC//elibc_}-${MULTILIB_ABI_FLAG//abi_}/xpi" -type f -name '*.xpi') )
+	#local langpacks=( $(find "${BUILD_DIR}/dist/linux-${ELIBC//elibc_}-${MULTILIB_ABI_FLAG//abi_}/xpi" -type f -name '*.xpi') )
+	local langpacks=( $(find "${WORKDIR}/language_packs" -type f -name '*.xpi') )
+
 	if [[ -n "${langpacks}" ]] ; then
 		moz_install_xpi "${MOZILLA_FIVE_HOME}/distribution/extensions" "${langpacks[@]}"
 	fi

@@ -895,12 +895,12 @@ pkg_setup() {
 }
 
 src_unpack() {
+	unpack "${FIREFOX_PATCHSET}"
 	if use buildtarball; then
 		unpack "icecat-${PV}-${PP}gnu${GV}.tar.bz2" || eerror "Tarball is missing, check that www-client/makeicecat has use flag buildtarball enabled."
 	else
 		unpacker "icecat-${PV}-${PP}gnu${GV}.tar.zst" || eerror "Failed to unpack."
 	fi
-	unpack "${FIREFOX_PATCHSET}"
 }
 
 _get_s() {
