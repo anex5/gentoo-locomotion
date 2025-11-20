@@ -1,0 +1,20 @@
+--- a/dom/bindings/moz.build.orig	2025-09-29 11:23:06.000000000 -0700
++++ b/dom/bindings/moz.build	2025-10-02 09:53:44.812396889 -0700
+@@ -215,3 +215,17 @@ if CONFIG["COMPILE_ENVIRONMENT"]:
+         entry_point="generateCSSPositionTryDescriptors",
+         inputs=["!/layout/style/ServoCSSPropList.py"],
+     )
++
++if CONFIG["CC_TYPE"] in ("clang"):
++    # Prevent tab crash
++    CXXFLAGS += [
++        "__OFLAG_SAFE__",
++        "-fno-fast-math",
++    ]
++
++if CONFIG["CC_TYPE"] in ("gcc"):
++    # Prevent tab crash
++    CXXFLAGS += [
++        "__OFLAG_SAFE__",
++        "-fno-fast-math",
++    ]

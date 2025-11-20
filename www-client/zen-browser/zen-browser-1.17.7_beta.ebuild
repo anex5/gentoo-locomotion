@@ -4,8 +4,7 @@
 EAPI=8
 
 # Using Gentoos firefox patches as system libraries and lto are quite nice
-FIREFOX_PATCHSET="firefox-${PV%%.*}esr-patches-03.tar.xz"
-FIREFOX_LOONG_PATCHSET="firefox-139-loong-patches-02.tar.xz"
+FIREFOX_PATCHSET="firefox-145-patches-01.tar.xz"
 
 LLVM_COMPAT=( {19..21} )
 PP="2"
@@ -26,27 +25,22 @@ VIRTUALX_REQUIRED="manual"
 WASI_SDK_VER=28.0
 WASI_SDK_LLVM_VER=${LLVM_SLOT}
 
-MOZ_ESR=yes
+MOZ_ESR=no
 
-inherit autotools check-reqs desktop flag-o-matic gnome2-utils linux-info llvm-r1 multiprocessing \
+inherit autotools check-reqs desktop git-r3 flag-o-matic gnome2-utils linux-info llvm-r1 multiprocessing \
 	multilib-minimal optfeature pax-utils python-any-r1 readme.gentoo-r1 rust toolchain-funcs unpacker virtualx xdg
 
 SRC_URI="
-	!buildtarball? (
-		https://gitlab.com/api/v4/projects/32909921/packages/generic/${PN}/${PV}-${PP}gnu${GV}/${P}-${PP}gnu${GV}.tar.zst
-	)
+	https://github.com/zen-browser/desktop/releases/download/${PV/_beta/b}/zen.source.tar.zst -> ${P}.tar.zst
 	https://dev.gentoo.org/~juippis/mozilla/patchsets/${FIREFOX_PATCHSET}
-	loong? (
-		https://dev.gentoo.org/~xen0n/distfiles/www-client/firefox/${FIREFOX_LOONG_PATCHSET}
-	)
 	wasm-sandbox? (
 		amd64? ( https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_SDK_VER/.*/}/wasi-sdk-${WASI_SDK_VER}-x86_64-linux.tar.gz )
 		arm64? ( https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_SDK_VER/.*/}/wasi-sdk-${WASI_SDK_VER}-arm64-linux.tar.gz )
 	)
 "
 
-DESCRIPTION="GNU IceCat Web Browser"
-HOMEPAGE="https://www.gnu.org/software/gnuzilla/"
+DESCRIPTION="A fast and beautiful, privacy-focused Firefox fork"
+HOMEPAGE="https://zen-browser.app/"
 
 
 LICENSE="MPL-2.0 GPL-2 LGPL-2.1"
@@ -63,7 +57,7 @@ CODEC_IUSE="
 "
 IUSE+="
 ${CODEC_IUSE}
-alsa atk buildtarball clang cpu_flags_arm_neon cups +dbus debug firejail hardened hwaccel
+alsa atk clang cpu_flags_arm_neon cups +dbus debug firejail hardened hwaccel
 jack -jemalloc +jit libcanberra libnotify libproxy libsecret lld lto mold pgo
 pulseaudio sndio selinux speech +system-av1 +system-ffmpeg +system-harfbuzz
 +system-icu +system-jpeg +system-libevent +system-libvpx +system-png +system-pipewire
@@ -276,7 +270,7 @@ CDEPEND="
 		>=media-sound/sndio-1.8.0-r1[${MULTILIB_USEDEP}]
 	)
 	system-av1? (
-		>=media-libs/dav1d-1.1.0:=[${MULTILIB_USEDEP},8bit]
+		>=media-libs/dav1d-1.0.0:=[${MULTILIB_USEDEP},8bit]
 		>=media-libs/libaom-3.10.0:=[${MULTILIB_USEDEP}]
 	)
 	system-harfbuzz? (
@@ -436,9 +430,6 @@ BDEPEND+="
 	app-alternatives/awk
 	app-arch/unzip
 	app-arch/zip
-	buildtarball? (
-		~www-client/makeicecat-"${PV}"[buildtarball]
-	)
 	mold? (
 		sys-devel/mold
 	)
@@ -505,57 +496,14 @@ llvm_check_deps() {
 }
 
 MOZ_LANGS=(
-	af ar ast be bg br ca cak cs cy da de dsb
-	el en-CA en-GB en-US es-AR es-ES et eu
-	fi fr fy-NL ga-IE gd gl he hr hsb hu
-	id is it ja ka kab kk ko lt lv ms nb-NO nl nn-NO
-	pa-IN pl pt-BR pt-PT rm ro ru
-	sk sl sq sr sv-SE th tr uk uz vi zh-CN zh-TW
+	ar ca cs cy da de el en-GB es-ES et fa fi fr ga-IE he hu id
+	is it ja ko lt nl nn-NO pl pt-BR pt-PT ru sv-SE th tr uk vi zh-CN zh-TW
 )
-
-# Firefox-only LANGS
-MOZ_LANGS+=( ach )
-MOZ_LANGS+=( an )
-MOZ_LANGS+=( az )
-MOZ_LANGS+=( bn )
-MOZ_LANGS+=( bs )
-MOZ_LANGS+=( ca-valencia )
-MOZ_LANGS+=( eo )
-MOZ_LANGS+=( es-CL )
-MOZ_LANGS+=( es-MX )
-MOZ_LANGS+=( fa )
-MOZ_LANGS+=( ff )
-MOZ_LANGS+=( fur )
-MOZ_LANGS+=( gn )
-MOZ_LANGS+=( gu-IN )
-MOZ_LANGS+=( hi-IN )
-MOZ_LANGS+=( hy-AM )
-MOZ_LANGS+=( ia )
-MOZ_LANGS+=( km )
-MOZ_LANGS+=( kn )
-MOZ_LANGS+=( lij )
-MOZ_LANGS+=( mk )
-MOZ_LANGS+=( mr )
-MOZ_LANGS+=( my )
-MOZ_LANGS+=( ne-NP )
-MOZ_LANGS+=( oc )
-MOZ_LANGS+=( sc )
-MOZ_LANGS+=( sco )
-MOZ_LANGS+=( si )
-MOZ_LANGS+=( skr )
-MOZ_LANGS+=( son )
-MOZ_LANGS+=( szl )
-MOZ_LANGS+=( ta )
-MOZ_LANGS+=( te )
-MOZ_LANGS+=( tl )
-MOZ_LANGS+=( trs )
-MOZ_LANGS+=( ur )
-MOZ_LANGS+=( xh )
 
 mozilla_set_globals() {
 	# https://bugs.gentoo.org/587334
 	local MOZ_TOO_REGIONALIZED_FOR_L10N=(
-		fy-NL ga-IE gu-IN hi-IN hy-AM nb-NO ne-NP nn-NO pa-IN sv-SE
+		ga-IE nn-NO sv-SE
 	)
 
 	local lang xflag
@@ -895,12 +843,14 @@ pkg_setup() {
 }
 
 src_unpack() {
-	if use buildtarball; then
-		unpack "icecat-${PV}-${PP}gnu${GV}.tar.bz2" || eerror "Tarball is missing, check that www-client/makeicecat has use flag buildtarball enabled."
-	else
-		unpacker "icecat-${PV}-${PP}gnu${GV}.tar.zst" || eerror "Failed to unpack."
-	fi
 	unpack "${FIREFOX_PATCHSET}"
+	mkdir "${S}" || die
+	cd ${S}
+	unpacker "${P}.tar.zst" || eerror "Failed to unpack."
+
+	EGIT_REPO_URI="https://github.com/zen-browser/l10n-packs"
+	EGIT_CHECKOUT_DIR=${S}/l10n
+	git-r3_src_unpack
 }
 
 _get_s() {
@@ -912,11 +862,11 @@ _get_s() {
 }
 
 src_prepare() {
-	use atk || eapply "${FILESDIR}/icecat-no-atk.patch"
-	use dbus || eapply "${FILESDIR}/icecat-no-dbus.patch"
-	eapply "${FILESDIR}/icecat-no-fribidi.patch"
-	eapply "${FILESDIR}/icecat-fix-clang-as.patch"
-	eapply "${FILESDIR}/icecat-system-gtests.patch"
+	use atk || eapply "${FILESDIR}/zen-browser-no-atk.patch"
+	use dbus || eapply "${FILESDIR}/zen-browser-no-dbus.patch"
+	eapply "${FILESDIR}/zen-browser-no-fribidi.patch"
+	eapply "${FILESDIR}/zen-browser-fix-clang-as.patch"
+	eapply "${FILESDIR}/zen-browser-system-gtests.patch"
 
 	if use lto; then
 		rm -v "${WORKDIR}"/firefox-patches/*-LTO-Only-enable-LTO-*.patch || die
@@ -962,35 +912,25 @@ src_prepare() {
 	fi
 
 	# Prevent tab crash
-	eapply "${FILESDIR}/extra-patches/firefox-140.3.1-disable-broken-flags-dom-bindings.patch"
+	eapply "${FILESDIR}/extra-patches/firefox-143.0.3-disable-broken-flags-dom-bindings.patch"
 
 	# Prevent video seek bug
 	eapply "${FILESDIR}/extra-patches/firefox-122.0-disable-broken-flags-ipc-chromium-chromium-config.patch"
 
-
 	# Build with clang-20
 	if [[ "${LLVM_SLOT}" =~ ("20"|"21") ]]; then
-		#eapply "${FILESDIR}/icecat-128.12.0-clang21.patch"
 		sed -e '/CXXFLAGS += \["-Werror=implicit-int-conversion"\]/d' -i "${S}/dom/canvas/moz.build" -i "${S}/dom/webgpu/moz.build" || die
 	fi
 
-	#eapply "${FILESDIR}/extra-patches/firefox-128.3.0e-allow-flac-no-ffvpx.patch"
 	eapply "${FILESDIR}/extra-patches/firefox-128.3.0e-big-endian-image-decoders.patch"
 
 	# Workaround for bgo#915651 on musl
 	if use elibc_glibc ; then
 		rm -v "${WORKDIR}"/firefox-patches/*bgo-748849-RUST_TARGET_override.patch || die
 	fi
-
-	# Use modified patch that isn't mangled
-	for patch in 0013-gcc-lto-pgo-gentoo.patch 0016-bgo-929967-fix-pgo-on-musl.patch; do
-		cp "${FILESDIR}/${patch}" "${WORKDIR}/firefox-patches/${patch}" || die
-	done
-	# Modify patch to apply correctly
-	#sed -i -e 's/Firefox/IceCat/' "${WORKDIR}"/firefox-patches/0016-bgo-929967-fix-pgo-on-musl.patch || die
+	rm -v "${WORKDIR}"/firefox-patches/0019-bgo-928126-enable-jxl.patch || die
 
 	eapply "${WORKDIR}/firefox-patches"
-	use loong && eapply "${WORKDIR}/firefox-loong-patches"
 
 	# Allow user to apply any additional patches without modifing ebuild
 	eapply_user
@@ -1006,10 +946,6 @@ src_prepare() {
 			export RUST_TARGET="i686-unknown-linux-musl"
 		elif use arm64 ; then
 			export RUST_TARGET="aarch64-unknown-linux-musl"
-		elif use loong; then
-			# Only the LP64D ABI of LoongArch64 is actively supported among
-			# the wider Linux ecosystem, so the assumption is safe.
-			export RUST_TARGET="loongarch64-unknown-linux-musl"
 		elif use ppc64 ; then
 			export RUST_TARGET="powerpc64le-unknown-linux-musl"
 		elif use riscv ; then
@@ -1448,6 +1384,7 @@ _src_configure() {
 		--with-system-pixman \
 		--with-system-zlib \
 		--with-toolchain-prefix="${CHOST}-" \
+		--with-app-name="${PN}" \
 		--with-unsigned-addon-scopes="app,system"
 
 	if use system-ffmpeg ; then
@@ -1472,7 +1409,7 @@ _src_configure() {
 		--with-libclang-path="$(llvm-config --libdir)"
 
 	# Set update channel
-	mozconfig_add_options_ac '' --update-channel="esr"
+	mozconfig_add_options_ac '' --update-channel="release"
 
 	#if ! use x86 && [[ ${CHOST} != armv*h* ]] ; then
 	#	mozconfig_add_options_ac '' --enable-rust-simd
@@ -1944,7 +1881,7 @@ _src_install() {
 	DESTDIR="${D}" ./mach install || die
 
 	# Upstream cannot ship symlink but we can (bmo#658850)
-	rm "${ED}${MOZILLA_FIVE_HOME}/${PN}-bin" || die
+	rm -v "${ED}${MOZILLA_FIVE_HOME}/${PN}-bin" || die
 	dosym "${PN}" "${MOZILLA_FIVE_HOME}/${PN}-bin"
 
 	# Don't install llvm-symbolizer from llvm-core/llvm package
@@ -1982,7 +1919,7 @@ _src_install() {
 
 	# Force hwaccel prefs if USE=hwaccel is enabled
 	if use hwaccel ; then
-		cat "${FILESDIR}/gentoo-hwaccel-prefs.js-r2" \
+		cat "${FILESDIR}/gentoo-hwaccel-prefs.js" \
 		>>"${GENTOO_PREFS}" \
 		|| die "failed to add prefs to force hardware-accelerated rendering to all-gentoo.js"
 
@@ -2023,29 +1960,17 @@ _src_install() {
 
 	# Install icons
 	local icon_srcdir="${s}/browser/branding/official"
-	local icon_symbolic_file="${FILESDIR}/icon/${PN}-symbolic.svg"
+	local icon_symbolic_file="${FILESDIR}/icon/zen-symbolic.svg"
 
 	insinto /usr/share/icons/hicolor/symbolic/apps
-	newins "${icon_symbolic_file}" "${PN}-symbolic.svg"
-
-	local icon size
-	for icon in "${icon_srcdir}/default"*".png" ; do
-		size=${icon%.png}
-		size=${size##*/default}
-
-		if [[ ${size} -eq 48 ]] ; then
-			newicon "${icon}" "${PN}.png"
-		fi
-
-		newicon -s ${size} "${icon}" "${PN}.png"
-	done
+	newins "${icon_symbolic_file}" "zen-symbolic.svg"
 
 	# Install menu
-	local app_name="GNU IceCat"
-	local desktop_file="${FILESDIR}/icon/${PN}-r3.desktop"
-	local desktop_filename="${PN}-esr-${ABI}.desktop"
+	local app_name="Zen Browser (${ABI})"
+	local desktop_file="${FILESDIR}/icon/zen.desktop"
+	local desktop_filename="${PN}-${ABI}.desktop"
 	local exec_command="${PN}-${ABI}"
-	local icon="${PN}"
+	local icon="zen-symbolic"
 	local use_wayland="false"
 
 	if use wayland ; then
@@ -2062,21 +1987,21 @@ _src_install() {
 
 	newmenu "${WORKDIR}/${PN}.desktop-template" "${desktop_filename}"
 
-	rm "${WORKDIR}/${PN}.desktop-template" || die
+	rm -v "${WORKDIR}/${PN}.desktop-template" || die
 
 	if use gnome-shell ; then
 		# Install search provider for Gnome
 		insinto /usr/share/gnome-shell/search-providers/
-		doins browser/components/shell/search-provider-files/org.gnu.icecat.search-provider.ini
+		doins browser/components/shell/search-provider-files/org.mozilla.${PN}.search-provider.ini
 
 		insinto /usr/share/dbus-1/services/
-		doins browser/components/shell/search-provider-files/org.gnu.icecat.SearchProvider.service
+		doins browser/components/shell/search-provider-files/org.mozilla.${PN}.SearchProvider.service
 
 		# Make the dbus service aware of a previous session, bgo#939196
 		sed -e \
-			"s/Exec=\/usr\/bin\/icecat/Exec=\/usr\/$(get_libdir)\/icecat\/icecat --dbus-service \/usr\/bin\/icecat/g" \
-			-i "${ED}/usr/share/dbus-1/services/org.gnu.icecat.SearchProvider.service" ||
-				die "Failed to sed org.gnu.icecat.SearchProvider.service dbus file"
+			"s/Exec=\/usr\/bin\/${PN}/Exec=\/usr\/$(get_libdir)\/${PN}\/${PN} --dbus-service \/usr\/bin\/${PN}/g" \
+			-i "${ED}/usr/share/dbus-1/services/org.mozilla.${PN}.SearchProvider.service" ||
+				die "Failed to sed org.mozilla.${PN}.SearchProvider.service dbus file"
 
 		# Update prefs to enable Gnome search provider
 		cat >>"${GENTOO_PREFS}" <<-EOF || die "failed to enable gnome-search-provider via prefs"
@@ -2086,7 +2011,7 @@ _src_install() {
 
 	# Install wrapper script
 	[[ -f "${ED}/usr/bin/${PN}" ]] && rm "${ED}/usr/bin/${PN}"
-	newbin "${FILESDIR}/${PN}-r1.sh" "${PN}-${ABI}"
+	newbin "${FILESDIR}/zen-browser.sh" "${PN}-${ABI}"
 	dosym "/usr/bin/${PN}-${ABI}" "/usr/bin/${PN}"
 
 	# Update wrapper
@@ -2132,7 +2057,7 @@ pkg_preinst() {
 pkg_postinst() {
 	xdg_pkg_postinst
 
-	elog "Cloudflare browser checks are broken with GNU IceCats anti fingerprinting measures."
+	elog "Cloudflare browser checks are broken with Zen Browser anti fingerprinting measures."
 	elog "You can fix cloudflare browser checks by undoing them in about:config like below:"
 	# Specifying (X11) is necessary for it to work, even in a Wayland session
 	elog "   general.appversion.override: ${PV%.[0-9]*} (X11)"
@@ -2166,7 +2091,7 @@ pkg_postinst() {
 	# bug 835078
 	if use hwaccel && has_version "x11-drivers/xf86-video-nouveau"; then
 		ewarn "You have nouveau drivers installed in your system and 'hwaccel' "
-		ewarn "enabled for IceCat. Nouveau / your GPU might not support the "
+		ewarn "enabled for Zen Browser. Nouveau / your GPU might not support the "
 		ewarn "required EGL, so either disable 'hwaccel' or try the workaround "
 		ewarn "explained in https://bugs.gentoo.org/835078#c5 if Firefox crashes."
 	fi
