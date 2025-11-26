@@ -59,6 +59,7 @@ PATCHES=(
 	# See also:
 	# https://github.com/elogind/elogind/issues/285
 	"${FILESDIR}/${PN}-255.17-revert-s2idle.patch" # bug 939042
+	"${FILESDIR}/${PN}-255.22-revert-openrc-user.patch" # bug 966481
 	"${FILESDIR}/${PN}-255.22-include-stat.h.patch"
 	"${FILESDIR}/${PN}-255.22-include-prctl.h.patch"
 )

@@ -11,11 +11,13 @@ HOMEPAGE="https://github.com/WillPower3309/swayfx"
 if [[ ${PV} == 9999 ]]; then
 	inherit git-r3
 	EGIT_REPO_URI="https://github.com/WillPower3309/swayfx"
+	SCENEFX_PV=9999
 else
 	MY_PV=${PV/_rc/-rc}
 	SRC_URI="https://github.com/WillPower3309/swayfx/archive/${MY_PV}.tar.gz -> ${P}.tar.gz"
 	KEYWORDS="amd64 arm64 ~arm ~loong ~ppc64 ~riscv ~x86"
 	S="${WORKDIR}/${PN}-${MY_PV}"
+	SCENEFX_PV=0.4
 fi
 
 LICENSE="MIT"
@@ -30,7 +32,7 @@ DEPEND="
 	sys-auth/seatd:=
 	dev-libs/libpcre2
 	>=dev-libs/wayland-1.20.0
-	>=gui-libs/scenefx-0.2
+	>=gui-libs/scenefx-${SCENEFX_PV}
 	x11-libs/cairo
 	>=x11-libs/libxkbcommon-1.5.0:0=
 	x11-libs/pango

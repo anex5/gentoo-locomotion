@@ -45,10 +45,8 @@ RESTRICT="
 	mirror
 "
 
-RDEPEND="
-	!net-libs/nodejs:0
+CDEPEND="
 	>=app-arch/brotli-1.1.0
-	>=app-eselect/eselect-nodejs-20250106
 	dev-db/sqlite:3
 	>=dev-libs/libuv-1.51.0:=
 	>=dev-libs/simdjson-3.10.1:=
@@ -56,7 +54,6 @@ RDEPEND="
 	>=net-libs/nghttp2-1.64.0:=
 	>=net-libs/nghttp3-1.7.0:=
 	>=sys-libs/zlib-1.3.1
-	corepack? ( sys-apps/yarn )
 	system-icu? (
 		>=dev-libs/icu-77.1:=
 	)
@@ -65,6 +62,13 @@ RDEPEND="
 		>=dev-libs/openssl-3.0.16:0[asm?,fips?]
 	)
 "
+
+RDEPEND="
+	!net-libs/nodejs:0
+	>=app-eselect/eselect-nodejs-20250106
+	corepack? ( sys-apps/yarn )
+"
+
 BDEPEND="${PYTHON_DEPS}
 	app-alternatives/ninja
 	sys-apps/coreutils
@@ -75,7 +79,7 @@ BDEPEND="${PYTHON_DEPS}
 	lld? ( llvm-core/lld )
 "
 
-DEPEND="${RDEPEND}"
+DEPEND="${CDEPEND}"
 
 # These are measured on a loong machine with -ggdb on, and only checked
 # if debugging flags are present in CFLAGS.
@@ -93,7 +97,7 @@ PATCHES=(
 	"${FILESDIR}/${PN}-24.2.0-lto-update.patch"
 	"${FILESDIR}/${PN}-24.2.0-support-clang-pgo.patch"
 	"${FILESDIR}/${PN}-19.3.0-v8-oflags.patch"
-	"${FILESDIR}/${PN}-24.2.0-split-pointer-compression-and-v8-sandbox-options.patch"
+	"${FILESDIR}/${PN}-25.1.0-split-pointer-compression-and-v8-sandbox-options.patch"
 )
 
 pkg_pretend() {
@@ -105,6 +109,13 @@ pkg_pretend() {
 	fi
 	( use x86 && ! use cpu_flags_x86_sse2 ) && \
 		die "Your CPU doesn't support the required SSE2 instruction."
+
+	tc-is-clang && (
+		has_version "llvm-runtimes/libgcc" || \
+			die "With clang compiler we need libgcc as the support lib.\nPlease install 'llvm-runtimes/libgcc'"
+		has_version "llvm-runtimes/libatomic-stub" || \
+			die "With clang compiler we need atomic as the support lib.\nPlease install 'llvm-runtimes/libatomic-stub'"
+	)
 }
 
 pkg_setup() {
@@ -139,12 +150,12 @@ src_prepare() {
 	sed -i -e "/DEPFLAGS =/d" tools/gyp/pylib/gyp/generator/make.py || die
 
 	# We need to disable mprotect on two files when it builds Bug 694100.
-	use pax-kernel && PATCHES+=( "${FILESDIR}"/${PN}-20.6.0-paxmarking.patch )
+	use pax-kernel && PATCHES+=( "${FILESDIR}"/${PN}-24.1.0-paxmarking.patch )
 
 	# https://github.com/nodejs/node/issues/51339
-	use pointer-compression && PATCHES+=(
-		"${FILESDIR}/${PN}-24.4.0-fix-v8-external-code-space.patch"
-	)
+	#use pointer-compression && PATCHES+=(
+#		"${FILESDIR}/${PN}-24.4.0-fix-v8-external-code-space.patch"
+#	)
 
 	default
 
@@ -370,13 +381,15 @@ src_install() {
 		"${ED}/usr/share/doc/${PF}" \
 		|| die
 
-	# Let eselect-nodejs handle switching corepack
-	dodir "/usr/$(get_libdir)/corepack"
-	mv \
-		"${ED}/usr/$(get_libdir)/node_modules/corepack" \
-		"${ED}/usr/$(get_libdir)/corepack/node${SLOT_MAJOR}" \
-		|| die
-	rm -rf "${ED}/usr/bin/corepack"
+	if use corepack; then
+		# Let eselect-nodejs handle switching corepack
+		dodir "/usr/$(get_libdir)/corepack"
+		mv \
+			"${ED}/usr/$(get_libdir)/node_modules/corepack" \
+			"${ED}/usr/$(get_libdir)/corepack/node${SLOT_MAJOR}" \
+			|| die
+		rm -rf "${ED}/usr/bin/corepack"
+	fi
 
 	if use npm; then
 		keepdir /etc/npm
