@@ -4,7 +4,7 @@
 EAPI=8
 
 DESCRIPTION="Manages the /usr/include/node symlink"
-HOMEPAGE="https://github.com/orsonteodoro/oiledmachine-overlay/tree/master/app-eselect/eselect-nodejs"
+HOMEPAGE="https://github.com/anex5/gentoo-locomotion/tree/master/app-eselect/eselect-nodejs"
 LICENSE="GPL-2"
 KEYWORDS="~amd64 ~arm ~arm64 ~loong ~ppc64 ~riscv ~x86 ~amd64-linux ~x64-macos"
 SLOT="0"

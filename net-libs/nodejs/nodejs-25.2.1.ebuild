@@ -4,7 +4,7 @@
 EAPI=8
 
 CONFIG_CHECK="~ADVISE_SYSCALLS"
-PYTHON_COMPAT=( python3_{11..13} )
+PYTHON_COMPAT=( python3_{11..14} )
 PYTHON_REQ_USE="threads(+)"
 MULTIPLEXER_VER="11"
 
@@ -20,21 +20,20 @@ SLOT="${SLOT_MAJOR}/$(ver_cut 1-2 ${PV})"
 if [[ ${PV} == *9999 ]]; then
 	inherit git-r3
 	EGIT_REPO_URI="https://github.com/nodejs/node"
-	SLOT="24/0"
+	SLOT="25/25.2"
 else
 	SRC_URI="https://nodejs.org/dist/v${PV}/node-v${PV}.tar.xz"
 	KEYWORDS="~amd64 ~arm ~arm64 ~loong ~ppc64 ~riscv ~x86 ~amd64-linux ~x64-macos"
 	S="${WORKDIR}/node-v${PV}"
 fi
 
-IUSE="+asm +corepack cpu_flags_x86_sse2 debug doc fips +icu inspector +jit \
+IUSE="+asm cpu_flags_x86_sse2 debug doc fips +icu inspector +jit \
 lto lld man mold +npm pax-kernel pointer-compression +snapshot +ssl \
 system-icu +system-ssl test v8-sandbox"
 REQUIRED_USE="
 	^^ ( mold lld )
-	corepack
 	inspector? ( icu ssl )
-	npm? ( corepack ssl )
+	npm? ( ssl )
 	system-icu? ( icu )
 	system-ssl? ( ssl )
 	v8-sandbox? ( pointer-compression )
@@ -66,7 +65,6 @@ CDEPEND="
 RDEPEND="
 	!net-libs/nodejs:0
 	>=app-eselect/eselect-nodejs-20250106
-	corepack? ( sys-apps/yarn )
 "
 
 BDEPEND="${PYTHON_DEPS}
@@ -220,6 +218,8 @@ src_configure() {
 
 	# LTO compiler flags are handled by configure.py itself
 	filter-lto
+	# The warnings are *so* noisy and make build.logs massive
+	append-cxxflags $(test-flags-CXX -Wno-template-id-cdtor)
 
 	# LTO compiler flags are handled by configure.py itself
 	filter-flags \
@@ -277,7 +277,6 @@ src_configure() {
 		myconf+=( --with-intl=none )
 	fi
 	#use system-llhttp || myconf+=( --without-system-llhttp )
-	use corepack || myconf+=( --without-corepack )
 	use inspector || myconf+=( --without-inspector )
 	use npm || myconf+=( --without-npm )
 	use snapshot || myconf+=( --without-node-snapshot )
@@ -351,7 +350,7 @@ src_install() {
 	mv "${ED}/usr/bin/node" "${ED}/usr/bin/node${SLOT_MAJOR}" || die
 	dosym "node${SLOT_MAJOR}" "/usr/bin/node"
 
-	pax-mark -m "${ED}/usr/bin/node${SLOT_MAJOR}"
+	use pax-kernel && pax-mark -m "${ED}/usr/bin/node${SLOT_MAJOR}"
 
 	# set up a symlink structure that node-gyp expects..
 	local D_INCLUDE_BASE="/usr/include/node${SLOT_MAJOR}"
@@ -381,29 +380,14 @@ src_install() {
 		"${ED}/usr/share/doc/${PF}" \
 		|| die
 
-	if use corepack; then
-		# Let eselect-nodejs handle switching corepack
-		dodir "/usr/$(get_libdir)/corepack"
-		mv \
-			"${ED}/usr/$(get_libdir)/node_modules/corepack" \
-			"${ED}/usr/$(get_libdir)/corepack/node${SLOT_MAJOR}" \
-			|| die
-		rm -rf "${ED}/usr/bin/corepack"
-	fi
-
 	if use npm; then
 		keepdir /etc/npm
 		echo "NPM_CONFIG_GLOBALCONFIG=${EPREFIX}/etc/npm/npmrc" > "${T}"/50npm
-		#echo "PATH=${EPREFIX}/usr/$(get_libdir)/corepack/node${SLOT_MAJOR}" > "${T}"/50npm
-
 		doenvd "${T}"/50npm
-
-		dosym "/usr/$(get_libdir)/corepack/node${SLOT_MAJOR}/shims/npm" "/usr/bin/npm"
-		sed -e "/^dirname /s|\$\(.\+\)|\$(readlink -q \$0)|g" -i "${ED}/usr/$(get_libdir)/corepack/node${SLOT_MAJOR}/shims/npm" || die
 
 		# Install bash completion for `npm`
 		local tmp_npm_completion_file="$(TMPDIR="${T}" mktemp -t npm.XXXXXXXXXX)"
-		"${ED}/usr/$(get_libdir)/corepack/node${SLOT_MAJOR}/shims/npm" completion > "${tmp_npm_completion_file}"
+		"${ED}/usr/bin/npm" completion > "${tmp_npm_completion_file}"
 		newbashcomp "${tmp_npm_completion_file}" npm
 
 		# Move man pages
