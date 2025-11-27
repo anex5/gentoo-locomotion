@@ -1,6 +1,6 @@
 --- a/src/OrcaSlicer.cpp
 +++ b/src/OrcaSlicer.cpp
-@@ -71,26 +71,25 @@ using namespace nlohmann;
+@@ -71,26 +71,29 @@ using namespace nlohmann;
  
  #include "OrcaSlicer.hpp"
  //BBS: add exception handler for win32
@@ -18,6 +18,10 @@
  #include <GLFW/glfw3.h>
 +#include <wx/stdpaths.h>
 +#include "slic3r/GUI/GUI_Init.hpp"
++#elseif
++#define MAX_PLATE_COUNT     36
++#include "libslic3r/Preset.hpp"
++#include <fcntl.h>
 +#endif /* SLIC3R_GUI */
  
  #ifdef __WXGTK__

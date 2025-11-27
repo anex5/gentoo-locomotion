@@ -16,6 +16,7 @@ else
 	SRC_URI="https://github.com/SoftFever/OrcaSlicer/archive/refs/tags/v${MY_PV}.tar.gz -> ${P}.tar.gz"
 	#KEYWORDS="~amd64 ~arm64 ~x86"
 	S="${WORKDIR}/${MY_PN}-${MY_PV}"
+	PATCHES+=( "${FILESDIR}/${PN}-2.9.2-slic3r-fixes.patch" )
 fi
 
 DESCRIPTION="A G-code generator for 3D printers."
@@ -70,7 +71,6 @@ DEPEND="${RDEPEND}
 
 PATCHES=(
 	"${FILESDIR}/${PN}-2.0.0_wxgtk3-wayland-fix.patch"
-	"${FILESDIR}/${PN}-2.9.2-slic3r-fixes.patch"
 	"${FILESDIR}/${PN}-2.9.2-LLVM-fixes.patch"
 	"${FILESDIR}/${PN}-2.9.2-headless-fixes.patch"
 )
@@ -102,7 +102,7 @@ src_configure() {
 		-DSLIC3R_PCH=OFF
 		-DSLIC3R_STATIC=$(usex static-libs)
 		-DSLIC3R_WX_STABLE=ON
-		-DSLIC3R_PRECOMPILED_HEADERS=ON
+		-DSLIC3R_PRECOMPILED_HEADERS=OFF
 		-DORCA_TOOLS=0
 		-DBBL_RELEASE_TO_PUBLIC=1
 		-DBBL_INTERNAL_TESTING=0
