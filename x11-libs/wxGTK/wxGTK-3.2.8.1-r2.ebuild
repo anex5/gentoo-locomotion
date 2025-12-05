@@ -3,7 +3,7 @@
 
 EAPI=8
 
-inherit multilib-minimal flag-o-matic
+inherit edo multilib-minimal flag-o-matic toolchain-funcs
 
 WXSUBVERSION="${PV}-gtk3"				# 3.2.5-gtk3
 WXVERSION="$(ver_cut 1-3)"				# 3.2.5
@@ -19,8 +19,8 @@ SRC_URI="
 S="${WORKDIR}/wxWidgets-${PV}"
 
 LICENSE="wxWinLL-3 GPL-2 doc? ( wxWinFDL-3 )"
-SLOT="${WXRELEASE}"
-KEYWORDS="~alpha ~amd64 ~arm ~arm64 ~hppa ~loong ~mips ~ppc ~ppc64 ~riscv ~sparc ~x86 ~amd64-linux ~x86-linux"
+SLOT="${WXRELEASE}/$(ver_cut 1-2)"
+#KEYWORDS="~alpha amd64 arm arm64 ~hppa ~loong ~mips ~ppc ppc64 ~riscv ~sparc x86 ~amd64-linux ~x86-linux"
 IUSE="+gui curl doc debug keyring gstreamer libnotify +lzma opengl pch sdl +spell test tiff wayland webkit X"
 REQUIRED_USE="
 	test? ( tiff )
@@ -41,7 +41,7 @@ RDEPEND="
 		>=dev-libs/glib-2.22:2[${MULTILIB_USEDEP}]
 		media-libs/libjpeg-turbo:=[${MULTILIB_USEDEP}]
 		media-libs/libpng:0=[${MULTILIB_USEDEP}]
-		sys-libs/zlib[${MULTILIB_USEDEP}]
+		virtual/zlib:=[${MULTILIB_USEDEP}]
 		x11-libs/cairo[${MULTILIB_USEDEP}]
 		>=x11-libs/gtk+-3.24.41-r1:3[wayland?,X?,${MULTILIB_USEDEP}]
 		x11-libs/gdk-pixbuf:2[${MULTILIB_USEDEP}]
@@ -59,15 +59,15 @@ RDEPEND="
 			media-libs/gst-plugins-base:1.0[${MULTILIB_USEDEP}]
 			media-libs/gst-plugins-bad:1.0[${MULTILIB_USEDEP}]
 		)
+		libnotify? ( x11-libs/libnotify[${MULTILIB_USEDEP}] )
 		opengl? (
 			virtual/opengl[${MULTILIB_USEDEP}]
 		)
 		spell? ( app-text/gspell:= )
 		wayland? ( dev-libs/wayland )
+		tiff? ( media-libs/tiff:=[${MULTILIB_USEDEP}] )
 		webkit? ( net-libs/webkit-gtk:4.1= )
 	)
-	libnotify? ( x11-libs/libnotify[${MULTILIB_USEDEP}] )
-	tiff? ( media-libs/tiff:=[${MULTILIB_USEDEP}] )
 "
 DEPEND="${RDEPEND}
 	opengl? ( virtual/glu[${MULTILIB_USEDEP}] )
@@ -86,13 +86,14 @@ BDEPEND="
 
 PATCHES=(
 	#"${WORKDIR}"/wxGTK-3.0.5_p20210214/
-	"${FILESDIR}/${PN}-3.2.1-gtk3-translation-domain.patch"
+	"${FILESDIR}/${PN}-3.2.8-gtk3-translation-domain.patch"
 	#"${FILESDIR}"/wxGTK-ignore-c++-abi.patch #676878
 	"${FILESDIR}/${PN}-3.2.1-configure-tests.patch"
 	"${FILESDIR}/${PN}-3.2.1-wayland-control.patch"
 	"${FILESDIR}/${PN}-3.2.1-prefer-lib64-in-tests.patch"
 	"${FILESDIR}/${PN}-3.2.5-dont-break-flags.patch"
 	"${FILESDIR}/${PN}-3.2.2.1-backport-pr24197.patch"
+	"${FILESDIR}/${P}-wayland-titlebar.patch"
 )
 
 src_prepare() {
@@ -136,8 +137,10 @@ src_prepare() {
 
 multilib_src_configure() {
 	# defang automagic dependencies, bug #927952
-	use wayland || append-cflags -DGENTOO_GTK_HIDE_WAYLAND
-	use X || append-cflags -DGENTOO_GTK_HIDE_X11
+	#use wayland || append-cflags -DGENTOO_GTK_HIDE_WAYLAND
+	#use X || append-cflags -DGENTOO_GTK_HIDE_X11
+	use wayland || append-cflags -DGENTOO_GTK_HIDE_WAYLAND -DGENTOO_GTK_HIDE_X11
+	use X || aappend-cflags -DGENTOO_GTK_HIDE_WAYLAND -DGENTOO_GTK_HIDE_X11
 
 	# Workaround for bug #915154
 	append-ldflags $(test-flags-CCLD -Wl,--undefined-version)
@@ -146,7 +149,7 @@ multilib_src_configure() {
 	local myeconfargs=(
 		--with-zlib=sys
 		--with-expat=sys
-		--enable-compat30
+		--disable-compat32
 		--enable-xrc
 		$(use_with sdl)
 		$(use_with lzma liblzma)
@@ -249,6 +252,8 @@ multilib_src_install_all() {
 	# Unversioned links
 	rm "${ED}"/usr/bin/wx-config || die
 	rm "${ED}"/usr/bin/wxrc || die
+	# wxwin.m4 is owned by eselect-wxwidgets
+	mv "${ED}"/usr/share/aclocal/wxwin.m4 "${ED}"/usr/share/aclocal/wxwin32-gtk3.m4 || die
 
 	# version bakefile presets
 	pushd "${ED}"/usr/share/bakefile/presets >/dev/null || die

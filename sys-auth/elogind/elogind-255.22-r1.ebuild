@@ -3,7 +3,7 @@
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{11..14} )
+PYTHON_COMPAT=( python3_{12..14} )
 
 if [[ ${PV} = *9999* ]]; then
 	EGIT_BRANCH="v255-stable"
@@ -117,10 +117,10 @@ src_configure() {
 		--localstatedir="${EPREFIX}"/var
 		-Dbashcompletiondir="${EPREFIX}/usr/share/bash-completion/completions"
 		-Dman=auto
-		-Dsmack=true
+		-Dsmack=false
 		-Dcgroup-controller=openrc
 		-Ddefault-hierarchy=${cgroupmode}
-		-Ddefault-kill-user-processes=false
+		-Ddefault-kill-user-processes=true
 		-Dacl=$(usex acl enabled disabled)
 		-Daudit=$(usex audit enabled disabled)
 		-Dhtml=$(usex doc auto disabled)
@@ -130,6 +130,7 @@ src_configure() {
 		-Dtests=$(usex test true false)
 		-Dutmp=$(usex elibc_musl false true)
 		-Dmode=release
+		-Defi=true
 
 		# Ensure consistency between merged-usr and split-usr (bug 945965)
 		-Dhalt-path="${EPREFIX}/sbin/halt"

@@ -1,0 +1,11 @@
+--- a/src/common/translation.cpp
++++ b/src/common/translation.cpp
+@@ -1407,7 +1407,7 @@ bool wxTranslations::AddStdCatalog()
+     // (i.e. where they're not installed by our own "make install").
+     wxString domain("wxstd-" wxSTRINGIZE(wxMAJOR_VERSION) "." wxSTRINGIZE(wxMINOR_VERSION));
+     if ( GetBestAvailableTranslation(domain).empty() )
+-        domain = wxS("wxstd");
++        domain = wxS("wxstd32-gtk3");
+ 
+     return AddCatalog(domain);
+ }
