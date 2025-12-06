@@ -25,7 +25,7 @@ WASI_SDK_LLVM_VER=${LLVM_SLOT}
 
 MOZ_ESR=
 
-MOZ_PV=145.0.1
+MOZ_PV=145.0.2
 MOZ_PV_SUFFIX=
 if [[ ${PV} =~ (_(alpha|beta|rc).*)$ ]] ; then
 	MOZ_PV_SUFFIX=${BASH_REMATCH[1]}
@@ -284,7 +284,7 @@ CDEPEND="
 		>=media-sound/sndio-1.8.0-r1[${MULTILIB_USEDEP}]
 	)
 	system-av1? (
-		>=media-libs/dav1d-1.0.0:=[${MULTILIB_USEDEP},8bit]
+		>=media-libs/dav1d-1.1.0:=[${MULTILIB_USEDEP},8bit]
 		>=media-libs/libaom-3.10.0:=[${MULTILIB_USEDEP}]
 	)
 	system-harfbuzz? (
@@ -510,57 +510,13 @@ llvm_check_deps() {
 }
 
 MOZ_LANGS=(
-	af ar ast be bg br ca cak cs cy da de dsb
-	el en-CA en-GB en-US es-AR es-ES et eu
-	fi fr fy-NL ga-IE gd gl he hr hsb hu
-	id is it ja ka kab kk ko lt lv ms nb-NO nl nn-NO
-	pa-IN pl pt-BR pt-PT rm ro ru
-	sk sl sq sr sv-SE th tr uk uz vi zh-CN zh-TW
+	ar ca cs cy da de el en-GB es-ES et fa fi fr ga-IE he hu id is it ja ko lt nl nn-NO pl pt-BR pt-PT ru sv-SE th tr uk vi zh-CN zh-TW
 )
-
-# Firefox-only LANGS
-MOZ_LANGS+=( ach )
-MOZ_LANGS+=( an )
-MOZ_LANGS+=( az )
-MOZ_LANGS+=( bn )
-MOZ_LANGS+=( bs )
-MOZ_LANGS+=( ca-valencia )
-MOZ_LANGS+=( eo )
-MOZ_LANGS+=( es-CL )
-MOZ_LANGS+=( es-MX )
-MOZ_LANGS+=( fa )
-MOZ_LANGS+=( ff )
-MOZ_LANGS+=( fur )
-MOZ_LANGS+=( gn )
-MOZ_LANGS+=( gu-IN )
-MOZ_LANGS+=( hi-IN )
-MOZ_LANGS+=( hy-AM )
-MOZ_LANGS+=( ia )
-MOZ_LANGS+=( km )
-MOZ_LANGS+=( kn )
-MOZ_LANGS+=( lij )
-MOZ_LANGS+=( mk )
-MOZ_LANGS+=( mr )
-MOZ_LANGS+=( my )
-MOZ_LANGS+=( ne-NP )
-MOZ_LANGS+=( oc )
-MOZ_LANGS+=( sc )
-MOZ_LANGS+=( sco )
-MOZ_LANGS+=( si )
-MOZ_LANGS+=( skr )
-MOZ_LANGS+=( son )
-MOZ_LANGS+=( szl )
-MOZ_LANGS+=( ta )
-MOZ_LANGS+=( te )
-MOZ_LANGS+=( tl )
-MOZ_LANGS+=( trs )
-MOZ_LANGS+=( ur )
-MOZ_LANGS+=( xh )
 
 mozilla_set_globals() {
 	# https://bugs.gentoo.org/587334
 	local MOZ_TOO_REGIONALIZED_FOR_L10N=(
-		fy-NL ga-IE gu-IN hi-IN hy-AM nb-NO ne-NP nn-NO pa-IN sv-SE
+		ga-IE nn-NO sv-SE
 	)
 
 	local lang xflag
@@ -577,9 +533,9 @@ mozilla_set_globals() {
 			xflag=${lang}
 		fi
 
-		SRC_URI+=" l10n_${xflag/[_@]/-}? ("
-		SRC_URI+=" https://archive.mozilla.org/pub/${MOZ_PN}/releases/${MOZ_PV}/linux-x86_64/xpi/${lang}.xpi -> ${MOZ_P_DISTFILES}-${lang}.xpi"
-		SRC_URI+=" )"
+		#SRC_URI+=" l10n_${xflag/[_@]/-}? ("
+		#SRC_URI+=" https://archive.mozilla.org/pub/${MOZ_PN}/releases/${MOZ_PV}/linux-x86_64/xpi/${lang}.xpi -> ${MOZ_P_DISTFILES}-${lang}.xpi"
+		#SRC_URI+=" )"
 		IUSE+=" l10n_${xflag/[_@]/-}"
 	done
 }
@@ -603,7 +559,7 @@ moz_build_xpi() {
 	debug-print-function ${FUNCNAME} "$@"
 
 	local MOZ_TOO_REGIONALIZED_FOR_L10N=(
-		fy-NL ga-IE gu-IN hi-IN hy-AM nb-NO ne-NP nn-NO pa-IN sv-SE
+		ga-IE nn-NO sv-SE
 	)
 
 	cd "${BUILD_DIR}"/browser/locales || die
@@ -904,22 +860,21 @@ pkg_setup() {
 
 src_unpack() {
 	unpack "${FIREFOX_PATCHSET}"
-	local _lp_dir="${WORKDIR}/language_packs"
-	local _src_file
-
-	if [[ ! -d "${_lp_dir}" ]] ; then
-		mkdir "${_lp_dir}" || die
-	fi
-
-	for _src_file in ${A} ; do
-		if [[ ${_src_file} == *.xpi ]]; then
-			cp "${DISTDIR}/${_src_file}" "${_lp_dir}" || die "Failed to copy '${_src_file}' to '${_lp_dir}'!"
-		else
-			unpack ${_src_file}
-		fi
-	done
-	mkdir "${S}" || die
-	cd ${S}
+#	local _lp_dir="${WORKDIR}/language_packs"
+#	local _src_file
+#
+#	if [[ ! -d "${_lp_dir}" ]] ; then
+#		mkdir "${_lp_dir}" || die
+#	fi
+#
+#	for _src_file in ${A} ; do
+#		if [[ ${_src_file} == *.xpi ]]; then
+#			cp "${DISTDIR}/${_src_file}" "${_lp_dir}" || die "Failed to copy '${_src_file}' to '${_lp_dir}'!"
+#		else
+#			unpack ${_src_file}
+#		fi
+#	done
+	mkdir "${S}" && cd ${S} || die
 	unpacker "${P}.tar.zst" || eerror "Failed to unpack."
 }
 
@@ -1905,6 +1860,9 @@ _src_compile() {
 	fi
 
 	${virtx_cmd} ./mach build --verbose || die
+
+	# Build language packs
+	moz_build_xpi
 }
 
 src_test() {
@@ -2020,8 +1978,8 @@ _src_install() {
 
 	# Install language packs
 	#dexlare -A suffix=( [amd64]="x86_64" [arm64]="arm" )
-	#local langpacks=( $(find "${BUILD_DIR}/dist/linux-${ELIBC//elibc_}-${MULTILIB_ABI_FLAG//abi_}/xpi" -type f -name '*.xpi') )
-	local langpacks=( $(find "${WORKDIR}/language_packs" -type f -name '*.xpi') )
+	local langpacks=( $(find "${BUILD_DIR}/dist/linux-${ELIBC//elibc_}-${MULTILIB_ABI_FLAG//abi_}/xpi" -type f -name '*.xpi') )
+	#local langpacks=( $(find "${WORKDIR}/language_packs" -type f -name '*.xpi') )
 
 	if [[ -n "${langpacks}" ]] ; then
 		moz_install_xpi "${MOZILLA_FIVE_HOME}/distribution/extensions" "${langpacks[@]}"
@@ -2080,7 +2038,7 @@ _src_install() {
 
 	# Install wrapper script
 	[[ -f "${ED}/usr/bin/${PN}" ]] && rm "${ED}/usr/bin/${PN}"
-	newbin "${FILESDIR}/zen-browser.sh" "${PN}-${ABI}"
+	newbin "${FILESDIR}/${PN}.sh" "${PN}-${ABI}"
 	dosym "/usr/bin/${PN}-${ABI}" "/usr/bin/${PN}"
 
 	# Update wrapper
