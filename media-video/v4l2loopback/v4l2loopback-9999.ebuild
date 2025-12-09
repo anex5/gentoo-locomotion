@@ -8,17 +8,17 @@ inherit linux-mod-r1 toolchain-funcs flag-o-matic
 case ${PV} in
 9999)
 	inherit git-r3
-	EGIT_REPO_URI="https://github.com/umlaeute/v4l2loopback.git"
+	EGIT_REPO_URI="https://github.com/v4l2loopback/v4l2loopback"
 	;;
 *)
 	KEYWORDS="~amd64 ~x86"
-	SRC_URI="https://github.com/umlaeute/${PN}/archive/v${PV}.tar.gz -> ${P}.tar.gz"
+	SRC_URI="https://github.com/v4l2loopback/${PN}/archive/v${PV}.tar.gz -> ${P}.tar.gz"
 	RESTRICT="mirror"
 	;;
 esac
 
 DESCRIPTION="v4l2 loopback device whose output is its own input"
-HOMEPAGE="https://github.com/umlaeute/v4l2loopback"
+HOMEPAGE="https://github.com/v4l2loopback/v4l2loopback"
 
 LICENSE="GPL-2"
 SLOT="0"

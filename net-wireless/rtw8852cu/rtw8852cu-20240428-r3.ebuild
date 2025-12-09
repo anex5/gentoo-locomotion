@@ -5,7 +5,7 @@ EAPI=8
 
 inherit linux-mod-r1 flag-o-matic
 
-MODULES_KERNEL_MAX=6.17
+MODULES_KERNEL_MAX=6.18
 MODULES_KERNEL_MIN=6.1
 
 COMMIT="d256c2ae282b70f03629e36900da54905ab4187c"
@@ -26,40 +26,50 @@ S="${WORKDIR}/rtw8852cu-${COMMIT}"
 
 RESTRICT="mirror bindist"
 
+PATCHES=(
+    "${FILESDIR}/txe70uh.patch"
+    "${FILESDIR}/0001-add-platforms_ops-to-arm_rk-HCI_USB.patch"
+)
+
 pkg_setup() {
+	linux-info_pkg_setup
 	linux-mod-r1_pkg_setup
 
 	CONFIG_CHECK="~!SSB ~!X86_INTEL_LPSS"
 	CONFIG_CHECK2="LIB80211 ~!MAC80211 ~LIB80211_CRYPT_TKIP WIRELESS_EXT COMPAT_NET_DEV_OPS CFG80211"
+
+	filter-flags -fno-plt
+	filter-lto
+	strip-unsupported-flags
 }
 
 src_prepare() {
-	default
-	sed -e '/^\# gcc-1[0-9]/,/^$/ s:^:\#:' -i Makefile || die "Failed to patch Makefile."
+	# Replace wrong EXTRA_CFLAGS (stopped working with kernels >= 6.15)
+	# with proper CFLAGS_MODULE (available since 2.6.36).
+	# Bug 957883
+	sed -E -e 's/(^|[^A-Za-z0-9_])EXTRA_CFLAGS([^A-Za-z0-9_]|$)/\1CFLAGS_MODULE\2/g' -i Makefile \
+		common.mk platform/*.mk phl/phl.mk phl/hal_g6/rtl8852c/rtl8852c.mk phl/hal_g6/phy/rf/rf.mk \
+		phl/hal_g6/phy/bb/bb.mk phl/hal_g6/mac/mac.mk phl/hal_g6/hal.mk phl/hal_g6/btc/btc.mk || die
 	if [[ -n ${KV_FULL} ]] && kernel_is -gt 6 12; then
 		eapply "${FILESDIR}/rtl-fix-kernel-6.13-build-4c0f3cf.patch"
 	fi
 	if [[ -n ${KV_FULL} ]] && kernel_is -gt 6 14; then
 		eapply "${FILESDIR}/rtl-fix-kernel-6.15-build-c014d09.patch"
 	fi
-	#if [[ -n ${KV_FULL} ]] && kernel_is -gt 6 15; then
-	#	eapply "${FILESDIR}/rtl-fix-kernel-6.16-build-efd68a7.patch"
-	#fi
+	if [[ -n ${KV_FULL} ]] && kernel_is -gt 6 15; then
+		eapply "${FILESDIR}/rtl-fix-kernel-6.16-build-efd68a7.patch"
+	fi
+	if [[ -n ${KV_FULL} ]] && kernel_is -gt 6 17; then
+		eapply "${FILESDIR}/rtl-fix-kernel-6.18-build.patch"
+	fi
+	default
 }
 
 src_compile() {
-	filter-flags -O3 -fno-plt #912949
-	filter-lto
-	CC=${KERNEL_CC} CXX=${KERNEL_CXX} strip-unsupported-flags
-
+	set_arch_to_kernel
 	local modlist=( 8852cu=kernel/drivers/net/wireless/realtek/rtlwifi/rtw8852cu:. )
+	local modargs=( KVER="${KV_FULL}" KSRC="${KERNEL_DIR}" )
 
-	local modargs=(
-		KERNELDIR="${KV_OUT_DIR}"
-		KVER=${KV_FULL}
-		KSRC=${KERNEL_DIR}
-	)
-
-	linux-mod-r1_src_compile
+	USER_EXTRA_CFLAGS="-Wno-error=incompatible-pointer-types" linux-mod-r1_src_compile
 }
 

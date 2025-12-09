@@ -1,0 +1,29 @@
+diff -ruN 88x2bu-20210702.orig/core/crypto/sha256.c 88x2bu-20210702/core/crypto/sha256.c
+--- 88x2bu-20210702.orig/core/crypto/sha256.c	2025-12-05 00:00:00.000000000 +0100
++++ 88x2bu-20210702/core/crypto/sha256.c	2025-12-05 00:00:00.000000000 +0100
+@@ -97,8 +97,8 @@
+  * @mac: Buffer for the hash (32 bytes)
+  * Returns: 0 on success, -1 on failure
+  */
+-int hmac_sha256(const u8 *key, size_t key_len, const u8 *data,
+-		size_t data_len, u8 *mac)
++int _hmac_sha256(const u8 *key, size_t key_len, const u8 *data,
++		 size_t data_len, u8 *mac)
+ {
+ 	return hmac_sha256_vector(key, key_len, 1, &data, &data_len, mac);
+ }
+diff -ruN 88x2bu-20210702.orig/core/crypto/sha256.h 88x2bu-20210702/core/crypto/sha256.h
+--- 88x2bu-20210702.orig/core/crypto/sha256.h	2025-12-05 00:00:00.000000000 +0100
++++ 88x2bu-20210702/core/crypto/sha256.h	2025-12-05 00:00:00.000000000 +0100
+@@ -13,8 +13,8 @@
+ 
+ int hmac_sha256_vector(const u8 *key, size_t key_len, size_t num_elem,
+ 		       const u8 *addr[], const size_t *len, u8 *mac);
+-int hmac_sha256(const u8 *key, size_t key_len, const u8 *data,
+-		size_t data_len, u8 *mac);
++int _hmac_sha256(const u8 *key, size_t key_len, const u8 *data,
++		 size_t data_len, u8 *mac);
+ int sha256_prf(const u8 *key, size_t key_len, const char *label,
+ 	       const u8 *data, size_t data_len, u8 *buf, size_t buf_len);
+ int sha256_prf_bits(const u8 *key, size_t key_len, const char *label,
+
