@@ -32,7 +32,7 @@ RDEPEND+="${PYTHON_DEPS}
 	>=dev-python/pandas-2.2.2[${PYTHON_USEDEP}]
 	>=dev-python/click-8.0.1[${PYTHON_USEDEP}]
 	dev-python/typing-extensions[${PYTHON_USEDEP}]
-	virtual/pillow[${PYTHON_USEDEP}]
+	dev-python/pillow[${PYTHON_USEDEP}]
 "
 DEPEND="
 	>=dev-python/numpy-1.23.2:=[${PYTHON_USEDEP}]

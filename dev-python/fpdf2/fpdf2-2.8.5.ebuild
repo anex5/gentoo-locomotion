@@ -30,7 +30,7 @@ DEPEND+="
 	dev-python/pypdf[${PYTHON_USEDEP}]
 	dev-python/defusedxml[${PYTHON_USEDEP}]
 	dev-python/fonttools[${PYTHON_USEDEP}]
-	virtual/pillow[${PYTHON_USEDEP}]
+	dev-python/pillow[${PYTHON_USEDEP}]
 "
 BDEPEND+="
 	dev-python/setuptools[${PYTHON_USEDEP}]
