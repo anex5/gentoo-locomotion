@@ -3,7 +3,7 @@ Encoding=UTF-8
 Version=1.0
 Type=Application
 Terminal=false
-Exec=/usr/bin/rofi -show calc -modi calc -save-original -reuse-result -no-unicode -no-show-match -no-sort -terse -color=never -no-bold -hint-welcome "\t  Вычислитель" -hint-result "\t  = " -hint-history "Записать" -calc-command "echo -en '{result}' | wl-copy -p"
+Exec=/usr/bin/rofi -show calc -modi calc -save-original -reuse-result -no-unicode -no-show-match -no-sort -color=never -no-bold -hint-welcome "\t  Вычислитель" -hint-result "\t  = " -hint-history "Записать" -calc-command "echo -en '{result}' | wl-copy"
 Name=Calculator
 Name[ru]=Вычислитель
 Icon=accessories-calculator-symbolic

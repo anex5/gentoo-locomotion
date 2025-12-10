@@ -1,0 +1,11 @@
+--- a/src/calc.c
++++ b/src/calc.c
+@@ -616,7 +616,7 @@ static ModeMode calc_mode_result(Mode *s
+                 get_real_history_index(pd->history, selected_line));
+ 
+         execsh(sw, pd->cmd, entry);
+-        retv = MODE_EXIT;
++        retv = RELOAD_DIALOG;
+     } else if (menu_entry & MENU_CUSTOM_INPUT) {
+         if (!is_error_string(pd->last_result) && strlen(pd->last_result) > 0) {
+             if (!pd->config.no_history &&

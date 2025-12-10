@@ -34,6 +34,7 @@ RDEPEND="${DEPEND}
 "
 
 PATCHES=(
+	"${FILESDIR}/${PN}-2.5.0-reload-menu-on-history-cmd.patch"
 	"${FILESDIR}/${PN}-2.5.0-add-to-history-hint.patch"
 )
 
