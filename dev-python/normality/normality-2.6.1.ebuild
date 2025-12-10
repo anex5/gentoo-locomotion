@@ -10,16 +10,13 @@ DISTUTILS_USE_PEP517=hatchling
 inherit distutils-r1
 
 DESCRIPTION="A tiny library for Python text normalisation. Useful for ad-hoc text processing."
-HOMEPAGE="
-	https://github.com/pudo/normality/
-"
+HOMEPAGE="https://github.com/pudo/normality/"
 SRC_URI="https://github.com/pudo/normality/archive/refs/tags/${PV}.tar.gz -> ${P}.tar.gz"
-
 
 LICENSE="MIT"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
-IUSE+="icu test"
+IUSE+="icu"
 
 RDEPEND+="
 	>=dev-python/six-1.11.0[${PYTHON_USEDEP}]
@@ -39,9 +36,13 @@ DEPEND+="${RDEPEND}
 	)
 "
 
-RESTRICT="mirror test"
+RESTRICT="mirror"
 
-python_prepare_all() {
-	rm -r "tests" || die
-	distutils-r1_python_prepare_all
-}
+distutils_enable_tests pytest
+
+EPYTEST_DESELECT=(
+	"tests/test_normality.py::NormalityTest::test_ahmad"
+	"tests/test_normality.py::NormalityTest::test_azeri"
+	"tests/test_normality.py::NormalityTest::test_georgian"
+	"tests/test_normality.py::NormalityTest::test_petro"
+)

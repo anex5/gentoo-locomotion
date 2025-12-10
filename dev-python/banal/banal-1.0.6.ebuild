@@ -7,7 +7,7 @@ PYTHON_COMPAT=( python3_{11..13} )
 
 DISTUTILS_USE_PEP517=hatchling
 
-inherit distutils-r1 pypi
+inherit distutils-r1
 
 DESCRIPTION="Commons of banal micro-functions for Python."
 HOMEPAGE="
