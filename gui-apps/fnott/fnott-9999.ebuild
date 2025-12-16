@@ -3,7 +3,7 @@
 
 EAPI=8
 
-inherit meson xdg systemd toolchain-funcs
+inherit meson systemd xdg toolchain-funcs
 
 DESCRIPTION="Keyboard driven and lightweight Wayland notification daemon."
 HOMEPAGE="https://codeberg.org/dnkl/fnott"
@@ -25,19 +25,19 @@ RESTRICT="
 	mirror
 "
 
-DEPEND="
+RDEPEND="
 	dev-libs/wayland
 	<media-libs/fcft-4.0.0
 	>=media-libs/fcft-3.0.0
 	media-libs/fontconfig
-	x11-libs/pixman
-	media-libs/libpng
-	sys-apps/dbus
 	media-libs/freetype
+	media-libs/libpng:=
 	>=media-libs/nanosvg-20241219
+	sys-apps/dbus
+	x11-libs/pixman
 "
-RDEPEND="${DEPEND}"
-BDEPEND="
+DEPEND="
+	${RDEPEND}
 	man? ( app-text/scdoc )
 	>=dev-libs/tllist-1.1.0
 	>=dev-libs/wayland-protocols-1.32
@@ -48,6 +48,7 @@ src_prepare() {
 	default
 	sed -e "s/^\(Icon=\).*$/\1preferences-system-notifications-symbolic/" -i "${PN}.desktop"
 	echo -e "Name[ru_RU]=Уведомления" >> "${PN}.desktop"
+	echo -e "GenericName=Notification service" >> "${PN}.desktop"
 	echo -e "GenericName[ru_RU]=Служба уведомлений" >> "${PN}.desktop"
 	tc-is-cross-compiler && ( sed -e "/wscanner\./s@native\: true@native\: false@" -i meson.build || die "Sed failed..." )
 	use systemd || ( sed -e "/subdir('systemd')/d" -i meson.build || die "Sed failed..." )
@@ -68,6 +69,8 @@ src_configure() {
 src_install() {
 	local DOCS=( CHANGELOG.md README.md LICENSE )
 	meson_src_install
+
+	rm -r "${ED}"/usr/share/doc/"${PN}" || die
 
 	if use systemd; then
 		systemd_douserunit ${PN}.service
