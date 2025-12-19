@@ -4,7 +4,7 @@
 EAPI=8
 
 # Using Gentoos firefox patches as system libraries and lto are quite nice
-FIREFOX_PATCHSET="firefox-145-patches-01.tar.xz"
+FIREFOX_PATCHSET="firefox-146-patches-01.tar.xz"
 
 LLVM_COMPAT=( {19..21} )
 
@@ -25,7 +25,7 @@ WASI_SDK_LLVM_VER=${LLVM_SLOT}
 
 MOZ_ESR=
 
-MOZ_PV=145.0.2
+MOZ_PV=146.0.0
 MOZ_PV_SUFFIX=
 if [[ ${PV} =~ (_(alpha|beta|rc).*)$ ]] ; then
 	MOZ_PV_SUFFIX=${BASH_REMATCH[1]}
@@ -73,7 +73,7 @@ IUSE+="
 ${CODEC_IUSE}
 alsa atk clang cpu_flags_arm_neon cups +dbus debug firejail hardened hwaccel
 jack -jemalloc +jit libcanberra libnotify libproxy libsecret lld lto mold pgo
-pulseaudio sndio selinux speech +system-av1 +system-ffmpeg +system-harfbuzz
+pulseaudio sndio selinux speech systemd +system-av1 +system-ffmpeg +system-harfbuzz
 +system-icu +system-jpeg +system-libevent +system-libvpx +system-png +system-pipewire
 -system-python-libs +system-webp test vaapi wayland +webrtc wifi webspeech X
 "
@@ -156,11 +156,11 @@ GAMEPAD_BDEPEND="
 # Required for gamepad, or WebAuthn roaming authenticators (e.g. USB security key)
 UDEV_RDEPEND="
 	kernel_linux? (
-		|| (
+		systemd? (
 			>=sys-apps/systemd-217[${MULTILIB_USEDEP}]
-			>=sys-fs/eudev-2.1.1[${MULTILIB_USEDEP}]
-			sys-apps/systemd-utils[${MULTILIB_USEDEP},udev]
-			sys-fs/udev[${MULTILIB_USEDEP}]
+		)
+		!systemd? (
+			>=sys-apps/systemd-utils-217[${MULTILIB_USEDEP},udev]
 		)
 	)
 "
@@ -245,19 +245,19 @@ CDEPEND="
 	${SYSTEM_PYTHON_LIBS}
 	>=app-accessibility/at-spi2-core-2.46.0:2[${MULTILIB_USEDEP}]
 	>=dev-libs/glib-2.42:2[${MULTILIB_USEDEP}]
-	>=dev-libs/nss-3.117.0[${MULTILIB_USEDEP}]
-	>=dev-libs/nspr-4.35[${MULTILIB_USEDEP}]
+	>=dev-libs/nspr-4.38.2[${MULTILIB_USEDEP}]
+	>=dev-libs/nss-3.118[${MULTILIB_USEDEP}]
 	>=media-libs/fontconfig-2.7.0[${MULTILIB_USEDEP}]
-	>=media-libs/freetype-2.13.0[${MULTILIB_USEDEP}]
-	>=sys-libs/zlib-1.2.13[${MULTILIB_USEDEP}]
+	>=media-libs/freetype-2.14.1[${MULTILIB_USEDEP}]
+	>=sys-libs/zlib-1.3.1[${MULTILIB_USEDEP}]
 	>=x11-libs/pango-1.22.0[${MULTILIB_USEDEP}]
-	>=x11-libs/pixman-0.36.0[${MULTILIB_USEDEP}]
+	>=x11-libs/pixman-0.40.0[${MULTILIB_USEDEP}]
 	dev-libs/expat[${MULTILIB_USEDEP}]
 	dev-libs/libffi:=[${MULTILIB_USEDEP}]
 	media-libs/alsa-lib[${MULTILIB_USEDEP}]
 	virtual/freedesktop-icon-theme
 	x11-libs/cairo
-	x11-libs/gdk-pixbuf[${MULTILIB_USEDEP}]
+	x11-libs/gdk-pixbuf:2[${MULTILIB_USEDEP}]
 	dbus? (
 		>=dev-libs/dbus-glib-${DBUS_GLIB_PV}[${MULTILIB_USEDEP}]
 		>=sys-apps/dbus-${DBUS_PV}[${MULTILIB_USEDEP}]
@@ -948,13 +948,14 @@ src_prepare() {
 	fi
 
 	eapply "${FILESDIR}/extra-patches/firefox-128.3.0e-big-endian-image-decoders.patch"
+	eapply "${FILESDIR}/extra-patches/firefox-146.0.0-fix-include-sys-prctl.h.patch"
 
 	# Workaround for bgo#915651 on musl
 	if use elibc_glibc ; then
 		rm -v "${WORKDIR}"/firefox-patches/*bgo-748849-RUST_TARGET_override.patch || die
 		rm -v "${WORKDIR}"/firefox-patches/*bmo-1988166-musl-remove-nonexisting-system-header-req.patch || die
 	fi
-	rm -v "${WORKDIR}"/firefox-patches/0019-bgo-928126-enable-jxl.patch || die
+	rm -v "${WORKDIR}"/firefox-patches/*-bgo-928126-enable-jxl.patch || die
 
 	eapply "${WORKDIR}/firefox-patches"
 
