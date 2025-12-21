@@ -70,7 +70,7 @@ src_install() {
 	local DOCS=( CHANGELOG.md README.md LICENSE )
 	meson_src_install
 
-	rm -r "${ED}"/usr/share/doc/"${PN}" || die
+	#rm -r "${ED}"/usr/share/doc/"${PN}" || die
 
 	if use systemd; then
 		systemd_douserunit ${PN}.service
