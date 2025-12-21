@@ -45,7 +45,8 @@ BDEPEND="
 
 src_prepare() {
 	default
-	echo -e "Name[ru_RU]=Пузырь" >> "${PN}.desktop"
+	echo -e "Name[ru_RU]=Пузырек" >> "${PN}.desktop"
+	echo -e "GenericName=Menu" >> "${PN}.desktop"
 	echo -e "GenericName[ru_RU]=Меню" >> "${PN}.desktop"
 	use man || ( sed -e "/subdir('doc')/d" -i meson.build || die "Sed failed..." )
 	use completions || ( sed -e "/subdir('completions')/d" -i meson.build || die "Sed failed..." )
