@@ -432,7 +432,7 @@ BDEPEND+="
 		)
 		wasm-sandbox? ( llvm-core/lld:${LLVM_SLOT} )
 	')
-	>=dev-util/cbindgen-0.24.3
+	>=dev-util/cbindgen-0.29.1
 	>=dev-util/pkgconf-1.8.0[${MULTILIB_USEDEP},pkg-config(+)]
 	>=net-libs/nodejs-21[${MULTILIB_USEDEP}]
 	|| (
