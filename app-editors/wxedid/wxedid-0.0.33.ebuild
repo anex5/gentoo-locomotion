@@ -37,19 +37,23 @@ src_prepare() {
 		sed -e '/echo -en \"#include <sys\/cdefs\.h>\\n\" >> \$out_scp_src/d' \
 			-e 's/__BEGIN_DECLS\\n\\n/#ifdef __cplusplus\\nextern "C" {\\n#endif/g' \
 			-e 's/__END_DECLS\\n\\n/#ifdef __cplusplus\\n}\\n#endif/g' \
-			-i src/rcode/rcd_autogen || die "Sed failed."
+			-i src/rcode/rcd_autogen || die
 		sed -e '/#include <sys\/cdefs\.h>/d' \
 			-e 's/__BEGIN_DECLS/#ifdef __cplusplus\nextern "C" {\n#endif/g' \
 			-e 's/__END_DECLS/#ifdef __cplusplus\n}\n#endif/g' \
-			-i src/rcode/{rcode.h,rcd_alias.h,rcode_scp.h,rcd_scp.tmp.c,rcd_scp.tmp.h,rcd_fn.tmp.c} || die "Sed failed."
+			-i src/rcode/{rcode.h,rcd_alias.h,rcode_scp.h,rcd_scp.tmp.c,rcd_scp.tmp.h,rcd_fn.tmp.c} || die
 	fi
+	# Strip hardcoded oflags and lto
+	sed -e 's/-O1 -flto//' -i configure.ac || die
 }
 
 src_configure() {
-	tc-export CC CXX
+	tc-export CXX
 	tc-export_build_env BUILD_CXX
 	export RCDGEN_CXXCPP="${BUILD_CXX}"
 	econf --enable-shared
+	#use elibc_musl && append-cxxflags -D__EXPORTED_HEADERS__
+	strip-unsupported-flags
 	default
 }
 

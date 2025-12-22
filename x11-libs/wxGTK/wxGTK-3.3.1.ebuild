@@ -28,7 +28,7 @@ REQUIRED_USE="
 	spell? ( gui )
 	keyring? ( gui )
 "
-RESTRICT="!test? ( test )"
+RESTRICT="!test? ( test ) mirror"
 
 RDEPEND="
 	>=app-eselect/eselect-wxwidgets-20131230
@@ -61,7 +61,7 @@ RDEPEND="
 		)
 		libnotify? ( x11-libs/libnotify[${MULTILIB_USEDEP}] )
 		opengl? (
-			virtual/opengl[${MULTILIB_USEDEP}]
+			X? ( virtual/opengl[${MULTILIB_USEDEP}] )
 			wayland? ( dev-libs/wayland )
 		)
 		spell? ( app-text/gspell:= )
