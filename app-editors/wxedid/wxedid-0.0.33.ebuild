@@ -18,7 +18,7 @@ RESTRICT="mirror"
 
 DEPEND="x11-libs/wxGTK:${WX_GTK_VER}"
 
-QA_PRESTRIPPED="usr/bin/wxedid"
+#QA_PRESTRIPPED="usr/bin/wxedid"
 
 S="${WORKDIR}/${PN}-${PV}"
 
