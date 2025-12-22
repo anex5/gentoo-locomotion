@@ -3,7 +3,7 @@
 
 EAPI=8
 
-WX_GTK_VER=3.2-gtk3
+WX_GTK_VER=3.3-gtk3
 inherit autotools toolchain-funcs wxwidgets desktop
 
 DESCRIPTION="wxWidgets-based EDID (Extended Display Identification Data) editor"
