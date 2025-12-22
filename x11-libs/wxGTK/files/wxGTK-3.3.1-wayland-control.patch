@@ -73,62 +73,30 @@ index 54eb7a7..b6d5e52 100755
  
            enablestring=
            defaultval=$wxUSE_ALL_FEATURES
-@@ -29335,26 +29366,27 @@ done
+@@ -29335,7 +29366,8 @@ done
          TOOLKIT=GTK
          GUIDIST=GTK_DIST
  
 -        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for GDK Wayland backend" >&5
-+	if test x"$wxUSE_WAYLAND" = xyes; then
-+		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for GDK Wayland backend" >&5
++    if test x"$wxUSE_WAYLAND" = xyes; then
++        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for GDK Wayland backend" >&5
  $as_echo_n "checking for GDK Wayland backend... " >&6; }
  if ${wx_cv_gdk_wayland+:} false; then :
    $as_echo_n "(cached) " >&6
- else
- 
--            save_CFLAGS=$CFLAGS
--            CFLAGS="$CFLAGS $TOOLKIT_INCLUDE"
--            cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-+		    save_CFLAGS=$CFLAGS
-+		    CFLAGS="$CFLAGS $TOOLKIT_INCLUDE"
-+		    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
- /* end confdefs.h.  */
- 
--                            #include <gdk/gdk.h>
-+				    #include <gdk/gdk.h>
- 
- int
- main ()
- {
- 
--                            #ifndef GDK_WINDOWING_WAYLAND
--                            Not GDK Windowing Wayland
--                            #endif
-+				    #ifndef GDK_WINDOWING_WAYLAND
-+				    Not GDK Windowing Wayland
-+				    #endif
- 
-   ;
-   return 0;
-@@ -29367,11 +29399,14 @@ else
- 
- fi
- rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
--            CFLAGS=$save_CFLAGS
-+		    CFLAGS=$save_CFLAGS
- 
+@@ -29367,6 +29399,9 @@ else
  fi
  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $wx_cv_gdk_wayland" >&5
  $as_echo "$wx_cv_gdk_wayland" >&6; }
-+	else
-+		wx_cv_gdk_wayland=no
-+	fi
++    else
++        wx_cv_gdk_wayland=no
++    fi
+     fi
  
-                 if test "$wxUSE_GPE" = "yes"; then
-             { $as_echo "$as_me:${as_lineno-$LINENO}: checking for gpewidget library" >&5
+     if test "$wxUSE_DFB" = 1; then
 diff --git a/configure.in b/configure.in
 index c76c528..430cdff 100644
---- a/configure.in
-+++ b/configure.in
+--- a/configure.ac
++++ b/configure.ac
 @@ -779,6 +779,7 @@ WX_ARG_FEATURE(textfile,      [  --enable-textfile       use wxTextFile class],
  WX_ARG_FEATURE(timer,         [  --enable-timer          use wxTimer class], wxUSE_TIMER)
  WX_ARG_FEATURE(variant,       [  --enable-variant        use wxVariant class], wxUSE_VARIANT)
@@ -144,42 +112,42 @@ index c76c528..430cdff 100644
 -        AC_CACHE_CHECK([for GDK Wayland backend], wx_cv_gdk_wayland, [
 -            save_CFLAGS=$CFLAGS
 -            CFLAGS="$CFLAGS $TOOLKIT_INCLUDE"
--            AC_TRY_COMPILE([
+-            AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
 -                            #include <gdk/gdk.h>
 -                           ],
 -                           [
 -                            #ifndef GDK_WINDOWING_WAYLAND
 -                            Not GDK Windowing Wayland
 -                            #endif
--                           ],
+-                           ])],
 -                           wx_cv_gdk_wayland=yes,
 -                           wx_cv_gdk_wayland=no
 -                           )
 -            CFLAGS=$save_CFLAGS
 -        ])
-+	if test x"$wxUSE_WAYLAND" = xyes; then
-+		AC_CACHE_CHECK([for GDK Wayland backend], wx_cv_gdk_wayland, [
-+		    save_CFLAGS=$CFLAGS
-+		    CFLAGS="$CFLAGS $TOOLKIT_INCLUDE"
-+		    AC_TRY_COMPILE([
-+				    #include <gdk/gdk.h>
-+				   ],
-+				   [
-+				    #ifndef GDK_WINDOWING_WAYLAND
-+				    Not GDK Windowing Wayland
-+				    #endif
-+				   ],
-+				   wx_cv_gdk_wayland=yes,
-+				   wx_cv_gdk_wayland=no
-+				   )
-+		    CFLAGS=$save_CFLAGS
-+		])
-+	else
-+		wx_cv_gdk_wayland=no
-+	fi
++        if test x"$wxUSE_WAYLAND" = xyes; then
++            AC_CACHE_CHECK([for GDK Wayland backend], wx_cv_gdk_wayland, [
++                save_CFLAGS=$CFLAGS
++                CFLAGS="$CFLAGS $TOOLKIT_INCLUDE"
++                AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
++                                #include <gdk/gdk.h>
++                              ],
++                              [
++                                #ifndef GDK_WINDOWING_WAYLAND
++                                Not GDK Windowing Wayland
++                                #endif
++                              ])],
++                              wx_cv_gdk_wayland=yes,
++                              wx_cv_gdk_wayland=no
++                              )
++                CFLAGS=$save_CFLAGS
++            ])
++        else
++            wx_cv_gdk_wayland=no
++        fi
+     fi
  
-         dnl test for external libxpm if we're configured to use it
-         if test "$wxUSE_GPE" = "yes"; then
+     if test "$wxUSE_DFB" = 1; then
 -- 
 2.39.0
 
