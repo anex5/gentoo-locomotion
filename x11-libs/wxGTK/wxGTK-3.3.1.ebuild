@@ -20,7 +20,7 @@ S="${WORKDIR}/wxWidgets-${PV}"
 
 LICENSE="wxWinLL-3 GPL-2 doc? ( wxWinFDL-3 )"
 SLOT="${WXRELEASE}/$(ver_cut 1-2)"
-KEYWORDS="~alpha ~amd64 ~arm ~arm64 ~hppa ~loong ~ia64 ~mips ~ppc ppc64 ~riscv ~sparc ~x86 ~amd64-linux ~x86-linux"
+KEYWORDS="~alpha ~amd64 ~arm ~arm64 ~hppa ~loong ~ia64 ~mips ~ppc ~ppc64 ~riscv ~sparc ~x86 ~amd64-linux ~x86-linux"
 IUSE="+gui curl doc debug keyring gstreamer libnotify +lzma opengl pch sdl +spell test tiff wayland webkit X"
 REQUIRED_USE="
 	test? ( tiff )
@@ -129,7 +129,6 @@ src_prepare() {
 		-e "s:\(WX_VERSION=\).*:\1${WXVERSION}:" \
 		-e "s:\(WX_RELEASE=\).*:\1${WXRELEASE}:" \
 		-e "s:\(WX_SUBVERSION=\).*:\1${WXSUBVERSION}:" \
-		-e '/WX_VERSION_TAG=/ s:${WX_RELEASE}:3.0:' \
 		configure || die
 }
 
@@ -259,7 +258,7 @@ multilib_src_install_all() {
 	rm "${ED}"/usr/bin/wx-config || die
 	rm "${ED}"/usr/bin/wxrc || die
 	# wxwin.m4 is owned by eselect-wxwidgets
-	mv "${ED}"/usr/share/aclocal/wxwin.m4 "${ED}"/usr/share/aclocal/wxwin${WXRELEASE_NODOT}.m4
+	# mv "${ED}"/usr/share/aclocal/wxwin.m4 "${ED}"/usr/share/aclocal/wxwin${WXRELEASE_NODOT}.m4 || die
 
 	# version bakefile presets
 	pushd "${ED}"/usr/share/bakefile/presets >/dev/null || die

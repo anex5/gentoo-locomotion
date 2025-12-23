@@ -3,10 +3,10 @@
 
 EAPI=8
 
-inherit multilib-minimal
+inherit edo multilib-minimal flag-o-matic toolchain-funcs
 
-WXSUBVERSION="${PV}-gtk3"				# 3.2.1-gtk3
-WXVERSION="$(ver_cut 1-3)"				# 3.2.1
+WXSUBVERSION="${PV}-gtk3"				# 3.2.9-gtk3
+WXVERSION="$(ver_cut 1-3)"				# 3.2.9
 # Make sure that this matches the number of components in ${PV}
 WXRELEASE="$(ver_cut 1-2)-gtk3"			# 3.2-gtk3
 WXRELEASE_NODOT=${WXRELEASE//./}		# 32-gtk3
@@ -19,11 +19,16 @@ SRC_URI="
 S="${WORKDIR}/wxWidgets-${PV}"
 
 LICENSE="wxWinLL-3 GPL-2 doc? ( wxWinFDL-3 )"
-SLOT="${WXRELEASE}"
-KEYWORDS="~alpha ~amd64 ~arm ~arm64 ~hppa ~ia64 ~mips ~ppc ~ppc64 ~riscv ~sparc ~x86 ~amd64-linux ~x86-linux"
-IUSE="+gui curl doc debug gnome-keyring gstreamer libnotify +lzma opengl pch sdl +spell test tiff wayland webkit"
-REQUIRED_USE="test? ( tiff ) tiff? ( gui ) spell? ( gui ) gnome-keyring? ( gui )"
-RESTRICT="!test? ( test )"
+SLOT="${WXRELEASE}/$(ver_cut 1-2)"
+KEYWORDS="~alpha ~amd64 ~arm ~arm64 ~hppa ~loong ~ia64 ~mips ~ppc ~ppc64 ~riscv ~sparc ~x86 ~amd64-linux ~x86-linux"
+IUSE="+gui curl doc debug keyring gstreamer libnotify +lzma opengl pch sdl +spell test tiff wayland webkit X"
+REQUIRED_USE="
+	test? ( tiff )
+	tiff? ( gui )
+	spell? ( gui )
+	keyring? ( gui )
+"
+RESTRICT="!test? ( test ) mirror"
 
 RDEPEND="
 	>=app-eselect/eselect-wxwidgets-20131230
@@ -36,13 +41,19 @@ RDEPEND="
 		>=dev-libs/glib-2.22:2[${MULTILIB_USEDEP}]
 		media-libs/libjpeg-turbo:=[${MULTILIB_USEDEP}]
 		media-libs/libpng:0=[${MULTILIB_USEDEP}]
-		sys-libs/zlib[${MULTILIB_USEDEP}]
+		virtual/zlib[${MULTILIB_USEDEP}]
 		x11-libs/cairo[${MULTILIB_USEDEP}]
 		x11-libs/gtk+:3[wayland?,${MULTILIB_USEDEP}]
 		x11-libs/gdk-pixbuf:2[${MULTILIB_USEDEP}]
+		X? (
+			x11-libs/libSM[${MULTILIB_USEDEP}]
+			x11-libs/libX11[${MULTILIB_USEDEP}]
+			x11-libs/libXtst
+			x11-libs/libXxf86vm[${MULTILIB_USEDEP}]
+		)
 		media-libs/fontconfig
 		x11-libs/pango[${MULTILIB_USEDEP}]
-		gnome-keyring? ( app-crypt/libsecret )
+		keyring? ( app-crypt/libsecret )
 		gstreamer? (
 			media-libs/gstreamer:1.0[${MULTILIB_USEDEP}]
 			media-libs/gst-plugins-base:1.0[${MULTILIB_USEDEP}]
@@ -50,15 +61,17 @@ RDEPEND="
 		)
 		libnotify? ( x11-libs/libnotify[${MULTILIB_USEDEP}] )
 		opengl? (
-			virtual/opengl[${MULTILIB_USEDEP}]
+			X? ( virtual/opengl[${MULTILIB_USEDEP}] )
 			wayland? ( dev-libs/wayland )
 		)
 		spell? ( app-text/gspell:= )
 		tiff? ( media-libs/tiff:=[${MULTILIB_USEDEP}] )
 		webkit? ( net-libs/webkit-gtk:4= )
-	)"
+	)
+"
 DEPEND="${RDEPEND}
-	opengl? ( virtual/glu[${MULTILIB_USEDEP}] )"
+	opengl? ( virtual/glu[${MULTILIB_USEDEP}] )
+"
 BDEPEND="
 	test? ( >=dev-util/cppunit-1.8.0 )
 	>=app-eselect/eselect-wxwidgets-20131230
@@ -73,12 +86,12 @@ BDEPEND="
 
 PATCHES=(
 	#"${WORKDIR}"/wxGTK-3.0.5_p20210214/
-	"${FILESDIR}/${PN}-3.2.1-gtk3-translation-domain.patch"
+	"${FILESDIR}/${PN}-3.2.8-gtk3-translation-domain.patch"
 	#"${FILESDIR}"/wxGTK-ignore-c++-abi.patch #676878
 	"${FILESDIR}/${PN}-3.2.1-configure-tests.patch"
 	"${FILESDIR}/${PN}-3.2.1-wayland-control.patch"
 	"${FILESDIR}/${PN}-3.2.1-prefer-lib64-in-tests.patch"
-	"${FILESDIR}/${PN}-3.2.2.1-dont-break-flags.patch"
+	"${FILESDIR}/${PN}-3.2.5-dont-break-flags.patch"
 )
 
 src_prepare() {
@@ -89,8 +102,6 @@ src_prepare() {
 	local versioned_makefiles=(
 		./tests/benchmarks/Makefile.in
 		./tests/Makefile.in
-		./utils/emulator/src/Makefile.in
-		./utils/execmon/Makefile.in
 		./utils/wxrc/Makefile.in
 		./utils/helpview/src/Makefile.in
 		./utils/hhp2cached/Makefile.in
@@ -116,17 +127,26 @@ src_prepare() {
 		-e "s:\(WX_VERSION=\).*:\1${WXVERSION}:" \
 		-e "s:\(WX_RELEASE=\).*:\1${WXRELEASE}:" \
 		-e "s:\(WX_SUBVERSION=\).*:\1${WXSUBVERSION}:" \
-		-e '/WX_VERSION_TAG=/ s:${WX_RELEASE}:3.0:' \
 		configure || die
 }
 
 multilib_src_configure() {
+	# defang automagic dependencies, bug #927952
+	#use wayland || append-cflags -DGENTOO_GTK_HIDE_WAYLAND
+	#use X || append-cflags -DGENTOO_GTK_HIDE_X11
+	use wayland || append-cflags -DGENTOO_GTK_HIDE_WAYLAND -DGENTOO_GTK_HIDE_X11
+	use X || append-cflags -DGENTOO_GTK_HIDE_WAYLAND -DGENTOO_GTK_HIDE_X11
+
+	# Workaround for bug #915154
+	append-ldflags $(test-flags-CCLD -Wl,--undefined-version)
+
 	# X independent options
 	local myeconfargs=(
 		--with-zlib=sys
 		--with-expat=sys
-		--enable-compat30
+		--disable-compat30
 		--enable-xrc
+		--disable-symver
 		$(use_with sdl)
 		$(use_with lzma liblzma)
 		# Currently defaults to curl, could change.  Watch the VDB!
@@ -141,8 +161,23 @@ multilib_src_configure() {
 		--libdir='${prefix}'/$(get_libdir)
 	)
 
-	# Switch to wxGLCanvas GLX instead of EGL, resolves many OpenGL issues.
-	myeconfargs+=( "--disable-glcanvasegl" )
+	# By default, we now build with the GLX GLCanvas because some software like
+	# PrusaSlicer does not yet support EGL:
+	#
+	# https://github.com/prusa3d/PrusaSlicer/issues/9774 .
+	#
+	# A solution for this is being developed upstream:
+	#
+	# https://github.com/wxWidgets/wxWidgets/issues/22325 .
+	#
+	# Any software that needs to use OpenGL under Wayland can be patched like
+	# this to run under xwayland:
+	#
+	# https://github.com/visualboyadvance-m/visualboyadvance-m/commit/aca206a721265366728222d025fec30ee500de82 .
+	#
+	# Check that the macro wxUSE_GLCANVAS_EGL is set to 1.
+	#
+	use X && myeconfargs+=( "--disable-glcanvasegl" )
 
 	# debug in >=2.9
 	# there is no longer separate debug libraries (gtk2ud)
@@ -173,7 +208,7 @@ multilib_src_configure() {
 		$(use_with libnotify)
 		$(use_with opengl)
 		$(use_with tiff libtiff sys)
-		$(use_enable gnome-keyring secretstore)
+		$(use_enable keyring secretstore)
 		$(use_enable spell spellcheck)
 		$(use_enable test tests)
 		$(use_enable wayland)
@@ -182,12 +217,29 @@ multilib_src_configure() {
 	# wxBase options
 	! use gui && myeconfargs+=( --disable-gui )
 
+	# wxWidgets installs a configuration file with a reference to EGREP.
+	# Autoconf discovers these programs via full paths, which is
+	# unnecessary and fails if a build happened on a merged-usr system
+	# but is being used on a split-usr system.  Bug #927920.
+	export ac_cv_path_SED="sed"
+	export ac_cv_path_EGREP="grep -E"
+	export ac_cv_path_EGREP_TRADITIONAL="grep -E"
+	export ac_cv_path_FGREP="grep -F"
+	export ac_cv_path_GREP="grep"
+	export ac_cv_path_lt_DD="dd"
+
 	ECONF_SOURCE="${S}" econf "${myeconfargs[@]}"
 }
 
 multilib_src_test() {
-	emake -C tests
-	(cd tests && ./test '~[.]~[net]') || die
+	pushd tests >/dev/null || die
+
+	emake
+	# TODO: Use --success for verbose logs, but it seems to change test results?
+	# TODO: test_gui too with xvfb-run, as Fedora does?
+	edo ./test '~[.]~[net]'
+
+	popd >/dev/null || die
 }
 
 multilib_src_install_all() {
@@ -202,6 +254,8 @@ multilib_src_install_all() {
 	# Unversioned links
 	rm "${ED}"/usr/bin/wx-config || die
 	rm "${ED}"/usr/bin/wxrc || die
+	# wxwin.m4 is owned by eselect-wxwidgets
+	# mv "${ED}"/usr/share/aclocal/wxwin.m4 "${ED}"/usr/share/aclocal/wxwin${WXRELEASE_NODOT}.m4 || die
 
 	# version bakefile presets
 	pushd "${ED}"/usr/share/bakefile/presets >/dev/null || die
