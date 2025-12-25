@@ -12,7 +12,6 @@
 +    default="default",
 +)
 +
- with only_when(compile_environment):
  
 -    @depends(target)
 -    def libav_fft(target):

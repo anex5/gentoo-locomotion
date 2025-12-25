@@ -1978,9 +1978,9 @@ _src_install() {
 	fi
 
 	# Install language packs
-	#dexlare -A suffix=( [amd64]="x86_64" [arm64]="arm" )
-	local langpacks=( $(find "${BUILD_DIR}/dist/linux-${ELIBC//elibc_}-${MULTILIB_ABI_FLAG//abi_}/xpi" -type f -name '*.xpi') )
-	#local langpacks=( $(find "${WORKDIR}/language_packs" -type f -name '*.xpi') )
+	ELIBC_PREFIX=""
+	use elibc_musl && ELIBC_PREFIX="musl-"
+	local langpacks=( $(find "${BUILD_DIR}/dist/linux-${ELIBC_PREFIX}${MULTILIB_ABI_FLAG//abi_}/xpi" -type f -name '*.xpi') )
 
 	if [[ -n "${langpacks}" ]] ; then
 		moz_install_xpi "${MOZILLA_FIVE_HOME}/distribution/extensions" "${langpacks[@]}"

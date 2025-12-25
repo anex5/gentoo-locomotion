@@ -10,16 +10,16 @@ inherit python-any-r1
 DESCRIPTION="Script for creating GNU Icecat tarball"
 HOMEPAGE="https://www.gnu.org/software/gnuzilla/"
 
-COMMIT="b1da0f01591182b43e179451ce2484d0fee88dd8"
+COMMIT="f4e50b9a4d5384ce2e860133bf0beaaccbf19b46"
 
 PP="1"
 GV="1"
-COMPARE_LOCALES_PV="9.0.1"
+COMPARE_LOCALES_PV="9.0.4"
 SRC_URI="
-	https://git.savannah.gnu.org/cgit/gnuzilla.git/snapshot/gnuzilla-${COMMIT}.tar.gz
-	https://archive.mozilla.org/pub/firefox/releases/${PV}esr/source/firefox-${PV}esr.source.tar.xz
-	https://github.com/mozilla/compare-locales/archive/refs/tags/RELEASE_${COMPARE_LOCALES_PV//./_}.tar.gz
-		-> compare-locales-${COMPARE_LOCALES_PV}.tar.gz
+    https://cgit.git.savannah.gnu.org/cgit/gnuzilla.git/snapshot/gnuzilla-${COMMIT}.tar.gz
+    https://archive.mozilla.org/pub/firefox/releases/${PV}esr/source/firefox-${PV}esr.source.tar.xz
+    https://github.com/mozilla/compare-locales/archive/refs/tags/RELEASE_${COMPARE_LOCALES_PV//./_}.tar.gz
+        -> compare-locales-${COMPARE_LOCALES_PV}.tar.gz
 "
 
 LICENSE="GPL-3"
@@ -32,18 +32,64 @@ IUSE="+buildtarball"
 
 RDEPEND="${BDEPEND}"
 BDEPEND="
-	${PYTHON_DEPS}
-	app-arch/unzip
-	app-crypt/gnupg
-	dev-vcs/mercurial
-	$(python_gen_any_dep '
-		dev-python/jsonschema[${PYTHON_USEDEP}]
-	')
+    ${PYTHON_DEPS}
+    app-arch/unzip
+    app-crypt/gnupg
+    dev-vcs/mercurial
+    $(python_gen_any_dep '
+        dev-python/jsonschema[${PYTHON_USEDEP}]
+    ')
 "
 
 S="${WORKDIR}/gnuzilla-${COMMIT}"
 
 declare -A LANG_COMMIT
+LANG_COMMIT[ach]="4c5fea93f2624411412afc90cda054f7d645e71e" # 2024-07-09 12:14
+LANG_COMMIT[af]="b4e3c95d5b2bb8694ffa72d607ae418ee19b67e8" # 2024-07-09 12:14
+LANG_COMMIT[ak]="f82cfa823d7ed911c5519c50e5881beb24def5fa" # 2024-07-09 12:14
+LANG_COMMIT[an]="50a12624cd5cde9f018efa51b8433f84213e06f6" # 2024-07-09 12:14
+LANG_COMMIT[ar]="2a6b9746463b26b41b8f9d36ee6b4a0b8be9d47a" # 2024-07-09 12:14
+LANG_COMMIT[as]="08c274ff79475cae458e1ed35770f5c416ac34e2" # 2024-07-09 12:14
+LANG_COMMIT[ast]="f515769d5719f8d673fd17fed6f5194de60d8c77" # 2024-07-09 12:14
+LANG_COMMIT[az]="ef9e6a1e591411c9f8d13a6974a96d26b175e06e" # 2024-07-09 12:14
+LANG_COMMIT[be]="cc17926ff5d45d8af339d44b457f0c4054d3037e" # 2024-07-09 12:14
+LANG_COMMIT[bg]="139421848b25353e6deb4a2306ba7cf7e2434a58" # 2024-07-09 12:14
+LANG_COMMIT[bn]="0fe5fe3663f0872781a811734c03f49bc4980e9f" # 2024-07-09 12:14
+LANG_COMMIT[bn-BD]="97b9c13ea376d937d0211274a6ca9ec713015853" # 2024-07-09 12:14
+LANG_COMMIT[bn-IN]="914a6bf0496b39ca2d05b70255fe88a1b49cd1f2" # 2024-07-09 12:14
+LANG_COMMIT[bo]="84df3a5a7327aa2261436d043baba4d44109525b" # 2024-07-09 12:14
+LANG_COMMIT[br]="b84bfc5072700b961775046a285cac685252b6e7" # 2024-07-09 12:14
+LANG_COMMIT[brx]="a2f84d3d57cf765458aef85b548a79916b04c5a9" # 2024-07-09 12:14
+LANG_COMMIT[bs]="b2c4f5a406d97c20a73e3715ae45b43138d7e906" # 2024-07-09 12:14
+LANG_COMMIT[ca]="dae0084381471f8ccfa429791410b0a7fba64c56" # 2024-07-09 12:14
+LANG_COMMIT[ca-valencia]="cbb59aed8a7baebaafe6bb38f456eb720f678f84" # 2024-07-09 12:14
+LANG_COMMIT[cak]="a5ee9fc6b23aed9363802d0f8f7d6b23b09135bc" # 2024-07-09 12:14
+LANG_COMMIT[ckb]="6656a93b69127ff4237221d57c3bea828d5397c7" # 2024-07-09 12:14
+LANG_COMMIT[crh]="bf90ea2238bad0e2d1d66d06e19e8d6f0441cd83" # 2024-07-09 12:14
+LANG_COMMIT[cs]="6ba70977cd61f28839645c9f4ec634a5466ca7e4" # 2024-07-09 12:14
+LANG_COMMIT[csb]="86f0804df27a725987987f4211600d375b4ace78" # 2024-07-09 12:14
+LANG_COMMIT[cy]="6c1e5fb7988fb3681140aed65b387d706de3d26a" # 2024-07-09 12:14
+LANG_COMMIT[da]="803579fd1a4d3c7833dc4afaf97a82b6867bb59f" # 2024-07-09 12:21
+LANG_COMMIT[de]="a24e44cd9012506fc45a04754e49212473474c8a" # 2024-07-09 12:14
+LANG_COMMIT[dsb]="a9bc76f6383ee9ecc1708c6d203b895a9ce54973" # 2024-07-09 12:02
+LANG_COMMIT[el]="bab0b0affe256e98c405cc07c802d6c37c1d9a17" # 2024-07-09 12:14
+LANG_COMMIT[en-CA]="b8d5641eb6eb73587f78127813cf56803c7e3df5" # 2024-07-09 20:02
+LANG_COMMIT[en-GB]="c9aa642b3c714f5cf3f2f6759179b4fb353f10e3" # 2024-07-09 21:11
+LANG_COMMIT[en-ZA]="49e9391b1814f8e046484bfb4c4e3170480fca14" # 2024-07-09 12:14
+LANG_COMMIT[eo]="1ce3bae8f941d0713e9984de5adbb360c54a7daf" # 2024-07-09 12:14
+LANG_COMMIT[es-AR]="5864a7f25a6a7a2361a6f8e3cc21147044b85669" # 2024-07-09 12:14
+LANG_COMMIT[es-CL]="63e0ced6ce18d4c69a7ea2a3abe5470822eea144" # 2024-07-09 12:14
+LANG_COMMIT[es-ES]="967230a30cb768202ad164dfb252c618327f455b" # 2024-07-09 12:14
+LANG_COMMIT[es-MX]="a12332f48724583c720da0d8ff6b8e32654e9200" # 2024-07-09 12:14
+LANG_COMMIT[et]="6e2f66da09d35cf79bfe121b771c8abc36e0dc7d" # 2024-07-09 12:14
+LANG_COMMIT[eu]="51c25788c594027d41898a01666db0054ea24f69" # 2024-07-09 12:14
+LANG_COMMIT[fa]="98130adb7867760f17ba58177b6766ca47b7b1e6" # 2024-07-09 12:14
+LANG_COMMIT[ff]="4afa4b4e4a33566c0166a349ac3eadcbb3f2770d" # 2024-07-09 12:14
+LANG_COMMIT[fi]="aaa683848a4f1548361558cc03f2a33a89c9d34f" # 2024-07-09 17:51
+LANG_COMMIT[fr]="f77487a0a53df4cb1074c0831a501fa6f4d5d080" # 2024-07-09 11:51
+LANG_COMMIT[frp]="98f43af4d21725f0534d21b70fca8b9ab8caf63a" # 2024-07-09 12:15
+LANG_COMMIT[fur]="f5298046ff89bac2fd92d567bec9371f648ccb6b" # 2024-07-09 12:15
+LANG_COMMIT[fy-NL]="b00b914387999d744057652bc5a745a2d0b8a438" # 2024-07-09 12:15
 LANG_COMMIT[ace]="415dee13b9cb64b188aa3e861483cbf8be26f2fe" # 2024-07-09 12:14
 LANG_COMMIT[ach]="4c5fea93f2624411412afc90cda054f7d645e71e" # 2024-07-09 12:14
 LANG_COMMIT[af]="b4e3c95d5b2bb8694ffa72d607ae418ee19b67e8" # 2024-07-09 12:14
@@ -151,8 +197,11 @@ LANG_COMMIT[pa-IN]="66d8a510328c3ed8bba1f99e83dddf6bdf379a5e" # 2024-07-09 12:15
 LANG_COMMIT[pai]="29047ceb5cb5f90e25fb23ddbb9a3e5173232942" # 2024-07-09 12:15
 LANG_COMMIT[pbb]="fe6b5eb1d44e0c97581e751ea313f8d4578786e8" # 2024-07-09 12:15
 LANG_COMMIT[pl]="ffd050236a85c7a9f6989bc3ec459257e2f394fd" # 2024-07-09 12:15
+#LANG_COMMIT[ppl]="65b3ab6d50725e7c1e626abe7846b78557d28588" # 2024-01-18 12:34
 LANG_COMMIT[pt-BR]="604739b89fb234808a2060e60dc9903abe7df9aa" # 2024-07-09 11:51
 LANG_COMMIT[pt-PT]="1000c5704572002a58ea2b2d27a39334a420ed94" # 2024-07-09 12:15
+#LANG_COMMIT[quy]="d6b514dd7fa7004290657c4698aef0ccbb9138da" # 2024-04-29 15:17
+#LANG_COMMIT[qvi]="41079c0a8ce980779df96e20b264401d4fa1a620" # 2024-04-29 15:17
 LANG_COMMIT[rm]="bcb807ee0623dd2d638733d4426c2a807df720da" # 2024-07-09 18:02
 LANG_COMMIT[ro]="a6c782e754f21fe9911218b581966d6dc875ff05" # 2024-07-09 12:15
 LANG_COMMIT[ru]="7134bcfc193e5b5a5ebbbb6b0b31a3f49125e3c8" # 2024-07-09 11:31
@@ -164,6 +213,7 @@ LANG_COMMIT[scn]="c0eda44a0a434b9d9a84158a32682dcfe94da610" # 2024-07-09 12:15
 LANG_COMMIT[sco]="812bd0b4471a845d2bc15ced303e98075a70b601" # 2024-07-09 12:15
 LANG_COMMIT[si]="a05ce2a92874ead3344c0a1b218753ce6718111f" # 2024-07-09 12:15
 LANG_COMMIT[sk]="b9738bf183b1b4f16eba67cbe30eb36a7571631a" # 2024-07-09 12:15
+LANG_COMMIT[skr]="00eaf8d9e83b662814a5d1f30cd55cc1efa2b2e3" # 2024-07-09 12:15
 LANG_COMMIT[sl]="886f8abe76b5c60707ade082de28b16035469e5b" # 2024-07-09 12:15
 LANG_COMMIT[son]="e50833bbce27b9412e9c51edc08f6adaeaab354b" # 2024-07-09 12:15
 LANG_COMMIT[sq]="5dbfb24210875e28996cf10e47734f17491424d5" # 2024-07-09 11:21
@@ -198,77 +248,79 @@ LANG_COMMIT[zh-TW]="bdede5e586d2288b0a3d4bf0c27744cd682ee1ba" # 2024-07-09 11:12
 LANG_COMMIT[zu]="2f8eb432efd5660f5e1ab85164858a949f27b4b9" # 2024-07-09 12:16
 
 fetch_l10n() {
-	local lang
-	for lang in "${!LANG_COMMIT[@]}" ; do
-		#en_US is handled internally
-		if [[ ${lang} == en-US ]] ; then
-			continue
-		fi
-		SRC_URI+=" https://hg.mozilla.org/l10n-central/${lang}/archive/${LANG_COMMIT[${lang}]}.zip -> icecat-lang-${lang}-${LANG_COMMIT[${lang}]}.zip"
-	done
+    local lang
+    for lang in "${!LANG_COMMIT[@]}" ; do
+        #en_US is handled internally
+        if [[ ${lang} == en-US ]] ; then
+            continue
+        fi
+        SRC_URI+=" https://hg.mozilla.org/l10n-central/${lang}/archive/${LANG_COMMIT[${lang}]}.zip -> icecat-lang-${lang}-${LANG_COMMIT[${lang}]}.zip"
+    done
 }
 fetch_l10n
 
 python_check_deps() {
-	python_has_version "dev-python/jsonschema[${PYTHON_USEDEP}]"
+    python_has_version "dev-python/jsonschema[${PYTHON_USEDEP}]"
 }
 
 src_unpack() {
-	unpack "gnuzilla-${COMMIT}.tar.gz"
-	for langpack in $(cd "${DISTDIR}"; ls icecat-lang-*.zip); do
-		unpack ${langpack}
-	done
-	unpack "compare-locales-${COMPARE_LOCALES_PV}.tar.gz"
+    unpack "gnuzilla-${COMMIT}.tar.gz"
+    for langpack in $(cd "${DISTDIR}"; ls icecat-lang-*.zip); do
+        unpack ${langpack}
+    done
+    unpack "compare-locales-${COMPARE_LOCALES_PV}.tar.gz"
+    unpack "firefox-${PV}esr.source.tar.xz"
 }
 
 src_prepare() {
-	default_src_prepare
+    default_src_prepare
 
-	# Remove the minimum necessary for script to work offline
-	sed -i '/^verify_sources$/d' makeicecat || die
-	sed -i '/hg checkout ${L10N_CMP_REV}$/d' makeicecat || die
+    # Remove the minimum necessary for script to work offline
+    sed -i '/^verify_sources$/d' makeicecat || die
+    sed -i '/^fetch_l10n$/d' makeicecat || die
+    sed -i '/^fetch_source$/d' makeicecat || die
+    sed -i '/^extract_sources$/d' makeicecat || die
+    sed -i '/^prepare_env$/d' makeicecat || die
 
-	# brand.dtd's removed in l10n's
-	sed -i -e '/find l10n.*brand.dtd/d' makeicecat || die
+    #mkdir "${S}/output" || die
+    #cp "${DISTDIR}/firefox-${PV}esr.source.tar.xz" "${S}/output" || die
+    mv "${WORKDIR}/firefox-${PV}" "${S}/icecat-${PV}" || die
 
-	mkdir "${S}/output" || die
-	cp "${DISTDIR}/firefox-${PV}esr.source.tar.xz" "${S}/output" || die
-
-	mkdir "${S}/output/l10n" || die
-	for lang in "${!LANG_COMMIT[@]}"; do
-		#en_US is handled internally
-		if [[ ${lang} == en-US ]] ; then
-			continue
-		fi
-		mv "${WORKDIR}/${lang}-${LANG_COMMIT[${lang}]}" "${S}/output/l10n/${lang}" || die
-		mkdir -p "${S}/output/l10n/${lang}/browser/chrome/browser/preferences" || die
-		touch "${S}/output/l10n/${lang}/browser/chrome/browser/preferences//advanced-scripts.dtd" || die
-		rm -rf "${S}/output/l10n/${lang}/.hg*" || die
-	done
-	mv "${WORKDIR}/compare-locales-RELEASE_${COMPARE_LOCALES_PV//./_}" "${S}/output/compare-locales" || die
+    L10N_DIR="${S}/icecat-${PV}/l10n"
+    mkdir -p "${L10N_DIR}" || die
+    for lang in "${!LANG_COMMIT[@]}"; do
+        #en_US is handled internally
+        [[ "${lang}" == "en-US" ]] && continue
+        mv "${WORKDIR}/${lang}-${LANG_COMMIT[${lang}]}" "${L10N_DIR}/${lang}" || die
+        mkdir -p "${L10N_DIR}/${lang}/browser/chrome/browser/preferences" || die
+        touch "${L10N_DIR}/${lang}/browser/chrome/browser/preferences/advanced-scripts.dtd" || die
+        rm -rf "${L10N_DIR}/${lang}/.hg*" || die
+    done
+    mv "${WORKDIR}/compare-locales-RELEASE_${COMPARE_LOCALES_PV//./_}" "${L10N_DIR}/compare-locales" || die
 }
 
 src_compile() {
-	if use buildtarball; then
-		./makeicecat || die
-	fi
+    if use buildtarball; then
+        ./makeicecat || die
+    fi
 }
 
 src_install() {
-	insinto "/usr/src/makeicecat-${PV}"
-	doins -r "${S}/"{artwork,CHANGELOG,COPYING,data,makeicecat,README,tools}
-	fperms +x "/usr/src/makeicecat-${PV}"/{makeicecat,tools/{AddonsScraper.py,buildbinaries,createdebsrcrepo,gnupload}}
-	if use buildtarball; then
-		insinto /usr/src/makeicecat-"${PV}"/output
-		doins "${S}/output/icecat-${PV}-${PP}gnu${GV}.tar.bz2"
-	fi
+    insinto "/usr/src/makeicecat-${PV}"
+    doins -r "${S}/"{artwork,CHANGELOG,COPYING,data,makeicecat,README,tools}
+    fperms +x "/usr/src/makeicecat-${PV}"/{makeicecat,tools/{AddonsScraper.py,buildbinaries,createdebsrcrepo,gnupload}}
+    if use buildtarball; then
+        #insinto /usr/src/makeicecat-"${PV}"
+        insinto "${PORTAGE_ACTUAL_DISTDIR}"
+        doins "${S}/icecat-${PV}-${PP}gnu${GV}.tar.bz2"
+    fi
 }
 
 pkg_postinst() {
-	if ! use buildtarball; then
-		einfo "You haven't enabled buildtarball, therefore you have to create the tarball yourself."
-		einfo "You can create the tarball in /usr/share/makeicecat-${PV} by starting the script manually."
-		einfo "   ./makeicecat"
-		einfo "It will take a while so be prepared."
-	fi
+    if ! use buildtarball; then
+        einfo "You haven't enabled buildtarball, therefore you have to create the tarball yourself."
+        einfo "You can create the tarball in /usr/share/makeicecat-${PV} by starting the script manually."
+        einfo "   ./makeicecat"
+        einfo "It will take a while so be prepared."
+    fi
 }

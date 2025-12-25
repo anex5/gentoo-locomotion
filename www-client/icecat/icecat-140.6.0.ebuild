@@ -4,11 +4,11 @@
 EAPI=8
 
 # Using Gentoos firefox patches as system libraries and lto are quite nice
-FIREFOX_PATCHSET="firefox-${PV%%.*}esr-patches-03.tar.xz"
+FIREFOX_PATCHSET="firefox-${PV%%.*}esr-patches-04.tar.xz"
 FIREFOX_LOONG_PATCHSET="firefox-139-loong-patches-02.tar.xz"
 
 LLVM_COMPAT=( {19..21} )
-PP="2"
+PP="1"
 GV="1"
 
 # This will also filter rust versions that don't match LLVM_COMPAT in the non-clang path; this is fine.
@@ -967,7 +967,6 @@ src_prepare() {
 	# Prevent video seek bug
 	eapply "${FILESDIR}/extra-patches/firefox-122.0-disable-broken-flags-ipc-chromium-chromium-config.patch"
 
-
 	# Build with clang-20
 	if [[ "${LLVM_SLOT}" =~ ("20"|"21") ]]; then
 		#eapply "${FILESDIR}/icecat-128.12.0-clang21.patch"
@@ -1440,6 +1439,7 @@ _src_configure() {
 		--without-ccache \
 		--with-intl-api \
 		--with-l10n-base="${s}/l10n" \
+		--with-ffvpx=no \
 		--with-system-ffi \
 		--with-system-gbm \
 		--with-system-libdrm \
@@ -1944,7 +1944,7 @@ _src_install() {
 	DESTDIR="${D}" ./mach install || die
 
 	# Upstream cannot ship symlink but we can (bmo#658850)
-	rm "${ED}${MOZILLA_FIVE_HOME}/${PN}-bin" || die
+	rm -v "${ED}${MOZILLA_FIVE_HOME}/${PN}-bin" || die
 	dosym "${PN}" "${MOZILLA_FIVE_HOME}/${PN}-bin"
 
 	# Don't install llvm-symbolizer from llvm-core/llvm package
@@ -2015,8 +2015,9 @@ _src_install() {
 	fi
 
 	# Install language packs
-	#dexlare -A suffix=( [amd64]="x86_64" [arm64]="arm" )
-	local langpacks=( $(find "${BUILD_DIR}/dist/linux-${ELIBC//elibc_}-${MULTILIB_ABI_FLAG//abi_}/xpi" -type f -name '*.xpi') )
+	ELIBC_PREFIX=""
+	use elibc_musl && ELIBC_PREFIX="musl-"
+	local langpacks=( $(find "${BUILD_DIR}/dist/linux-${ELIBC_PREFIX}${MULTILIB_ABI_FLAG//abi_}/xpi" -type f -name '*.xpi') )
 	if [[ -n "${langpacks}" ]] ; then
 		moz_install_xpi "${MOZILLA_FIVE_HOME}/distribution/extensions" "${langpacks[@]}"
 	fi

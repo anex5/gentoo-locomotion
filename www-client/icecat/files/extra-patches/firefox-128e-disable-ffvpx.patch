@@ -1,0 +1,105 @@
+--- a/toolkit/moz.configure
++++ b/toolkit/moz.configure
+@@ -2572,18 +2572,30 @@ with only_when(compile_environment):
+ 
+ # FFmpeg's ffvpx configuration
+ # ==============================================================
++option("--with-ffvpx",
++    help="{Enable,Disable} the vendored ffmpeg fork called ffvpx.  Enables decode only for dav1d, flac, mp3, opus, vpx{8,9} on 64-bit; decode only for flac on 32-bit.",
++    nargs=1,
++    choices=("yes", "no", "default"),
++    default="default",
++)
+ 
+-
+-@depends(target)
+-def ffvpx(target):
+-    use_nasm = True
++@depends("--with-ffvpx", target)
++def ffvpx(values, target):
++    if any("default" in value for value in values) or any("yes" in value for value in values):
++        enable = use_nasm = True
++    else:
++        enable = use_nasm = False
++
+     audio_only = False
+     flags = []
+ 
+     # This enables audio and video codecs paths on Windows  x86 and x86_64,
+     # macOS (all arch), and Linux x86_64. On other arch / OS combinations,
+     # only audio codecs are enabled.
+-    if target.kernel == "WINNT":
++    if any("no" in value for value in values):
++        # Do not set MOZ_FFVPX_AUDIOONLY preprocessor codepaths
++        pass
++    elif target.kernel == "WINNT":
+         if target.cpu == "x86":
+             # 32-bit windows need to prefix symbols with an underscore.
+             flags = ["-DPIC", "-DWIN32", "-DPREFIX", "-Pconfig_win32.asm"]
+--- a/config/external/moz.build
++++ b/config/external/moz.build
+@@ -50,7 +50,8 @@ if not CONFIG["MOZ_SYSTEM_PNG"]:
+ if not CONFIG["MOZ_SYSTEM_WEBP"]:
+     external_dirs += ["media/libwebp"]
+ 
+-external_dirs += ["media/ffvpx"]
++if CONFIG["MOZ_FFVPX"]:
++    external_dirs += ["media/ffvpx"]
+ 
+ if CONFIG["MOZ_JXL"]:
+     external_dirs += ["media/libjxl", "media/highway"]
+--- a/dom/media/webaudio/FFTBlock.h
++++ b/dom/media/webaudio/FFTBlock.h
+@@ -10,7 +10,11 @@
+ #include "AlignedTArray.h"
+ #include "AudioNodeEngine.h"
+ #include "FFVPXRuntimeLinker.h"
++#ifdef MOZ_FFVPX
+ #include "ffvpx/tx.h"
++#else
++#include <libavutil/tx.h>
++#endif
+ 
+ namespace mozilla {
+ 
+--- a/dom/media/platforms/ffmpeg/ffvpx/FFVPXRuntimeLinker.h
++++ b/dom/media/platforms/ffmpeg/ffvpx/FFVPXRuntimeLinker.h
+@@ -11,7 +11,11 @@
+ #include "PlatformEncoderModule.h"
+ #include "mozilla/StaticMutex.h"
+ #include "mozilla/ThreadSafety.h"
++#ifdef MOZ_FFVPX
+ #include "ffvpx/tx.h"
++#else
++#include <libavutil/tx.h>
++#endif
+ 
+ struct FFmpegFFTFuncs {
+   decltype(av_tx_init)* init;
+--- a/dom/media/platforms/ffmpeg/FFmpegLibWrapper.h
++++ b/dom/media/platforms/ffmpeg/FFmpegLibWrapper.h
+@@ -8,7 +8,11 @@
+ #include "mozilla/Attributes.h"
+ #include "mozilla/DefineEnum.h"
+ #include "mozilla/Types.h"
++#ifdef MOZ_FFVPX
+ #include "ffvpx/tx.h"
++#else
++#include <libavutil/tx.h>
++#endif
+ 
+ struct AVCodec;
+ struct AVCodecContext;
+--- a/browser/installer/package-manifest.in
++++ b/browser/installer/package-manifest.in
+@@ -157,8 +157,10 @@
+ #endif
+ @BINPATH@/@DLL_PREFIX@lgpllibs@DLL_SUFFIX@
+ @BINPATH@/@DLL_PREFIX@gkcodecs@DLL_SUFFIX@
++#ifdef MOZ_FFVPX
+ @BINPATH@/@DLL_PREFIX@mozavutil@DLL_SUFFIX@
+ @BINPATH@/@DLL_PREFIX@mozavcodec@DLL_SUFFIX@
++#endif
+ 
+ ; [Components]
+ #ifdef ACCESSIBILITY
