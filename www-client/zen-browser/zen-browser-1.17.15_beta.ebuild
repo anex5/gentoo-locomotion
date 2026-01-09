@@ -510,13 +510,13 @@ llvm_check_deps() {
 }
 
 MOZ_LANGS=(
-	ar ca cs cy da de el en-GB es-ES et fa fi fr ga-IE he hu id is it ja ko lt nl nn-NO pl pt-BR pt-PT ru sv-SE th tr uk vi zh-CN zh-TW
+	ar ca cs cy da de el en-GB es-ES et fa fi fr ga-IE he hu id is it ja ko lt nb-NO nl nn-NO pl pt-BR pt-PT ro ru sk sv-SE th tr uk vi zh-CN zh-TW
 )
 
 mozilla_set_globals() {
 	# https://bugs.gentoo.org/587334
 	local MOZ_TOO_REGIONALIZED_FOR_L10N=(
-		ga-IE nn-NO sv-SE
+		ga-IE nb-NO nn-NO sv-SE
 	)
 
 	local lang xflag
@@ -559,7 +559,7 @@ moz_build_xpi() {
 	debug-print-function ${FUNCNAME} "$@"
 
 	local MOZ_TOO_REGIONALIZED_FOR_L10N=(
-		ga-IE nn-NO sv-SE
+		ga-IE nb-NO nn-NO sv-SE
 	)
 
 	cd "${BUILD_DIR}"/browser/locales || die
@@ -1935,7 +1935,6 @@ _src_install() {
 	# Set installDistroAddons to true so that language packs work
 	cat >>"${GENTOO_PREFS}" <<-EOF || die "failed to set extensions.installDistroAddons pref"
 	pref("extensions.installDistroAddons",     true);
-	pref("extensions.langpacks.signatures.required",	false);
 	EOF
 
 	# Disable signatures for language packs so that unsigned just built language packs work
