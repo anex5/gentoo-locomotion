@@ -1,16 +1,16 @@
-# Copyright 2021-2025 Gentoo Authors
+# Copyright 2021-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{11..13} )
+PYTHON_COMPAT=( python3_{11..14} )
 
 inherit python-any-r1
 
 DESCRIPTION="Script for creating GNU Icecat tarball"
 HOMEPAGE="https://www.gnu.org/software/gnuzilla/"
 
-COMMIT="f4e50b9a4d5384ce2e860133bf0beaaccbf19b46"
+COMMIT="c211e9c18a24310266543cb3c90256ef2660815c"
 
 PP="1"
 GV="1"
