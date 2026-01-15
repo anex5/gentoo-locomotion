@@ -47,14 +47,15 @@ diff --git a/efi/main.c b/efi/main.c
 index 6a748412..e924cfb1 100644
 --- a/efi/main.c
 +++ b/efi/main.c
-@@ -12,6 +12,7 @@
+@@ -10,7 +10,7 @@
+ #include <syslinux/firmware.h>
+ #include <syslinux/linux.h>
  #include <sys/ansi.h>
+-#include <setjmp.h>
++#include <efisetjmp.h>
  
  #include "efi.h"
-+#include <efisetjmp.h>
  #include "fio.h"
- #include "version.h"
- #include "efi_pxe.h"
 -- 
 2.25.1
 

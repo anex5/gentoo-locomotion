@@ -1,4 +1,4 @@
-# Copyright 1999-2025 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -15,7 +15,7 @@ S="${WORKDIR}/${MY_P}"
 
 LICENSE="GPL-2"
 SLOT="0"
-#KEYWORDS="-* ~amd64 ~x86"
+KEYWORDS="-* amd64 x86"
 IUSE="custom-cflags abi_x86_32 abi_x86_64 +bios +uefi"
 
 RESTRICT="mirror test"
@@ -56,19 +56,26 @@ pkg_setup() {
 PATCHES=(
 	#"${FILESDIR}"/acpi_off.patch
 	"${FILESDIR}"/0002-gfxboot-menu-label.patch
+	"${FILESDIR}"/syslinux-6.04_pre1-fcommon.patch #705730
 	#"${FILESDIR}"/0003-memdisk-Force-ld-output-format-to-32-bits.patch
-	"${FILESDIR}"/0004-gnu-efi-from-arch.patch
+	#"${FILESDIR}"/0004-gnu-efi-from-arch.patch
 	#"${FILESDIR}"/0005-gnu-efi-version-compatibility.patch
+    "${FILESDIR}"/0005-Workaround-multiple-definition-of-symbol-errors.patch
+	"${FILESDIR}"/0006-Replace-builtin-strlen-that-appears-to-get-optimized.patch
+	#"${FILESDIR}"/0009-bios-Don-t-try-to-guess-the-sections-alignment.patch
+	#"${FILESDIR}"/0010-core-Clean-up-the-i386-bios-build.patch
+	"${FILESDIR}"/0012-libinstaller-Fix-build-with-glibc-2.36.patch
+	#"${FILESDIR}"/0013-Fix-build-with-gnu-efi-version-3.0.9.patch
 	"${FILESDIR}"/0015-efi-main.c-include-efisetjmp.h.patch
-	"${FILESDIR}"/0017-Replace-builtin-strlen-that-appears-to-get-optimized.patch
 	"${FILESDIR}"/0016-strip-gnu-property.patch
 	"${FILESDIR}"/0017-single-load-segment.patch
 	"${FILESDIR}"/0018-prevent-pow-optimization.patch
 	#"${FILESDIR}"/0025-reproducible-build.patch
-	#"${FILESDIR}"/0006-The-VPrint-definition-is-now-part-of-the-exports-of-.patch
+	"${FILESDIR}"/0027-use-correct-type-for-size.patch
+	"${FILESDIR}"/0006-The-VPrint-definition-is-now-part-of-the-exports-of-.patch
 	#"${FILESDIR}"/0007-Update-the-longjump-calls-to-fit-the-new-declaration.patch
-	"${FILESDIR}"/syslinux-6.04_pre1-fcommon.patch #705730
 	"${FILESDIR}"/syslinux-6.04_pre3-debug.c-fix-printf-include.patch
+	"${FILESDIR}"/syslinux-6.04_pre2-fix-loadflie-pointer-type.patch
     #"${FILESDIR}"/0001-linux-syslinux-support-ext2-3-4-device.patch
     #"${FILESDIR}"/0002-linux-syslinux-implement-open_ext2_fs.patch
     #"${FILESDIR}"/0003-linux-syslinux-implement-install_to_ext2.patch
@@ -78,9 +85,10 @@ PATCHES=(
     #"${FILESDIR}"/0007-linux-syslinux-implement-ext_construct_sectmap_fs.patch
     #"${FILESDIR}"/0008-libinstaller-syslinuxext-implement-syslinux_patch_bo.patch
     #"${FILESDIR}"/0009-linux-syslinux-implement-install_bootblock.patch
-    "${FILESDIR}"/0010-Workaround-multiple-definition-of-symbol-errors.patch
     "${FILESDIR}"/0001-install-don-t-install-obsolete-file-com32.ld.patch
     "${FILESDIR}"/determinism.patch
+	#"${FILESDIR}/syslinux-6.03-sysmacros.patch"
+	"${FILESDIR}/syslinux-6.04-binutils-2.41.patch"
 )
 
 src_prepare() {

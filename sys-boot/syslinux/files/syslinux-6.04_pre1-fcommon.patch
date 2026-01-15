@@ -39,6 +39,6 @@ gcc-10 enabled f-no-common by default. Broke syslinux linking.
  # set up the LIBDIR and EFIINC for building for the appropriate architecture
 -GCCOPT := $(call gcc_ok,-fno-stack-protector,)
 +GCCOPT := $(call gcc_ok,-fno-stack-protector,) $(call gcc_ok,-fcommon)
- EFIINC = /usr/include/efi
- LIBDIR  = /usr/lib
+ EFIINC = $(objdir)/include/efi
+ LIBDIR  = $(objdir)/lib
  

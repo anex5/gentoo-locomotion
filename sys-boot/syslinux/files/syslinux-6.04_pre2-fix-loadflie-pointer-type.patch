@@ -1,0 +1,11 @@
+--- a/com32/chain/chain.c
++++ b/com32/chain/chain.c
+@@ -514,7 +514,7 @@ int main(int argc, char *argv[])
+     if (opt.file) {
+ 	fdat.base = (opt.fseg << 4) + opt.foff;
+ 
+-	if (loadfile(opt.file, &fdat.data, &fdat.size)) {
++	if (loadfile(opt.file, &fdat.data, (size_t *)&fdat.size)) {
+ 	    error("Couldn't read the boot file.");
+ 	    goto bail;
+ 	}
