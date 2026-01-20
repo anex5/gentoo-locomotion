@@ -52,7 +52,7 @@ index 6a748412..e924cfb1 100644
  #include <syslinux/linux.h>
  #include <sys/ansi.h>
 -#include <setjmp.h>
-+#include <efisetjmp.h>
++//#include <setjmp.h>
  
  #include "efi.h"
  #include "fio.h"

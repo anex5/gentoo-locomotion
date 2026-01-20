@@ -54,7 +54,7 @@ pkg_setup() {
 # removed all the unpack/patching stuff since we aren't rebuilding the core stuff anymore
 
 PATCHES=(
-	#"${FILESDIR}"/acpi_off.patch
+	"${FILESDIR}"/acpi_off.patch
 	"${FILESDIR}"/0002-gfxboot-menu-label.patch
 	"${FILESDIR}"/syslinux-6.04_pre1-fcommon.patch #705730
 	#"${FILESDIR}"/0003-memdisk-Force-ld-output-format-to-32-bits.patch

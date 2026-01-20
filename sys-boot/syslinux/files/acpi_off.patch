@@ -14,14 +14,14 @@
 +##
 +## -----------------------------------------------------------------------
 +
-+# Avoid <acpi/acpi.h> header file conflicts with b/com32/gplinclude
++# Avoid "acpica_linuxized/include/acpi/acpi.h" header file conflicts with b/com32/gplinclude
 +NOGPL = 1
 +
 +LIBS += $(CURDIR)/libacpica.a
 +
-+topdir = ../..
-+MAKEDIR = $(topdir)/mk
-+include $(MAKEDIR)/com32.mk
++
++VPATH = $(SRC)
++include $(MAKEDIR)/elf.mk
 +
 +LIBACPICA_SRC_DIRS = acpica_linuxized/drivers/acpi/acpica \
 +	acpica_linuxized/drivers/acpi
@@ -8372,7 +8372,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acparser.h"
 +#include "amlcode.h"
@@ -8773,7 +8773,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "amlcode.h"
 +#include "acdispat.h"
@@ -9185,7 +9185,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "amlcode.h"
 +#include "acdispat.h"
@@ -9895,7 +9895,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acdispat.h"
 +#include "acnamesp.h"
@@ -10115,7 +10115,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acdispat.h"
 +#include "acinterp.h"
@@ -10799,7 +10799,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acdispat.h"
 +#include "acnamesp.h"
@@ -11516,7 +11516,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acparser.h"
 +#include "amlcode.h"
@@ -12360,7 +12360,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acparser.h"
 +#include "amlcode.h"
@@ -13120,7 +13120,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acparser.h"
 +#include "amlcode.h"
@@ -13994,7 +13994,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acparser.h"
 +#include "amlcode.h"
@@ -14756,7 +14756,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acparser.h"
 +#include "amlcode.h"
@@ -15298,7 +15298,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acparser.h"
 +#include "amlcode.h"
@@ -16021,7 +16021,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acdispat.h"
 +
@@ -16238,7 +16238,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acparser.h"
 +#include "acdispat.h"
@@ -16999,7 +16999,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acevents.h"
 +
@@ -17295,7 +17295,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acevents.h"
 +#include "acinterp.h"
@@ -17639,7 +17639,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acevents.h"
 +#include "acnamesp.h"
@@ -18399,7 +18399,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acevents.h"
 +#include "acnamesp.h"
@@ -18908,7 +18908,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acevents.h"
 +#include "acnamesp.h"
@@ -19349,7 +19349,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acevents.h"
 +
@@ -19728,7 +19728,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acevents.h"
 +#include "acnamesp.h"
@@ -20065,7 +20065,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acevents.h"
 +#include "acnamesp.h"
@@ -21333,7 +21333,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acevents.h"
 +#include "acnamesp.h"
@@ -22010,7 +22010,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acevents.h"
 +
@@ -22196,7 +22196,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acnamesp.h"
 +#include "acevents.h"
@@ -23052,7 +23052,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "actables.h"
 +
@@ -23378,7 +23378,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acevents.h"
 +#include "acnamesp.h"
@@ -24152,7 +24152,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acnamesp.h"
 +#include "acevents.h"
@@ -24446,7 +24446,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acinterp.h"
 +#include "acnamesp.h"
@@ -25079,7 +25079,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acinterp.h"
 +#include "amlcode.h"
@@ -25769,7 +25769,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acinterp.h"
 +#include "amlcode.h"
@@ -26303,7 +26303,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acinterp.h"
 +
@@ -26567,7 +26567,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acinterp.h"
 +#include "amlcode.h"
@@ -27609,7 +27609,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acdispat.h"
 +#include "acinterp.h"
@@ -27989,7 +27989,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acinterp.h"
 +#include "amlcode.h"
@@ -28990,7 +28990,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acinterp.h"
 +#include "amlcode.h"
@@ -29717,7 +29717,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acinterp.h"
 +#include "acevents.h"
@@ -30219,7 +30219,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acinterp.h"
 +#include "amlcode.h"
@@ -30658,7 +30658,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acparser.h"
 +#include "acdispat.h"
@@ -31697,7 +31697,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acparser.h"
 +#include "acinterp.h"
@@ -32279,7 +32279,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acinterp.h"
 +#include "acparser.h"
@@ -32554,7 +32554,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acinterp.h"
 +#include "acparser.h"
@@ -32895,7 +32895,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acinterp.h"
 +#include "amlcode.h"
@@ -33521,7 +33521,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acinterp.h"
 +
@@ -34044,7 +34044,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acdispat.h"
 +#include "acinterp.h"
@@ -34325,7 +34325,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "amlcode.h"
 +#include "acdispat.h"
@@ -34879,7 +34879,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "amlcode.h"
 +#include "acparser.h"
@@ -35582,7 +35582,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acdispat.h"
 +#include "acinterp.h"
@@ -36089,7 +36089,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acinterp.h"
 +#include "amlcode.h"
@@ -36390,7 +36390,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acinterp.h"
 +
@@ -36614,7 +36614,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acinterp.h"
 +
@@ -36944,7 +36944,7 @@
 +
 +#define DEFINE_AML_GLOBALS
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acinterp.h"
 +#include "amlcode.h"
@@ -37394,7 +37394,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +
 +#define _COMPONENT          ACPI_HARDWARE
@@ -37582,7 +37582,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acevents.h"
 +
@@ -38069,7 +38069,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +
 +#define _COMPONENT          ACPI_NAMESPACE
@@ -38486,7 +38486,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acevents.h"
 +
@@ -39146,7 +39146,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +
 +#define _COMPONENT          ACPI_HARDWARE
@@ -39735,7 +39735,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +
 +#define _COMPONENT          ACPI_HARDWARE
@@ -39925,7 +39925,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +
 +#define _COMPONENT          ACPI_HARDWARE
@@ -40257,7 +40257,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acnamesp.h"
 +
@@ -40832,7 +40832,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "amlcode.h"
 +#include "acnamesp.h"
@@ -41505,7 +41505,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acnamesp.h"
 +
@@ -42024,7 +42024,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acnamesp.h"
 +
@@ -42745,7 +42745,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +
 +/* TBD: This entire module is apparently obsolete and should be removed */
 +
@@ -42889,7 +42889,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acparser.h"
 +#include "acinterp.h"
@@ -43344,7 +43344,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acnamesp.h"
 +#include "acdispat.h"
@@ -43958,7 +43958,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acnamesp.h"
 +#include "acdispat.h"
@@ -44275,7 +44275,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "amlcode.h"
 +#include "acnamesp.h"
@@ -44545,7 +44545,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acnamesp.h"
 +
@@ -44995,7 +44995,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acnamesp.h"
 +#include "acparser.h"
@@ -45202,7 +45202,7 @@
 +
 +#define ACPI_CREATE_PREDEFINED_TABLE
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acnamesp.h"
 +#include "acpredef.h"
@@ -46375,7 +46375,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acnamesp.h"
 +#include "acinterp.h"
@@ -47109,7 +47109,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acnamesp.h"
 +
@@ -47865,7 +47865,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acnamesp.h"
 +
@@ -48268,7 +48268,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acnamesp.h"
 +#include "amlcode.h"
@@ -49020,7 +49020,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acnamesp.h"
 +
@@ -49381,7 +49381,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acnamesp.h"
 +#include "acinterp.h"
@@ -50241,7 +50241,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acnamesp.h"
 +#include "acparser.h"
@@ -50881,7 +50881,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acnamesp.h"
 +
@@ -51127,7 +51127,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acparser.h"
 +#include "amlcode.h"
@@ -52005,7 +52005,7 @@
 + * opcode templates in aml_op_info[].
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acparser.h"
 +#include "acdispat.h"
@@ -53215,7 +53215,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acparser.h"
 +#include "acopcode.h"
@@ -54051,7 +54051,7 @@
 + * templates in aml_op_info[]
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acparser.h"
 +#include "acdispat.h"
@@ -54734,7 +54734,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acparser.h"
 +
@@ -55002,7 +55002,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acparser.h"
 +#include "amlcode.h"
@@ -55321,7 +55321,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acparser.h"
 +#include "amlcode.h"
@@ -55566,7 +55566,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acparser.h"
 +
@@ -55679,7 +55679,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acparser.h"
 +#include "acdispat.h"
@@ -56074,7 +56074,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acresrc.h"
 +
@@ -56458,7 +56458,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acresrc.h"
 +#include "acnamesp.h"
@@ -57154,7 +57154,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acresrc.h"
 +#include "acnamesp.h"
@@ -57664,7 +57664,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acresrc.h"
 +
@@ -58616,7 +58616,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acresrc.h"
 +
@@ -58867,7 +58867,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acresrc.h"
 +
@@ -59160,7 +59160,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acresrc.h"
 +
@@ -59458,7 +59458,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acresrc.h"
 +
@@ -59711,7 +59711,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acresrc.h"
 +
@@ -59948,7 +59948,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acresrc.h"
 +
@@ -60771,7 +60771,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acresrc.h"
 +
@@ -61215,7 +61215,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acnamesp.h"
 +#include "acresrc.h"
@@ -61999,7 +61999,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acresrc.h"
 +#include "acnamesp.h"
@@ -62620,7 +62620,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "actables.h"
 +
@@ -63289,7 +63289,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "actables.h"
 +
@@ -63432,7 +63432,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acnamesp.h"
 +#include "actables.h"
@@ -64088,7 +64088,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "actables.h"
 +
@@ -64787,7 +64787,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acnamesp.h"
 +#include "actables.h"
@@ -65426,7 +65426,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "actables.h"
 +
@@ -65705,7 +65705,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acnamesp.h"
 +
@@ -66002,7 +66002,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acdebug.h"
 +
@@ -66387,7 +66387,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +
 +#define _COMPONENT          ACPI_UTILITIES
@@ -66713,7 +66713,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +
 +/*
@@ -67464,7 +67464,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acnamesp.h"
 +
@@ -68468,7 +68468,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +
 +#define _COMPONENT          ACPI_UTILITIES
@@ -69121,7 +69121,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acnamesp.h"
 +
@@ -69675,7 +69675,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acinterp.h"
 +#include "acnamesp.h"
@@ -70385,7 +70385,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acnamesp.h"
 +
@@ -70727,7 +70727,7 @@
 +
 +#define DEFINE_ACPI_GLOBALS
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +
 +#define _COMPONENT          ACPI_UTILITIES
@@ -71116,7 +71116,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acinterp.h"
 +
@@ -71464,7 +71464,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acnamesp.h"
 +#include "acevents.h"
@@ -71610,7 +71610,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +
 +#define _COMPONENT          ACPI_UTILITIES
@@ -71788,7 +71788,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +
 +#define _COMPONENT          ACPI_UTILITIES
@@ -72115,7 +72115,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acnamesp.h"
 +
@@ -73252,7 +73252,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +
 +#define _COMPONENT          ACPI_UTILITIES
@@ -73606,7 +73606,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acnamesp.h"
 +
@@ -74316,7 +74316,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +
 +#define _COMPONENT          ACPI_UTILITIES
@@ -74699,7 +74699,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acresrc.h"
 +
@@ -75526,7 +75526,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +
 +#define _COMPONENT          ACPI_UTILITIES
@@ -75886,7 +75886,7 @@
 + * occurs in the body of acpi_ut_free.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +
 +#ifdef ACPI_DBG_TRACK_ALLOCATIONS
@@ -76526,7 +76526,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acevents.h"
 +#include "acnamesp.h"
@@ -77249,7 +77249,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acnamesp.h"
 +
@@ -77667,7 +77667,7 @@
 + * POSSIBILITY OF SUCH DAMAGES.
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "accommon.h"
 +#include "acnamesp.h"
 +
@@ -77845,7 +77845,7 @@
 + * Chapter 9: OS Services Layer - External Interface Definitnion
 + */
 +
-+#include <acpi/acpi.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include <sys/pci.h>
 +#include <unistd.h>
 +#include <sys/times.h>
@@ -87369,8 +87369,8 @@
 +#include <stdio.h>
 +#include <stdlib.h>
 +#include <console.h>
-+#include <sys/cpu.h>
-+#include <acpi/acpi.h>
++#include <x86/cpu.h>
++#include "acpica_linuxized/include/acpi/acpi.h"
 +#include "osl.h"
 +
 +acpi_status dump_tree_cb(acpi_handle obj, u32 depth, void *context, void **ret)
@@ -87558,14 +87558,31 @@
 +int acpi_os_process_deferred_work(int noexec);
 +
 +#endif /* _OSL_H_ */
---- a/com32/modules/Makefile
-+++ b/com32/modules/Makefile
-@@ -20,7 +20,7 @@ include $(MAKEDIR)/elf.mk
+--- a/com32/Makefile
++++ b/com32/Makefile
+@@ -1,4 +1,4 @@
+-SUBDIRS = tools lib libutil gpllib libupload elflink/ldlinux modules mboot \
++SUBDIRS = acpioff tools lib libutil gpllib libupload elflink/ldlinux modules mboot \
+ 	  menu samples elflink rosh cmenu hdt gfxboot sysdump lua/src chain
  
- # BIOS-specific modules
- MOD_BIOS = disk.c32 elf.c32 ethersel.c32 gpxecmd.c32 ifmemdsk.c32 ifplop.c32 \
--	   kbdmap.c32 kontron_wdt.c32 pcitest.c32 pmload.c32 poweroff.c32 \
-+	   kbdmap.c32 kontron_wdt.c32 pcitest.c32 pmload.c32 poweroff.c32 acpioff.c32 \
- 	   prdhcp.c32 pxechn.c32 sanboot.c32 sdi.c32 vesainfo.c32
- 
- # All-architecture modules
+ .PHONY: subdirs $(SUBDIRS)
+@@ -13,7 +13,7 @@ all tidy dist clean spotless install: su
+ # Parallel dependencies
+ elflink/ldlinux gpllib libupload libutil: lib
+ cmenu: lib libutil
+-
++acpioff: lib
+ chain gfxboot mboot menu modules rosh: lib libutil gpllib
+ hdt: lib libutil gpllib libupload cmenu
+ lua/src: lib libutil gpllib cmenu
+--- a/Makefile
++++ b/Makefile
+@@ -142,7 +142,7 @@ MODULES = memdisk/memdisk \
+ 	com32/hdt/*.c32 com32/rosh/*.c32 com32/gfxboot/*.c32 \
+ 	com32/sysdump/*.c32 com32/lua/src/*.c32 com32/chain/*.c32 \
+ 	com32/lib/*.c32 com32/libutil/*.c32 com32/gpllib/*.c32 \
+-	com32/elflink/ldlinux/*.c32 com32/cmenu/libmenu/*.c32
++	com32/elflink/ldlinux/*.c32 com32/cmenu/libmenu/*.c32 com32/acpioff/*.c32
+ else
+ # FIXME: Prune other BIOS-centric modules
+ MODULES = com32/menu/*.c32 com32/modules/*.c32 com32/mboot/*.c32 \
