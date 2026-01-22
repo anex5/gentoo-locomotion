@@ -284,7 +284,7 @@ CDEPEND="
 		>=media-libs/harfbuzz-7.3.0:0=[${MULTILIB_USEDEP}]
 	)
 	system-icu? (
-		>=dev-libs/icu-73.1:=[${MULTILIB_USEDEP}]
+		>=dev-libs/icu-76.1:=[${MULTILIB_USEDEP}]
 	)
 	system-jpeg? (
 		>=media-libs/libjpeg-turbo-2.1.5.1[${MULTILIB_USEDEP}]
@@ -990,6 +990,11 @@ src_prepare() {
 
 	eapply "${WORKDIR}/firefox-patches"
 	use loong && eapply "${WORKDIR}/firefox-loong-patches"
+
+	# ICU's subslot change should trigger rebuild on Firefox if it is updated 77->78.
+	if use system-icu && has_version ">=dev-libs/icu-78.1" ; then
+		eapply "${FILESDIR}/firefox-146.0.1-icu78.patch" # bgo#967261
+	fi
 
 	# Allow user to apply any additional patches without modifing ebuild
 	eapply_user

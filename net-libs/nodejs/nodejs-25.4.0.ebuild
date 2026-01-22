@@ -4,7 +4,7 @@
 EAPI=8
 
 CONFIG_CHECK="~ADVISE_SYSCALLS"
-PYTHON_COMPAT=( python3_{11..14} )
+PYTHON_COMPAT=( python3_{13..14} )
 PYTHON_REQ_USE="threads(+)"
 MULTIPLEXER_VER="11"
 
@@ -20,7 +20,7 @@ SLOT="${SLOT_MAJOR}/$(ver_cut 1-2 ${PV})"
 if [[ ${PV} == *9999 ]]; then
 	inherit git-r3
 	EGIT_REPO_URI="https://github.com/nodejs/node"
-	SLOT="25/25.2"
+	SLOT="25/25.4"
 else
 	SRC_URI="https://nodejs.org/dist/v${PV}/node-v${PV}.tar.xz"
 	KEYWORDS="~amd64 ~arm ~arm64 ~loong ~ppc64 ~riscv ~x86 ~amd64-linux ~x64-macos"
@@ -414,7 +414,7 @@ src_install() {
 			\) \) -exec rm -rf "{}" \;
 	fi
 
-	use doc && ( mv "${ED}"/usr/share/doc/node "${ED}"/usr/share/doc/${PF} || die )
+	mv "${ED}"/usr/share/doc/node "${ED}"/usr/share/doc/${PF} || die
 
 	cp --remove-destination "${FILESDIR}/node-multiplexer-v${MULTIPLEXER_VER}" "${ED}/usr/bin/node" || die
 	sed -e "s|__EPREFIX__|${EPREFIX}|g" -i "${ED}/usr/bin/node" || die
