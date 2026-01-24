@@ -1,4 +1,4 @@
-# Copyright 1999-2025 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -47,18 +47,25 @@ RESTRICT="
 CDEPEND="
 	>=app-arch/brotli-1.1.0
 	dev-db/sqlite:3
+	>=dev-cpp/ada-3.3.0:=
+	>=dev-cpp/simdutf-7.3.4:=
 	>=dev-libs/libuv-1.51.0:=
-	>=dev-libs/simdjson-3.10.1:=
-	>=net-dns/c-ares-1.34.4:=
-	>=net-libs/nghttp2-1.64.0:=
+	>=dev-libs/simdjson-4.0.7:=
+	>=net-dns/c-ares-1.34.5:=
+	>=net-libs/nghttp2-1.66.0:=
 	>=net-libs/nghttp3-1.7.0:=
-	>=sys-libs/zlib-1.3.1
+	virtual/zlib:=
 	system-icu? (
 		>=dev-libs/icu-77.1:=
 	)
 	system-ssl? (
-		>=net-libs/ngtcp2-1.9.1:=
-		>=dev-libs/openssl-3.0.16:0[asm?,fips?]
+		>=net-libs/ngtcp2-1.11.0:=
+		>=dev-libs/openssl-3.5.4:0[asm?,fips?]
+	)
+	!system-ssl? ( >=net-libs/ngtcp2-1.11.0:=[-gnutls] )
+	|| (
+		sys-devel/gcc:*
+		llvm-runtimes/libatomic-stub
 	)
 "
 
@@ -241,9 +248,7 @@ src_configure() {
 
 	local myconf=(
 		--ninja
-		# ada is not packaged yet
-		# https://github.com/ada-url/ada
-		# --shared-ada
+		--shared-ada
 		--shared-brotli
 		--shared-cares
 		--shared-libuv
@@ -251,9 +256,7 @@ src_configure() {
 		--shared-nghttp3
 		--shared-ngtcp2
 		--shared-simdjson
-		# sindutf is not packaged yet
-		# https://github.com/simdutf/simdutf
-		# --shared-simdutf
+		--shared-simdutf
 		--shared-sqlite
 		--shared-zlib
 	)
@@ -280,6 +283,11 @@ src_configure() {
 	use inspector || myconf+=( --without-inspector )
 	use npm || myconf+=( --without-npm )
 	use snapshot || myconf+=( --without-node-snapshot )
+	if use ssl; then
+		use system-ssl && myconf+=(--shared-openssl --openssl-use-def-ca-store)
+	else
+		myconf+=(--without-ssl)
+	fi
 	if use ssl; then
 		use system-ssl && myconf+=( --shared-openssl --openssl-use-def-ca-store )
 	else
@@ -320,7 +328,7 @@ src_configure() {
 	GYP_DEFINES="linux_use_gold_flags=0
 		linux_use_bundled_binutils=0
 		linux_use_bundled_gold=0" \
-	"${EPYTHON}" configure.py \
+		"${EPYTHON}" configure.py \
 		--prefix="${EPREFIX}"/usr \
 		--dest-cpu=${myarch} \
 		"${myconf[@]}" || die
@@ -331,7 +339,7 @@ src_configure() {
 
 src_compile() {
 	export NINJA_ARGS=" $(get_NINJAOPTS)"
-	emake -Onone
+	eninja -C out/Release
 }
 
 src_install() {
@@ -365,33 +373,28 @@ src_install() {
 	mv "${ED}/usr/include/node/"* "${ED}${D_INCLUDE_BASE}" || die
 	rm -rf "${ED}/usr/include/node" || die
 
-	if use doc; then
-		docinto html
-		dodoc -r "${S}"/doc/*
+	if use doc ; then
+		insinto "/usr/share/node/${SLOT_MAJOR}/share/doc/${PF}/html"
+		doins -r "${S}/doc/"*
 	fi
 
-	# Use tarball instead.
-	rm -rf "${ED}/usr/$(get_libdir)/node_modules/npm"
-	rm -rf "${ED}/usr/bin/npm"
-	rm -rf "${ED}/usr/bin/npx"
-
-	mv \
-		"${ED}/usr/share/doc/node" \
-		"${ED}/usr/share/doc/${PF}" \
-		|| die
-
 	if use npm; then
+		# Use tarball instead.
+		# rm -rf "${ED}/usr/$(get_libdir)/node_modules/npm"
+		rm -rf "${ED}/usr/bin/npm"
+		rm -rf "${ED}/usr/bin/npx"
+
 		keepdir /etc/npm
 		echo "NPM_CONFIG_GLOBALCONFIG=${EPREFIX}/etc/npm/npmrc" > "${T}"/50npm
 		doenvd "${T}"/50npm
 
-		# Install bash completion for `npm`
+		# Install bash completion for npm
 		local tmp_npm_completion_file="$(TMPDIR="${T}" mktemp -t npm.XXXXXXXXXX)"
 		"${ED}/usr/bin/npm" completion > "${tmp_npm_completion_file}"
 		newbashcomp "${tmp_npm_completion_file}" npm
 
 		# Move man pages
-		#use man && doman "${LIBDIR}"/node_modules/npm/man/man{1,5,7}/*
+		use man && doman "${LIBDIR}"/node_modules/npm/man/man{1,5,7}/*
 
 		# Clean up
 		rm -f "${LIBDIR}"/node_modules/npm/{.mailmap,.npmignore,Makefile}
