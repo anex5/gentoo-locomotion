@@ -354,22 +354,13 @@ multilib_src_configure() {
 		vulkan_enable video_cards_imagination imagination
 		vulkan_enable video_cards_intel intel intel_hasvk
 		vulkan_enable video_cards_lavapipe swrast
+		vulkan_enable video_cards_nvk nouveau
 		vulkan_enable video_cards_panfrost panfrost
 		vulkan_enable video_cards_lima lima
 		vulkan_enable video_cards_amdgpu amd
 		vulkan_enable video_cards_v3d broadcom
 		vulkan_enable video_cards_vc4 broadcom
 		vulkan_enable video_cards_virgl virtio
-		if use video_cards_nvk; then
-			vulkan_enable video_cards_nvk nouveau
-			if ! multilib_is_native_abi; then
-				echo -e "[binaries]\nrust = ['rustc', '--target=$(rust_abi $CBUILD)']" > "${T}/rust_fix.ini"
-				emesonargs+=(
-					--native-file "${T}"/rust_fix.ini
-				)
-			fi
-		fi
-
 		emesonargs+=(-Dvulkan-layers=anti-lag,device-select,overlay)
 	fi
 
@@ -415,6 +406,7 @@ multilib_src_configure() {
 		$(meson_feature llvm)
 		$(meson_feature lm-sensors lmsensors)
 		$(meson_feature unwind libunwind)
+		$(meson_feature vulkan display-info)
 		$(meson_feature zstd)
 		$(meson_use llvm amd-use-llvm)
 		$(meson_use sysprof)
