@@ -1525,7 +1525,8 @@ _src_configure() {
 		mozconfig_add_options_ac "+hardened" --enable-hardening
 		mozconfig_add_options_ac "+hardened stl" --enable-stl-hardening
 		append-ldflags "-Wl,-z,relro -Wl,-z,now"
-
+	else
+		mozconfig_add_options_ac "-hardened" --disable-hardening
 	fi
 
 	# Increase the FORTIFY_SOURCE value, #910071.
