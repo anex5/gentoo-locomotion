@@ -1,10 +1,10 @@
-# Copyright 1999-2025 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
 # Using Gentoos firefox patches as system libraries and lto are quite nice
-FIREFOX_PATCHSET="firefox-146-patches-01.tar.xz"
+FIREFOX_PATCHSET="firefox-147-patches-01.tar.xz"
 
 LLVM_COMPAT=( {19..21} )
 
@@ -25,7 +25,7 @@ WASI_SDK_LLVM_VER=${LLVM_SLOT}
 
 MOZ_ESR=
 
-MOZ_PV=146.0.0
+MOZ_PV=147.0.2
 MOZ_PV_SUFFIX=
 if [[ ${PV} =~ (_(alpha|beta|rc).*)$ ]] ; then
 	MOZ_PV_SUFFIX=${BASH_REMATCH[1]}
@@ -72,7 +72,7 @@ CODEC_IUSE="
 IUSE+="
 ${CODEC_IUSE}
 alsa atk clang cpu_flags_arm_neon cups +dbus debug firejail hardened hwaccel
-jack -jemalloc +jit libcanberra libnotify libproxy libsecret lld lto mold pgo
+jack -jemalloc +jit jpegxl libcanberra libnotify libproxy libsecret lld lto mold pgo
 pulseaudio sndio selinux speech systemd +system-av1 +system-ffmpeg +system-harfbuzz
 +system-icu +system-jpeg +system-libevent +system-libvpx +system-png +system-pipewire
 -system-python-libs +system-webp test vaapi wayland +webrtc wifi webspeech X
@@ -890,8 +890,8 @@ src_prepare() {
 	use atk || eapply "${FILESDIR}/zen-browser-no-atk.patch"
 	use dbus || eapply "${FILESDIR}/zen-browser-no-dbus.patch"
 	eapply "${FILESDIR}/zen-browser-no-fribidi.patch"
-	eapply "${FILESDIR}/zen-browser-fix-clang-as.patch"
 	eapply "${FILESDIR}/zen-browser-system-gtests.patch"
+	eapply "${FILESDIR}/zen-browser-fix-python-utcfromtimestamp.patch"
 
 	if use lto; then
 		rm -v "${WORKDIR}"/firefox-patches/*-LTO-Only-enable-LTO-*.patch || die
@@ -948,9 +948,8 @@ src_prepare() {
 	fi
 
 	eapply "${FILESDIR}/extra-patches/firefox-128.3.0e-big-endian-image-decoders.patch"
-	eapply "${FILESDIR}/extra-patches/firefox-146.0.0-fix-include-sys-prctl.h.patch"
 
-	# Workaround for bgo#915651 on musl
+	# Workaround for bug #915651 on musl
 	if use elibc_glibc ; then
 		rm -v "${WORKDIR}"/firefox-patches/*bgo-748849-RUST_TARGET_override.patch || die
 		rm -v "${WORKDIR}"/firefox-patches/*bmo-1988166-musl-remove-nonexisting-system-header-req.patch || die
@@ -1281,6 +1280,7 @@ check_speech_dispatcher() {
 OFLAG=""
 LTO_TYPE=""
 _src_configure() {
+	OFLAG="$(sed -ne "s/\(-O[0-9]\+\) .*$/\1/p" <<< "${CFLAGS}")"
 	local s=$(_get_s)
 	cd "${s}" || die
 
@@ -1410,7 +1410,9 @@ _src_configure() {
 		--with-system-pixman \
 		--with-system-zlib \
 		--with-toolchain-prefix="${CHOST}-" \
+		--with-ffvpx=no \
 		--with-app-name="${PN}" \
+		--with-l10n-base="${s}/browser/locales" \
 		--with-unsigned-addon-scopes="app,system"
 
 	if use system-ffmpeg ; then
@@ -1437,16 +1439,17 @@ _src_configure() {
 	# Set update channel
 	mozconfig_add_options_ac '' --update-channel="release"
 
-	#if ! use x86 && [[ ${CHOST} != armv*h* ]] ; then
-	#	mozconfig_add_options_ac '' --enable-rust-simd
-	#fi
+	# Whitelist to allow unkeyworded arches to build with "--disable-rust-simd" by default.
+	if use amd64 || use arm64 || use ppc64 || use loong || use riscv ; then
+		mozconfig_add_options_ac '' --enable-rust-simd
+	fi
 
 	# For future keywording: This is currently (97.0) only supported on:
 	# amd64, arm, arm64, and x86.
 	# You might want to flip the logic around if Firefox is to support more
 	# arches.
 	# bug 833001, bug 903411#c8
-	if use ppc64 || use riscv ; then
+	if use loong || use ppc64 || use riscv; then
 		mozconfig_add_options_ac '' --disable-sandbox
 	else
 		mozconfig_add_options_ac '' --enable-sandbox
@@ -1456,6 +1459,11 @@ _src_configure() {
 		mozconfig_add_options_ac 'Enabling JIT' --enable-jit
 	else
 		mozconfig_add_options_ac 'Disabling JIT' --disable-jit
+	fi
+
+	# riscv-related options, bgo#947337, bgo#947338
+	if use riscv ; then
+		mozconfig_add_options_ac 'Disable webrtc for RISC-V' --disable-webrtc
 	fi
 
 	if [[ -s "${s}/api-google.key" ]] ; then
@@ -1513,13 +1521,15 @@ _src_configure() {
 	mozconfig_use_enable webrtc
 	mozconfig_use_enable webspeech
 
-	# The upstream default is hardening on even if unset.
 	if use hardened ; then
 		mozconfig_add_options_ac "+hardened" --enable-hardening
-		append-ldflags "-Wl,-z,relro -Wl,-z,now" # Full Relro
-	else
-		mozconfig_add_options_ac "-hardened" --disable-hardening
+		mozconfig_add_options_ac "+hardened stl" --enable-stl-hardening
+		append-ldflags "-Wl,-z,relro -Wl,-z,now"
+
 	fi
+
+	# Increase the FORTIFY_SOURCE value, #910071.
+	sed -e "/-D_FORTIFY_SOURCE=/s:2:${OFLAG#-O}:" -i "${S}"/build/moz.configure/toolchain.configure || die
 
 	local myaudiobackends=""
 	use jack && myaudiobackends+="jack,"
@@ -1550,6 +1560,8 @@ _src_configure() {
 		mozconfig_add_options_ac 'no wasm-sandbox' --without-wasm-sandboxed-libraries
 		mozconfig_use_with system-harfbuzz system-graphite2
 	fi
+
+	! use jpegxl && mozconfig_add_options_ac '-jpegxl' --disable-jxl
 
 	if use lto; then
 		if tc-is-cross-compiler; then
