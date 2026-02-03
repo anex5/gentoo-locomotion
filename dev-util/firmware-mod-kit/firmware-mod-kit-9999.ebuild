@@ -1,9 +1,9 @@
-# Copyright 2021 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-inherit git-r3 toolchain-funcs
+inherit git-r3 autotools toolchain-funcs
 
 DESCRIPTION="Utilities to to extract and rebuild firmware images for various embedded devices"
 HOMEPAGE="https://code.google.com/p/firmware-mod-kit/wiki/Documentation"
@@ -22,19 +22,27 @@ DEPEND="
 RDEPEND="${DEPEND}"
 #BDEPEND="app-text/dos2unix"
 
-#PATCHES="${FILESDIR}"/gcc10.patch
+PATCHES="${FILESDIR}"/wrt54gv5_img-fix-printf.patch
 
 #S=${WORKDIR}/${P}/src
 
 src_prepare() {
-	sed -e 's|struct global|extern struct global|' -i "${S}"/src/webcomp-tools/common.h || die
-	sed -e '12 i\struct global globals = {};' -i "${S}"/src/webcomp-tools/common.c || die
+	#sed -e 's|struct global|extern struct global|' -i "${S}"/src/webcomp-tools/common.h || die
+	#sed -e '12 i\struct global globals = {};' -i "${S}"/src/webcomp-tools/common.c || die
+	sed -e 's/BIG_ENDIAN/__BIG_ENDIAN/g' -e 's/LITTLE_ENDIAN/__LITTLE_ENDIAN/g' -i "${S}"/src/webcomp-tools/common.c || die
+	sed -e '/CXX := g++/d' -i "${S}"/src/Makefile -i "${S}"/src/wrt_vx_imgtool/Makefile || die
+	sed -e 's/gcc/\$\(CC\)/' -i "${S}"/src/bff/Makefile || die
+
+	sed -e 's|u_int8_t|uint8_t|g' -e 's|u_int16_t|uint16_t|g' -e 's|u_int32_t|uint32_t|g' \
+		-i "${S}"/src/asustrx.c -i "${S}"/src/untrx.h \
+		-i "${S}"/src/firmware-tools/mkfwimage2.c -i "${S}"/src/firmware-tools/fw.h || die
+
 #	dos2unix ${S}/src/others/squashfs-3.4-cisco/squashfs-tools/mksquashfs.c
 	default
 }
 
 src_configure(){
-	cd src && econf
+	cd src && eautoreconf
 }
 
 src_compile() {

@@ -1,0 +1,11 @@
+--- a/src/wrt_vx_imgtool/wrt54gv5_img.cpp
++++ b/src/wrt_vx_imgtool/wrt54gv5_img.cpp
+@@ -672,7 +672,7 @@ int FixImage(const char *pszImage)
+ int main(int argc, char* argv[])
+ {
+ 	printf("\n WRT54G/GS v5-v6 firmware image builder, extractor, fixer, and viewer");
+-	printf("\n "VERSION_TEXT " - " __DATE__ " by Jeremy Collake (jeremy@bitsum.com)");		
++	printf("\n %s - %s by Jeremy Collake (jeremy@bitsum.com)", VERSION_TEXT, __DATE__);
+ 	//printf("\n For info see: http://www.bitsum.com/openwiking/owbase/ow.asp?WRT54G5%5FCFE");	
+ 	printf("\n ------------------------------------------------------------------------------");
+ 
