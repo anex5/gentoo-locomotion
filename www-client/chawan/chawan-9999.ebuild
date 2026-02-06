@@ -20,23 +20,22 @@ fi
 
 LICENSE="Unlicense"
 SLOT="0"
-IUSE=""
+IUSE="static-libs"
 
 BDEPEND="
 	app-arch/unzip
 	dev-lang/nim
+	llvm-runtimes/libatomic-stub
 	virtual/pkgconfig
 	virtual/pandoc
 "
 
 RDEPEND="
-	app-arch/brotli:=
-    sys-libs/ncurses:=[unicode(+)]
-    net-misc/curl:=[http2,ssl,adns]
-	llvm-runtimes/libatomic-stub
-	>=virtual/zlib-1.2.9:=
-	dev-libs/openssl:=
-	net-libs/libssh2
+    sys-libs/ncurses:=[unicode(+),static-libs?]
+    net-misc/curl:=[brotli,http2,openssl,ssl,ssh,adns,static-libs?]
+	dev-libs/openssl:=[static-libs?]
+	net-libs/libssh2:=[static-libs?]
+	>=virtual/zlib-1.2.9:=[static-libs?]
 "
 
 RESTRICT="mirror"
@@ -50,6 +49,8 @@ usr/libexec/chawan/gmi2html
 usr/libexec/chawan/ansi2html
 usr/libexec/chawan/md2html
 usr/libexec/chawan/gopher2html
+usr/libexec/chawan/tohtml
+usr/libexec/chawan/cgi-bin/ssl
 usr/libexec/chawan/cgi-bin/sftp
 usr/libexec/chawan/cgi-bin/gemini
 usr/libexec/chawan/cgi-bin/http
@@ -69,6 +70,7 @@ usr/bin/cha
 src_compile() {
 	append-cflags "-ffile-prefix-map=${S}/="
 	use x86 && appnd-cflags "-fpermissive"
+	export STATIC_LINK=$(usex static-libs 1 0)
 	default
 }
 
@@ -76,3 +78,6 @@ src_install(){
 	emake DESTDIR="${D}" PREFIX="${EPREFIX}/usr" install
 }
 
+src_test(){
+	emake test
+}
