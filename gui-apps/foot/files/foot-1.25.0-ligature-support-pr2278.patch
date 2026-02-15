@@ -1,0 +1,1036 @@
+From 8b33b2c4ad1e34c5c21c3fdcefb03f28079a7885 Mon Sep 17 00:00:00 2001
+From: barsmonster <3@14.by>
+Date: Fri, 13 Feb 2026 11:30:56 +0000
+Subject: [PATCH] Add font ligature rendering support
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Add tweak.ligatures option (default: no) for OpenType liga/calt
+rendering with programming fonts. Ligatures are render-only —
+the grid and copy/paste are unchanged.
+
+Uses HarfBuzz to probe which character subsequences form actual
+ligatures. Only those go through fcft's grapheme cache; the rest
+use the bounded per-glyph cache.
+
+Block cursor over a ligature uses a pixman gradient as composite
+source for single-pass correct-color rendering.
+---
+ config.c           |  13 +
+ config.h           |   1 +
+ doc/foot.ini.5.scd |  15 +
+ meson.build        |   7 +-
+ render.c           | 747 +++++++++++++++++++++++++++++++++++++++++++--
+ terminal.c         |  67 ++++
+ terminal.h         |   2 +
+ 7 files changed, 831 insertions(+), 21 deletions(-)
+
+diff --git a/config.c b/config.c
+index 14e836c1..48f25ba3 100644
+--- a/config.c
++++ b/config.c
+@@ -2832,6 +2832,18 @@ parse_section_tweak(struct context *ctx)
+         return true;
+     }
+ 
++    else if (streq(key, "ligatures")) {
++        if (!value_to_bool(ctx, &conf->tweak.ligatures))
++            return false;
++        if (conf->tweak.ligatures && !conf->can_shape_grapheme) {
++            LOG_WARN(
++                "fcft lacks grapheme shaping support; "
++                "ligatures disabled");
++            conf->tweak.ligatures = false;
++        }
++        return true;
++    }
++
+     else if (streq(key, "grapheme-width-method")) {
+         _Static_assert(sizeof(conf->tweak.grapheme_width_method) == sizeof(int),
+                        "enum is not 32-bit");
+@@ -3578,6 +3590,7 @@ config_load(struct config *conf, const char *conf_path,
+ #if defined(FOOT_GRAPHEME_CLUSTERING) && FOOT_GRAPHEME_CLUSTERING
+             .grapheme_shaping = fcft_caps & FCFT_CAPABILITY_GRAPHEME_SHAPING,
+ #endif
++            .ligatures = false,
+             .grapheme_width_method = GRAPHEME_WIDTH_DOUBLE,
+             .delayed_render_lower_ns = 500000,         /* 0.5ms */
+             .delayed_render_upper_ns = 16666666 / 2,   /* half a frame period (60Hz) */
+diff --git a/config.h b/config.h
+index 9ca47753..88b6279e 100644
+--- a/config.h
++++ b/config.h
+@@ -423,6 +423,7 @@ struct config {
+         enum fcft_scaling_filter fcft_filter;
+         bool overflowing_glyphs;
+         bool grapheme_shaping;
++        bool ligatures;
+         enum {
+             GRAPHEME_WIDTH_WCSWIDTH,
+             GRAPHEME_WIDTH_DOUBLE,
+diff --git a/doc/foot.ini.5.scd b/doc/foot.ini.5.scd
+index 8bff9629..b13e56a2 100644
+--- a/doc/foot.ini.5.scd
++++ b/doc/foot.ini.5.scd
+@@ -1964,6 +1964,21 @@ any of these options.
+ 	
+ 	Default: _yes_
+ 
++*ligatures*
++	Boolean. When enabled, foot renders font ligatures —
++	multi-character sequences like ->, =>, !=, <= that
++	programming fonts (Fira Code, JetBrains Mono, Cascadia Code,
++	etc.) display as combined glyphs.
++
++	Ligatures are purely visual — copy/paste always preserves
++	the original individual characters.
++
++	Requires a font with ligature tables and fcft compiled with
++	HarfBuzz support. Has no visible effect with fonts that do
++	not define ligatures.
++
++	Default: _no_
++
+ *grapheme-width-method*
+ 	Selects which method to use when calculating the width
+ 	(i.e. number of columns) of a grapheme cluster. One of
+diff --git a/meson.build b/meson.build
+index aa8342ab..d4e7ad25 100644
+--- a/meson.build
++++ b/meson.build
+@@ -145,6 +145,7 @@ wayland_client = dependency('wayland-client')
+ wayland_cursor = dependency('wayland-cursor')
+ xkb = dependency('xkbcommon', version: '>=1.0.0')
+ fontconfig = dependency('fontconfig')
++harfbuzz = dependency('harfbuzz')
+ utf8proc = dependency('libutf8proc', required: get_option('grapheme-clustering'))
+ 
+ if utf8proc.found()
+@@ -282,7 +283,7 @@ pgolib = static_library(
+   'terminal.c', 'terminal.h',
+   emoji_variation_sequences,
+   wl_proto_src + wl_proto_headers,
+-  dependencies: [libepoll, pixman, fcft, tllist, wayland_client, xkb, utf8proc],
++  dependencies: [libepoll, pixman, fcft, tllist, wayland_client, xkb, utf8proc, fontconfig, harfbuzz],
+   link_with: vtlib,
+ )
+ 
+@@ -298,7 +299,7 @@ if get_option('b_pgo') == 'generate'
+     'pgo',
+     'pgo/pgo.c',
+     wl_proto_src + wl_proto_headers,
+-    dependencies: [math, threads, libepoll, pixman, wayland_client, xkb, utf8proc, fcft, tllist],
++    dependencies: [math, threads, libepoll, pixman, wayland_client, xkb, utf8proc, fcft, tllist, harfbuzz],
+     link_with: pgolib,
+   )
+ endif
+@@ -333,7 +334,7 @@ executable(
+   'xkbcommon-vmod.h',
+   srgb_funcs, wl_proto_src + wl_proto_headers, version,
+   dependencies: [math, threads, libepoll, pixman, wayland_client, wayland_cursor, xkb, fontconfig, utf8proc,
+-                 tllist, fcft],
++                 tllist, fcft, harfbuzz],
+   link_with: pgolib,
+   install: true)
+ 
+diff --git a/render.c b/render.c
+index 3aa7d543..e15cfd7e 100644
+--- a/render.c
++++ b/render.c
+@@ -25,6 +25,7 @@
+ #include <xdg-toplevel-icon-v1.h>
+ 
+ #include <fcft/fcft.h>
++#include <hb.h>
+ 
+ #define LOG_MODULE "render"
+ #define LOG_ENABLE_DBG 0
+@@ -684,23 +685,12 @@ draw_cursor(const struct terminal *term, const struct cell *cell,
+     }
+ }
+ 
+-static int
+-render_cell(struct terminal *term, pixman_image_t *pix,
+-            pixman_region32_t *damage, struct row *row, int row_no, int col,
+-            bool has_cursor)
++static void
++resolve_colors(const struct terminal *term,
++               const struct cell *cell,
++               uint32_t *out_fg, uint32_t *out_bg,
++               uint16_t *out_alpha)
+ {
+-    struct cell *cell = &row->cells[col];
+-    if (cell->attrs.clean)
+-        return 0;
+-
+-    cell->attrs.clean = 1;
+-    cell->attrs.confined = true;
+-
+-    int width = term->cell_width;
+-    int height = term->cell_height;
+-    const int x = term->margins.left + col * width;
+-    const int y = term->margins.top + row_no * height;
+-
+     uint32_t _fg = 0;
+     uint32_t _bg = 0;
+ 
+@@ -845,6 +835,33 @@ render_cell(struct terminal *term, pixman_image_t *pix,
+     if (cell->attrs.blink && term->blink.state == BLINK_OFF)
+         _fg = color_blend_towards(_fg, 0x00000000, term->conf->dim.amount);
+ 
++    *out_fg = _fg;
++    *out_bg = _bg;
++    *out_alpha = alpha;
++}
++
++static int
++render_cell(struct terminal *term, pixman_image_t *pix,
++            pixman_region32_t *damage, struct row *row, int row_no, int col,
++            bool has_cursor)
++{
++    struct cell *cell = &row->cells[col];
++    if (cell->attrs.clean)
++        return 0;
++
++    cell->attrs.clean = 1;
++    cell->attrs.confined = true;
++
++    int width = term->cell_width;
++    int height = term->cell_height;
++    const int x = term->margins.left + col * width;
++    const int y = term->margins.top + row_no * height;
++
++    uint32_t _fg, _bg;
++    uint16_t alpha;
++    resolve_colors(term, cell, &_fg, &_bg, &alpha);
++    const bool is_selected = cell->attrs.selected;
++
+     const bool gamma_correct = wayl_do_linear_blending(term->wl, term->conf);
+     pixman_color_t fg = color_hex_to_pixman(_fg, gamma_correct);
+     pixman_color_t bg = color_hex_to_pixman_with_alpha(_bg, alpha, gamma_correct);
+@@ -1192,13 +1209,707 @@ draw_cursor:
+     return cell_cols;
+ }
+ 
++static bool
++cell_eligible_for_ligature(const struct cell *cell,
++                           const struct cell *next)
++{
++    char32_t wc = cell->wc;
++    if (wc == 0 || wc == U' ' || wc == U'\t')
++        return false;
++    if (wc >= CELL_COMB_CHARS_LO)
++        return false;
++    /* Skip wide characters (next cell is a spacer) */
++    if (next != NULL && next->wc >= CELL_SPACER)
++        return false;
++    if ((wc >= GLYPH_BOX_DRAWING_FIRST &&
++         wc <= GLYPH_BOX_DRAWING_LAST) ||
++        (wc >= GLYPH_BRAILLE_FIRST &&
++         wc <= GLYPH_BRAILLE_LAST) ||
++        (wc >= GLYPH_LEGACY_FIRST &&
++         wc <= GLYPH_LEGACY_LAST) ||
++        (wc >= GLYPH_OCTANTS_FIRST &&
++         wc <= GLYPH_OCTANTS_LAST))
++    {
++        return false;
++    }
++    return true;
++}
++
++static bool
++attrs_run_compatible(const struct attributes *a,
++                     const struct attributes *b)
++{
++    return a->bold == b->bold
++        && a->italic == b->italic
++        && a->fg_src == b->fg_src && a->fg == b->fg
++        && a->bg_src == b->bg_src && a->bg == b->bg
++        && a->reverse == b->reverse
++        && a->dim == b->dim
++        && a->blink == b->blink
++        && a->selected == b->selected
++        && a->conceal == b->conceal
++        && a->strikethrough == b->strikethrough
++        && a->underline == b->underline
++        && a->url == b->url;
++}
++
++static inline void
++composite_glyph(pixman_image_t *src_pix,
++                const struct fcft_glyph *glyph,
++                pixman_image_t *pix,
++                int dst_x, int dst_y, int x_origin,
++                bool blink_off)
++{
++    if (unlikely(glyph->is_color_glyph)) {
++        if (unlikely(blink_off))
++            return;
++        pixman_image_composite32(
++            PIXMAN_OP_OVER,
++            glyph->pix, NULL, pix,
++            0, 0, 0, 0,
++            dst_x, dst_y,
++            glyph->width, glyph->height);
++    } else {
++        pixman_image_composite32(
++            PIXMAN_OP_OVER,
++            src_pix, glyph->pix, pix,
++            dst_x - x_origin, 0, 0, 0,
++            dst_x, dst_y,
++            glyph->width, glyph->height);
++    }
++}
++
++struct ligature_range { int start, end; };
++
++/*
++ * Extend ranges[count-1].end to cover [lo, hi),
++ * or start a new range if not adjacent.
++ */
++static inline int
++extend_or_push(struct ligature_range *ranges,
++               int count, int max_ranges,
++               int lo, int hi)
++{
++    if (count > 0 && ranges[count - 1].end >= lo) {
++        if (hi > ranges[count - 1].end)
++            ranges[count - 1].end = hi;
++    } else if (count < max_ranges) {
++        ranges[count++] =
++            (struct ligature_range){ lo, hi };
++    }
++    return count;
++}
++
++static int
++probe_ligature_ranges(
++    hb_font_t *hb_font,
++    const uint32_t *codepoints, int run_len,
++    struct ligature_range *ranges, int max_ranges)
++{
++    /* TODO: cache buf in TLS to avoid per-call alloc */
++    hb_buffer_t *buf = hb_buffer_create();
++    hb_buffer_add_codepoints(
++        buf, codepoints, run_len, 0, run_len);
++    hb_buffer_set_direction(buf, HB_DIRECTION_LTR);
++    hb_buffer_set_script(buf, HB_SCRIPT_COMMON);
++    hb_shape(hb_font, buf, NULL, 0);
++
++    unsigned glyph_count;
++    hb_glyph_info_t *info =
++        hb_buffer_get_glyph_infos(buf, &glyph_count);
++
++    int count = 0;
++
++    if (glyph_count == (unsigned)run_len) {
++        /*
++         * 1:1 mapping — compare each shaped glyph
++         * against the nominal (unshaped) glyph.
++         */
++        for (unsigned i = 0; i < glyph_count; i++) {
++            hb_codepoint_t nominal;
++            if (!hb_font_get_nominal_glyph(
++                    hb_font, codepoints[i], &nominal)
++                || info[i].codepoint != nominal)
++            {
++                count = extend_or_push(
++                    ranges, count, max_ranges,
++                    (int)i, (int)i + 1);
++            }
++        }
++    } else {
++        /*
++         * Glyph count differs from input length
++         * (many-to-one or one-to-many substitution).
++         * Clusters are monotonically non-decreasing
++         * for LTR text, so we can build ranges
++         * directly.
++         */
++        for (unsigned i = 0; i < glyph_count; i++) {
++            unsigned cluster = info[i].cluster;
++            unsigned next_cluster;
++            if (i + 1 < glyph_count)
++                next_cluster = info[i + 1].cluster;
++            else
++                next_cluster = (unsigned)run_len;
++
++            bool is_nominal = false;
++            if (next_cluster == cluster + 1) {
++                hb_codepoint_t nominal;
++                if (hb_font_get_nominal_glyph(
++                        hb_font, codepoints[cluster],
++                        &nominal)
++                    && info[i].codepoint == nominal)
++                {
++                    is_nominal = true;
++                }
++            }
++
++            if (!is_nominal) {
++                int hi = (int)next_cluster;
++                if (hi > run_len)
++                    hi = run_len;
++                count = extend_or_push(
++                    ranges, count, max_ranges,
++                    (int)cluster, hi);
++            }
++        }
++    }
++
++    hb_buffer_destroy(buf);
++    return count;
++}
++
++enum glyph_pen_mode { PEN_CELL_ALIGNED, PEN_GLYPH_ADVANCE };
++
++static void
++render_char_glyph(struct terminal *term, struct fcft_font *font,
++                  pixman_image_t *src_pix, pixman_image_t *pix,
++                  char32_t wc, int *pen_x, int y, int x_origin,
++                  int cell_width, enum glyph_pen_mode mode,
++                  int cell_idx, bool blink_off)
++{
++    const struct fcft_glyph *glyph = fcft_rasterize_char_utf32(
++        font, wc, term->font_subpixel);
++    if (glyph == NULL)
++        return;
++    int dst_x = *pen_x + glyph->x;
++    int dst_y = y + term->font_baseline - glyph->y;
++    composite_glyph(
++        src_pix, glyph, pix, dst_x, dst_y,
++        x_origin, blink_off);
++    if (mode == PEN_GLYPH_ADVANCE)
++        *pen_x += glyph->advance.x;
++    else
++        *pen_x = x_origin + term->font_x_ofs + (cell_idx + 1) * cell_width;
++}
++
++static void
++render_ligature_run(struct terminal *term,
++                    pixman_image_t *pix,
++                    pixman_region32_t *damage,
++                    struct row *row, int row_no,
++                    int run_start, int run_len,
++                    int cursor_col)
++{
++    const int width = term->cell_width;
++    const int height = term->cell_height;
++    const int x = term->margins.left + run_start * width;
++    const int y = term->margins.top + row_no * height;
++    const int run_width = run_len * width;
++
++    struct cell *first_cell = &row->cells[run_start];
++
++    /* Resolve colors from the first cell (all cells
++     * in the run share the same visual attributes) */
++    uint32_t _fg, _bg;
++    uint16_t alpha;
++    resolve_colors(term, first_cell, &_fg, &_bg, &alpha);
++
++    const bool gamma_correct =
++        wayl_do_linear_blending(term->wl, term->conf);
++
++    struct fcft_font *font =
++        attrs_to_font(term, &first_cell->attrs);
++
++    const bool has_cursor =
++        cursor_col >= run_start &&
++        cursor_col < run_start + run_len;
++    const bool is_block_cursor =
++        has_cursor &&
++        term->cursor_style == CURSOR_BLOCK &&
++        term->kbd_focus;
++
++    /* Mark all cells clean */
++    for (int i = 0; i < run_len; i++) {
++        row->cells[run_start + i].attrs.clean = 1;
++        row->cells[run_start + i].attrs.confined = true;
++    }
++
++    /* Clip to run rectangle */
++    pixman_region32_t clip;
++    pixman_region32_init_rect(
++        &clip, x, y, run_width, height);
++    pixman_image_set_clip_region32(pix, &clip);
++
++    if (damage != NULL) {
++        pixman_region32_union_rect(
++            damage, damage, x, y, run_width, height);
++    }
++
++    pixman_region32_fini(&clip);
++
++    /* Background */
++    pixman_color_t bg =
++        color_hex_to_pixman_with_alpha(
++            _bg, alpha, gamma_correct);
++    pixman_image_fill_rectangles(
++        PIXMAN_OP_SRC, pix, &bg, 1,
++        &(pixman_rectangle16_t){
++            x, y, run_width, height});
++
++    /* Block cursor colors */
++    pixman_color_t cursor_color = {0};
++    pixman_color_t text_color = {0};
++    if (is_block_cursor) {
++        struct cell *cursor_cell =
++            &row->cells[cursor_col];
++        pixman_color_t fg_pix =
++            color_hex_to_pixman(_fg, gamma_correct);
++        const pixman_color_t bg_pix =
++            color_hex_to_pixman(_bg, gamma_correct);
++        cursor_colors_for_cell(
++            term, cursor_cell, &fg_pix, &bg_pix,
++            &cursor_color, &text_color, gamma_correct);
++
++        if (likely(
++                term->cursor_blink.state ==
++                CURSOR_BLINK_ON))
++        {
++            int cx = term->margins.left +
++                cursor_col * width;
++            pixman_image_fill_rectangles(
++                PIXMAN_OP_SRC, pix, &cursor_color, 1,
++                &(pixman_rectangle16_t){
++                    cx, y, width, height});
++        }
++    }
++
++    /* Skip glyph rendering if concealed */
++    if (unlikely(first_cell->attrs.conceal) &&
++        !first_cell->attrs.selected)
++    {
++        goto cursor_overlay;
++    }
++
++    /* Blink handling */
++    const bool blink_off =
++        first_cell->attrs.blink &&
++        term->blink.state == BLINK_OFF;
++    if (first_cell->attrs.blink && term->blink.fd < 0) {
++        mtx_lock(&term->render.workers.lock);
++        term_arm_blink_timer(term);
++        mtx_unlock(&term->render.workers.lock);
++    }
++
++    {
++        pixman_color_t fg =
++            color_hex_to_pixman(_fg, gamma_correct);
++
++        const bool cursor_visible =
++            is_block_cursor &&
++            likely(term->cursor_blink.state ==
++                   CURSOR_BLINK_ON);
++
++        pixman_image_t *src_pix;
++        if (cursor_visible) {
++            /*
++             * Linear gradient with hard color stops:
++             * fg everywhere, text_color at cursor cell.
++             * No pixel buffer — just 4 stop parameters.
++             * PAD repeat clamps out-of-range coords to
++             * edge colors (avoids fixed-point rounding
++             * producing transparent pixels).
++             */
++            xassert(run_width > 0);
++            int cursor_px =
++                (cursor_col - run_start) * width;
++            pixman_fixed_t frac_start =
++                pixman_double_to_fixed(
++                    (double)cursor_px / run_width);
++            pixman_fixed_t frac_end =
++                pixman_double_to_fixed(
++                    (double)(cursor_px + width)
++                    / run_width);
++            pixman_gradient_stop_t stops[4] = {
++                { frac_start, fg },
++                { frac_start, text_color },
++                { frac_end, text_color },
++                { frac_end, fg },
++            };
++            pixman_point_fixed_t p1 = { 0, 0 };
++            pixman_point_fixed_t p2 = {
++                pixman_int_to_fixed(run_width), 0 };
++            src_pix =
++                pixman_image_create_linear_gradient(
++                    &p1, &p2, stops, 4);
++            pixman_image_set_repeat(
++                src_pix, PIXMAN_REPEAT_PAD);
++        } else {
++            src_pix =
++                pixman_image_create_solid_fill(&fg);
++        }
++
++        /* VLA; bounded by term->cols (typically ≤ 200) */
++        uint32_t codepoints[run_len];
++        for (int i = 0; i < run_len; i++)
++            codepoints[i] =
++                row->cells[run_start + i].wc;
++
++        int pen_x = x + term->font_x_ofs;
++
++        hb_font_t *probe = term->ligature_probe;
++        if (probe != NULL) {
++            /*
++             * Use HarfBuzz to identify which
++             * subsequences actually form ligatures.
++             * Only those go through the grapheme cache;
++             * everything else uses the bounded
++             * per-character cache.
++             */
++            struct ligature_range ranges[run_len];
++            int nranges = probe_ligature_ranges(
++                probe, codepoints, run_len,
++                ranges, run_len);
++
++            int pos = 0;
++            for (int r = 0; r < nranges; r++) {
++                /* Render non-ligature chars before
++                 * this range */
++                for (; pos < ranges[r].start; pos++) {
++                    render_char_glyph(
++                        term, font, src_pix, pix,
++                        codepoints[pos], &pen_x, y, x,
++                        width, PEN_CELL_ALIGNED, pos,
++                        blink_off);
++                }
++
++                /* Render ligature range via grapheme
++                 * cache */
++                int seg_len =
++                    ranges[r].end - ranges[r].start;
++                const struct fcft_grapheme *grapheme =
++                    fcft_rasterize_grapheme_utf32(
++                        font, seg_len,
++                        &codepoints[ranges[r].start],
++                        term->font_subpixel);
++
++                if (grapheme != NULL) {
++                    for (size_t g = 0;
++                         g < grapheme->count; g++)
++                    {
++                        const struct fcft_glyph *glyph
++                            = grapheme->glyphs[g];
++                        if (glyph == NULL)
++                            continue;
++                        int dst_x =
++                            pen_x + glyph->x;
++                        int dst_y =
++                            y + term->font_baseline
++                            - glyph->y;
++                        composite_glyph(
++                            src_pix, glyph, pix,
++                            dst_x, dst_y, x,
++                            blink_off);
++                        pen_x += glyph->advance.x;
++                    }
++                } else {
++                    for (int i = ranges[r].start;
++                         i < ranges[r].end; i++)
++                    {
++                        render_char_glyph(
++                            term, font, src_pix, pix,
++                            codepoints[i], &pen_x, y, x,
++                            width, PEN_GLYPH_ADVANCE,
++                            0, blink_off);
++                    }
++                }
++
++                pen_x = x + term->font_x_ofs
++                    + ranges[r].end * width;
++                pos = ranges[r].end;
++            }
++
++            /* Remaining non-ligature chars after
++             * last range */
++            for (; pos < run_len; pos++) {
++                render_char_glyph(
++                    term, font, src_pix, pix,
++                    codepoints[pos], &pen_x, y, x,
++                    width, PEN_CELL_ALIGNED, pos,
++                    blink_off);
++            }
++        } else {
++            /*
++             * No probe available — fall back to
++             * sending entire run through grapheme API.
++             */
++            const struct fcft_grapheme *grapheme =
++                fcft_rasterize_grapheme_utf32(
++                    font, run_len, codepoints,
++                    term->font_subpixel);
++
++            if (grapheme != NULL) {
++                for (size_t g = 0;
++                     g < grapheme->count; g++)
++                {
++                    const struct fcft_glyph *glyph =
++                        grapheme->glyphs[g];
++                    if (glyph == NULL)
++                        continue;
++                    int dst_x = pen_x + glyph->x;
++                    int dst_y =
++                        y + term->font_baseline
++                        - glyph->y;
++                    composite_glyph(
++                        src_pix, glyph, pix,
++                        dst_x, dst_y, x,
++                        blink_off);
++                    pen_x += glyph->advance.x;
++                }
++            } else {
++                for (int i = 0; i < run_len; i++) {
++                    render_char_glyph(
++                        term, font, src_pix, pix,
++                        codepoints[i], &pen_x, y, x,
++                        width, PEN_GLYPH_ADVANCE,
++                        0, blink_off);
++                }
++            }
++        }
++
++        pixman_image_unref(src_pix);
++
++    }
++
++    /* Per-cell decorations */
++    {
++        pixman_color_t fg =
++            color_hex_to_pixman(_fg, gamma_correct);
++
++        for (int i = 0; i < run_len; i++) {
++            const int col = run_start + i;
++            const struct cell *cell =
++                &row->cells[col];
++            const int cx =
++                term->margins.left + col * width;
++
++            if (cell->attrs.underline) {
++                pixman_color_t ul_color = fg;
++                enum underline_style ul_style =
++                    UNDERLINE_SINGLE;
++
++                if (row->extra != NULL) {
++                    for (int j = 0;
++                         j < row->extra->
++                             underline_ranges.count;
++                         j++)
++                    {
++                        const struct row_range *range =
++                            &row->extra->
++                                underline_ranges.v[j];
++
++                        if (range->start > col)
++                            break;
++
++                        if (range->start <= col &&
++                            col <= range->end)
++                        {
++                            switch (
++                                range->underline
++                                    .color_src)
++                            {
++                            case COLOR_BASE256:
++                                ul_color =
++                                    color_hex_to_pixman(
++                                        term->colors
++                                            .table[
++                                                range->
++                                                    underline
++                                                    .color],
++                                        gamma_correct);
++                                break;
++
++                            case COLOR_RGB:
++                                ul_color =
++                                    color_hex_to_pixman(
++                                        range->underline
++                                            .color,
++                                        gamma_correct);
++                                break;
++
++                            case COLOR_DEFAULT:
++                                break;
++
++                            case COLOR_BASE16:
++                                BUG("underline color "
++                                    "can't be base-16");
++                                break;
++                            }
++
++                            ul_style =
++                                range->underline.style;
++                            break;
++                        }
++                    }
++                }
++
++                draw_styled_underline(
++                    term, pix, font, &ul_color,
++                    ul_style, cx, y, 1);
++            }
++
++            if (cell->attrs.strikethrough) {
++                draw_strikeout(
++                    term, pix, font, &fg,
++                    cx, y, 1);
++            }
++
++            if (unlikely(cell->attrs.url)) {
++                pixman_color_t url_color =
++                    color_hex_to_pixman(
++                        term->conf->colors_dark
++                                .use_custom.url
++                            ? term->conf->colors_dark
++                                  .url
++                            : term->colors.table[3],
++                        gamma_correct);
++                draw_underline(
++                    term, pix, font, &url_color,
++                    cx, y, 1);
++            }
++        }
++    }
++
++cursor_overlay:
++    /* Non-block cursors: draw overlay on top */
++    if (has_cursor &&
++        (term->cursor_style != CURSOR_BLOCK ||
++         !term->kbd_focus))
++    {
++        struct cell *cursor_cell =
++            &row->cells[cursor_col];
++        pixman_color_t fg_pix =
++            color_hex_to_pixman(_fg, gamma_correct);
++        const pixman_color_t bg_pix =
++            color_hex_to_pixman(_bg, gamma_correct);
++        int cx = term->margins.left +
++            cursor_col * width;
++        draw_cursor(
++            term, cursor_cell, font, pix,
++            &fg_pix, &bg_pix, cx, y, 1);
++    }
++
++    pixman_image_set_clip_region32(pix, NULL);
++}
++
++static void
++render_row_ligatures(struct terminal *term,
++                     pixman_image_t *pix,
++                     pixman_region32_t *damage,
++                     struct row *row, int row_no,
++                     int cursor_col)
++{
++    /*
++     * Dirty-propagate spacer cells: if a spacer (right
++     * half of a wide char) is dirty, the wide char cell
++     * must be re-rendered too — left-to-right rendering
++     * can't rely on overpainting like right-to-left does.
++     */
++    for (int c = 1; c < term->cols; c++) {
++        if (!row->cells[c].attrs.clean &&
++            row->cells[c].wc >= CELL_SPACER &&
++            row->cells[c - 1].attrs.clean)
++        {
++            row->cells[c - 1].attrs.clean = 0;
++        }
++    }
++
++    int col = 0;
++    while (col < term->cols) {
++        struct cell *cell = &row->cells[col];
++
++        const struct cell *next =
++            col + 1 < term->cols
++            ? &row->cells[col + 1] : NULL;
++
++        if (!cell_eligible_for_ligature(cell, next)) {
++            int cols = render_cell(
++                term, pix, damage, row, row_no,
++                col, col == cursor_col);
++            /* Mark spacer cells clean (wide chars) */
++            for (int i = 1; i < cols; i++) {
++                row->cells[col + i].attrs.clean = 1;
++                row->cells[col + i].attrs.confined = true;
++            }
++            col += max(cols, 1);
++            continue;
++        }
++
++        int run_start = col;
++        col++;
++
++        while (col < term->cols &&
++               cell_eligible_for_ligature(
++                   &row->cells[col],
++                   col + 1 < term->cols
++                   ? &row->cells[col + 1] : NULL) &&
++               attrs_run_compatible(
++                   &row->cells[run_start].attrs,
++                   &row->cells[col].attrs))
++        {
++            col++;
++        }
++
++        int run_len = col - run_start;
++        if (run_len == 1) {
++            render_cell(
++                term, pix, damage, row, row_no,
++                run_start, run_start == cursor_col);
++        } else {
++            /* Check if any cell in the run is dirty */
++            bool any_dirty = false;
++            for (int i = 0; i < run_len; i++) {
++                if (!row->cells[run_start + i]
++                         .attrs.clean)
++                {
++                    any_dirty = true;
++                    break;
++                }
++            }
++
++            if (any_dirty) {
++                render_ligature_run(
++                    term, pix, damage, row,
++                    row_no, run_start, run_len,
++                    cursor_col);
++            }
++        }
++    }
++}
++
+ static void
+ render_row(struct terminal *term, pixman_image_t *pix,
+            pixman_region32_t *damage, struct row *row,
+            int row_no, int cursor_col)
+ {
+-    for (int col = term->cols - 1; col >= 0; col--)
+-        render_cell(term, pix, damage, row, row_no, col, cursor_col == col);
++    if (term->conf->tweak.ligatures) {
++        render_row_ligatures(
++            term, pix, damage, row,
++            row_no, cursor_col);
++    } else {
++        for (int col = term->cols - 1; col >= 0; col--)
++            render_cell(term, pix, damage, row, row_no, col, cursor_col == col);
++    }
+ }
+ 
+ static void
+diff --git a/terminal.c b/terminal.c
+index b670d606..29a43ae7 100644
+--- a/terminal.c
++++ b/terminal.c
+@@ -19,6 +19,9 @@
+ #include <linux/input-event-codes.h>
+ #include <xdg-shell.h>
+ 
++#include <fontconfig/fontconfig.h>
++#include <hb.h>
++
+ #define LOG_MODULE "terminal"
+ #define LOG_ENABLE_DBG 0
+ #include "log.h"
+@@ -857,6 +860,69 @@ term_set_fonts(struct terminal *term, struct fcft_font *fonts[static 4],
+ 
+     sixel_cell_size_changed(term);
+ 
++    /* (Re-)create HarfBuzz probe font for ligature detection */
++    hb_font_destroy(term->ligature_probe);
++    term->ligature_probe = NULL;
++
++    if (conf->tweak.ligatures &&
++        conf->fonts[0].count > 0)
++    {
++        /* Probe main font only; covers typical ligature fonts */
++        const char *pattern =
++            conf->fonts[0].arr[0].pattern;
++        /* fontconfig already initialized by fcft */
++        FcPattern *pat = FcNameParse(
++            (const FcChar8 *)pattern);
++        if (pat != NULL) {
++            FcConfigSubstitute(NULL, pat, FcMatchPattern);
++            FcDefaultSubstitute(pat);
++            FcResult result;
++            FcPattern *match =
++                FcFontMatch(NULL, pat, &result);
++            if (match != NULL) {
++                FcChar8 *file = NULL;
++                int index = 0;
++                if (FcPatternGetString(
++                        match, FC_FILE, 0, &file)
++                        == FcResultMatch
++                    && file != NULL)
++                {
++                    FcPatternGetInteger(
++                        match, FC_INDEX, 0, &index);
++                    hb_blob_t *blob =
++                        hb_blob_create_from_file(
++                            (const char *)file);
++                    if (hb_blob_get_length(blob) > 0) {
++                        hb_face_t *face =
++                            hb_face_create(blob, index);
++                        hb_font_t *hb_font =
++                            hb_font_create(face);
++                        if (hb_font ==
++                            hb_font_get_empty())
++                        {
++                            hb_face_destroy(face);
++                        } else {
++                            unsigned upem =
++                                hb_face_get_upem(face);
++                            hb_font_set_scale(
++                                hb_font, upem, upem);
++                            term->ligature_probe = hb_font;
++                            hb_face_destroy(face);
++                        }
++                    } else {
++                        LOG_WARN(
++                            "failed to load font file "
++                            "for ligature probe: %s",
++                            file);
++                    }
++                    hb_blob_destroy(blob);
++                }
++                FcPatternDestroy(match);
++            }
++            FcPatternDestroy(pat);
++        }
++    }
++
+     /* Optimization - some code paths (are forced to) call
+      * render_resize() after this function */
+     if (resize_grid) {
+@@ -1878,6 +1944,7 @@ term_destroy(struct terminal *term)
+     for (size_t i = 0; i < 4; i++)
+         free(term->font_sizes[i]);
+ 
++    hb_font_destroy(term->ligature_probe);
+ 
+     free_custom_glyphs(
+         &term->custom_glyphs.box_drawing, GLYPH_BOX_DRAWING_COUNT);
+diff --git a/terminal.h b/terminal.h
+index fe39341d..4d69e467 100644
+--- a/terminal.h
++++ b/terminal.h
+@@ -13,6 +13,7 @@
+ 
+ #include <tllist.h>
+ #include <fcft/fcft.h>
++typedef struct hb_font_t hb_font_t;
+ 
+ #include "composed.h"
+ #include "config.h"
+@@ -478,6 +479,7 @@ struct terminal {
+     int16_t font_y_ofs;
+     int16_t font_baseline;
+     enum fcft_subpixel font_subpixel;
++    hb_font_t *ligature_probe;  /* NULL if unavailable */
+ 
+     struct {
+         struct fcft_glyph **box_drawing;
+-- 
+2.47.3
+

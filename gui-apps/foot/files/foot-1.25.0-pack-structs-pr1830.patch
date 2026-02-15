@@ -1,0 +1,143 @@
+From deba63fcffc280e7d7aff6a777e314fedeca225b Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Daniel=20Ekl=C3=B6f?= <daniel@ekloef.se>
+Date: Sat, 7 Sep 2024 09:06:16 +0200
+Subject: [PATCH 1/4] term: reduce the size of the row struct, by packing it
+
+This reduces run-time memory usage, especially with large scrollbacks.
+
+TODO: need to test for performance regressions.
+---
+ terminal.h | 13 +++++++------
+ 1 file changed, 7 insertions(+), 6 deletions(-)
+
+diff --git a/terminal.h b/terminal.h
+index a87a125b..0d3792e2 100644
+--- a/terminal.h
++++ b/terminal.h
+@@ -158,15 +158,16 @@ struct row {
+     struct cell *cells;
+     struct row_data *extra;
+ 
++    struct {
++        int cmd_start;  /* Column, -1 if unset */
++        int cmd_end;    /* Column, -1 if unset */
++        bool prompt_marker;
++    } __attribute__((packed)) shell_integration;
++
+     bool dirty;
+     bool linebreak;
+ 
+-    struct {
+-        bool prompt_marker;
+-        int cmd_start;  /* Column, -1 if unset */
+-        int cmd_end;    /* Column, -1 if unset */
+-    } shell_integration;
+-};
++} __attribute__((packed));
+ 
+ struct sixel {
+     /*
+-- 
+2.47.3
+
+
+From 117bb80dd0299de8946aba61beb808084a71ebd4 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Daniel=20Ekl=C3=B6f?= <daniel@ekloef.se>
+Date: Sat, 7 Sep 2024 19:18:46 +0200
+Subject: [PATCH 2/4] term: use 16-bit ints for cmd start/end columns
+
+Reduces the size of struct row even further, from 27 bytes to 23
+bytes.
+---
+ terminal.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/terminal.h b/terminal.h
+index 0d3792e2..f0c0a669 100644
+--- a/terminal.h
++++ b/terminal.h
+@@ -159,8 +159,8 @@ struct row {
+     struct row_data *extra;
+ 
+     struct {
+-        int cmd_start;  /* Column, -1 if unset */
+-        int cmd_end;    /* Column, -1 if unset */
++        int16_t cmd_start;  /* Column, -1 if unset */
++        int16_t cmd_end;    /* Column, -1 if unset */
+         bool prompt_marker;
+     } __attribute__((packed)) shell_integration;
+ 
+-- 
+2.47.3
+
+
+From f3f9212c7c5c811abf74b16044f82a2198f99888 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Daniel=20Ekl=C3=B6f?= <daniel@ekloef.se>
+Date: Mon, 9 Sep 2024 07:21:29 +0200
+Subject: [PATCH 3/4] term: don't pack the outer struct, in the row struct
+
+This appears to improve performance, back to the levels in the master
+branch.
+
+The struct is now 24 bytes, which is still a reduction of 25%, down
+from 32 bytes.
+
+Initial benchmarks suggest we're at the same performance levels as the
+master branch on all vtetest tests, and actually somewhat faster on
+some of the scroll tests.
+---
+ terminal.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/terminal.h b/terminal.h
+index f0c0a669..5a6381a1 100644
+--- a/terminal.h
++++ b/terminal.h
+@@ -167,7 +167,7 @@ struct row {
+     bool dirty;
+     bool linebreak;
+ 
+-} __attribute__((packed));
++};
+ 
+ struct sixel {
+     /*
+-- 
+2.47.3
+
+
+From 2f68448bd890da925647e066585509f6a506fd49 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Daniel=20Ekl=C3=B6f?= <daniel@ekloef.se>
+Date: Mon, 9 Sep 2024 07:41:59 +0200
+Subject: [PATCH 4/4] term: struct row: reorder, for improved readability
+
+---
+ terminal.h | 7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
+
+diff --git a/terminal.h b/terminal.h
+index 5a6381a1..3e85ac99 100644
+--- a/terminal.h
++++ b/terminal.h
+@@ -158,15 +158,14 @@ struct row {
+     struct cell *cells;
+     struct row_data *extra;
+ 
++    bool dirty;
++    bool linebreak;
++
+     struct {
+         int16_t cmd_start;  /* Column, -1 if unset */
+         int16_t cmd_end;    /* Column, -1 if unset */
+         bool prompt_marker;
+     } __attribute__((packed)) shell_integration;
+-
+-    bool dirty;
+-    bool linebreak;
+-
+ };
+ 
+ struct sixel {
+-- 
+2.47.3
+

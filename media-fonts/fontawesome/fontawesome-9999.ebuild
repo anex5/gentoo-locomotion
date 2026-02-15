@@ -1,4 +1,4 @@
-# Copyright 1999-2025 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -20,7 +20,7 @@ fi
 
 RESTRICT="mirror"
 LICENSE="CC-BY-4.0 OFL-1.1"
-SLOT="0/6"
+SLOT="0/7"
 IUSE="+otf ttf"
 
 REQUIRED_USE="|| ( otf ttf )"
