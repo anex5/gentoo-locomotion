@@ -1146,12 +1146,7 @@ get_olast() {
 		| grep -o -E -e "-O(0|1|z|s|2|3|4|fast)" \
 		| tr " " "\n" \
 		| tail -n 1)
-	if [[ -n "${olast}" ]] ; then
-		echo "${olast}"
-	else
-		# Upstream default
-		echo "-O3"
-	fi
+	echo "${olast}"
 }
 
 check_speech_dispatcher() {
@@ -1548,19 +1543,12 @@ _src_configure() {
 	! use jumbo-build && mozconfig_add_options_ac '--disable-unified-build' --disable-unified-build
 
 	if use X && use wayland ; then
-		WIDGET_TOOLKIT="cairo-gtk3-x11-wayland"
-		mozconfig_add_options_ac '+x11+wayland' --enable-default-toolkit="${WIDGET_TOOLKIT}"
+		mozconfig_add_options_ac '+x11+wayland' --enable-default-toolkit=cairo-gtk3-x11-wayland
 	elif ! use X && use wayland ; then
-		WIDGET_TOOLKIT="cairo-gtk3-wayland-only"
-		mozconfig_add_options_ac '+wayland' --enable-default-toolkit="${WIDGET_TOOLKIT}"
+		mozconfig_add_options_ac '+wayland' --enable-default-toolkit=cairo-gtk3-wayland-only
 	else
-		WIDGET_TOOLKIT="cairo-gtk3-x11-only"
-		mozconfig_add_options_ac '+x11' --enable-default-toolkit="${WIDGET_TOOLKIT}"
+		mozconfig_add_options_ac '+x11' --enable-default-toolkit=cairo-gtk3-x11-only
 	fi
-
-	# Disable ml backends
-	sed -e "s/\(if CONFIG\[\"MOZ_WIDGET_TOOLKIT\"\] \!\= \"\)android/\1${WIDGET_TOOLKIT}/" \
-		-i toolkit/components/ml/backends/llama/moz.build || die
 
 	# wasm-sandbox
 	# Since graphite2 is one of the sandboxed libraries, system-graphite2 obviously can't work with +wasm-sandbox.
@@ -1585,10 +1573,17 @@ _src_configure() {
 		if use pgo ; then
 			mozconfig_add_options_ac '+pgo' MOZ_PGO=1
 
+			# Avoid compressing just-built instrumented Firefox with
+			# high levels of compression. Just use tar as a container
+			# to save >=10 minutes.
+			export MOZ_PKG_FORMAT=tar
+
 			if use clang ; then
 				# Used in build/pgo/profileserver.py
 				export LLVM_PROFDATA="llvm-profdata"
-				mozconfig_add_options_ac '+pgo-rust' MOZ_PGO_RUST=1
+			else
+				# Attempt to fix pgo hanging with gcc, bgo#966309.
+				export MOZ_REMOTE_SETTINGS_DEVTOOLS=1
 			fi
 		fi
 	fi
@@ -1604,10 +1599,6 @@ _src_configure() {
 	# Linker flags are set from above.
 	filter-ldflags '-fuse-ld=*' '-Wl,-fuse-ld=*'
 	filter-flags '-fuse-ld=*' '-Wl,-fuse-ld=*'
-	export RUSTFLAGS="${RUSTFLAGS/-C link-arg=-fuse-ld=lld/}"
-	export RUSTFLAGS="${RUSTFLAGS/-C link-arg=-fuse-ld=mold/}"
-	export RUSTFLAGS="${RUSTFLAGS/-C linker-plugin-lto/}"
-	export RUSTFLAGS="${RUSTFLAGS/-C link-arg=-flto/}"
 
 	# LTO flag was handled via configure
 	filter-lto
