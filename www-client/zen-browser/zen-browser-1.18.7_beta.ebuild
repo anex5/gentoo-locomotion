@@ -284,7 +284,7 @@ CDEPEND="
 		>=media-sound/sndio-1.8.0-r1[${MULTILIB_USEDEP}]
 	)
 	system-av1? (
-		>=media-libs/dav1d-1.5.2:=[${MULTILIB_USEDEP},8bit]
+		>=media-libs/dav1d-1.5.1:=[${MULTILIB_USEDEP},8bit]
 		>=media-libs/libaom-3.10.0:=[${MULTILIB_USEDEP}]
 	)
 	system-harfbuzz? (
@@ -902,11 +902,6 @@ src_prepare() {
 	#	rm -v "${WORKDIR}"/firefox-patches/*ppc64*.patch
 	#fi
 
-	if use system-ffmpeg; then
-		#eapply "${FILESDIR}/extra-patches/firefox-115e-allow-ffmpeg-decode-av1.patch"
-		eapply "${FILESDIR}/extra-patches/firefox-128e-disable-ffvpx.patch"
-	fi
-
 	if use x86 && use elibc_glibc ; then
 		rm -v "${WORKDIR}"/firefox-patches/*-musl-non-lfs64-api-on-audio_thread_priority-crate.patch || die
 	fi
@@ -934,7 +929,12 @@ src_prepare() {
 	#eapply "${FILESDIR}/extra-patches/firefox-115e-python3.12-bug1831512.patch"
 	#eapply "${FILESDIR}/extra-patches/firefox-115e-PR-b1cc62489fae.patch"
 	#[[ "${EPYTHON//python}" == "3.13" ]] && eapply "${FILESDIR}/extra-patches/firefox-115e-python3.13-build-fix.patch"
+
 	# Allow to use system-ffmpeg completely.
+	if use system-ffmpeg; then
+		#eapply "${FILESDIR}/extra-patches/firefox-115e-allow-ffmpeg-decode-av1.patch"
+		eapply "${FILESDIR}/extra-patches/firefox-128e-disable-ffvpx.patch"
+	fi
 
 	# Prevent tab crash
 	eapply "${FILESDIR}/extra-patches/firefox-143.0.3-disable-broken-flags-dom-bindings.patch"
@@ -960,7 +960,6 @@ src_prepare() {
 	eapply "${WORKDIR}/firefox-patches"
 	# Allow user to apply any additional patches without modifing ebuild
 	eapply_user
-
 
 	# Make cargo respect MAKEOPTS
 	[[ -n ${CARGO_BUILD_JOBS} ]] || export CARGO_BUILD_JOBS="$(makeopts_jobs)"
@@ -1560,8 +1559,8 @@ _src_configure() {
 	fi
 
 	# Disable ml backends
-	#sed -e "s/\(if CONFIG\[\"MOZ_WIDGET_TOOLKIT\"\] \!\= \"\)android/\1${WIDGET_TOOLKIT}/" \
-	#	-i toolkit/components/ml/backends/llama/moz.build || die
+	sed -e "s/\(if CONFIG\[\"MOZ_WIDGET_TOOLKIT\"\] \!\= \"\)android/\1${WIDGET_TOOLKIT}/" \
+		-i toolkit/components/ml/backends/llama/moz.build || die
 
 	# wasm-sandbox
 	# Since graphite2 is one of the sandboxed libraries, system-graphite2 obviously can't work with +wasm-sandbox.
@@ -1650,6 +1649,15 @@ _src_configure() {
 		fi
 	fi
 
+	local oflag_safe
+	if [[ -z "${OFLAG}" ]] ; then
+		oflag_safe=$(get_olast)
+	else
+		oflag_safe="${OFLAG}"
+	fi
+	[[ "${oflag_safe}" == "-Ofast" ]] && oflag_safe="-O3"
+	einfo "oflag_safe:\t${oflag_safe}"
+
 	local L=(
 		"dom/bindings/moz.build"
 		"ipc/chromium/chromium-config.mozbuild"
@@ -1666,9 +1674,9 @@ _src_configure() {
 
 	local f
 	for f in ${L[@]} ; do
-		einfo "Editing ${f}: OFLAG -> ${OFLAG}"
-		sed -e "s|-O[0-9s]|${OFLAG}|g" \
-			-i "${f}" || die
+		einfo "Editing ${f}:  __OFLAG_SAFE__ -> ${oflag_safe}"
+		sed -i -e "s|__OFLAG_SAFE__|${oflag_safe}|g" \
+			"${f}" || die
 	done
 
 	# Debug flag was handled via configure
