@@ -25,7 +25,7 @@ WASI_SDK_LLVM_VER=${LLVM_SLOT}
 
 MOZ_ESR=
 
-MOZ_PV=147.0.3
+MOZ_PV=147.0.4
 MOZ_PV_SUFFIX=
 if [[ ${PV} =~ (_(alpha|beta|rc).*)$ ]] ; then
 	MOZ_PV_SUFFIX=${BASH_REMATCH[1]}
@@ -230,7 +230,7 @@ SYSTEM_PYTHON_LIBS="
 			>=dev-python/tomlkit-0.12.3[${PYTHON_USEDEP}]
 			>=dev-python/tqdm-4.66.3[${PYTHON_USEDEP}]
 			>=dev-python/typing-extensions-4.12.2[${PYTHON_USEDEP}]
-			>=dev-python/urllib3-1.26.19[${PYTHON_USEDEP}]
+			>=dev-python/urllib3-2.6.3[${PYTHON_USEDEP}]
 			>=dev-python/voluptuous-0.12.1[${PYTHON_USEDEP}]
 			>=dev-python/wcwidth-0.2.13[${PYTHON_USEDEP}]
 			>=dev-python/wheel-0.43.0[${PYTHON_USEDEP}]
