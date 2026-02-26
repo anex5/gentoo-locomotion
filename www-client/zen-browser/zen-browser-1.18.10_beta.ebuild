@@ -6,7 +6,7 @@ EAPI=8
 # Using Gentoos firefox patches as system libraries and lto are quite nice
 FIREFOX_PATCHSET="firefox-147-patches-02.tar.xz"
 
-LLVM_COMPAT=( {19..21} )
+LLVM_COMPAT=( {19..22} )
 
 # This will also filter rust versions that don't match LLVM_COMPAT in the non-clang path; this is fine.
 RUST_NEEDS_LLVM=1
