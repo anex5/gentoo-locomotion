@@ -4,11 +4,11 @@
 EAPI=8
 
 # Using Gentoos firefox patches as system libraries and lto are quite nice
-FIREFOX_PATCHSET="firefox-${PV%%.*}esr-patches-04.tar.xz"
+FIREFOX_PATCHSET="firefox-${PV%%.*}esr-patches-07.tar.xz"
 FIREFOX_LOONG_PATCHSET="firefox-139-loong-patches-02.tar.xz"
 
-LLVM_COMPAT=( {19..21} )
-PP="1"
+LLVM_COMPAT=( {19..22} )
+PP="2"
 GV="1"
 
 # This will also filter rust versions that don't match LLVM_COMPAT in the non-clang path; this is fine.
@@ -23,7 +23,7 @@ VIRTUALX_REQUIRED="manual"
 
 # Information about the bundled wasi toolchain from
 # https://github.com/WebAssembly/wasi-sdk/
-WASI_SDK_VER=28.0
+WASI_SDK_VER=30.0
 WASI_SDK_LLVM_VER=${LLVM_SLOT}
 
 MOZ_ESR=yes
@@ -222,7 +222,7 @@ SYSTEM_PYTHON_LIBS="
 			>=dev-python/tomlkit-0.12.3[${PYTHON_USEDEP}]
 			>=dev-python/tqdm-4.66.3[${PYTHON_USEDEP}]
 			>=dev-python/typing-extensions-4.12.2[${PYTHON_USEDEP}]
-			>=dev-python/urllib3-1.26.19[${PYTHON_USEDEP}]
+			>=dev-python/urllib3-2.6.3[${PYTHON_USEDEP}]
 			>=dev-python/voluptuous-0.12.1[${PYTHON_USEDEP}]
 			>=dev-python/wcwidth-0.2.13[${PYTHON_USEDEP}]
 			>=dev-python/wheel-0.43.0[${PYTHON_USEDEP}]
@@ -237,13 +237,13 @@ CDEPEND="
 	${SYSTEM_PYTHON_LIBS}
 	>=app-accessibility/at-spi2-core-2.46.0:2[${MULTILIB_USEDEP}]
 	>=dev-libs/glib-2.42:2[${MULTILIB_USEDEP}]
-	>=dev-libs/nss-3.90.0[${MULTILIB_USEDEP}]
-	>=dev-libs/nspr-4.35[${MULTILIB_USEDEP}]
+	>=dev-libs/nspr-4.38.2[${MULTILIB_USEDEP}]
+	>=dev-libs/nss-3.119[${MULTILIB_USEDEP}]
 	>=media-libs/fontconfig-2.7.0[${MULTILIB_USEDEP}]
-	>=media-libs/freetype-2.13.0[${MULTILIB_USEDEP}]
-	>=sys-libs/zlib-1.2.13[${MULTILIB_USEDEP}]
+	>=media-libs/freetype-2.14.1[${MULTILIB_USEDEP}]
+	>=sys-libs/zlib-1.3.1[${MULTILIB_USEDEP}]
 	>=x11-libs/pango-1.22.0[${MULTILIB_USEDEP}]
-	>=x11-libs/pixman-0.36.0[${MULTILIB_USEDEP}]
+	>=x11-libs/pixman-0.40.0[${MULTILIB_USEDEP}]
 	dev-libs/expat[${MULTILIB_USEDEP}]
 	dev-libs/libffi:=[${MULTILIB_USEDEP}]
 	media-libs/alsa-lib[${MULTILIB_USEDEP}]
@@ -276,18 +276,18 @@ CDEPEND="
 		>=media-sound/sndio-1.8.0-r1[${MULTILIB_USEDEP}]
 	)
 	system-av1? (
-		>=media-libs/dav1d-1.1.0:=[${MULTILIB_USEDEP},8bit]
+		>=media-libs/dav1d-1.5.1:=[${MULTILIB_USEDEP},8bit]
 		>=media-libs/libaom-3.10.0:=[${MULTILIB_USEDEP}]
 	)
 	system-harfbuzz? (
 		!wasm-sandbox? ( >=media-gfx/graphite2-1.3.14 )
-		>=media-libs/harfbuzz-7.3.0:0=[${MULTILIB_USEDEP}]
+		>=media-libs/harfbuzz-12.2.0:0=[${MULTILIB_USEDEP}]
 	)
 	system-icu? (
-		>=dev-libs/icu-76.1:=[${MULTILIB_USEDEP}]
+		>=dev-libs/icu-78.1:=[${MULTILIB_USEDEP}]
 	)
 	system-jpeg? (
-		>=media-libs/libjpeg-turbo-2.1.5.1[${MULTILIB_USEDEP}]
+		>=media-libs/libjpeg-turbo-3.0.4[${MULTILIB_USEDEP}]
 	)
 	system-ffmpeg? (
 		>=media-video/ffmpeg-${FFMPEG_PV}[${MULTILIB_USEDEP},dav1d?,openh264?,opus?,vaapi?,vpx?]
@@ -296,16 +296,16 @@ CDEPEND="
 		>=dev-libs/libevent-2.1.12:=[${MULTILIB_USEDEP},threads(+)]
 	)
 	system-libvpx? (
-		>=media-libs/libvpx-1.13.0:=[${MULTILIB_USEDEP},postproc]
+		>=media-libs/libvpx-1.15.2:=[${MULTILIB_USEDEP},postproc]
 	)
 	system-pipewire? (
 		>=media-video/pipewire-1.4.7-r2:=[${MULTILIB_USEDEP}]
 	)
 	system-png? (
-		>=media-libs/libpng-1.6.39:=[${MULTILIB_USEDEP},apng]
+		>=media-libs/libpng-1.6.50:=[${MULTILIB_USEDEP},apng]
 	)
 	system-webp? (
-		>=media-libs/libwebp-1.3.0:=[${MULTILIB_USEDEP}]
+		>=media-libs/libwebp-1.6.0:=[${MULTILIB_USEDEP}]
 	)
 	wayland? (
 		>=media-libs/libepoxy-1.5.10-r1
@@ -424,7 +424,7 @@ BDEPEND+="
 		)
 		wasm-sandbox? ( llvm-core/lld:${LLVM_SLOT} )
 	')
-	>=dev-util/cbindgen-0.24.3
+	>=dev-util/cbindgen-0.29.1
 	>=dev-util/pkgconf-1.8.0[${MULTILIB_USEDEP},pkg-config(+)]
 	>=net-libs/nodejs-21[${MULTILIB_USEDEP}]
 	|| (
@@ -954,6 +954,13 @@ src_prepare() {
 	#eapply "${FILESDIR}/extra-patches/firefox-115e-python3.12-bug1831512.patch"
 	#eapply "${FILESDIR}/extra-patches/firefox-115e-PR-b1cc62489fae.patch"
 	#[[ "${EPYTHON//python}" == "3.13" ]] && eapply "${FILESDIR}/extra-patches/firefox-115e-python3.13-build-fix.patch"
+	if [[ "${EPYTHON//python}" == "3.14" ]] ; then
+		eapply "${FILESDIR}/extra-patches/5fcff175718cd308bc6d6f2996de14eb8a93e2a2.patch" || die
+		eapply "${FILESDIR}/extra-patches/23efd75219786d71acff0b4e7c1b0de297b84c4e.patch" || die
+		eapply "${FILESDIR}/extra-patches/b68b1f93a6e31188486458f32fbe37811257604f.patch" || die
+		eapply "${FILESDIR}/extra-patches/d4b3eb4f76e81f18c53863b1d55ee146d6ec7d10.patch" || die
+		eapply "${FILESDIR}/extra-patches/dbf9702ed87ea5c88c2a1ee615998532ac8f10cc.patch" || die
+	fi
 
 	# Allow to use system-ffmpeg completely.
 	if use system-ffmpeg; then
@@ -968,7 +975,7 @@ src_prepare() {
 	eapply "${FILESDIR}/extra-patches/firefox-122.0-disable-broken-flags-ipc-chromium-chromium-config.patch"
 
 	# Build with clang-20
-	if [[ "${LLVM_SLOT}" =~ ("20"|"21") ]]; then
+	if [[ "${LLVM_SLOT}" =~ ("20"|"21"|"22") ]]; then
 		#eapply "${FILESDIR}/icecat-128.12.0-clang21.patch"
 		sed -e '/CXXFLAGS += \["-Werror=implicit-int-conversion"\]/d' -i "${S}/dom/canvas/moz.build" -i "${S}/dom/webgpu/moz.build" || die
 	fi
@@ -979,6 +986,10 @@ src_prepare() {
 	# Workaround for bgo#915651 on musl
 	if use elibc_glibc ; then
 		rm -v "${WORKDIR}"/firefox-patches/*bgo-748849-RUST_TARGET_override.patch || die
+		if has_version '>=sys-libs/glibc-2.43'; then
+			#eapply "${FILESDIR}/extra-patches/firefox-140.8.0-Patch-glsl-optimizer-to-build-with-glibc-2.43.patch" || die
+			eapply "${FILESDIR}/extra-patches/firefox-140.8.0-Fix-sandbox-to-build-with-glibc-2.43.patch" || die
+		fi
 	fi
 
 	# Use modified patch that isn't mangled
@@ -1007,7 +1018,7 @@ src_prepare() {
 		if use amd64 ; then
 			export RUST_TARGET="x86_64-unknown-linux-musl"
 		elif use x86 ; then
-			export RUST_TARGET="i686-unknown-linux-musl"
+			export RUST_TARGET="x86-unknown-linux-musl"
 		elif use arm64 ; then
 			export RUST_TARGET="aarch64-unknown-linux-musl"
 		elif use loong; then
@@ -1078,6 +1089,7 @@ src_prepare() {
 
 	# Clear checksums from cargo crates we've manually patched.
 	# moz_clear_vendor_checksums crate
+	moz_clear_vendor_checksums glslopt
 
 	# Respect choice for "jumbo-build"
 	# Changing the value for FILES_PER_UNIFIED_FILE may not work, see #905431
