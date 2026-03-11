@@ -1,4 +1,4 @@
-# Copyright 2019-2025 Gentoo Authors
+# Copyright 2019-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -13,7 +13,7 @@ if [[ ${PV} == 9999 ]]; then
 	EGIT_REPO_URI="https://github.com/any1/wayvnc.git"
 	KEYWORDS=""
 else
-	COMMIT="e12cb689f3afb333f0678de03ff25a431ffd2207"
+	COMMIT="7ee86054c680b3429137069712e38fcba61ebae7"
 	SRC_URI="https://github.com/any1/wayvnc/archive/${COMMIT}.tar.gz -> ${P}.tar.gz"
 	KEYWORDS="~amd64 ~arm ~arm64 ~loong ~ppc64 ~riscv ~x86"
 	S=${WORKDIR}/${PN}-${COMMIT}

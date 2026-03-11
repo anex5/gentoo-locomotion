@@ -1,4 +1,4 @@
-# Copyright 2019-2025 Gentoo Authors
+# Copyright 2019-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -12,7 +12,7 @@ if [[ ${PV} == 9999 ]]; then
 	inherit git-r3
 	EGIT_REPO_URI="https://github.com/any1/neatvnc.git"
 else
-	COMMIT="32c71c00492aefc7e9ed2f7853fdc551ca7e4e36"
+	COMMIT="a87b33ab090636713162cd61131ee2c757c97c21"
 	SRC_URI="https://github.com/any1/neatvnc/archive/${COMMIT}.tar.gz -> ${P}.tar.gz"
 	KEYWORDS="~amd64 ~arm ~arm64 ~loong ~ppc64 ~riscv ~x86"
 	S=${WORKDIR}/${PN}-${COMMIT}
