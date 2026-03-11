@@ -4,14 +4,14 @@
 EAPI=8
 
 # Using Gentoos firefox patches as system libraries and lto are quite nice
-FIREFOX_PATCHSET="firefox-147-patches-01.tar.xz"
+FIREFOX_PATCHSET="firefox-148-patches-02.tar.xz"
 
-LLVM_COMPAT=( {19..21} )
+LLVM_COMPAT=( {20..22} )
 
 # This will also filter rust versions that don't match LLVM_COMPAT in the non-clang path; this is fine.
 RUST_NEEDS_LLVM=1
 # If not building with clang we need at least rust 1.76
-RUST_MIN_VER=1.82.0
+RUST_MIN_VER=1.87.0
 
 PYTHON_COMPAT=( python3_{11..14} )
 PYTHON_REQ_USE="ncurses,sqlite,ssl"
@@ -20,12 +20,12 @@ VIRTUALX_REQUIRED="manual"
 
 # Information about the bundled wasi toolchain from
 # https://github.com/WebAssembly/wasi-sdk/
-WASI_SDK_VER=29.0
+WASI_SDK_VER=30.0
 WASI_SDK_LLVM_VER=${LLVM_SLOT}
 
 MOZ_ESR=
 
-MOZ_PV=147.0.2
+MOZ_PV=148.0.2
 MOZ_PV_SUFFIX=
 if [[ ${PV} =~ (_(alpha|beta|rc).*)$ ]] ; then
 	MOZ_PV_SUFFIX=${BASH_REMATCH[1]}
@@ -436,10 +436,10 @@ BDEPEND+="
 	>=dev-util/pkgconf-1.8.0[${MULTILIB_USEDEP},pkg-config(+)]
 	>=net-libs/nodejs-21[${MULTILIB_USEDEP}]
 	|| (
-		>=dev-lang/rust-1.83.0[${MULTILIB_USEDEP}]
-		>=dev-lang/rust-bin-1.83.0[${MULTILIB_USEDEP}]
-		<dev-lang/rust-1.92.0[${MULTILIB_USEDEP}]
-		<dev-lang/rust-bin-1.92.0[${MULTILIB_USEDEP}]
+		>=dev-lang/rust-1.87.0[${MULTILIB_USEDEP}]
+		>=dev-lang/rust-bin-1.87.0[${MULTILIB_USEDEP}]
+		<dev-lang/rust-1.95.0[${MULTILIB_USEDEP}]
+		<dev-lang/rust-bin-1.95.0[${MULTILIB_USEDEP}]
 	)
 	app-alternatives/awk
 	app-arch/unzip
