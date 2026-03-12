@@ -1036,6 +1036,8 @@ src_prepare() {
 
 	# Clear checksums from cargo crates we've manually patched.
 	# moz_clear_vendor_checksums crate
+	# glslopt: bgo#969412
+	moz_clear_vendor_checksums glslopt
 
 	# Respect choice for "jumbo-build"
 	# Changing the value for FILES_PER_UNIFIED_FILE may not work, see #905431
@@ -1056,8 +1058,6 @@ src_prepare() {
 	fi
 	# Removed creation of a single build dir
 
-	# Clear cargo checksums from crates we have patched
-	# moz_clear_vendor_checksums crate
 	# Write API keys to disk
 	echo -n "${MOZ_API_KEY_GOOGLE//gGaPi/}" > "${S}"/api-google.key || die
 	echo -n "${MOZ_API_KEY_LOCATION//gGaPi/}" > "${S}"/api-location.key || die

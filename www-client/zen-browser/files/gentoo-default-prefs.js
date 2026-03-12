@@ -528,7 +528,7 @@ user_pref("security.cert_pinning.enforcement_level", 0);
 user_pref("security.enterprise_roots.enabled", true);
 user_pref("security.mixed_content.block_active_content", false);
 user_pref("security.mixed_content.upgrade_display_content", true);
-user_pref("security.sandbox.content.level", 0);
+user_pref("security.sandbox.content.level", 2);
 user_pref("security.sandbox.socket.process.level", 0);
 user_pref("security.ssl3.ecdhe_ecdsa_aes_128_sha", false);
 user_pref("security.ssl3.ecdhe_ecdsa_aes_256_sha", false);
