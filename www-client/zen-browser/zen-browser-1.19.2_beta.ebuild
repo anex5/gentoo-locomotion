@@ -913,7 +913,7 @@ src_prepare() {
 
 	# Prevent YT stall prevention with clang with -Ofast.
 	# Prevent audio perma mute with gcc with -Ofast.
-	eapply "${FILESDIR}/extra-patches/firefox-128.3.0e-disable-broken-flags-js.patch"
+	eapply "${FILESDIR}/extra-patches/firefox-148.0-disable-broken-flags-js.patch"
 
 	# Only partial patching was done because the distro doesn't support
 	# multilib Python.  Only native ABI is supported.  This means cbindgen
