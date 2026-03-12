@@ -1,24 +1,24 @@
-# Copyright 1999-2025 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
 inherit meson toolchain-funcs xdg-utils
 
-DESCRIPTION="A window switcher, run dialog and dmenu replacement (fork with Wayland support)"
+DESCRIPTION="A window switcher, run dialog and dmenu replacement"
 HOMEPAGE="https://github.com/davatorium/rofi"
 
-if [[ ${PV} = *9999 ]]; then
-	inherit git-r3
+if [[ "${PV}" == "9999" ]]; then
 	EGIT_REPO_URI="https://github.com/davatorium/rofi"
-	#EGIT_SUBMODULES=()
 	EGIT_BRANCH="next"
+	#EGIT_SUBMODULES=()
+	inherit git-r3
 	KEYWORDS=""
 else
 	MY_PV="${PV/_/-}"
 	LIBGWATER_COMMIT="d86f9903efb9c490c0e3b0316d7f2da5b5a5632c"
 	LIBNKUTILS_COMMIT="2f220a40ad32cf51b6b7d7ae83ab641a3ae76693"
-	ROFI_COMMIT="81d2411e890e4c4513f1ea173d760043615bdee4"
+	ROFI_COMMIT="92f19220ddbd6e965849ccb2c8dee151b82d69bc"
 	SRC_URI="
 		https://github.com/davatorium/rofi/archive/${ROFI_COMMIT}.tar.gz -> ${P}-${COMMIT}.gh.tar.gz
 		https://github.com/sardemff7/libgwater/archive/${LIBGWATER_COMMIT}.tar.gz -> libgwater-${LIBGWATER_COMMIT}.gh.tar.gz
@@ -69,8 +69,12 @@ RDEPEND="
 "
 DEPEND="
 	${RDEPEND}
-	X? ( x11-base/xorg-proto )
-	test? (
+	wayland? ( dev-libs/wayland-protocols )
+	X? (
+		x11-base/xorg-proto
+		x11-libs/xcb-util-keysyms
+	)
+ 	test? (
 		>=dev-libs/check-0.11
 		dev-util/cppcheck
 	)
@@ -110,11 +114,11 @@ src_configure() {
 	tc-export CC CXX LD
 	local emesonargs=(
 		$(meson_use drun)
-		$(meson_use windowmode window)
-		$(meson_feature X xcb)
-		$(meson_feature wayland)
-		$(meson_feature test check)
 		$(meson_use imdkit imdkit)
+		$(meson_use windowmode window)
+		$(meson_feature test check)
+		$(meson_feature wayland)
+		$(meson_feature X xcb)
 	)
 
 	meson_src_configure
