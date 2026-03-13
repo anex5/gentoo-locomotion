@@ -20,8 +20,8 @@ VIRTUALX_REQUIRED="manual"
 
 # Information about the bundled wasi toolchain from
 # https://github.com/WebAssembly/wasi-sdk/
-WASI_SDK_VER=30.0
-WASI_SDK_LLVM_VER=${LLVM_SLOT}
+declare -A WASI_SDK_VER
+WASI_SDK_VER=( [22]="32.0" [21]="30.0" [20]="27.0" )
 
 MOZ_ESR=
 
@@ -44,12 +44,21 @@ MOZ_P_DISTFILES="${MOZ_PN}-${MOZ_PV_DISTFILES}"
 inherit autotools check-reqs desktop flag-o-matic gnome2-utils linux-info llvm-r1 multiprocessing \
 	multilib-minimal optfeature pax-utils python-any-r1 readme.gentoo-r1 rust toolchain-funcs unpacker virtualx xdg
 
+
 SRC_URI="
 	https://github.com/zen-browser/desktop/releases/download/${PV/_beta/b}/zen.source.tar.zst -> ${P}.tar.zst
 	https://dev.gentoo.org/~juippis/mozilla/patchsets/${FIREFOX_PATCHSET}
 	wasm-sandbox? (
-		amd64? ( https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_SDK_VER/.*/}/wasi-sdk-${WASI_SDK_VER}-x86_64-linux.tar.gz )
-		arm64? ( https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_SDK_VER/.*/}/wasi-sdk-${WASI_SDK_VER}-arm64-linux.tar.gz )
+		amd64? (
+			llvm_slot_22? ( https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_SDK_VER[22]/.*/}/wasi-sdk-${WASI_SDK_VER[22]}-x86_64-linux.tar.gz )
+			llvm_slot_21? ( https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_SDK_VER[21]/.*/}/wasi-sdk-${WASI_SDK_VER[21]}-x86_64-linux.tar.gz )
+			llvm_slot_20? ( https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_SDK_VER[20]/.*/}/wasi-sdk-${WASI_SDK_VER[20]}-x86_64-linux.tar.gz )
+		)
+		arm64? (
+			llvm_slot_22? ( https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_SDK_VER[22]/.*/}/wasi-sdk-${WASI_SDK_VER[22]}-arm64-linux.tar.gz )
+			llvm_slot_21? ( https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_SDK_VER[21]/.*/}/wasi-sdk-${WASI_SDK_VER[21]}-arm64-linux.tar.gz )
+			llvm_slot_20? ( https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_SDK_VER[20]/.*/}/wasi-sdk-${WASI_SDK_VER[20]}-arm64-linux.tar.gz )
+		)
 	)
 "
 
@@ -225,7 +234,6 @@ SYSTEM_PYTHON_LIBS="
 			>=dev-python/rich-14.0.0[${PYTHON_USEDEP}]
 			>=dev-python/rsa-4.9[${PYTHON_USEDEP}]
 			>=dev-python/six-1.16.0[${PYTHON_USEDEP}]
-			>=dev-python/toml-0.10.2[${PYTHON_USEDEP}]
 			>=dev-python/tomli-2.2.1[${PYTHON_USEDEP}]
 			>=dev-python/tomlkit-0.12.3[${PYTHON_USEDEP}]
 			>=dev-python/tqdm-4.66.3[${PYTHON_USEDEP}]
@@ -246,7 +254,7 @@ CDEPEND="
 	>=app-accessibility/at-spi2-core-2.46.0:2[${MULTILIB_USEDEP}]
 	>=dev-libs/glib-2.42:2[${MULTILIB_USEDEP}]
 	>=dev-libs/nspr-4.38.2[${MULTILIB_USEDEP}]
-	>=dev-libs/nss-3.118[${MULTILIB_USEDEP}]
+	>=dev-libs/nss-3.120[${MULTILIB_USEDEP}]
 	>=media-libs/fontconfig-2.7.0[${MULTILIB_USEDEP}]
 	>=media-libs/freetype-2.14.1[${MULTILIB_USEDEP}]
 	>=sys-libs/zlib-1.3.1[${MULTILIB_USEDEP}]
@@ -284,36 +292,36 @@ CDEPEND="
 		>=media-sound/sndio-1.8.0-r1[${MULTILIB_USEDEP}]
 	)
 	system-av1? (
-		>=media-libs/dav1d-1.1.0:=[${MULTILIB_USEDEP},8bit]
-		>=media-libs/libaom-3.10.0:=[${MULTILIB_USEDEP}]
+		>=media-libs/dav1d-1.5.1:=[${MULTILIB_USEDEP},8bit]
+		>=media-libs/libaom-1.0.0:=[${MULTILIB_USEDEP}]
 	)
 	system-harfbuzz? (
-		!wasm-sandbox? ( >=media-gfx/graphite2-1.3.14 )
-		>=media-libs/harfbuzz-7.3.0:0=[${MULTILIB_USEDEP}]
+		!wasm-sandbox? ( >=media-gfx/graphite2-1.3.14[${MULTILIB_USEDEP}] )
+		>=media-libs/harfbuzz-12.3.0:0=[${MULTILIB_USEDEP}]
 	)
 	system-icu? (
-		>=dev-libs/icu-73.1:=[${MULTILIB_USEDEP}]
+		>=dev-libs/icu-78.1:=[${MULTILIB_USEDEP}]
 	)
 	system-jpeg? (
-		>=media-libs/libjpeg-turbo-2.1.5.1[${MULTILIB_USEDEP}]
+		>=media-libs/libjpeg-turbo-3.0.4[${MULTILIB_USEDEP}]
 	)
 	system-ffmpeg? (
 		>=media-video/ffmpeg-${FFMPEG_PV}[${MULTILIB_USEDEP},dav1d?,openh264?,opus?,vaapi?,vpx?]
 	)
 	system-libevent? (
-		>=dev-libs/libevent-2.1.12:=[${MULTILIB_USEDEP},threads(+)]
+		>=dev-libs/libevent-2.1.12:0[${MULTILIB_USEDEP},threads(+)]
 	)
 	system-libvpx? (
-		>=media-libs/libvpx-1.13.0:=[${MULTILIB_USEDEP},postproc]
+		>=media-libs/libvpx-1.15.2:0[${MULTILIB_USEDEP},postproc]
 	)
 	system-pipewire? (
 		>=media-video/pipewire-1.4.7-r2:=[${MULTILIB_USEDEP}]
 	)
 	system-png? (
-		>=media-libs/libpng-1.6.39:=[${MULTILIB_USEDEP},apng]
+		>=media-libs/libpng-1.6.53:0[${MULTILIB_USEDEP},apng]
 	)
 	system-webp? (
-		>=media-libs/libwebp-1.3.0:=[${MULTILIB_USEDEP}]
+		>=media-libs/libwebp-1.6.0:0[${MULTILIB_USEDEP}]
 	)
 	wayland? (
 		>=media-libs/libepoxy-1.5.10-r1
@@ -708,7 +716,7 @@ pkg_pretend() {
 		elif use lto ; then
 			CHECKREQS_DISK_BUILD="10600M"
 		else
-			CHECKREQS_DISK_BUILD="7400M"
+			CHECKREQS_DISK_BUILD="6800M"
 		fi
 
 		check-reqs_pkg_pretend
@@ -736,7 +744,7 @@ pkg_setup() {
 		elif use lto ; then
 			CHECKREQS_DISK_BUILD="10600M"
 		else
-			CHECKREQS_DISK_BUILD="7400M"
+			CHECKREQS_DISK_BUILD="6800M"
 		fi
 
 		check-reqs_pkg_setup
@@ -856,24 +864,28 @@ pkg_setup() {
 		ewarn "Speech recognition (USE=webspeech) has not been confirmed working."
 		ewarn
 	fi
+
+	if use system-python-libs; then
+		ewarn "Ensure the system python libraries is consistent by running pip check."
+		ewarn "If pip detects any problem, portage will refuse to install this package."
+	fi
 }
 
 src_unpack() {
 	unpack "${FIREFOX_PATCHSET}"
-#	local _lp_dir="${WORKDIR}/language_packs"
-#	local _src_file
 #
-#	if [[ ! -d "${_lp_dir}" ]] ; then
-#		mkdir "${_lp_dir}" || die
-#	fi
-#
-#	for _src_file in ${A} ; do
-#		if [[ ${_src_file} == *.xpi ]]; then
-#			cp "${DISTDIR}/${_src_file}" "${_lp_dir}" || die "Failed to copy '${_src_file}' to '${_lp_dir}'!"
-#		else
-#			unpack ${_src_file}
-#		fi
-#	done
+	if use wasm-sandbox; then
+		use amd64 && (
+			use llvm_slot_20 && ( unpack wasi-sdk-${WASI_SDK_VER[20]}-x86_64-linux.tar.gz || eerror "Failed to unpack" )
+			use llvm_slot_21 && ( unpack wasi-sdk-${WASI_SDK_VER[21]}-x86_64-linux.tar.gz || eerror "Failed to unpack" )
+			use llvm_slot_22 && ( unpack wasi-sdk-${WASI_SDK_VER[22]}-x86_64-linux.tar.gz || eerror "Failed to unpack" )
+		)
+		use arm64 && (
+			use llvm_slot_20 && ( unpack wasi-sdk-${WASI_SDK_VER[20]}-arm64-linux.tar.gz || eerror "Failed to unpack" )
+			use llvm_slot_21 && ( unpack wasi-sdk-${WASI_SDK_VER[21]}-arm64-linux.tar.gz || eerror "Failed to unpack" )
+			use llvm_slot_22 && ( unpack wasi-sdk-${WASI_SDK_VER[22]}-arm64-linux.tar.gz || eerror "Failed to unpack" )
+		)
+	fi
 	mkdir "${S}" && cd ${S} || die
 	unpacker "${P}.tar.zst" || eerror "Failed to unpack."
 }
@@ -943,7 +955,7 @@ src_prepare() {
 	eapply "${FILESDIR}/extra-patches/firefox-122.0-disable-broken-flags-ipc-chromium-chromium-config.patch"
 
 	# Build with clang-20
-	if [[ "${LLVM_SLOT}" =~ ("20"|"21") ]]; then
+	if [[ "${LLVM_SLOT}" =~ ("20"|"21"|"22") ]]; then
 		sed -e '/CXXFLAGS += \["-Werror=implicit-int-conversion"\]/d' -i "${S}/dom/canvas/moz.build" -i "${S}/dom/webgpu/moz.build" || die
 	fi
 
@@ -953,6 +965,7 @@ src_prepare() {
 	if use elibc_glibc ; then
 		rm -v "${WORKDIR}"/firefox-patches/*bgo-748849-RUST_TARGET_override.patch || die
 		rm -v "${WORKDIR}"/firefox-patches/*bmo-1988166-musl-remove-nonexisting-system-header-req.patch || die
+		rm -v "${WORKDIR}"/firefox-patches/*bgo-967694-musl-prctrl-exception-on-musl.patch || die
 	fi
 	rm -v "${WORKDIR}"/firefox-patches/*-bgo-928126-enable-jxl.patch || die
 
@@ -969,7 +982,7 @@ src_prepare() {
 		if use amd64 ; then
 			export RUST_TARGET="x86_64-unknown-linux-musl"
 		elif use x86 ; then
-			export RUST_TARGET="i686-unknown-linux-musl"
+			export RUST_TARGET="x86-unknown-linux-musl"
 		elif use arm64 ; then
 			export RUST_TARGET="aarch64-unknown-linux-musl"
 		elif use ppc64 ; then
@@ -1002,8 +1015,8 @@ src_prepare() {
 		sed -i \
 			-e "s:%%PORTAGE_WORKDIR%%:${WORKDIR}:" \
 			-e "s:%%WASI_ARCH%%:${wasi_arch}:" \
-			-e "s:%%WASI_SDK_VER%%:${WASI_SDK_VER}:" \
-			-e "s:%%WASI_SDK_LLVM_VER%%:${WASI_SDK_LLVM_VER}:" \
+			-e "s:%%WASI_SDK_VER%%:${WASI_SDK_VER[${LLVM_SLOT}]}:" \
+			-e "s:%%WASI_SDK_LLVM_VER%%:${LLVM_SLOT}:" \
 			toolkit/moz.configure || die "Failed to update wasi-related paths."
 	fi
 
@@ -1556,7 +1569,7 @@ _src_configure() {
 	# wasm-sandbox
 	# Since graphite2 is one of the sandboxed libraries, system-graphite2 obviously can't work with +wasm-sandbox.
 	if use wasm-sandbox ; then
-		mozconfig_add_options_ac '+wasm-sandbox' --with-wasi-sysroot="${WORKDIR}/wasi-sdk-${WASI_SDK_VER}-${wasi_arch}-linux/share/wasi-sysroot/"
+		mozconfig_add_options_ac '+wasm-sandbox' --with-wasi-sysroot="${WORKDIR}/wasi-sdk-${WASI_SDK_VER[${LLVM_SLOT}]}-${wasi_arch}-linux/share/wasi-sysroot/"
 	else
 		mozconfig_add_options_ac 'no wasm-sandbox' --without-wasm-sandboxed-libraries
 		mozconfig_use_with system-harfbuzz system-graphite2
