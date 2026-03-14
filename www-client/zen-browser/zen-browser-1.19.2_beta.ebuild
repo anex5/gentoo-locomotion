@@ -1018,6 +1018,8 @@ src_prepare() {
 			-e "s:%%WASI_SDK_VER%%:${WASI_SDK_VER[${LLVM_SLOT}]}:" \
 			-e "s:%%WASI_SDK_LLVM_VER%%:${LLVM_SLOT}:" \
 			toolkit/moz.configure || die "Failed to update wasi-related paths."
+
+		use llvm_slot_22 && eapply "${FILESDIR}/extra-patches/firefox-148.0-fix-wasm32-target.patch"
 	fi
 
 	# Make LTO & ICU respect MAKEOPTS
