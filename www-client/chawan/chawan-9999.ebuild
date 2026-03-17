@@ -33,8 +33,6 @@ BDEPEND="
 RDEPEND="
     sys-libs/ncurses:=[unicode(+),static-libs?]
     net-misc/curl:=[brotli,http2,openssl,ssl,ssh,adns,static-libs?]
-	dev-libs/openssl:=[static-libs?]
-	net-libs/libssh2:=[static-libs?]
 	>=virtual/zlib-1.2.9:=[static-libs?]
 "
 

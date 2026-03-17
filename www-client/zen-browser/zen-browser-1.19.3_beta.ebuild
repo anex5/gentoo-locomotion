@@ -130,6 +130,7 @@ REQUIRED_USE="
 	debug? (
 		!system-av1
 	)
+	wasm-sandbox? ( !system-harfbuzz )
 	wayland? (
 		dbus
 	)
