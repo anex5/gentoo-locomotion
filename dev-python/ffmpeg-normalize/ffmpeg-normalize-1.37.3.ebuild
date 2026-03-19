@@ -1,4 +1,4 @@
-# Copyright 1999-2025 Gentoo Foundation
+# Copyright 1999-2026 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -28,7 +28,7 @@ RDEPEND+="
 	>=media-video/ffmpeg-4.4:=
 	>=dev-python/colorama-0.4.6[${PYTHON_USEDEP}]
 	>=dev-python/colorlog-6.7.0[${PYTHON_USEDEP}]
-	>=dev-python/ffmpeg-progress-yield-1.0.1[${PYTHON_USEDEP}]
+	>=dev-python/ffmpeg-progress-yield-1.1.2[${PYTHON_USEDEP}]
 	>=dev-python/tqdm-4.64.1[${PYTHON_USEDEP}]
 	>=media-libs/mutagen-1.47.0[${PYTHON_USEDEP}]
 "
@@ -49,6 +49,11 @@ RESTRICT="mirror"
 EPYTEST_PLUGINS=( pytest-asyncio )
 EPYTEST_XDIST=1
 distutils_enable_tests pytest
+
+src_prepare() {
+	default
+	sed -e "s/colorlog==6\.7\.0/colorlog>=6\.7\.0/" -i pyproject.toml || die "Sed failed."
+}
 
 python_test() {
 	local -x PYTEST_DISABLE_PLUGIN_AUTOLOAD=1

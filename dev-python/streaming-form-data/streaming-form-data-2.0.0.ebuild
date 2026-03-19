@@ -1,9 +1,9 @@
-# Copyright 1999-2025 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{11..13} )
+PYTHON_COMPAT=( python3_{11..14} )
 
 DISTUTILS_USE_PEP517=setuptools
 DISTUTILS_EXT=1
@@ -24,14 +24,15 @@ SLOT="0"
 KEYWORDS="~amd64 ~arm64 ~mips ~x86 ~arm"
 
 RDEPEND="${PYTHON_DEPS}
-	>=dev-python/smart-open-7.5.0[${PYTHON_USEDEP}]
+	>=dev-python/smart-open-7.0.5[${PYTHON_USEDEP}]
+	>=dev-python/aiofiles-23.2.1[${PYTHON_USEDEP}]
 "
 
 BDEPEND+="
 	dev-python/setuptools[${PYTHON_USEDEP}]
 	dev-python/wheel[${PYTHON_USEDEP}]
 	test? (
-		=dev-python/cython-3*[${PYTHON_USEDEP}]
+		>=dev-python/cython-3.0.11[${PYTHON_USEDEP}]
 		>=dev-python/flask-3.0.3[${PYTHON_USEDEP}]
 		>=dev-python/mkdocs-1.6.1[${PYTHON_USEDEP}]
 		>=dev-python/moto-5.0.18[${PYTHON_USEDEP}]

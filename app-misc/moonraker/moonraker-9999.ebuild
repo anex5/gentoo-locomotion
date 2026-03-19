@@ -4,10 +4,10 @@
 EAPI=8
 
 DISTUTILS_USE_PEP517=pdm-backend
-PYTHON_COMPAT=( python3_{11..14} pypy3_11 )
+PYTHON_COMPAT=( python3_{11..14} )
 PDM_BUILD_SCM_VERSION="${PV}"
 
-inherit distutils-r1 pypi systemd
+inherit distutils-r1 systemd
 
 DESCRIPTION="API Web Server for Klipper"
 HOMEPAGE="https://github.com/Arksine/moonraker"
@@ -32,19 +32,20 @@ DEPEND="
 RDEPEND="${DEPEND}
 	${PYTHON_DEPS}
 	app-misc/klipper
-	>=dev-python/apprise-1.9.2[${PYTHON_USEDEP}]
+	>=dev-python/apprise-1.9.6[${PYTHON_USEDEP}]
 	>=dev-python/distro-1.9.0[${PYTHON_USEDEP}]
-	>=dev-python/inotify-simple-1.3.5[${PYTHON_USEDEP}]
+	>=dev-python/inotify-simple-2.0.1[${PYTHON_USEDEP}]
 	>=dev-python/importlib-metadata-4.13.0[${PYTHON_USEDEP}]
-	>=dev-python/streaming-form-data-1.11.0[${PYTHON_USEDEP}]
+	>=dev-python/streaming-form-data-1.19.1[${PYTHON_USEDEP}]
 	>=dev-python/dbus-fast-2.28.0[${PYTHON_USEDEP}]
 	>=dev-python/paho-mqtt-1.6.1[${PYTHON_USEDEP}]
 	>=dev-python/ldap3-2.9.1[${PYTHON_USEDEP}]
-	>=dev-python/libnacl-2.1.0[${PYTHON_USEDEP}]
-	>=dev-python/jinja2-3.1.5[${PYTHON_USEDEP}]
+	>=dev-python/jinja2-3.1.6[${PYTHON_USEDEP}]
 	>=dev-python/libnacl-2.1.0[${PYTHON_USEDEP}]
 	>=dev-python/pillow-9.5.0[${PYTHON_USEDEP}]
 	>=dev-python/pyserial-3.4[${PYTHON_USEDEP}]
+	>=dev-python/preprocess-cancellation-0.2.1[${PYTHON_USEDEP}]
+	>=dev-python/python-periphery-2.4.1[${PYTHON_USEDEP}]
 	>=dev-python/tornado-6.2[${PYTHON_USEDEP}]
 	>=dev-python/zeroconf-0.131.0[${PYTHON_USEDEP}]
 "
@@ -61,13 +62,15 @@ DOCS=(
 	docs/dev_changelog.md
 	docs/printer_objects.md
 	docs/user_changes.md
-	docs/web_api.md
 )
 
 src_prepare() {
 	sed -i -e 's|^DEFAULT_KLIPPY_LOG_PATH.*|DEFAULT_KLIPPY_LOG_PATH = "/var/log/klipper/klipper.log"|g' moonraker/components/application.py || die
 
-	use systemd || ( eapply "${FILESDIR}/moonraker-openrc.patch" || die )
+	# Relax the deps
+	sed -e '/^dependencies = \[$/,/^\]$/ {//! s:==:\>=:g;s:\, <=[0-9.]\+::g}' -i pyproject.toml || die
+
+	#use systemd || ( eapply "${FILESDIR}/moonraker-openrc.patch" || die )
 
 	distutils-r1_src_prepare
 }

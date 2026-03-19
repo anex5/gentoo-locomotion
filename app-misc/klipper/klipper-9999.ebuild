@@ -1,8 +1,8 @@
-# Copyright 1999-2025 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
-PYTHON_COMPAT=( python3_{11..13} )
+PYTHON_COMPAT=( python3_{11..14} )
 
 inherit python-single-r1 systemd toolchain-funcs
 
@@ -14,7 +14,7 @@ if [[ ${PV} = *9999 ]]; then
 	EGIT_BRANCH="master"
 	KEYWORDS=""
 else
-	COMMIT="8db5d254e077e10583cfaff0d9e70e08263383e5"
+	COMMIT="644cda5ecaa39d0dcf797624c19d5425cb8121ec"
 	SRC_URI="https://github.com/Klipper3d/${PN}/archive/${COMMIT}.tar.gz -> ${P}.tar.gz
 	dict? ( https://github.com/Klipper3d/klipper/files/7491378/klipper-dict-20211106.tar.gz )"
 	KEYWORDS="~amd64 ~x86 ~arm ~arm64"
