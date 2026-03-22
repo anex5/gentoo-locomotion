@@ -7,8 +7,9 @@ inherit cmake
 
 DESCRIPTION="A package for unstructured serial graph partitioning"
 HOMEPAGE="https://github.com/KarypisLab/METIS"
-SRC_URI="https://github.com/KarypisLab/METIS/archive/refs/tags/v${PV}.tar.gz -> ${P}.tar.gz"
-S="${WORKDIR}/METIS-${PV}"
+COMMIT="dfded64f24664caa8809cacf416d378112e8867f"
+SRC_URI="https://github.com/KarypisLab/METIS/archive/${COMMIT}.tar.gz -> ${P}.tar.gz"
+S="${WORKDIR}/METIS-${COMMIT}"
 
 LICENSE="Apache-2.0"
 SLOT="0"
@@ -17,13 +18,15 @@ IUSE="doc double-precision examples int64 openmp static-libs"
 
 DEPEND="sci-libs/gklib"
 RDEPEND="${DEPEND}"
+RESTRICT="mirror"
 
 PATCHES=(
-	"${FILESDIR}"/${P}-multilib.patch
+	"${FILESDIR}"/${PN}-5.2.1-multilib.patch
 	"${FILESDIR}"/${P}-respect-user-flags.patch
 	# https://github.com/KarypisLab/METIS/pull/52 Bug 905822
-	"${FILESDIR}"/${P}-add-gklib-as-required.patch
+	"${FILESDIR}"/${PN}-5.2.1-add-gklib-as-required.patch
 )
+
 src_prepare() {
 	local idxwidth realwidth
 
@@ -55,7 +58,7 @@ src_configure() {
 		-DSHARED="$(usex static-libs OFF ON)"
 		-DOPENMP="$(usex openmp)"
 	)
-	cmake_src_configure
+	CMAKE_BUILD_TYPE=Release cmake_src_configure
 }
 
 src_test() {
