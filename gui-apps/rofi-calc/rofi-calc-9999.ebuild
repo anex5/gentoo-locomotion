@@ -1,4 +1,4 @@
-# Copyright 1999-2025 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -14,7 +14,7 @@ if [[ ${PV} = *9999 ]]; then
 	EGIT_SUBMODULES=()
 	KEYWORDS=""
 else
-	COMMIT="e9d785e2de1af442441b127c9b0151b5e507af85"
+	COMMIT="42e67748c7a647526a5d35b0bdf7adcd1f9c3025"
 	SRC_URI="https://github.com/svenstaro/rofi-calc/archive/${COMMIT}.tar.gz -> ${P}.tar.gz"
 	KEYWORDS="~amd64 ~x86 ~arm ~arm64"
 	S="${WORKDIR}/${PN}-${COMMIT}"

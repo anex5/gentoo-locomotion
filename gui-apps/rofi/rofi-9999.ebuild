@@ -18,7 +18,7 @@ else
 	MY_PV="${PV/_/-}"
 	LIBGWATER_COMMIT="d86f9903efb9c490c0e3b0316d7f2da5b5a5632c"
 	LIBNKUTILS_COMMIT="2f220a40ad32cf51b6b7d7ae83ab641a3ae76693"
-	ROFI_COMMIT="92f19220ddbd6e965849ccb2c8dee151b82d69bc"
+	ROFI_COMMIT="0472f34e7ae81f2f99b9f2bf3a699462122c79f6"
 	SRC_URI="
 		https://github.com/davatorium/rofi/archive/${ROFI_COMMIT}.tar.gz -> ${P}-${COMMIT}.gh.tar.gz
 		https://github.com/sardemff7/libgwater/archive/${LIBGWATER_COMMIT}.tar.gz -> libgwater-${LIBGWATER_COMMIT}.gh.tar.gz
