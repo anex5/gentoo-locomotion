@@ -1,9 +1,9 @@
-# Copyright 1999-2025 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{11..13} )
+PYTHON_COMPAT=( python3_{11..14} )
 
 inherit flag-o-matic multilib multiprocessing toolchain-funcs
 inherit cuda java-pkg-opt-2 cmake-multilib python-r1 virtualx xdg-utils
@@ -44,7 +44,7 @@ else
 		https://github.com/opencv/ade/archive/v${ADE_PV}.tar.gz -> ade-${ADE_PV}.tar.gz
 		contrib? (
 			https://github.com/${PN}/${PN}_contrib/archive/${PV}.tar.gz -> ${PN}_contrib-${PV}.tar.gz
-			dnnsamples? (
+			wechat-qrcode? (
 				https://github.com/${PN}/${PN}_3rdparty/archive/${QRCODE_COMMIT}.tar.gz -> ${PN}_3rdparty-${QRCODE_COMMIT}.tar.gz
 				https://github.com/${PN}/${PN}_3rdparty/archive/${DNN_SAMPLES_FACE_DETECTOR_COMMIT}.tar.gz
 					-> ${PN}_3rdparty-${DNN_SAMPLES_FACE_DETECTOR_COMMIT}.tar.gz
@@ -71,17 +71,17 @@ else
 			https://github.com/ShiqiYu/libfacedetection.train/raw/02246e79b1e976c83d1e135a85e0628120c93769/onnx/yunet_s_640_640.onnx -> yunet-202303.onnx
 		)
 	"
-	KEYWORDS="amd64 ~arm ~arm64 ~loong ~ppc ~ppc64 ~riscv ~x86"
+	KEYWORDS="amd64 ~arm ~arm64 ~loong ~ppc64 ~riscv ~x86"
 fi
 
 LICENSE="Apache-2.0"
 SLOT="0/${PV}" # subslot = libopencv* soname version
 
 # general options
-IUSE="debug doc +eigen flatbuffers gflags glog java non-free lto onnx opencvapps +python test testprograms"
+IUSE="debug doc +eigen flatbuffers gflags glog java non-free lto onnx opencvapps python test testprograms"
 
 # modules
-IUSE+=" contrib contribcvv contribdnn contribfreetype contribhdf contribovis contribsfm contribxfeatures2d dnnsamples examples +features2d"
+IUSE+=" contrib contribcvv contribdnn contribfreetype contribhdf contribovis contribsfm contribxfeatures2d examples +features2d wechat-qrcode"
 # hardware
 IUSE+=" cuda cudnn opencl video_cards_intel"
 # video
@@ -170,8 +170,7 @@ REQUIRED_USE="
 		tesseract? ( opencl )
 		non-free
 	)
-	cudnn? ( cuda contribdnn )
-	dnnsamples? ( examples )
+	cudnn? ( cuda )
 	gflags? ( contrib )
 	glog? ( contrib )
 	contribcvv? ( contrib qt6 )
@@ -181,8 +180,8 @@ REQUIRED_USE="
 	contribovis? ( contrib )
 	contribsfm? ( contrib eigen gflags glog )
 	contribxfeatures2d? ( contrib )
-	mkl? ( lapack )
 	java? ( python )
+	mkl? ( lapack )
 	opengl? ( || ( qt6 wayland ) )
 	jasper? ( !abi_x86_32 )
 	python? ( ${PYTHON_REQUIRED_USE} )
@@ -194,14 +193,15 @@ REQUIRED_USE="
 	testprograms? ( test )
 	test? ( || ( ffmpeg gstreamer ) jpeg png tiff features2d )
 	wayland? ( !vtk )
+	wechat-qrcode? ( contribdnn )
 "
 
-RESTRICT="!test? ( test )"
+RESTRICT="!test? ( test ) mirror"
 
 COMMON_DEPEND="
 	app-arch/bzip2[${MULTILIB_USEDEP}]
 	dev-libs/protobuf:=[protoc(+),protobuf(+),${MULTILIB_USEDEP}]
-	sys-libs/zlib[${MULTILIB_USEDEP}]
+	virtual/zlib:=[${MULTILIB_USEDEP}]
 	avif? ( media-libs/libavif:=[${MULTILIB_USEDEP}] )
 	cuda? ( dev-util/nvidia-cuda-toolkit:= )
 	cudnn? (
@@ -214,7 +214,7 @@ COMMON_DEPEND="
 		media-libs/harfbuzz:=[${MULTILIB_USEDEP}]
 	)
 	contribovis? ( >=dev-games/ogre-1.12:= )
-	ffmpeg? ( media-video/ffmpeg:=[${MULTILIB_USEDEP}] )
+	ffmpeg? ( media-video/ffmpeg:0=[${MULTILIB_USEDEP}] )
 	flatbuffers? ( >=dev-libs/flatbuffers-23.5.9:= )
 	gdal? ( sci-libs/gdal:= )
 	gflags? ( dev-cpp/gflags:=[${MULTILIB_USEDEP}] )
@@ -232,15 +232,17 @@ COMMON_DEPEND="
 		media-libs/libdc1394:=[${MULTILIB_USEDEP}]
 		sys-libs/libraw1394[${MULTILIB_USEDEP}]
 	)
-	java? ( >=virtual/jre-1.8:* )
-	jpeg? ( media-libs/libjpeg-turbo:=[${MULTILIB_USEDEP}] )
+	jpeg? ( >=media-libs/libjpeg-turbo-3.1.0:=[${MULTILIB_USEDEP}] )
 	jpeg2k? (
 		jasper? ( media-libs/jasper:= )
-		!jasper? ( media-libs/openjpeg:2=[${MULTILIB_USEDEP}] )
+		!jasper? ( >=media-libs/openjpeg-2.5.3:2=[${MULTILIB_USEDEP}] )
 	)
 	lapack? (
 		atlas? ( sci-libs/atlas )
-		mkl? ( sci-libs/mkl )
+		mkl? (
+			sci-libs/mkl[tbb?]
+			openmp? ( sci-libs/mkl[gnu-openmp] )
+		)
 		!atlas? (
 			!mkl? (
 				virtual/cblas
@@ -281,8 +283,8 @@ COMMON_DEPEND="
 	qt6? (
 		dev-qt/qtbase:6[gui,widgets,concurrent,opengl?]
 	)
-	quirc? ( media-libs/quirc )
-	tbb? ( dev-cpp/tbb:=[${MULTILIB_USEDEP}] )
+	quirc? ( media-libs/quirc:=[${MULTILIB_USEDEP}] )
+	tbb? ( >=dev-cpp/tbb-2022.1.0:=[${MULTILIB_USEDEP}] )
 	tesseract? ( app-text/tesseract[${MULTILIB_USEDEP}] )
 	tiff? ( media-libs/tiff:=[${MULTILIB_USEDEP}] )
 	truetype? ( media-libs/freetype:2[${MULTILIB_USEDEP}] )
@@ -293,7 +295,7 @@ COMMON_DEPEND="
 		|| (
 			(
 				sci-libs/vtk[opencascade(+)]
-				sci-libs/opencascade[-ffmpeg]
+				sci-libs/opencascade[-ffmpeg(-)]
 			)
 			sci-libs/vtk[-opencascade(-)]
 		)
@@ -343,6 +345,7 @@ RDEPEND="
 unset COMMON_DEPEND
 
 BDEPEND="
+	dev-util/patchelf
 	virtual/pkgconfig
 	cuda? ( dev-util/nvidia-cuda-toolkit:= )
 	doc? (
@@ -370,10 +373,11 @@ PATCHES=(
 	"${FILESDIR}/${PN}-4.1.2-opencl-license.patch"
 	"${FILESDIR}/${PN}-4.4.0-disable-native-cpuflag-detect.patch"
 	"${FILESDIR}/${PN}-4.12.0-link-with-cblas-for-lapack.patch"
-	"${FILESDIR}/${PN}-4.8.1-use-system-flatbuffers.patch"
+
+	"${FILESDIR}/${PN}-4.13.0-use-system-flatbuffers.patch"
 	"${FILESDIR}/${PN}-4.8.1-use-system-opencl.patch"
 	"${FILESDIR}/${PN}-4.9.0-drop-python2-detection.patch"
-	"${FILESDIR}/${PN}-4.9.0-cmake-cleanup.patch"
+	"${FILESDIR}/${PN}-4.13.0-cmake-cleanup.patch"
 	"${FILESDIR}/${PN}-4.10.0-fix-build-with-vtk9.patch"
 	"${FILESDIR}/${PN}-4.10.0-dnn-explicitly-include-abseil-cpp.patch"
 	"${FILESDIR}/${PN}-4.10.0-tbb-detection.patch"
@@ -382,11 +386,15 @@ PATCHES=(
 	#"${FILESDIR}/${PN}-4.11.0-cmake-CMP0177.patch"
 
 	#"${FILESDIR}/${PN}-4.10.0-cmake4.patch" # PR pending #27192
-	"${FILESDIR}/${PN}-4.11.0-qt-6.9.patch" # https://github.com/opencv/opencv/issues/27223
+	"${FILESDIR}/${PN}-4.12.0-cmake-4.patch"
+	#"${FILESDIR}/${PN}-4.11.0-qt-6.9.patch" # https://github.com/opencv/opencv/issues/27223
 
 	#"${FILESDIR}"/${PN}-4.11.0-fix-libspng-link.patch #  PR pending #27314
 
-	#"${FILESDIR}/${PN}-4.11.0-cuda-12.9.patch" # PR 27288
+	#"${FILESDIR}/${PN}-4.12.0-cuda-13.0.patch"
+
+	#"${FILESDIR}/${PN}-4.11.0-ffmpeg8.patch" # PR 27691
+	#"${DISTDIR}/${P}-fix_videowriter_raw_return_code.patch"
 
 	# TODO applied in src_prepare
 	# "${FILESDIR}/${PN}_contrib-4.8.1-rgbd.patch"
@@ -458,9 +466,9 @@ cuda_get_host_compiler() {
 
 	while ! \
 		nvcc "${NVCCFLAGS}" \
+			-x cu \
 			-ccbin "${NVCC_CCBIN}" \
 			- \
-			-x cu \
 			<<<"int main(){}" \
 			&>> "${T}/cuda_get_host_compiler.log" ;
 		do
@@ -553,15 +561,45 @@ src_unpack() {
 	else
 		default
 	fi
+
+	# remove bundled stuff
+	local files_3rdparty=(
+		# cpufeatures
+		# fastcv
+		ffmpeg
+		flatbuffers
+		include/{opencl,vulkan}
+		# ippicv
+		# ittnotify
+		libjasper
+		libjpeg
+		libjpeg-turbo
+		libpng
+		libspng
+		libtiff
+		# libtim-vx
+		libwebp
+		openexr
+		openjpeg
+		# orbbecsdk
+		protobuf
+		quirc
+		tbb
+		zlib
+		zlib-ng
+	)
+
+	local file
+	for file in "${files_3rdparty[@]}"; do
+		rm -r "${S}/3rdparty/${file}" || die "Removing 3rd party components (${file}) failed"
+
+		sed -e "\_add\_subdirectory(.*3rdparty/${file})_d" \
+			-i "${S}/CMakeLists.txt" "${S}/cmake"/*cmake || die
+	done
 }
 
 src_prepare() {
 	cmake_src_prepare
-
-	# remove bundled stuff
-	rm -r 3rdparty || die "Removing 3rd party components failed"
-	sed -e '/add_subdirectory(.*3rdparty.*)/ d' \
-		-i CMakeLists.txt cmake/*cmake || die
 
 	sed \
 		-e 's:truetype/wqy:wqy-microhei:g' \
@@ -580,11 +618,11 @@ src_prepare() {
 		pushd "${WORKDIR}/${PN}_contrib-${PV}" >/dev/null || die
 		eapply "${FILESDIR}/${PN}_contrib-4.8.1-rgbd.patch"
 		eapply "${FILESDIR}/${PN}_contrib-4.8.1-NVIDIAOpticalFlowSDK-2.0.tar.gz.patch"
+		#eapply "${FILESDIR}/${PN}_contrib-4.12.0-cuda-13.0.patch"
 		[[ -n "${PATCHES_CONTRIB_USER[*]}" ]] && eapply "${PATCHES_CONTRIB_USER[@]}"
 		popd >/dev/null || die
 
 		! use contribcvv && { rm -R "${WORKDIR}/${PN}_contrib-${PV}/modules/cvv" || die; }
-		! use contribdnn && { rm -R "${S}/modules/dnn" || die; }
 		! use contribfreetype && { rm -R "${WORKDIR}/${PN}_contrib-${PV}/modules/freetype" || die; }
 		! use contribhdf && { rm -R "${WORKDIR}/${PN}_contrib-${PV}/modules/hdf" || die; }
 		! use contribovis && { rm -R "${WORKDIR}/${PN}_contrib-${PV}/modules/ovis" || die; }
@@ -604,7 +642,7 @@ src_prepare() {
 			-i "${S}/modules/gapi/cmake/DownloadADE.cmake" || die
 	fi
 
-	if use dnnsamples; then
+	if use wechat-qrcode; then
 		mkdir -p "${S}/.cache/wechat_qrcode" || die
 		for file in "detect.caffemodel" "detect.prototxt" "sr.prototxt" "sr.caffemodel"; do
 			mv \
@@ -691,6 +729,8 @@ src_prepare() {
 multilib_src_configure() {
 	CMAKE_BUILD_TYPE=$(usex debug "RelWithDebInfo" "Release")
 
+	append-cppflags "$(usex debug '-DDEBUG' '-DNDEBUG')"
+
 	if use opencl ; then
 		append-cppflags -DCL_TARGET_OPENCL_VERSION=120
 	fi
@@ -716,7 +756,7 @@ multilib_src_configure() {
 		-DENABLE_DOWNLOAD="no"
 		-DOPENCV_ENABLE_NONFREE="$(usex non-free)"
 		-DWITH_QUIRC="$(usex quirc)"
-		-DWITH_FLATBUFFERS="$(usex flatbuffers)"
+		-DWITH_FLATBUFFERS="$(multilib_native_usex flatbuffers)"
 		-DWITH_1394="$(usex ieee1394)"
 		# -DWITH_AVFOUNDATION="no" # IOS
 		-DWITH_VTK="$(multilib_native_usex vtk)"
@@ -728,6 +768,7 @@ multilib_src_configure() {
 		-DWITH_GTK_2_X="no" # only want gtk3 nowadays
 		-DWITH_IMGCODEC_GIF="$(usex gif)"
 		-DWITH_IPP="no"
+		-DWITH_JULIA="no"
 		-DWITH_JASPER="$(usex jpeg2k "$(multilib_native_usex jasper)")"
 		-DWITH_JPEG="$(usex jpeg)"
 		-DWITH_OPENJPEG="$(usex jpeg2k "$(multilib_native_usex !jasper)")"
@@ -736,8 +777,8 @@ multilib_src_configure() {
 		-DWITH_OPENGL="$(usex opengl)"
 		-DOpenGL_GL_PREFERENCE="GLVND"
 		-DWITH_OPENVX="no"
-		-DWITH_OPENNI="no"       # Not packaged
-		-DWITH_OPENNI2="no"      # Not packaged
+		-DWITH_OPENNI="$(multilib_native_usex openni)"
+		-DWITH_OPENNI2="$(multilib_native_usex openni2)"
 		-DWITH_PNG="$(usex png)"
 		-DWITH_SPNG="$(usex png "$(multilib_native_usex spng)")"
 		-DWITH_GDCM="no"
@@ -821,7 +862,6 @@ multilib_src_configure() {
 		# -DINSTALL_ANDROID_EXAMPLES="no"
 		-DINSTALL_TO_MANGLED_PATHS="no"
 		-DOPENCV_GENERATE_PKGCONFIG="yes"
-		-DOPENCV_ENABLE_NONFREE="$(multilib_native_usex non-free)"
 		# -DOPENCV_README_FILE="no"
 		# -DOPENCV_LICENSE_FILE="no"
 		# opencv uses both ${CMAKE_INSTALL_LIBDIR} and ${LIB_SUFFIX}
@@ -873,9 +913,12 @@ multilib_src_configure() {
 	# ===================================================
 	# configure modules to be build
 	# ===================================================
+		-DBUILD_opencv_dnn="$(usex contribdnn)"
 		-DBUILD_opencv_gapi="$(usex ffmpeg yes "$(usex gstreamer)")"
 		-DBUILD_opencv_features2d="$(usex features2d)"
 		-DBUILD_opencv_java_bindings_generator="$(usex java)"
+		-DBUILD_opencv_wechat_qrcode="$(usex wechat-qrcode)"
+		-DBUILD_opencv_julia="no"
 		-DBUILD_opencv_js="no"
 		-DBUILD_opencv_js_bindings_generator="no"
 		-DBUILD_opencv_objc_bindings_generator="no"
@@ -912,6 +955,7 @@ multilib_src_configure() {
 	if [[ ${PV} != *9999* ]] ; then
 		mycmakeargs+=(
 			-DOPENCV_VCSVERSION="${PV}"
+			-DBUILD_INFO_SKIP_EXTRA_MODULES="yes"
 		)
 	fi
 
@@ -978,22 +1022,14 @@ multilib_src_configure() {
 	if use contrib; then
 		mycmakeargs+=(
 			-DBUILD_opencv_cvv="$(usex contribcvv)"
-			-DBUILD_opencv_dnn="$(usex contribdnn)"
-			-DOPENCV_DNN_OPENCL="$(usex opencl)"
-			-DOPENCV_DNN_CUDA="$(multilib_native_usex cudnn)"
 			-DBUILD_opencv_dnns_easily_fooled="OFF"
 			-DBUILD_opencv_freetype="$(usex contribfreetype)"
 			-DBUILD_opencv_hdf="$(multilib_native_usex contribhdf)"
 			-DBUILD_opencv_ovis="$(usex contribovis)"
 			-DBUILD_opencv_sfm="$(usex contribsfm)"
 			-DBUILD_opencv_xfeatures2d="$(usex contribxfeatures2d)"
+			-DWITH_TESSERACT="$(multilib_native_usex tesseract)"
 		)
-
-		if ! multilib_native_use tesseract; then
-			mycmakeargs+=(
-				-DCMAKE_DISABLE_FIND_PACKAGE_Tesseract="yes"
-			)
-		fi
 	fi
 
 	# workaround for bug 413429
@@ -1009,7 +1045,19 @@ multilib_src_configure() {
 			# eqawarn "Can't access the GPU at /dev/nvidiactl."
 			# eqawarn "User $(id -nu) is not in the group \"video\"."
 
+			# export CUDAARCHS="all"
+			# build all targets
 			mycmakeargs+=(
+				# can't use "all" as that breaks openmp
+				# nvcc fatal   : Unsupported gpu architecture 'compute_all'
+				# -DCMAKE_CUDA_ARCHITECTURES="all"
+
+				# with openmp -> CUDA_ARCHITECTURES is empty for target "cmTC_0088f"
+				# -DCUDA_GENERATION="Auto" # requires access to GPU
+
+				# wrong arch....
+				# -DCMAKE_CUDA_ARCHITECTURES="${CUDAARCHS:-50}" # breaks with openmp otherwise..
+
 				-DOpenMP_CUDA_FLAGS=""
 				-DOpenMP_CUDA_LIB_NAMES=""
 			)
@@ -1085,6 +1133,13 @@ multilib_src_configure() {
 		)
 	fi
 
+	if use contribdnn; then
+		mycmakeargs+=(
+			-DOPENCV_DNN_OPENCL="$(usex opencl)"
+			-DOPENCV_DNN_CUDA="$(multilib_native_usex cudnn)"
+		)
+	fi
+
 	if use ffmpeg; then
 		mycmakeargs+=(
 			-DOPENCV_GAPI_GSTREAMER="no"
@@ -1100,16 +1155,37 @@ multilib_src_configure() {
 		)
 	fi
 
-	if use mkl; then
-		mycmakeargs+=(
-			-DLAPACK_IMPL="MKL"
-			-DMKL_WITH_OPENMP="$(usex openmp)"
-			-DMKL_WITH_TBB="$(usex tbb)"
-		)
+	if multilib_native_use lapack; then
+		if use mkl; then
+			mycmakeargs+=(
+				-DWITH_MKL="yes"
+				-DMKL_WITH_OPENMP="$(usex openmp)"
+				-DMKL_WITH_TBB="$(usex tbb)"
+			)
+		else
+			mycmakeargs+=(
+				-DSKIP_OPENBLAS_PACKAGE="yes"
+				-DOPENCV_LAPACK_DISABLE_MKL="yes"
+			)
+		fi
+	fi
+
+	if use gtk3 || use qt6 || use wayland; then
+		if use opengl; then
+			mycmakeargs+=(
+				-DWITH_OPENGL="yes"
+				-DOpenGL_GL_PREFERENCE="GLVND"
+			)
+		else
+			mycmakeargs+=(
+				-DWITH_OPENGL="no"
+			)
+		fi
 	fi
 
 	# NOTE set this via MYCMAKEARGS if needed
 	if use opencl; then
+		mycmakeargs+=( -DOPENCL_INCLUDE_DIR="${ESYSROOT}/usr/include" )
 		if has_version sci-libs/clfft; then
 			mycmakeargs+=( -DWITH_OPENCLAMDFFT="yes" )
 		else
@@ -1149,8 +1225,12 @@ multilib_src_configure() {
 		)
 	fi
 
+	if use vulkan; then
+		mycmakeargs+=( -DVULKAN_INCLUDE_DIRS="${ESYSROOT}/usr/include" )
+	fi
+
 	if multilib_native_use python; then
-		# shellcheck disable=SC2317
+		# shellcheck disable=SC2329
 		python_configure() {
 			# Set all python variables to load the correct Gentoo paths
 			local mycmakeargs=(
@@ -1161,6 +1241,7 @@ multilib_src_configure() {
 				-DBUILD_opencv_python_bindings_generator="yes"
 				-DBUILD_opencv_python_tests="$(usex test)"
 				-DPYTHON_DEFAULT_EXECUTABLE="${EPYTHON}"
+				-DPYTHON_EXECUTABLE="${EPYTHON}" # check
 				-DINSTALL_PYTHON_EXAMPLES="$(usex examples)"
 				-DBUILD_NEW_PYTHON_SUPPORT="ON"
 			)
@@ -1170,6 +1251,7 @@ multilib_src_configure() {
 		python_foreach_impl python_configure
 	else
 		mycmakeargs+=(
+			-DOPENCV_PYTHON_SKIP_DETECTION="yes"
 			-DPYTHON_EXECUTABLE="no"
 			-DINSTALL_PYTHON_EXAMPLES="no"
 			-DBUILD_opencv_python3="no"
@@ -1244,9 +1326,10 @@ multilib_src_test() {
 	if ! use gtk3 && ! use qt6; then
 		# TODO Compositor doesn't have required interfaces in function 'init'
 		# && ! use wayland
-		local -x OPENCV_SKIP_TESTS_highgui=(
-			'Highgui_GUI.*'
-		)
+		# local -x OPENCV_SKIP_TESTS_highgui=(
+		# 	'Highgui_GUI.*'
+		# )
+		:
 	else
 		addpredict /dev/fuse
 	fi
@@ -1270,36 +1353,37 @@ multilib_src_test() {
 		if use opengl; then
 			local -x OPENCV_SKIP_TESTS_cudaarithm=(
 				'OpenGL/Buffer.MapDevice/*'
-				'OpenGL/Buffer*'
 				'OpenGL/*Gpu*'
-				'OpenGL/Texture2D*'
 			)
 		fi
 	fi
 
 	if use contribdnn; then
 		local -x OPENCV_SKIP_TESTS_dnn=(
-			'Test_ONNX_layers.LSTM_cell_forward/*'
-			'Test_ONNX_layers.LSTM_cell_bidirectional/*'
-			'Test_TensorFlow_layers.Convolution3D/*'
-			'Test_TensorFlow_layers.concat_3d/*'
+			'Test_ONNX_layers.LSTM_cell_forward/0'
+			'Test_ONNX_layers.LSTM_cell_bidirectional/0'
+			'Test_TensorFlow_layers.Convolution3D/1'
+			'Test_TensorFlow_layers.concat_3d/1'
 		)
 		local -x OPENCV_SKIP_TESTS_objdetect=(
-			'Objdetect_face_detection.regression'
-			'Objdetect_face_recognition.regression' 'Objdetect_QRCode_Encode_Decode_Structured_Append.regression'
+			# dnn/onnx/models/face_recognizer_fast.onnx
+			'Objdetect_face_recognition.regression'
+			'Objdetect_QRCode_Encode_Decode_Structured_Append.regression'
 		)
+		:
 	else
+		# dnn/onnx/models/yunet-202303.onnx
 		local -x OPENCV_SKIP_TESTS_objdetect=(
 			'Objdetect_face_detection.regression'
 			'Objdetect_face_recognition.regression'
-			)
+		)
 
 		OPENCV_SKIP_TESTS_video+=(
 			'vittrack.accuracy_vittrack'
 		)
 	fi
 
-	if use dnnsamples; then
+	if use wechat-qrcode; then
 		local -x OPENCV_SKIP_TESTS_wechat_qrcode=(
 			'Objdetect_QRCode_points_position.rotate45'
 			'Objdetect_QRCode_Big.regression'
@@ -1317,8 +1401,9 @@ multilib_src_test() {
 		"Imgproc_ConnectedComponents.maxlabels_8conn_odd"
 	)
 
-	local -x OPENCV_SKIP_TESTS_ximgproc=(
-		'InterpolatorTest.RICReferenceAccuracy'
+	local -x OPENCV_SKIP_TESTS_imgcodecs=(
+		"Imgcodecs_Png.ReadWriteWithExif"
+		"Imgcodecs_AVIF*"
 	)
 
 	if multilib_native_use cuda; then
@@ -1326,20 +1411,20 @@ multilib_src_test() {
 			eerror "Can't access the GPU at /dev/nvidiactl."
 			eerror "User $(id -nu) is not in the group \"video\"."
 			local -x TEST_CUDA="false"
-			# local -x OPENCV_PARALLEL_BACKEND="threads"
-			# local -x DNN_BACKEND_OPENCV="cuda"
 
 			local -x OPENCV_SKIP_TESTS_photo=( "CUDA_*" )
 			local -x OPENCV_SKIP_TESTS_stitching=( "CUDA_*" )
 			OPENCV_SKIP_TESTS_video+=( "CUDA_*" )
 		else
+			# local -x OPENCV_PARALLEL_BACKEND="threads"
+			local -x DNN_BACKEND_OPENCV="cuda"
 			cuda_add_sandbox -w
 			addwrite "/dev/dri/"
 			[[ -c /dev/udmabuf ]] && addwrite /dev/udmabuf
 		fi
 	fi
 
-	# shellcheck disable=SC2317
+	# shellcheck disable=SC2329
 	opencv_test() {
 		cd "${BUILD_DIR}" || die
 
@@ -1352,7 +1437,7 @@ multilib_src_test() {
 		# # path to extra OpenVINO plugins
 		# local -x OPENCV_DNN_IE_EXTRA_PLUGIN_PATH="${BUILD_DIR}/lib"
 
-		local -x OPENCV_TEMP_PATH="${T}"
+		local -x OPENCV_TEMP_PATH="${T%/}"
 
 		local -x OPENCV_TEST_DATA_PATH="${WORKDIR}/${PN}_extra-${PV}/testdata"
 
@@ -1363,6 +1448,10 @@ multilib_src_test() {
 		local test_opts_base=(
 			--skip_unstable=1
 			--test_threads="$(makeopts_jobs)"
+			--test_debug="$(usex debug 2 0)"
+			# --test_require_data=1 # OPENCV_TEST_REQUIRE_DATA="true"
+			# --test_bigdata=1
+			# --test_tag_enable="verylong,mem_6gb" #,skip_other,dnn_skip_cuda,dnn_skip_cuda_fp16,dnn_skip_parse
 		)
 
 		local results=()
@@ -1403,16 +1492,20 @@ multilib_src_test() {
 
 		if [[ -n "${results[*]}" ]]; then
 			echo -e "failed: ${results[*]}"
-			if command -v jq; then
+			if command -v jq &>/dev/null; then
 				for res in "${results[@]}"; do
-					echo "${res} $(
-						jq -r '.testsuites.[] |
-							select( .failures != 0) |
-							.testsuite.[] |
-							select( (.failures | length) > 0) |
-							"\(.classname).\(.name)"' "${BUILD_DIR}/test-reports/${res}.json" | \
-							tr '\n' ' '
-						)"
+					if [[ -f "${BUILD_DIR}/test-reports/${res}.json" ]]; then
+						eerror "${res}: $(
+							jq -r '.testsuites.[] |
+								select( .failures != 0) |
+								.testsuite.[] |
+								select( (.failures | length) > 0) |
+								"\(.classname).\(.name)"' "${BUILD_DIR}/test-reports/${res}.json" | \
+								tr '\n' ' '
+							)"
+					else
+						eerror "${res}: no test report"
+					fi
 				done
 			fi
 			die "${results[*]}"

@@ -1,0 +1,18 @@
+From: Paul Zander <negril.nx+gentoo@gmail.com>
+
+don't check for deprecated libavresample
+fix openjpeg version string
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index cbb302a..eab0a0a 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1472,7 +1472,7 @@ endif()
+ 
+ if(HAVE_OPENJPEG)
+   status("    JPEG 2000:" OpenJPEG_FOUND
+-      THEN "OpenJPEG (ver ${OPENJPEG_VERSION})"
++      THEN "OpenJPEG (ver ${OPENJPEG_MAJOR_VERSION}.${OPENJPEG_MINOR_VERSION}.${OPENJPEG_BUILD_VERSION})"
+       ELSE "build (ver ${OPENJPEG_VERSION})"
+   )
+ elseif(HAVE_JASPER)
