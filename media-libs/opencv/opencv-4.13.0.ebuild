@@ -729,7 +729,6 @@ src_prepare() {
 multilib_src_configure() {
 	CMAKE_BUILD_TYPE=$(usex debug "RelWithDebInfo" "Release")
 
-	append-cppflags "$(usex debug '-DDEBUG' '-DNDEBUG')"
 
 	if use opencl ; then
 		append-cppflags -DCL_TARGET_OPENCL_VERSION=120
@@ -737,6 +736,8 @@ multilib_src_configure() {
 
 	# bug #919101 and https://github.com/opencv/opencv/issues/19020
 	filter-lto
+
+	append-cppflags "$(usex debug '-DDEBUG' '-DNDEBUG')"
 
 	if tc-is-gcc && [[ $(gcc-major-version) -ge 15 ]] && use contribdnn; then
 		append-cxxflags "-fno-tree-vectorize"
