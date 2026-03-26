@@ -7,14 +7,14 @@ EAPI=8
 FIREFOX_PATCHSET="firefox-${PV%%.*}esr-patches-07.tar.xz"
 FIREFOX_LOONG_PATCHSET="firefox-139-loong-patches-02.tar.xz"
 
-LLVM_COMPAT=( {19..22} )
-PP="2"
+LLVM_COMPAT=( {20..22} )
+PP="1"
 GV="1"
 
 # This will also filter rust versions that don't match LLVM_COMPAT in the non-clang path; this is fine.
 RUST_NEEDS_LLVM=1
 # If not building with clang we need at least rust 1.76
-RUST_MIN_VER=1.82.0
+RUST_MIN_VER=1.87.0
 
 PYTHON_COMPAT=( python3_{11..14} )
 PYTHON_REQ_USE="ncurses,sqlite,ssl"
@@ -23,8 +23,8 @@ VIRTUALX_REQUIRED="manual"
 
 # Information about the bundled wasi toolchain from
 # https://github.com/WebAssembly/wasi-sdk/
-WASI_SDK_VER=30.0
-WASI_SDK_LLVM_VER=${LLVM_SLOT}
+declare -A WASI_SDK_VER
+WASI_SDK_VER=( [22]="32.0" [21]="30.0" [20]="27.0" )
 
 MOZ_ESR=yes
 
@@ -40,8 +40,16 @@ SRC_URI="
 		https://dev.gentoo.org/~xen0n/distfiles/www-client/firefox/${FIREFOX_LOONG_PATCHSET}
 	)
 	wasm-sandbox? (
-		amd64? ( https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_SDK_VER/.*/}/wasi-sdk-${WASI_SDK_VER}-x86_64-linux.tar.gz )
-		arm64? ( https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_SDK_VER/.*/}/wasi-sdk-${WASI_SDK_VER}-arm64-linux.tar.gz )
+		amd64? (
+			llvm_slot_22? ( https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_SDK_VER[22]/.*/}/wasi-sdk-${WASI_SDK_VER[22]}-x86_64-linux.tar.gz )
+			llvm_slot_21? ( https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_SDK_VER[21]/.*/}/wasi-sdk-${WASI_SDK_VER[21]}-x86_64-linux.tar.gz )
+			llvm_slot_20? ( https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_SDK_VER[20]/.*/}/wasi-sdk-${WASI_SDK_VER[20]}-x86_64-linux.tar.gz )
+		)
+		arm64? (
+			llvm_slot_22? ( https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_SDK_VER[22]/.*/}/wasi-sdk-${WASI_SDK_VER[22]}-arm64-linux.tar.gz )
+			llvm_slot_21? ( https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_SDK_VER[21]/.*/}/wasi-sdk-${WASI_SDK_VER[21]}-arm64-linux.tar.gz )
+			llvm_slot_20? ( https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_SDK_VER[20]/.*/}/wasi-sdk-${WASI_SDK_VER[20]}-arm64-linux.tar.gz )
+		)
 	)
 "
 
@@ -63,11 +71,11 @@ CODEC_IUSE="
 "
 IUSE+="
 ${CODEC_IUSE}
-alsa atk buildtarball clang cpu_flags_arm_neon cups +dbus debug firejail hardened hwaccel
-jack -jemalloc +jit libcanberra libnotify libproxy libsecret lld lto mold pgo
-pulseaudio sndio selinux speech +system-av1 +system-ffmpeg +system-harfbuzz
-+system-icu +system-jpeg +system-libevent +system-libvpx +system-png +system-pipewire
--system-python-libs +system-webp test vaapi wayland +webrtc wifi webspeech X
+alsa atk buildtarball clang cpu_flags_arm_neon cups +dbus debug firejail hardened hwaccel \
+jack -jemalloc +jit jpegxl libcanberra libnotify libproxy libsecret lld lto mold pgo \
+pulseaudio sndio selinux speech systemd +system-av1 +system-ffmpeg +system-graphite2 \
++system-harfbuzz +system-icu +system-jpeg +system-libevent +system-libvpx +system-png \
++system-pipewire -system-python-libs +system-webp test vaapi wayland +webrtc wifi webspeech X
 "
 
 # Firefox-only IUSE
@@ -113,6 +121,7 @@ REQUIRED_USE="
 	debug? (
 		!system-av1
 	)
+	wasm-sandbox? ( !system-graphite2 )
 	wayland? (
 		dbus
 	)
@@ -148,11 +157,11 @@ GAMEPAD_BDEPEND="
 # Required for gamepad, or WebAuthn roaming authenticators (e.g. USB security key)
 UDEV_RDEPEND="
 	kernel_linux? (
-		|| (
+		systemd? (
 			>=sys-apps/systemd-217[${MULTILIB_USEDEP}]
-			>=sys-fs/eudev-2.1.1[${MULTILIB_USEDEP}]
-			sys-apps/systemd-utils[${MULTILIB_USEDEP},udev]
-			sys-fs/udev[${MULTILIB_USEDEP}]
+		)
+		!systemd? (
+			>=sys-apps/systemd-utils-217[${MULTILIB_USEDEP},udev]
 		)
 	)
 "
@@ -187,7 +196,6 @@ SYSTEM_PYTHON_LIBS="
 			>=dev-python/importlib-metadata-6.0.0[${PYTHON_USEDEP}]
 			>=dev-python/iniparse-0.5[${PYTHON_USEDEP}]
 			>=dev-python/jinja2-3.1.6[${PYTHON_USEDEP}]
-			>=dev-python/jsmin-3.0.0[${PYTHON_USEDEP}]
 			>=dev-python/jsonschema-4.17.3[${PYTHON_USEDEP}]
 			>=dev-python/looseversion-1.0.1[${PYTHON_USEDEP}]
 			>=dev-python/mako-1.2.2[${PYTHON_USEDEP}]
@@ -222,7 +230,7 @@ SYSTEM_PYTHON_LIBS="
 			>=dev-python/tomlkit-0.12.3[${PYTHON_USEDEP}]
 			>=dev-python/tqdm-4.66.3[${PYTHON_USEDEP}]
 			>=dev-python/typing-extensions-4.12.2[${PYTHON_USEDEP}]
-			>=dev-python/urllib3-2.6.3[${PYTHON_USEDEP}]
+			>=dev-python/urllib3-1.26.19[${PYTHON_USEDEP}]
 			>=dev-python/voluptuous-0.12.1[${PYTHON_USEDEP}]
 			>=dev-python/wcwidth-0.2.13[${PYTHON_USEDEP}]
 			>=dev-python/wheel-0.43.0[${PYTHON_USEDEP}]
@@ -249,7 +257,7 @@ CDEPEND="
 	media-libs/alsa-lib[${MULTILIB_USEDEP}]
 	virtual/freedesktop-icon-theme
 	x11-libs/cairo
-	x11-libs/gdk-pixbuf[${MULTILIB_USEDEP}]
+	x11-libs/gdk-pixbuf:2[${MULTILIB_USEDEP}]
 	dbus? (
 		>=dev-libs/dbus-glib-${DBUS_GLIB_PV}[${MULTILIB_USEDEP}]
 		>=sys-apps/dbus-${DBUS_PV}[${MULTILIB_USEDEP}]
@@ -279,9 +287,11 @@ CDEPEND="
 		>=media-libs/dav1d-1.5.1:=[${MULTILIB_USEDEP},8bit]
 		>=media-libs/libaom-3.10.0:=[${MULTILIB_USEDEP}]
 	)
+	system-graphite2? (
+		>=media-gfx/graphite2-1.3.14[${MULTILIB_USEDEP}]
+	)
 	system-harfbuzz? (
-		!wasm-sandbox? ( >=media-gfx/graphite2-1.3.14 )
-		>=media-libs/harfbuzz-12.2.0:0=[${MULTILIB_USEDEP}]
+		>=media-libs/harfbuzz-12.3.0:0=[${MULTILIB_USEDEP}]
 	)
 	system-icu? (
 		>=dev-libs/icu-78.1:=[${MULTILIB_USEDEP}]
@@ -293,19 +303,19 @@ CDEPEND="
 		>=media-video/ffmpeg-${FFMPEG_PV}[${MULTILIB_USEDEP},dav1d?,openh264?,opus?,vaapi?,vpx?]
 	)
 	system-libevent? (
-		>=dev-libs/libevent-2.1.12:=[${MULTILIB_USEDEP},threads(+)]
+		>=dev-libs/libevent-2.1.12:0[${MULTILIB_USEDEP},threads(+)]
 	)
 	system-libvpx? (
-		>=media-libs/libvpx-1.15.2:=[${MULTILIB_USEDEP},postproc]
+		>=media-libs/libvpx-1.15.2:0[${MULTILIB_USEDEP},postproc]
 	)
 	system-pipewire? (
 		>=media-video/pipewire-1.4.7-r2:=[${MULTILIB_USEDEP}]
 	)
 	system-png? (
-		>=media-libs/libpng-1.6.50:=[${MULTILIB_USEDEP},apng]
+		>=media-libs/libpng-1.6.53:0[${MULTILIB_USEDEP},apng]
 	)
 	system-webp? (
-		>=media-libs/libwebp-1.6.0:=[${MULTILIB_USEDEP}]
+		>=media-libs/libwebp-1.6.0:0[${MULTILIB_USEDEP}]
 	)
 	wayland? (
 		>=media-libs/libepoxy-1.5.10-r1
@@ -428,10 +438,10 @@ BDEPEND+="
 	>=dev-util/pkgconf-1.8.0[${MULTILIB_USEDEP},pkg-config(+)]
 	>=net-libs/nodejs-21[${MULTILIB_USEDEP}]
 	|| (
-		>=dev-lang/rust-1.83.0[${MULTILIB_USEDEP}]
-		>=dev-lang/rust-bin-1.83.0[${MULTILIB_USEDEP}]
-		<dev-lang/rust-1.92.0[${MULTILIB_USEDEP}]
-		<dev-lang/rust-bin-1.92.0[${MULTILIB_USEDEP}]
+		>=dev-lang/rust-1.87.0[${MULTILIB_USEDEP}]
+		>=dev-lang/rust-bin-1.87.0[${MULTILIB_USEDEP}]
+		<dev-lang/rust-1.95.0[${MULTILIB_USEDEP}]
+		<dev-lang/rust-bin-1.95.0[${MULTILIB_USEDEP}]
 	)
 	app-alternatives/awk
 	app-arch/unzip
@@ -744,7 +754,7 @@ pkg_pretend() {
 		elif use lto ; then
 			CHECKREQS_DISK_BUILD="10600M"
 		else
-			CHECKREQS_DISK_BUILD="7400M"
+			CHECKREQS_DISK_BUILD="6800M"
 		fi
 
 		check-reqs_pkg_pretend
@@ -772,7 +782,7 @@ pkg_setup() {
 		elif use lto ; then
 			CHECKREQS_DISK_BUILD="10600M"
 		else
-			CHECKREQS_DISK_BUILD="7400M"
+			CHECKREQS_DISK_BUILD="6800M"
 		fi
 
 		check-reqs_pkg_setup
@@ -896,6 +906,19 @@ pkg_setup() {
 
 src_unpack() {
 	unpack "${FIREFOX_PATCHSET}"
+
+	if use wasm-sandbox; then
+		use amd64 && (
+			use llvm_slot_20 && ( unpack wasi-sdk-${WASI_SDK_VER[20]}-x86_64-linux.tar.gz || eerror "Failed to unpack" )
+			use llvm_slot_21 && ( unpack wasi-sdk-${WASI_SDK_VER[21]}-x86_64-linux.tar.gz || eerror "Failed to unpack" )
+			use llvm_slot_22 && ( unpack wasi-sdk-${WASI_SDK_VER[22]}-x86_64-linux.tar.gz || eerror "Failed to unpack" )
+		)
+		use arm64 && (
+			use llvm_slot_20 && ( unpack wasi-sdk-${WASI_SDK_VER[20]}-arm64-linux.tar.gz || eerror "Failed to unpack" )
+			use llvm_slot_21 && ( unpack wasi-sdk-${WASI_SDK_VER[21]}-arm64-linux.tar.gz || eerror "Failed to unpack" )
+			use llvm_slot_22 && ( unpack wasi-sdk-${WASI_SDK_VER[22]}-arm64-linux.tar.gz || eerror "Failed to unpack" )
+		)
+	fi
 	if use buildtarball; then
 		unpack "icecat-${PV}-${PP}gnu${GV}.tar.bz2" || eerror "Tarball is missing, check that www-client/makeicecat has use flag buildtarball enabled."
 	else
@@ -983,7 +1006,7 @@ src_prepare() {
 	#eapply "${FILESDIR}/extra-patches/firefox-128.3.0e-allow-flac-no-ffvpx.patch"
 	eapply "${FILESDIR}/extra-patches/firefox-128.3.0e-big-endian-image-decoders.patch"
 
-	# Workaround for bgo#915651 on musl
+	# Workaround for bug #915651 on musl
 	if use elibc_glibc ; then
 		rm -v "${WORKDIR}"/firefox-patches/*bgo-748849-RUST_TARGET_override.patch || die
 		if has_version '>=sys-libs/glibc-2.43'; then
@@ -1055,9 +1078,16 @@ src_prepare() {
 		sed -i \
 			-e "s:%%PORTAGE_WORKDIR%%:${WORKDIR}:" \
 			-e "s:%%WASI_ARCH%%:${wasi_arch}:" \
-			-e "s:%%WASI_SDK_VER%%:${WASI_SDK_VER}:" \
-			-e "s:%%WASI_SDK_LLVM_VER%%:${WASI_SDK_LLVM_VER}:" \
+			-e "s:%%WASI_SDK_VER%%:${WASI_SDK_VER[${LLVM_SLOT}]}:" \
+			-e "s:%%WASI_SDK_LLVM_VER%%:${LLVM_SLOT}:" \
 			toolkit/moz.configure || die "Failed to update wasi-related paths."
+
+		if use llvm_slot_22; then
+			sed -e "s/\(wasm32-wasi\|wasm32-unknown-wasi\)/\1p1/g" \
+				-i build/moz.configure/toolchain.configure \
+				-i gfx/harfbuzz/src/wasm/sample/c/Makefile \
+				-i toolkit/moz.configure || die
+		fi
 	fi
 
 	# Make LTO & ICU respect MAKEOPTS
@@ -1491,16 +1521,16 @@ _src_configure() {
 	# Set update channel
 	mozconfig_add_options_ac '' --update-channel="esr"
 
-	#if ! use x86 && [[ ${CHOST} != armv*h* ]] ; then
-	#	mozconfig_add_options_ac '' --enable-rust-simd
-	#fi
-
+	# Whitelist to allow unkeyworded arches to build with "--disable-rust-simd" by default.
+	if use amd64 || use arm64 || use ppc64 || use loong || use riscv ; then
+		mozconfig_add_options_ac '' --enable-rust-simd
+	fi
 	# For future keywording: This is currently (97.0) only supported on:
 	# amd64, arm, arm64, and x86.
 	# You might want to flip the logic around if Firefox is to support more
 	# arches.
 	# bug 833001, bug 903411#c8
-	if use ppc64 || use riscv ; then
+	if use loong || use ppc64 || use riscv; then
 		mozconfig_add_options_ac '' --disable-sandbox
 	else
 		mozconfig_add_options_ac '' --enable-sandbox
@@ -1510,6 +1540,11 @@ _src_configure() {
 		mozconfig_add_options_ac 'Enabling JIT' --enable-jit
 	else
 		mozconfig_add_options_ac 'Disabling JIT' --disable-jit
+	fi
+
+	# riscv-related options, bgo#947337, bgo#947338
+	if use riscv ; then
+		mozconfig_add_options_ac 'Disable webrtc for RISC-V' --disable-webrtc
 	fi
 
 	if [[ -s "${s}/api-google.key" ]] ; then
@@ -1550,7 +1585,7 @@ _src_configure() {
 
 	mozconfig_use_with system-av1
 	mozconfig_use_with system-harfbuzz
-	mozconfig_use_with system-harfbuzz system-graphite2
+	mozconfig_use_with system-graphite2
 	mozconfig_use_with system-icu
 	mozconfig_use_with system-jpeg
 	mozconfig_use_with system-libevent
@@ -1570,6 +1605,7 @@ _src_configure() {
 	# The upstream default is hardening on even if unset.
 	if use hardened ; then
 		mozconfig_add_options_ac "+hardened" --enable-hardening
+		mozconfig_add_options_ac "+hardened stl" --enable-stl-hardening
 		append-ldflags "-Wl,-z,relro -Wl,-z,now" # Full Relro
 	else
 		mozconfig_add_options_ac "-hardened" --disable-hardening
@@ -1599,11 +1635,12 @@ _src_configure() {
 	# wasm-sandbox
 	# Since graphite2 is one of the sandboxed libraries, system-graphite2 obviously can't work with +wasm-sandbox.
 	if use wasm-sandbox ; then
-		mozconfig_add_options_ac '+wasm-sandbox' --with-wasi-sysroot="${WORKDIR}/wasi-sdk-${WASI_SDK_VER}-${wasi_arch}-linux/share/wasi-sysroot/"
+		mozconfig_add_options_ac '+wasm-sandbox' --with-wasi-sysroot="${WORKDIR}/wasi-sdk-${WASI_SDK_VER[${LLVM_SLOT}]}-${wasi_arch}-linux/share/wasi-sysroot/"
 	else
 		mozconfig_add_options_ac 'no wasm-sandbox' --without-wasm-sandboxed-libraries
-		mozconfig_use_with system-harfbuzz system-graphite2
 	fi
+
+	! use jpegxl && mozconfig_add_options_ac '-jpegxl' --disable-jxl
 
 	if use lto; then
 		if tc-is-cross-compiler; then
@@ -2080,7 +2117,7 @@ _src_install() {
 
 	newmenu "${WORKDIR}/${PN}.desktop-template" "${desktop_filename}"
 
-	rm "${WORKDIR}/${PN}.desktop-template" || die
+	rm -v "${WORKDIR}/${PN}.desktop-template" || die
 
 	if use gnome-shell ; then
 		# Install search provider for Gnome

@@ -62,7 +62,7 @@ VERIFY_SIG_OPENPGP_KEY_PATH=/usr/share/openpgp-keys/dnkl.asc
 
 PATCHES=(
 	#"${FILESDIR}/${P}-ligature-support-pr2278.patch"
-	"${FILESDIR}/${P}-pack-structs-pr1830.patch"
+	"${FILESDIR}/${PN}-1.25.0-pack-structs-pr1830.patch"
 )
 
 src_prepare() {

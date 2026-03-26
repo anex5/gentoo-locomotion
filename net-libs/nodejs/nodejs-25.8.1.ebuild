@@ -20,10 +20,10 @@ SLOT="${SLOT_MAJOR}/$(ver_cut 1-2 ${PV})"
 if [[ ${PV} == *9999 ]]; then
 	inherit git-r3
 	EGIT_REPO_URI="https://github.com/nodejs/node"
-	SLOT="25/25.4"
+	SLOT="25/25.8"
 else
 	SRC_URI="https://nodejs.org/dist/v${PV}/node-v${PV}.tar.xz"
-	KEYWORDS="~amd64 ~arm ~arm64 ~loong ~ppc64 ~riscv ~x86 ~amd64-linux ~x64-macos"
+	KEYWORDS="~amd64 ~arm ~arm64 ~loong ~ppc64 ~riscv ~x86 ~x64-macos"
 	S="${WORKDIR}/node-v${PV}"
 fi
 
@@ -36,6 +36,7 @@ REQUIRED_USE="
 	npm? ( ssl )
 	system-icu? ( icu )
 	system-ssl? ( ssl )
+	x86? ( cpu_flags_x86_sse2 )
 	v8-sandbox? ( pointer-compression )
 "
 
@@ -52,7 +53,7 @@ CDEPEND="
 	>=dev-libs/libuv-1.51.0:=
 	>=dev-libs/simdjson-4.0.7:=
 	>=net-dns/c-ares-1.34.5:=
-	>=net-libs/nghttp2-1.66.0:=
+	>=net-libs/nghttp2-1.67.1:=
 	>=net-libs/nghttp3-1.7.0:=
 	virtual/zlib:=
 	system-icu? (
@@ -388,7 +389,7 @@ src_install() {
 		echo "NPM_CONFIG_GLOBALCONFIG=${EPREFIX}/etc/npm/npmrc" > "${T}"/50npm
 		doenvd "${T}"/50npm
 
-		# Install bash completion for npm
+		# Install bash completion for `npm`
 		local tmp_npm_completion_file="$(TMPDIR="${T}" mktemp -t npm.XXXXXXXXXX)"
 		"${ED}/usr/bin/npm" completion > "${tmp_npm_completion_file}"
 		newbashcomp "${tmp_npm_completion_file}" npm

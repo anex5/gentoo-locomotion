@@ -80,11 +80,11 @@ CODEC_IUSE="
 "
 IUSE+="
 ${CODEC_IUSE}
-alsa atk clang cpu_flags_arm_neon cups +dbus debug firejail hardened hwaccel
-jack -jemalloc +jit jpegxl libcanberra libnotify libproxy libsecret lld lto mold pgo
-pulseaudio sndio selinux speech systemd +system-av1 +system-ffmpeg +system-harfbuzz
-+system-icu +system-jpeg +system-libevent +system-libvpx +system-png +system-pipewire
--system-python-libs +system-webp test vaapi wayland +webrtc wifi webspeech X
+alsa atk clang cpu_flags_arm_neon cups +dbus debug firejail hardened hwaccel \
+jack -jemalloc +jit libcanberra libnotify libproxy libsecret lld lto mold pgo \
+pulseaudio sndio selinux speech systemd +system-av1 +system-ffmpeg +system-graphite2 \
++system-harfbuzz +system-icu +system-jpeg +system-libevent +system-libvpx +system-png \
++system-pipewire -system-python-libs +system-webp test vaapi wayland +webrtc wifi webspeech X
 "
 
 # Firefox-only IUSE
@@ -130,7 +130,7 @@ REQUIRED_USE="
 	debug? (
 		!system-av1
 	)
-	wasm-sandbox? ( !system-harfbuzz )
+	wasm-sandbox? ( !system-graphite2 )
 	wayland? (
 		dbus
 	)
@@ -205,7 +205,6 @@ SYSTEM_PYTHON_LIBS="
 			>=dev-python/importlib-metadata-6.0.0[${PYTHON_USEDEP}]
 			>=dev-python/iniparse-0.5[${PYTHON_USEDEP}]
 			>=dev-python/jinja2-3.1.6[${PYTHON_USEDEP}]
-			>=dev-python/jsmin-3.0.0[${PYTHON_USEDEP}]
 			>=dev-python/jsonschema-4.17.3[${PYTHON_USEDEP}]
 			>=dev-python/looseversion-1.0.1[${PYTHON_USEDEP}]
 			>=dev-python/mako-1.2.2[${PYTHON_USEDEP}]
@@ -294,10 +293,12 @@ CDEPEND="
 	)
 	system-av1? (
 		>=media-libs/dav1d-1.5.1:=[${MULTILIB_USEDEP},8bit]
-		>=media-libs/libaom-1.0.0:=[${MULTILIB_USEDEP}]
+		>=media-libs/libaom-3.10.0:=[${MULTILIB_USEDEP}]
+	)
+	system-graphite2? (
+		>=media-gfx/graphite2-1.3.14[${MULTILIB_USEDEP}]
 	)
 	system-harfbuzz? (
-		!wasm-sandbox? ( >=media-gfx/graphite2-1.3.14[${MULTILIB_USEDEP}] )
 		>=media-libs/harfbuzz-12.3.0:0=[${MULTILIB_USEDEP}]
 	)
 	system-icu? (
@@ -874,7 +875,7 @@ pkg_setup() {
 
 src_unpack() {
 	unpack "${FIREFOX_PATCHSET}"
-#
+
 	if use wasm-sandbox; then
 		use amd64 && (
 			use llvm_slot_20 && ( unpack wasi-sdk-${WASI_SDK_VER[20]}-x86_64-linux.tar.gz || eerror "Failed to unpack" )
@@ -942,6 +943,13 @@ src_prepare() {
 	#eapply "${FILESDIR}/extra-patches/firefox-115e-python3.12-bug1831512.patch"
 	#eapply "${FILESDIR}/extra-patches/firefox-115e-PR-b1cc62489fae.patch"
 	#[[ "${EPYTHON//python}" == "3.13" ]] && eapply "${FILESDIR}/extra-patches/firefox-115e-python3.13-build-fix.patch"
+	if [[ "${EPYTHON//python}" == "3.14" ]] ; then
+		eapply "${FILESDIR}/extra-patches/5fcff175718cd308bc6d6f2996de14eb8a93e2a2.patch" || die
+		eapply "${FILESDIR}/extra-patches/23efd75219786d71acff0b4e7c1b0de297b84c4e.patch" || die
+		eapply "${FILESDIR}/extra-patches/b68b1f93a6e31188486458f32fbe37811257604f.patch" || die
+		eapply "${FILESDIR}/extra-patches/d4b3eb4f76e81f18c53863b1d55ee146d6ec7d10.patch" || die
+		eapply "${FILESDIR}/extra-patches/dbf9702ed87ea5c88c2a1ee615998532ac8f10cc.patch" || die
+	fi
 
 	# Allow to use system-ffmpeg completely.
 	if use system-ffmpeg; then
@@ -1020,7 +1028,12 @@ src_prepare() {
 			-e "s:%%WASI_SDK_LLVM_VER%%:${LLVM_SLOT}:" \
 			toolkit/moz.configure || die "Failed to update wasi-related paths."
 
-		use llvm_slot_22 && eapply "${FILESDIR}/extra-patches/firefox-148.0-fix-wasm32-target.patch"
+		if use llvm_slot_22; then
+			sed -e "s/\(wasm32-wasi\|wasm32-unknown-wasi\)/\1p1/g" \
+				-i build/moz.configure/toolchain.configure \
+				-i gfx/harfbuzz/src/wasm/sample/c/Makefile \
+				-i toolkit/moz.configure || die
+		fi
 	fi
 
 	# Make LTO & ICU respect MAKEOPTS
@@ -1520,7 +1533,7 @@ _src_configure() {
 
 	mozconfig_use_with system-av1
 	mozconfig_use_with system-harfbuzz
-	mozconfig_use_with system-harfbuzz system-graphite2
+	mozconfig_use_with system-graphite2
 	mozconfig_use_with system-icu
 	mozconfig_use_with system-jpeg
 	mozconfig_use_with system-libevent
@@ -1575,10 +1588,9 @@ _src_configure() {
 		mozconfig_add_options_ac '+wasm-sandbox' --with-wasi-sysroot="${WORKDIR}/wasi-sdk-${WASI_SDK_VER[${LLVM_SLOT}]}-${wasi_arch}-linux/share/wasi-sysroot/"
 	else
 		mozconfig_add_options_ac 'no wasm-sandbox' --without-wasm-sandboxed-libraries
-		mozconfig_use_with system-harfbuzz system-graphite2
 	fi
 
-	! use jpegxl && mozconfig_add_options_ac '-jpegxl' --disable-jxl
+	#! use jpegxl && mozconfig_add_options_ac '-jpegxl' --disable-jxl
 
 	if use lto; then
 		if tc-is-cross-compiler; then

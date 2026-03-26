@@ -1,9 +1,9 @@
-# Copyright 1999-2025 Gentoo Foundation
+# Copyright 1999-2026 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{10..13} )
+PYTHON_COMPAT=( python3_{10..14} )
 
 MY_PN="OpenSfM"
 
@@ -43,14 +43,7 @@ DEPEND="
 	net-misc/curl
 	>=media-libs/opencv-4.8.0:=[contrib,contribsfm,contribxfeatures2d,eigen,features2d,openmp,python,${PYTHON_USEDEP}]
 	<=sci-libs/ceres-solver-${CERES_PV}:=
-	>=sci-libs/suitesparseconfig-7.6.0:=
-	>=sci-libs/amd-3.3.1:=
-	>=sci-libs/camd-3.3.1:=
-	>=sci-libs/colamd-3.3.1:=
-	>=sci-libs/ccolamd-3.3.1:=
-	>=sci-libs/cholmod-5.2.0:=
-	>=sci-libs/cxsparse-4.3.1:=
-	>=sci-libs/spqr-4.3.2:=
+	>=sci-libs/suitesparse-7.6.0:=[amd,camd,colamd,ccolamd,cholmod,cxsparse]
 	>=sci-libs/metis-5.2.1:=
 	>=dev-python/cloudpickle-0.4.0[${PYTHON_USEDEP}]
 	>=dev-python/exifread-2.1.2[${PYTHON_USEDEP}]
