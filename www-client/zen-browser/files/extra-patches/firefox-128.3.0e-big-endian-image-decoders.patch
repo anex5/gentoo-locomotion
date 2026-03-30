@@ -52,7 +52,7 @@ diff -r 9cd90914846f image/decoders/nsPNGDecoder.cpp
  
 -  return mLexer.Lex(aIterator, aOnResume,
 +  LexerResult res = mLexer.Lex(aIterator, aOnResume,
-                     [=](State aState, const char* aData, size_t aLength) {
+                     [this](State aState, const char* aData, size_t aLength) {
                        switch (aState) {
                          case State::PNG_DATA:
 @@ -371,6 +371,14 @@

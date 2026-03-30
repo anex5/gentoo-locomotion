@@ -4,14 +4,14 @@
 EAPI=8
 
 # Using Gentoos firefox patches as system libraries and lto are quite nice
-FIREFOX_PATCHSET="firefox-148-patches-02.tar.xz"
+FIREFOX_PATCHSET="firefox-149-patches-01.tar.xz"
 
 LLVM_COMPAT=( {20..22} )
 
 # This will also filter rust versions that don't match LLVM_COMPAT in the non-clang path; this is fine.
 RUST_NEEDS_LLVM=1
 # If not building with clang we need at least rust 1.76
-RUST_MIN_VER=1.87.0
+RUST_MIN_VER=1.90.0
 
 PYTHON_COMPAT=( python3_{11..14} )
 PYTHON_REQ_USE="ncurses,sqlite,ssl"
@@ -25,7 +25,7 @@ WASI_SDK_VER=( [22]="32.0" [21]="30.0" [20]="27.0" )
 
 MOZ_ESR=
 
-MOZ_PV=148.0.2
+MOZ_PV=149.0.0
 MOZ_PV_SUFFIX=
 if [[ ${PV} =~ (_(alpha|beta|rc).*)$ ]] ; then
 	MOZ_PV_SUFFIX=${BASH_REMATCH[1]}
@@ -88,7 +88,7 @@ pulseaudio sndio selinux speech systemd +system-av1 +system-ffmpeg +system-graph
 "
 
 # Firefox-only IUSE
-IUSE+=" gnome-shell screencast +jumbo-build wasm-sandbox"
+IUSE+=" gnome-shell jpegxl screencast +jumbo-build wasm-sandbox"
 
 REQUIRED_USE="
 	aac? (
@@ -904,8 +904,10 @@ src_prepare() {
 	use atk || eapply "${FILESDIR}/zen-browser-no-atk.patch"
 	use dbus || eapply "${FILESDIR}/zen-browser-no-dbus.patch"
 	eapply "${FILESDIR}/zen-browser-no-fribidi.patch"
-	eapply "${FILESDIR}/zen-browser-system-gtests.patch"
 	eapply "${FILESDIR}/zen-browser-fix-python-utcfromtimestamp.patch"
+
+	# Use system gtest package
+	sed -e "/TEST_DIRS += [\"test\/gtest\"]/d" -i "image/moz.build" || die
 
 	if use lto; then
 		rm -v "${WORKDIR}"/firefox-patches/*-LTO-Only-enable-LTO-*.patch || die
@@ -1590,7 +1592,7 @@ _src_configure() {
 		mozconfig_add_options_ac 'no wasm-sandbox' --without-wasm-sandboxed-libraries
 	fi
 
-	#! use jpegxl && mozconfig_add_options_ac '-jpegxl' --disable-jxl
+	! use jpegxl && mozconfig_add_options_ac '-jpegxl' --disable-jxl
 
 	if use lto; then
 		if tc-is-cross-compiler; then
