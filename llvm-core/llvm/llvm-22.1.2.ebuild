@@ -124,6 +124,41 @@ BDEPEND+="
 "
 [[ -n ${LLVM_MANPAGE_DIST} ]] && BDEPEND+=" ) "
 
+check_uptodate() {
+	local prod_targets=(
+		$(sed -n -e '/set(LLVM_ALL_TARGETS/,/)/p' CMakeLists.txt \
+			| tail -n +2 | head -n -1)
+	)
+	local all_targets=(
+		lib/Target/*/
+	)
+	all_targets=( "${all_targets[@]#lib/Target/}" )
+	all_targets=( "${all_targets[@]%/}" )
+
+	local exp_targets=() i
+	for i in "${all_targets[@]}"; do
+		has "${i}" "${prod_targets[@]}" || exp_targets+=( "${i}" )
+	done
+
+	local outdated
+	if [[ ${exp_targets[*]} != ${ALL_LLVM_EXPERIMENTAL_TARGETS[*]} ]]; then
+		eerror "ALL_LLVM_EXPERIMENTAL_TARGETS are outdated!"
+		eerror "    Have: ${ALL_LLVM_EXPERIMENTAL_TARGETS[*]}"
+		eerror "Expected: ${exp_targets[*]}"
+		eerror
+		outdated=1
+	fi
+
+	if [[ ${prod_targets[*]} != ${ALL_LLVM_PRODUCTION_TARGETS[*]} ]]; then
+		eerror "ALL_LLVM_PRODUCTION_TARGETS are outdated!"
+		eerror "    Have: ${ALL_LLVM_PRODUCTION_TARGETS[*]}"
+		eerror "Expected: ${prod_targets[*]}"
+		outdated=1
+	fi
+
+	[[ ${outdated} ]] && die "Update ALL_LLVM*_TARGETS"
+}
+
 pkg_setup() {
 	python_setup
 	ewarn
@@ -270,6 +305,11 @@ src_prepare() {
 	# Update config.guess to support more systems
 	cp "${BROOT}/usr/share/gnuconfig/config.guess" cmake/ || die
 
+	# Disable lit tests (we run them in dev-python/lit).
+	> utils/lit/CMakeLists.txt || die
+
+	# Verify that the ebuild is up-to-date
+	check_uptodate
 
 	llvm.org_src_prepare
 }
