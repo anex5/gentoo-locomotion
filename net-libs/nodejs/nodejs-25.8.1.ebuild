@@ -29,7 +29,7 @@ fi
 
 IUSE="+asm cpu_flags_x86_sse2 debug doc fips +icu inspector +jit \
 lto lld man mold +npm pax-kernel pointer-compression +snapshot +ssl \
-system-icu +system-ssl test v8-sandbox"
+system-icu +system-ssl +system-lief test v8-sandbox"
 REQUIRED_USE="
 	^^ ( mold lld )
 	inspector? ( icu ssl )
@@ -58,6 +58,9 @@ CDEPEND="
 	virtual/zlib:=
 	system-icu? (
 		>=dev-libs/icu-77.1:=
+	)
+	system-lief? (
+		>=dev-util/lief-0.17:=
 	)
 	system-ssl? (
 		>=net-libs/ngtcp2-1.11.0:=
@@ -260,6 +263,7 @@ src_configure() {
 		--shared-simdutf
 		--shared-sqlite
 		--shared-zlib
+		--shared-lief
 	)
 	if ! use asm && ! use system-ssl ; then
 		myconf+=( --openssl-no-asm )
@@ -380,11 +384,6 @@ src_install() {
 	fi
 
 	if use npm; then
-		# Use tarball instead.
-		# rm -rf "${ED}/usr/$(get_libdir)/node_modules/npm"
-		rm -rf "${ED}/usr/bin/npm"
-		rm -rf "${ED}/usr/bin/npx"
-
 		keepdir /etc/npm
 		echo "NPM_CONFIG_GLOBALCONFIG=${EPREFIX}/etc/npm/npmrc" > "${T}"/50npm
 		doenvd "${T}"/50npm

@@ -44,7 +44,7 @@ describe_show() {
 }
 
 get_libdir() {
-	realpath /usr/lib*/corepack | cut -f 3 -d "/"
+	realpath /usr/lib*/node_modules | cut -f 3 -d "/"
 }
 
 do_show() {
@@ -53,12 +53,6 @@ do_show() {
         local k_node_src="/usr/include/node"
         local k_node_dest=$(canonicalise "/usr/include/node")
         write_kv_list_entry "${k_node_src%/} ->" "${k_node_dest%/}"
-
-	local k_corepack_src="/usr/bin/corepack"
-	local k_corepack_dest=$(canonicalise "/usr/bin/corepack")
-        write_kv_list_entry "${k_corepack_src%/} ->" "${k_corepack_dest%/}"
-    else
-        write_kv_list_entry "(unset)" ""
     fi
 }
 

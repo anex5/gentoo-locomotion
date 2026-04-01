@@ -1,8 +1,16 @@
-# Copyright 1999-2024 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
+# Upstream doesn't make releases anymore and instead have a (broken) "rolling
+# git tag" model.
+#
+# https://github.com/LuaJIT/LuaJIT/issues/665#issuecomment-784452583
+# https://www.freelists.org/post/luajit/LuaJIT-uses-rolling-releases
+#
+# Regular snapshots should be made from the v2.1 branch. Get the version with
+# `git show -s --format=%ct`
 
 inherit pax-utils toolchain-funcs
 
@@ -24,11 +32,11 @@ if [[ ${VER_RELVER} == 9999999999 ]]; then
 	inherit git-r3
 else
 	# Update this commit hash to bump a pinned-commit ebuild.
-	GIT_COMMIT=fe71d0fb54ceadfb5b5f3b6baf29e486d97f6059
+	GIT_COMMIT=233ad24035944ece5367157e824e8357df3417d9
 	SRC_URI="https://github.com/LuaJIT/LuaJIT/archive/${GIT_COMMIT}.tar.gz -> ${P}.tar.gz"
 	S="${WORKDIR}/LuaJIT-${GIT_COMMIT}"
 
-	KEYWORDS="~amd64 ~arm ~arm64 -hppa ~mips ~ppc -riscv -sparc ~x86 ~amd64-linux ~x86-linux"
+	KEYWORDS="~amd64 ~arm ~arm64 -hppa ~mips ~ppc -riscv -sparc ~x86"
 fi
 
 LICENSE="MIT"
