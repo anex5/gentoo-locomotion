@@ -47,7 +47,7 @@ BDEPEND="${DISTUTILS_DEPS}
 
 REQUIRED_USE="python? ( ${PYTHON_REQUIRED_USE} )"
 #FIXME: LIEF_TESTS
-RESTRICT="test"
+RESTRICT="test mirror"
 
 QA_PRESTRIPPED="/usr/lib/python3.*/site-packages/lief/_lief.so"
 
@@ -90,7 +90,7 @@ src_configure() {
 		-DLIEF_EXAMPLES="$(usex examples ON OFF)"
 		-DLIEF_PYTHON_API="$PYTHON_API"
 
-		-DLIEF_MACHO=OFF
+		-DLIEF_MACHO=ON
 
 		-DLIEF_EXTERNAL_SPDLOG=ON
 		-DLIEF_OPT_MBEDTLS_EXTERNAL=ON

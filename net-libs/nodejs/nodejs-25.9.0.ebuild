@@ -27,7 +27,7 @@ else
 	S="${WORKDIR}/node-v${PV}"
 fi
 
-IUSE="+asm cpu_flags_x86_sse2 debug doc fips +icu inspector +jit \
+IUSE="+asm cpu_flags_x86_sse2 debug doc fips +icu inspector +lief +jit \
 lto lld man mold +npm pax-kernel pointer-compression +snapshot +ssl \
 system-icu +system-ssl +system-lief test v8-sandbox"
 REQUIRED_USE="
@@ -36,6 +36,7 @@ REQUIRED_USE="
 	npm? ( ssl )
 	system-icu? ( icu )
 	system-ssl? ( ssl )
+	system-lief? ( lief )
 	x86? ( cpu_flags_x86_sse2 )
 	v8-sandbox? ( pointer-compression )
 "
@@ -60,7 +61,7 @@ CDEPEND="
 		>=dev-libs/icu-77.1:=
 	)
 	system-lief? (
-		>=dev-util/lief-0.17:=
+		>=dev-util/lief-0.17.2:=
 	)
 	system-ssl? (
 		>=net-libs/ngtcp2-1.11.0:=
@@ -166,6 +167,8 @@ src_prepare() {
 #		"${FILESDIR}/${PN}-24.4.0-fix-v8-external-code-space.patch"
 #	)
 
+	use system-lief && ( rm -r deps/LIEF || die )
+
 	default
 
 	local FP=(
@@ -263,7 +266,6 @@ src_configure() {
 		--shared-simdutf
 		--shared-sqlite
 		--shared-zlib
-		--shared-lief
 	)
 	if ! use asm && ! use system-ssl ; then
 		myconf+=( --openssl-no-asm )
@@ -277,6 +279,13 @@ src_configure() {
 		use mold && append-ldflags -fuse-ld=mold
 		use lld && append-ldflags -fuse-ld=lld
 	fi
+	if use system-lief ; then
+		myconf+=(
+			--shared-lief
+			--shared-lief-includes="/usr/include"
+			--shared-lief-libpath="/usr/$(get_libdir)"
+		)
+	fi
 	if use system-icu; then
 		myconf+=( --with-intl=system-icu )
 	elif use icu; then
@@ -285,6 +294,7 @@ src_configure() {
 		myconf+=( --with-intl=none )
 	fi
 	#use system-llhttp || myconf+=( --without-system-llhttp )
+	use lief || myconf+=( --without-lief )
 	use inspector || myconf+=( --without-inspector )
 	use npm || myconf+=( --without-npm )
 	use snapshot || myconf+=( --without-node-snapshot )
