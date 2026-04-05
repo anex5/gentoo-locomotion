@@ -945,13 +945,13 @@ src_prepare() {
 	#eapply "${FILESDIR}/extra-patches/firefox-115e-python3.12-bug1831512.patch"
 	#eapply "${FILESDIR}/extra-patches/firefox-115e-PR-b1cc62489fae.patch"
 	#[[ "${EPYTHON//python}" == "3.13" ]] && eapply "${FILESDIR}/extra-patches/firefox-115e-python3.13-build-fix.patch"
-	if [[ "${EPYTHON//python}" == "3.14" ]] ; then
-		eapply "${FILESDIR}/extra-patches/5fcff175718cd308bc6d6f2996de14eb8a93e2a2.patch" || die
-		eapply "${FILESDIR}/extra-patches/23efd75219786d71acff0b4e7c1b0de297b84c4e.patch" || die
-		eapply "${FILESDIR}/extra-patches/b68b1f93a6e31188486458f32fbe37811257604f.patch" || die
-		eapply "${FILESDIR}/extra-patches/d4b3eb4f76e81f18c53863b1d55ee146d6ec7d10.patch" || die
-		eapply "${FILESDIR}/extra-patches/dbf9702ed87ea5c88c2a1ee615998532ac8f10cc.patch" || die
-	fi
+	#if [[ "${EPYTHON//python}" == "3.14" ]] ; then
+	#	eapply "${FILESDIR}/extra-patches/5fcff175718cd308bc6d6f2996de14eb8a93e2a2.patch" || die
+	#	eapply "${FILESDIR}/extra-patches/23efd75219786d71acff0b4e7c1b0de297b84c4e.patch" || die
+	#	eapply "${FILESDIR}/extra-patches/b68b1f93a6e31188486458f32fbe37811257604f.patch" || die
+	#	eapply "${FILESDIR}/extra-patches/d4b3eb4f76e81f18c53863b1d55ee146d6ec7d10.patch" || die
+	#	eapply "${FILESDIR}/extra-patches/dbf9702ed87ea5c88c2a1ee615998532ac8f10cc.patch" || die
+	#fi
 
 	# Allow to use system-ffmpeg completely.
 	if use system-ffmpeg; then
