@@ -20,7 +20,7 @@ RESTRICT="mirror"
 
 REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	paru? ( blas )
-	spqr? ( blas )
+	spqr? ( blas supernodal )
 	umfpack? ( blas )
 	graphblas? ( blas )
 "
@@ -77,7 +77,6 @@ multilib_src_configure() {
 	IFS=${IFS_backup}
 
 	local mycmakeargs=(
-		-DBLA_VENDOR=Blis
 		-DBUILD_SHARED_LIBS=ON
 		-DBUILD_STATIC_LIBS=$(use static-libs ON OFF)
 		-DSUITESPARSE_CONFIG_USE_OPENMP=$(usex openmp)
@@ -95,6 +94,8 @@ multilib_src_configure() {
 		-DSUITESPARSE_ENABLE_PROJECTS="${projects%%;}"
 		-DSUITESPARSE_REQUIRE_BLAS=$(usex blas ON OFF)
 		-DSUITESPARSE_DEMOS=$(usex test)
+		-DBLA_VENDOR=Generic
+		-DBLAS_LIBRARIES="$($(tc-getPKG_CONFIG) --libs blas)"
 		#-DCMAKE_FIND_DEBUG_MODE=yes
 		-DCMAKE_POLICY_VERSION_MINIMUM=3.5
 	)
