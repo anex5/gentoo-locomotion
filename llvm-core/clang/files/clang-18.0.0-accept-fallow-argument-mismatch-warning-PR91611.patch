@@ -1,0 +1,32 @@
+From afeb4498c0f5b9f4e41e486b28caa0603740ae2c Mon Sep 17 00:00:00 2001
+From: Paul Osmialowski <pawel.osmialowski at arm.com>
+Date: Thu, 9 May 2024 16:23:38 +0100
+Subject: [PATCH] [flang][driver] Accept -fallow-argument-mismatch with a
+ warning instead of rejecting it
+
+Many autotools-utilizing projects (mpich among them) fail to complete
+the `configure` step since it tries to invoke the (unknown to them)
+Fortran compiler always with the `-fallow-argument-mismatch` flag.
+
+As the use of this flag has no impact on flang, there is no definite
+need to reject it. It would be better to accept it with a warning and
+reject the opposite flag `-fno-allow-argument-mismatch` with an error.
+---
+ clang/include/clang/Driver/Options.td         |  2 ++
+ flang/test/Driver/allow-argument-mismatch.f90 | 15 +++++++++++++++
+ 2 files changed, 17 insertions(+)
+ create mode 100644 flang/test/Driver/allow-argument-mismatch.f90
+
+diff --git a/include/clang/Options/Options.td b/include/clang/Options/Options.td
+index 73a2518480e9b..eaa17fdec0f8b 100644
+--- a/include/clang/Options/Options.td
++++ b/include/clang/Options/Options.td
+@@ -2540,6 +2540,8 @@ def fsanitize_undefined_strip_path_components_EQ : Joined<["-"], "fsanitize-unde
+ 
+ } // end -f[no-]sanitize* flags
+ 
++def fallow_argument_mismatch : Flag<["-"], "fallow-argument-mismatch">, Visibility<[FlangOption, FC1Option]>;
++
+ def funsafe_math_optimizations : Flag<["-"], "funsafe-math-optimizations">,
+   Group<f_Group>, Visibility<[ClangOption, CC1Option]>,
+   HelpText<"Allow unsafe floating-point math optimizations which may decrease precision">,
