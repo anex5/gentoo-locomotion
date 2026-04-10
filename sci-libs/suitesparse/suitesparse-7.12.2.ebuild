@@ -96,6 +96,7 @@ multilib_src_configure() {
 		-DSUITESPARSE_DEMOS=$(usex test)
 		-DBLA_VENDOR=Generic
 		-DBLAS_LIBRARIES="$($(tc-getPKG_CONFIG) --libs blas)"
+		-DLAPACK_LIBRARIES="$($(tc-getPKG_CONFIG) --libs lapack)"
 		#-DCMAKE_FIND_DEBUG_MODE=yes
 		-DCMAKE_POLICY_VERSION_MINIMUM=3.5
 	)

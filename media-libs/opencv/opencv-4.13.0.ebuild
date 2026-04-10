@@ -618,6 +618,7 @@ src_prepare() {
 		pushd "${WORKDIR}/${PN}_contrib-${PV}" >/dev/null || die
 		eapply "${FILESDIR}/${PN}_contrib-4.8.1-rgbd.patch"
 		eapply "${FILESDIR}/${PN}_contrib-4.8.1-NVIDIAOpticalFlowSDK-2.0.tar.gz.patch"
+		eapply "${FILESDIR}/fix-cudacodec-dependencies.patch"
 		#eapply "${FILESDIR}/${PN}_contrib-4.12.0-cuda-13.0.patch"
 		[[ -n "${PATCHES_CONTRIB_USER[*]}" ]] && eapply "${PATCHES_CONTRIB_USER[@]}"
 		popd >/dev/null || die
@@ -729,7 +730,6 @@ src_prepare() {
 multilib_src_configure() {
 	CMAKE_BUILD_TYPE=$(usex debug "RelWithDebInfo" "Release")
 
-
 	if use opencl ; then
 		append-cppflags -DCL_TARGET_OPENCL_VERSION=120
 	fi
@@ -746,7 +746,6 @@ multilib_src_configure() {
 	# please don't sort here, order is the same as in CMakeLists.txt
 	local mycmakeargs=(
 		-DMIN_VER_CMAKE=3.26
-		-DCMAKE_POLICY_VERSION_MINIMUM="3.5"
 		-DCMAKE_POLICY_DEFAULT_CMP0148="OLD" # FindPythonInterp
 
 		# for protobuf
