@@ -3,9 +3,9 @@
 
 EAPI="8"
 
-DESCRIPTION="Virtual for BLAS C implementation"
+DESCRIPTION="Virtual for LAPACK C implementation"
 SLOT="0"
-KEYWORDS="~alpha amd64 arm arm64 ~hppa ~loong ~mips ~ppc ppc64 ~riscv ~s390 ~sparc x86 ~arm64-macos ~x64-macos"
+KEYWORDS="~alpha amd64 arm arm64 ~hppa ~loong ~mips ppc ppc64 ~riscv ~s390 ~sparc x86 ~x64-macos"
 IUSE="eselect-ldso -flexiblas index64"
 REQUIRED_USE="?? ( eselect-ldso flexiblas )"
 
@@ -17,9 +17,8 @@ RDEPEND="
 	!flexiblas? (
 		eselect-ldso? (
 			|| (
-				>=sci-libs/lapack-3.8[eselect-ldso(-)]
-				sci-libs/openblas[eselect-ldso(-)]
-				sci-libs/blis[eselect-ldso(-)]
+				>=sci-libs/lapack-3.8.0[lapacke,eselect-ldso(-)]
+				>=sci-libs/openblas-0.3.10[eselect-ldso(-)]
 			)
 		)
 	)
