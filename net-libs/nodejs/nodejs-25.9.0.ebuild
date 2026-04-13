@@ -20,7 +20,7 @@ SLOT="${SLOT_MAJOR}/$(ver_cut 1-2 ${PV})"
 if [[ ${PV} == *9999 ]]; then
 	inherit git-r3
 	EGIT_REPO_URI="https://github.com/nodejs/node"
-	SLOT="25/25.8"
+	SLOT="25/25.9"
 else
 	SRC_URI="https://nodejs.org/dist/v${PV}/node-v${PV}.tar.xz"
 	KEYWORDS="~amd64 ~arm ~arm64 ~loong ~ppc64 ~riscv ~x86 ~x64-macos"
@@ -414,7 +414,7 @@ src_install() {
 		local find_name=()
 		for match in "AUTHORS*" "CHANGELOG*" "CONTRIBUT*" "README*" \
 			".travis.yml" ".eslint*" ".wercker.yml" ".npmignore" \
-			"*.bat" "*.cmd"; do
+			"*.md" "*.markdown" "*.bat" "*.cmd"; do
 			find_name+=( ${find_exp} "${match}" )
 		done
 
