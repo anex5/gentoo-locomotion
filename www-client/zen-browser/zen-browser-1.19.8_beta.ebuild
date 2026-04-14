@@ -4,7 +4,7 @@
 EAPI=8
 
 # Using Gentoos firefox patches as system libraries and lto are quite nice
-FIREFOX_PATCHSET="firefox-149-patches-01.tar.xz"
+FIREFOX_PATCHSET="firefox-149-patches-02.tar.xz"
 
 LLVM_COMPAT=( {20..22} )
 
@@ -25,7 +25,7 @@ WASI_SDK_VER=( [22]="32.0" [21]="30.0" [20]="27.0" )
 
 MOZ_ESR=
 
-MOZ_PV=149.0.0
+MOZ_PV=149.0.2
 MOZ_PV_SUFFIX=
 if [[ ${PV} =~ (_(alpha|beta|rc).*)$ ]] ; then
 	MOZ_PV_SUFFIX=${BASH_REMATCH[1]}
@@ -979,6 +979,7 @@ src_prepare() {
 		rm -v "${WORKDIR}"/firefox-patches/*bgo-967694-musl-prctrl-exception-on-musl.patch || die
 	fi
 	rm -v "${WORKDIR}"/firefox-patches/*-bgo-928126-enable-jxl.patch || die
+	#rm -v "${WORKDIR}"/firefox-patches/0026-bmo-2022238-revert-bug-2001075-to-avoid-toolbar-freeze.patch || die
 
 	eapply "${WORKDIR}/firefox-patches"
 
@@ -996,6 +997,10 @@ src_prepare() {
 			export RUST_TARGET="x86-unknown-linux-musl"
 		elif use arm64 ; then
 			export RUST_TARGET="aarch64-unknown-linux-musl"
+		elif use loong; then
+			# Only the LP64D ABI of LoongArch64 is actively supported among
+			# the wider Linux ecosystem, so the assumption is safe.
+			export RUST_TARGET="loongarch64-unknown-linux-musl"
 		elif use ppc64 ; then
 			export RUST_TARGET="powerpc64le-unknown-linux-musl"
 		elif use riscv ; then
