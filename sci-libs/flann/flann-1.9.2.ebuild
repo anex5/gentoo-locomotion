@@ -1,4 +1,4 @@
-# Copyright 2022 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -29,15 +29,14 @@ DEPEND="
 	octave? ( >=sci-mathematics/octave-3.6.4-r1 )
 "
 RDEPEND="${DEPEND}"
+RESTRICT="mirror"
 # TODO:
 # readd dependencies for test suite,
 # requires multiple ruby dependencies
 
-PATCHES=(
-	"${FILESDIR}"/${P}-cmake-3.11{,-1}.patch # bug 678030
-	"${FILESDIR}"/${P}-cuda-9.patch
-	"${FILESDIR}"/${P}-system-lz4.patch # bug 681898
-)
+#PATCHES=(
+#	"${FILESDIR}"/${PN}-1.9.1-system-lz4.patch # bug 681898
+#)
 
 pkg_pretend() {
 	[[ ${MERGE_TYPE} != binary ]] && use openmp && tc-check-openmp
@@ -52,13 +51,15 @@ src_prepare() {
 	use mpi && export CXX=mpicxx
 	# produce pure octave files
 	# octave gentoo installation for .m files respected
-	sed -i \
-		-e 's/--mex//' \
+	sed -e 's/--mex//' \
 		-e 's/\.mex/\.oct/' \
 		-e '/FILES/s/${MEX_FILE}//' \
 		-e 's:share/flann/octave:share/octave/site/m:' \
 		-e "/CUSTOM_TARGET/a\INSTALL(FILES \${MEX_FILE} DESTINATION libexec/octave/site/oct/${CHOST})" \
-		src/matlab/CMakeLists.txt || die
+		-i src/matlab/CMakeLists.txt || die
+
+	sed -e "s/\(set(config_install_dir \"\)lib/\1$(get_libdir)/" -i CMakeLists.txt || die
+
 	use cuda && cuda_src_prepare
 
 	cmake_src_prepare
@@ -67,11 +68,10 @@ src_prepare() {
 src_configure() {
 	append-cxxflags -std=c++14
 
-	# python bindings are split off into dev-python/pyflann
 	local mycmakeargs=(
 		-DBUILD_C_BINDINGS=ON
+		# python bindings are split off into dev-python/pyflann
 		-DBUILD_PYTHON_BINDINGS=OFF
-		-DPYTHON_EXECUTABLE=
 		-DBUILD_CUDA_LIB=$(usex cuda)
 		-DBUILD_EXAMPLES=$(usex examples)
 		-DBUILD_DOC=$(usex doc)
