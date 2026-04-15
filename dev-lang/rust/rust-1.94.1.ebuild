@@ -15,7 +15,7 @@ PYTHON_COMPAT=( python3_{11..14} )
 # in the ebuild for changes that don't require a revbump.
 #
 # Uncomment this line when the ebuild needs a patchset update but no revbump.
-#RUST_PATCH_VER=${PV}-1
+# RUST_PATCH_VER=${PV}-1
 
 RUST_MAX_VER=${PV%%_*}
 RUST_PV=${PV%%_p*}
@@ -24,7 +24,7 @@ RUST_P=${PN}-${RUST_PV}
 
 if [[ ${PV} == *9999* ]]; then
 	# Update this as new `beta` releases come out.
-	RUST_MIN_VER="1.92.0"
+	RUST_MIN_VER="1.93.0"
 elif [[ ${PV} == *beta* ]]; then
 	RUST_MIN_VER="$(ver_cut 1).$(($(ver_cut 2) - 1)).0"
 else
@@ -135,7 +135,8 @@ BDEPEND="
 
 DEPEND="
 	>=app-arch/xz-utils-5.2
-	net-misc/curl:=[http2,ssl]
+	dev-db/sqlite:3
+	net-misc/curl[http2,ssl]
 	virtual/zlib:=
 	dev-libs/openssl:0=
 	system-llvm? (
@@ -185,6 +186,7 @@ QA_SONAME="
 
 QA_PRESTRIPPED="
 	usr/lib/${PN}/${SLOT}/lib/rustlib/.*/bin/rust-llvm-dwp
+	usr/lib/${PN}/${SLOT}/lib/rustlib/.*/bin/rust-objcopy
 	usr/lib/${PN}/${SLOT}/lib/rustlib/.*/lib/self-contained/crtn.o
 "
 
@@ -323,8 +325,9 @@ src_unpack() {
 		# to ensure that all dependencies are present and up-to-date
 		mkdir "${S}/vendor" || die
 		# This also compiles the 'build helper', there's no way to avoid this.
-		${EPYTHON} "${S}"/x.py vendor -v --config="${T}"/vendor-bootstrap.toml -j$(makeopts_jobs) ||
-			die "Failed to vendor dependencies"
+		${EPYTHON} "${S}"/x.py vendor -v --config="${T}"/vendor-bootstrap.toml \
+			-j$(get_makeopts_jobs) ||
+				die "Failed to vendor dependencies"
 		# TODO: This has to be generated somehow, this is from a 1.84.x tarball I had lying around.
 		cat <<- _EOF_ > "${S}/.cargo/config.toml"
 			[source.crates-io]
@@ -370,9 +373,9 @@ src_configure() {
 
 	# Avoid bundled copies of libraries
 	export RUSTONIG_SYSTEM_LIBONIG=1
+	export LIBSQLITE3_SYS_USE_PKG_CONFIG=1
 	# Need to check if these can be optional
-	#export LIBSQLITE3_SYS_USE_PKG_CONFIG=1
-	#export LIBSSH2_SYS_USE_PKG_CONFIG=1
+	export LIBSSH2_SYS_USE_PKG_CONFIG=1
 
 	filter-lto # https://bugs.gentoo.org/862109 https://bugs.gentoo.org/866231
 

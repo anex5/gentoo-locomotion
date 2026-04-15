@@ -352,8 +352,7 @@ src_prepare() {
 	use elibc_glibc && eapply "${FILESDIR}/clang-17.0.4-fix-glibc-limits.h-relative-path.patch"
 	eapply "${FILESDIR}/clang-18.0.0-accept-fallow-argument-mismatch-warning-PR91611.patch"
 
-	#use pgo && \
-	eapply "${FILESDIR}/clang-16.0.0.9999-add-include-path.patch"
+	use elibc_glibc && eapply "${FILESDIR}/clang-16.0.0.9999-add-include-path.patch"
 
 	eapply_hardened
 
