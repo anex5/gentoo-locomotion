@@ -33,7 +33,7 @@ inherit autotools check-reqs desktop flag-o-matic gnome2-utils linux-info llvm-r
 
 SRC_URI="
 	!buildtarball? (
-		https://gitlab.com/api/v4/projects/32909921/packages/generic/${PN}/${PV}-${PP}gnu${GV}/${P}-${PP}gnu${GV}.tar.zst
+		https://gitlab.com/api/v4/projects/32909921/packages/generic/${PN}/${PV}-gnu${GV}/${P}-${PP}gnu${GV}.tar.zst
 	)
 	https://dev.gentoo.org/~juippis/mozilla/patchsets/${FIREFOX_PATCHSET}
 	loong? (
@@ -1041,7 +1041,7 @@ src_prepare() {
 		if use amd64 ; then
 			export RUST_TARGET="x86_64-unknown-linux-musl"
 		elif use x86 ; then
-			export RUST_TARGET="x86-unknown-linux-musl"
+			export RUST_TARGET="i686-unknown-linux-musl"
 		elif use arm64 ; then
 			export RUST_TARGET="aarch64-unknown-linux-musl"
 		elif use loong; then
