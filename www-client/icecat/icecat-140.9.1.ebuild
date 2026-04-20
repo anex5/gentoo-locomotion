@@ -1007,9 +1007,9 @@ src_prepare() {
 	eapply "${FILESDIR}/extra-patches/firefox-128.3.0e-big-endian-image-decoders.patch"
 
 	# Workaround for bug #915651 on musl
+	rm -v "${WORKDIR}"/firefox-patches/*bmo-1999625-glibc-2.43.patch || die
 	if use elibc_glibc ; then
 		rm -v "${WORKDIR}"/firefox-patches/*bgo-748849-RUST_TARGET_override.patch || die
-		rm -v "${WORKDIR}"/firefox-patches/*bmo-1999625-glibc-2.43.patch || die
 		if has_version '>=sys-libs/glibc-2.43'; then
 			eapply "${FILESDIR}/extra-patches/firefox-140.8.0-Fix-sandbox-to-build-with-glibc-2.43.patch" || die
 			eapply "${FILESDIR}/extra-patches/firefox-140.8.0-Patch-glsl-optimizer-to-build-with-glibc-2.43.patch" || die
