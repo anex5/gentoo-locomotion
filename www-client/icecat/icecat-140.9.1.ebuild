@@ -14,7 +14,7 @@ GV="1"
 # This will also filter rust versions that don't match LLVM_COMPAT in the non-clang path; this is fine.
 RUST_NEEDS_LLVM=1
 # If not building with clang we need at least rust 1.76
-RUST_MIN_VER=1.87.0
+RUST_MIN_VER=1.82.0
 
 PYTHON_COMPAT=( python3_{11..14} )
 PYTHON_REQ_USE="ncurses,sqlite,ssl"
@@ -438,10 +438,10 @@ BDEPEND+="
 	>=dev-util/pkgconf-1.8.0[${MULTILIB_USEDEP},pkg-config(+)]
 	>=net-libs/nodejs-21[${MULTILIB_USEDEP}]
 	|| (
-		>=dev-lang/rust-1.87.0[${MULTILIB_USEDEP}]
-		>=dev-lang/rust-bin-1.87.0[${MULTILIB_USEDEP}]
-		<dev-lang/rust-1.95.0[${MULTILIB_USEDEP}]
-		<dev-lang/rust-bin-1.95.0[${MULTILIB_USEDEP}]
+		>=dev-lang/rust-1.82.0[${MULTILIB_USEDEP}]
+		>=dev-lang/rust-bin-1.82.0[${MULTILIB_USEDEP}]
+		<dev-lang/rust-1.96.0[${MULTILIB_USEDEP}]
+		<dev-lang/rust-bin-1.96.0[${MULTILIB_USEDEP}]
 	)
 	app-alternatives/awk
 	app-arch/unzip
@@ -1009,10 +1009,17 @@ src_prepare() {
 	# Workaround for bug #915651 on musl
 	if use elibc_glibc ; then
 		rm -v "${WORKDIR}"/firefox-patches/*bgo-748849-RUST_TARGET_override.patch || die
+		rm -v "${WORKDIR}"/firefox-patches/*bmo-1999625-glibc-2.43.patch || die
 		if has_version '>=sys-libs/glibc-2.43'; then
-			#eapply "${FILESDIR}/extra-patches/firefox-140.8.0-Patch-glsl-optimizer-to-build-with-glibc-2.43.patch" || die
 			eapply "${FILESDIR}/extra-patches/firefox-140.8.0-Fix-sandbox-to-build-with-glibc-2.43.patch" || die
+			eapply "${FILESDIR}/extra-patches/firefox-140.8.0-Patch-glsl-optimizer-to-build-with-glibc-2.43.patch" || die
 		fi
+	fi
+
+	if use llvm_slot_22 ; then
+		eapply "${FILESDIR}/extra-patches/firefox-140.8.0-skia-m142-update.patch" || die
+		eapply "${FILESDIR}/extra-patches/firefox-140.8.0-update-rust-bindgen-to-fix-clang22-build.patch" || die
+		eapply "${FILESDIR}/extra-patches/firefox-140.8.0-fix-build-encodings_rs-clang-22.patch" || die
 	fi
 
 	# Use modified patch that isn't mangled
@@ -1119,7 +1126,8 @@ src_prepare() {
 
 	# Clear checksums from cargo crates we've manually patched.
 	# moz_clear_vendor_checksums crate
-	moz_clear_vendor_checksums glslopt
+	#moz_clear_vendor_checksums glslopt
+    #moz_clear_vendor_checksums encoding_rs
 
 	# Respect choice for "jumbo-build"
 	# Changing the value for FILES_PER_UNIFIED_FILE may not work, see #905431
