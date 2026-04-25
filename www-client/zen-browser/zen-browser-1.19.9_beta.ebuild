@@ -4,7 +4,7 @@
 EAPI=8
 
 # Using Gentoos firefox patches as system libraries and lto are quite nice
-FIREFOX_PATCHSET="firefox-149-patches-02.tar.xz"
+FIREFOX_PATCHSET="firefox-150-patches-01.tar.xz"
 
 LLVM_COMPAT=( {20..22} )
 
@@ -13,7 +13,7 @@ RUST_NEEDS_LLVM=1
 # If not building with clang we need at least rust 1.76
 RUST_MIN_VER=1.90.0
 
-PYTHON_COMPAT=( python3_{11..14} )
+PYTHON_COMPAT=( python3_{12..14} )
 PYTHON_REQ_USE="ncurses,sqlite,ssl"
 
 VIRTUALX_REQUIRED="manual"
@@ -25,7 +25,7 @@ WASI_SDK_VER=( [22]="32.0" [21]="30.0" [20]="27.0" )
 
 MOZ_ESR=
 
-MOZ_PV=149.0.2
+MOZ_PV=150.0.0
 MOZ_PV_SUFFIX=
 if [[ ${PV} =~ (_(alpha|beta|rc).*)$ ]] ; then
 	MOZ_PV_SUFFIX=${BASH_REMATCH[1]}
@@ -179,71 +179,86 @@ SYSTEM_PYTHON_LIBS="
 		${PYTHON_DEPS}
 		$(python_gen_any_dep '
 			dev-python/zstandard[${PYTHON_USEDEP}]
-			>=dev-python/aiohttp-3.10.11[${PYTHON_USEDEP}]
-			>=dev-python/aiosignal-1.3.1[${PYTHON_USEDEP}]
+			>=dev-python/aiohappyeyeballs-2.6.1[${PYTHON_USEDEP}]
+			>=dev-python/aiohttp-3.13.3[${PYTHON_USEDEP}]
+			>=dev-python/aiosignal-1.4.0[${PYTHON_USEDEP}]
+			>=dev-python/ansicon-1.89.0[${PYTHON_USEDEP}]
 			>=dev-python/appdirs-1.4.4[${PYTHON_USEDEP}]
-			>=dev-python/arrow-1.3.0[${PYTHON_USEDEP}]
 			>=dev-python/async-timeout-5.0.1[${PYTHON_USEDEP}]
-			>=dev-python/attrs-23.1.0[${PYTHON_USEDEP}]
-			>=dev-python/binaryornot-0.4.4[${PYTHON_USEDEP}]
-			>=dev-python/blessed-1.19.1[${PYTHON_USEDEP}]
+			>=dev-python/attrs-25.3.0[${PYTHON_USEDEP}]
+			>=dev-python/blessed-1.21.0[${PYTHON_USEDEP}]
 			>=dev-python/build-1.2.2[${PYTHON_USEDEP}]
-			>=dev-python/cbor2-4.0.1[${PYTHON_USEDEP}]
-			>=dev-python/certifi-2024.7.4[${PYTHON_USEDEP}]
-			>=dev-python/chardet-5.2.0[${PYTHON_USEDEP}]
+			>=dev-python/cbor2-5.8.0[${PYTHON_USEDEP}]
+			>=dev-python/certifi-2025.6.15[${PYTHON_USEDEP}]
 			>=dev-python/charset-normalizer-3.4.2[${PYTHON_USEDEP}]
 			>=dev-python/click-8.1.7[${PYTHON_USEDEP}]
 			>=dev-python/colorama-0.4.6[${PYTHON_USEDEP}]
-			>=dev-util/cookiecutter-2.6.0[${PYTHON_USEDEP}]
+			>=dev-python/compare-locales-9.0.4[${PYTHON_USEDEP}]
 			>=dev-python/cookies-2.2.1[${PYTHON_USEDEP}]
 			>=dev-python/diskcache-5.6.3[${PYTHON_USEDEP}]
-			>=dev-python/distro-1.8.0[${PYTHON_USEDEP}]
+			>=dev-python/distro-1.9.0[${PYTHON_USEDEP}]
 			>=dev-python/ecdsa-0.19.1[${PYTHON_USEDEP}]
-			>=dev-python/filelock-3.16.1[${PYTHON_USEDEP}]
-			>=dev-python/frozenlist-1.5.0[${PYTHON_USEDEP}]
+			>=dev-python/esprima-4.0.1[${PYTHON_USEDEP}]
+			>=dev-python/fluent-migrate-0.13.3[${PYTHON_USEDEP}]
+			>=dev-python/fluent-syntax-0.19.0[${PYTHON_USEDEP}]
+			>=dev-python/frozenlist-1.7.0[${PYTHON_USEDEP}]
+			>=dev-python/gitignorant-0.3.1[${PYTHON_USEDEP}]
+			>=dev-python/giturlparse-0.12.0[${PYTHON_USEDEP}]
+			>=dev-python/glean-parser-18.2.0[${PYTHON_USEDEP}]
 			>=dev-python/idna-3.10[${PYTHON_USEDEP}]
-			>=dev-python/importlib-metadata-6.0.0[${PYTHON_USEDEP}]
+			>=dev-python/importlib-metadata-8.7.0[${PYTHON_USEDEP}]
 			>=dev-python/iniparse-0.5[${PYTHON_USEDEP}]
 			>=dev-python/jinja2-3.1.6[${PYTHON_USEDEP}]
+			>=dev-python/jinxed-1.3.0[${PYTHON_USEDEP}]
+			>=dev-python/json-e-4.8.0[${PYTHON_USEDEP}]
 			>=dev-python/jsonschema-4.17.3[${PYTHON_USEDEP}]
-			>=dev-python/looseversion-1.0.1[${PYTHON_USEDEP}]
-			>=dev-python/mako-1.2.2[${PYTHON_USEDEP}]
-			>=dev-python/markdown-it-py-3.0.0[${PYTHON_USEDEP}]
-			>=dev-python/markupsafe-2.0.1[${PYTHON_USEDEP}]
-			>=dev-python/mdurl-0.1.2[${PYTHON_USEDEP}]
-			>=dev-python/multidict-6.1.0[${PYTHON_USEDEP}]
-			>=dev-python/packaging-23.1[${PYTHON_USEDEP}]
-			>=dev-python/pathspec-0.9.0[${PYTHON_USEDEP}]
-			>=dev-python/pip-24.0[${PYTHON_USEDEP}]
-			>=dev-python/platformdirs-4.3.6[${PYTHON_USEDEP}]
+			>=dev-python/looseversion-1.3.0[${PYTHON_USEDEP}]
+			>=dev-python/mako-1.3.10[${PYTHON_USEDEP}]
+			>=dev-python/markupsafe-3.0.2[${PYTHON_USEDEP}]
+			>=dev-python/mohawk-1.1.0[${PYTHON_USEDEP}]
+			>=dev-python/moz-l10n-0.9.0[${PYTHON_USEDEP}]
+			>=dev-python/mozilla-repo-urls-0.1.1[${PYTHON_USEDEP}]
+			>=dev-python/mozilla-version-4.1.0[${PYTHON_USEDEP}]
+			>=dev-python/multidict-6.7.0[${PYTHON_USEDEP}]
+			>=dev-python/packaging-25.0[${PYTHON_USEDEP}]
+			>=dev-python/pathspec-0.12.1[${PYTHON_USEDEP}]
+			>=dev-python/pip-25.0.1[${PYTHON_USEDEP}]
+			>=dev-python/pip-tools-7.4.1[${PYTHON_USEDEP}]
+			>=dev-python/platformdirs-4.3.8[${PYTHON_USEDEP}]
 			>=dev-python/ply-3.10[${PYTHON_USEDEP}]
 			>=dev-python/polib-1.2.0[${PYTHON_USEDEP}]
-			>=dev-python/propcache-0.2.0[${PYTHON_USEDEP}]
-			>=dev-python/pyasn1-0.4.8[${PYTHON_USEDEP}]
-			>=dev-python/pyasn1-modules-0.2.8[${PYTHON_USEDEP}]
-			>=dev-python/pygments-2.19.1[${PYTHON_USEDEP}]
-			>=dev-python/pylru-1.0.9[${PYTHON_USEDEP}]
+			>=dev-python/propcache-0.3.2[${PYTHON_USEDEP}]
+			>=dev-python/pyasn1-0.6.1[${PYTHON_USEDEP}]
+			>=dev-python/pyasn1-modules-0.4.2[${PYTHON_USEDEP}]
+			>=dev-python/pylru-1.2.1[${PYTHON_USEDEP}]
 			>=dev-python/pyproject-hooks-1.2.0[${PYTHON_USEDEP}]
 			>=dev-python/pyrsistent-0.20.0[${PYTHON_USEDEP}]
 			>=dev-python/python-dateutil-2.9.0[${PYTHON_USEDEP}]
-			>=dev-python/python-slugify-8.0.4[${PYTHON_USEDEP}]
-			>=dev-python/pyyaml-6.0.1[${PYTHON_USEDEP}]
-			>=dev-python/requests-2.32.3[${PYTHON_USEDEP}]
-			>=dev-python/requests-unixsocket-0.2.0[${PYTHON_USEDEP}]
-			>=dev-python/responses-0.10.6[${PYTHON_USEDEP}]
-			>=dev-python/rich-14.0.0[${PYTHON_USEDEP}]
-			>=dev-python/rsa-4.9[${PYTHON_USEDEP}]
-			>=dev-python/six-1.16.0[${PYTHON_USEDEP}]
+			>=dev-python/python-hglib-2.6.2[${PYTHON_USEDEP}]
+			>=dev-python/pyyaml-6.0.3[${PYTHON_USEDEP}]
+			>=dev-python/redo-3.0.0[${PYTHON_USEDEP}]
+			>=dev-python/requests-2.32.4[${PYTHON_USEDEP}]
+			>=dev-python/requests-unixsocket-0.4.1[${PYTHON_USEDEP}]
+			>=dev-python/responses-0.25.7[${PYTHON_USEDEP}]
+			>=dev-python/rsa-4.9.1[${PYTHON_USEDEP}]
+			>=dev-python/sentry-sdk-2.30.0[${PYTHON_USEDEP}]
+			>=dev-python/setuptools-75.3.1[${PYTHON_USEDEP}]
+			>=dev-python/six-1.17.0[${PYTHON_USEDEP}]
+			>=dev-python/slugid-2.0.0[${PYTHON_USEDEP}]
+			>=dev-python/taskcluster-93.1.5[${PYTHON_USEDEP}]
+			>=dev-python/taskcluster-urls-13.0.1[${PYTHON_USEDEP}]
+			>=dev-python/toml-0.10.2[${PYTHON_USEDEP}]
 			>=dev-python/tomli-2.2.1[${PYTHON_USEDEP}]
-			>=dev-python/tomlkit-0.12.3[${PYTHON_USEDEP}]
-			>=dev-python/tqdm-4.66.3[${PYTHON_USEDEP}]
-			>=dev-python/typing-extensions-4.12.2[${PYTHON_USEDEP}]
-			>=dev-python/urllib3-1.26.19[${PYTHON_USEDEP}]
-			>=dev-python/voluptuous-0.12.1[${PYTHON_USEDEP}]
+			>=dev-python/tomlkit-0.13.3[${PYTHON_USEDEP}]
+			>=dev-python/tqdm-4.67.1[${PYTHON_USEDEP}]
+			>=dev-python/typing-extensions-4.15.0[${PYTHON_USEDEP}]
+			>=dev-python/urllib3-2.5.0[${PYTHON_USEDEP}]
+			>=dev-python/voluptuous-0.15.2[${PYTHON_USEDEP}]
 			>=dev-python/wcwidth-0.2.13[${PYTHON_USEDEP}]
-			>=dev-python/wheel-0.43.0[${PYTHON_USEDEP}]
-			>=dev-python/yarl-1.15.2[${PYTHON_USEDEP}]
-			>=dev-python/zipp-3.20.2[${PYTHON_USEDEP}]
+			>=dev-python/wheel-0.45.1[${PYTHON_USEDEP}]
+			>=dev-python/yamllint-1.37.1[${PYTHON_USEDEP}]
+			>=dev-python/yarl-1.20.1[${PYTHON_USEDEP}]
+			>=dev-python/zipp-3.23.0[${PYTHON_USEDEP}]
 		')
 	)
 "
@@ -714,11 +729,11 @@ pkg_pretend() {
 
 		# Ensure we have enough disk space to compile
 		if use pgo || use debug ; then
-			CHECKREQS_DISK_BUILD="14300M"
+			CHECKREQS_DISK_BUILD="18700M"
 		elif use lto ; then
 			CHECKREQS_DISK_BUILD="10600M"
 		else
-			CHECKREQS_DISK_BUILD="6800M"
+			CHECKREQS_DISK_BUILD="9700M"
 		fi
 
 		check-reqs_pkg_pretend
@@ -742,11 +757,11 @@ pkg_setup() {
 
 		# Ensure we have enough disk space to compile
 		if use pgo || use debug ; then
-			CHECKREQS_DISK_BUILD="14300M"
+			CHECKREQS_DISK_BUILD="18700M"
 		elif use lto ; then
 			CHECKREQS_DISK_BUILD="10600M"
 		else
-			CHECKREQS_DISK_BUILD="6800M"
+			CHECKREQS_DISK_BUILD="9700M"
 		fi
 
 		check-reqs_pkg_setup
@@ -956,19 +971,21 @@ src_prepare() {
 	# Allow to use system-ffmpeg completely.
 	if use system-ffmpeg; then
 		#eapply "${FILESDIR}/extra-patches/firefox-115e-allow-ffmpeg-decode-av1.patch"
-		eapply "${FILESDIR}/extra-patches/firefox-128e-disable-ffvpx.patch"
+		eapply "${FILESDIR}/extra-patches/firefox-128e-disable-ffvpx.patch" || die
 	fi
 
 	# Prevent tab crash
-	eapply "${FILESDIR}/extra-patches/firefox-143.0.3-disable-broken-flags-dom-bindings.patch"
+	eapply "${FILESDIR}/extra-patches/firefox-143.0.3-disable-broken-flags-dom-bindings.patch" || die
 
 	# Prevent video seek bug
-	eapply "${FILESDIR}/extra-patches/firefox-122.0-disable-broken-flags-ipc-chromium-chromium-config.patch"
+	eapply "${FILESDIR}/extra-patches/firefox-122.0-disable-broken-flags-ipc-chromium-chromium-config.patch" || die
 
 	# Build with clang-20
 	if [[ "${LLVM_SLOT}" =~ ("20"|"21"|"22") ]]; then
 		sed -e '/CXXFLAGS += \["-Werror=implicit-int-conversion"\]/d' -i "${S}/dom/canvas/moz.build" -i "${S}/dom/webgpu/moz.build" || die
 	fi
+
+	use llvm_slot_22 && ( eapply "${FILESDIR}/extra-patches/firefox-150.0.0-fix-encodings_rs-clang-22.patch" || die )
 
 	eapply "${FILESDIR}/extra-patches/firefox-128.3.0e-big-endian-image-decoders.patch"
 
@@ -994,7 +1011,7 @@ src_prepare() {
 		if use amd64 ; then
 			export RUST_TARGET="x86_64-unknown-linux-musl"
 		elif use x86 ; then
-			export RUST_TARGET="x86-unknown-linux-musl"
+			export RUST_TARGET="i686-unknown-linux-musl"
 		elif use arm64 ; then
 			export RUST_TARGET="aarch64-unknown-linux-musl"
 		elif use loong; then
@@ -1065,6 +1082,9 @@ src_prepare() {
 		-e 's/ccache_stats = None/return None/' \
 		"${S}"/python/mozbuild/mozbuild/controller/building.py \
 		|| die "sed failed to disable ccache stats call"
+
+	# Relax python libs requirements
+	# use system-python-libs && ( sed -e 's/urllib3==/urllib3>=/' -i third_party/python/requirements.txt || die )
 
 	einfo "Removing pre-built binaries ..."
 
