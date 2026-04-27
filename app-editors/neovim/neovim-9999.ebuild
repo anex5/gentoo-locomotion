@@ -50,9 +50,9 @@ DEPEND="${LUA_DEPS}
 	$(lua_gen_cond_dep '
 		dev-lua/LuaBitOp[${LUA_USEDEP}]
 	' lua5-{1,2})
-	=dev-libs/libutf8proc-2.11.3:=[-cjk]
-	=dev-libs/libuv-1.52.1:=
-	=dev-libs/tree-sitter-0.25*:=
+	>=dev-libs/libutf8proc-2.11.3:=[-cjk]
+	>=dev-libs/libuv-1.52.1:=
+	=dev-libs/tree-sitter-0.26*:=
 	=dev-libs/tree-sitter-c-0.24.1*
 	=dev-libs/tree-sitter-lua-0.5*
 	=dev-libs/tree-sitter-markdown-0.5*
@@ -100,7 +100,7 @@ src_configure() {
 		-DPREFER_LUA=$(usex lua_single_target_luajit no "$(lua_get_version)")
 		-DLUA_PRG="${LUA}"
 		#-DLUA_GEN_PRG="${ELUA}"
-		-DUSE_BUNDLED=OFF
+		#-DUSE_BUNDLED=OFF
 		-DCOMPILE_LUA=0
 		# bug 906019: fix hardcoded usage of ccache
 		-DCACHE_PRG=OFF
