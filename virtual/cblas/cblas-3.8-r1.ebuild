@@ -17,9 +17,9 @@ RDEPEND="
 	!flexiblas? (
 		eselect-ldso? (
 			|| (
-				>=sci-libs/lapack-3.8[eselect-ldso(-)]
-				sci-libs/openblas[eselect-ldso(-)]
-				sci-libs/blis[eselect-ldso(-)]
+				>=sci-libs/lapack-3.8[eselect-ldso(-),index64?]
+				sci-libs/openblas[eselect-ldso(-),index64?]
+				sci-libs/blis[eselect-ldso(-),index64?]
 			)
 		)
 	)
