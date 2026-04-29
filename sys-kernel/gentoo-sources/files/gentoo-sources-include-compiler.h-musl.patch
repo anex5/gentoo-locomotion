@@ -1,0 +1,10 @@
+--- a/include/uapi/linux/swab.h
++++ b/include/uapi/linux/swab.h
+@@ -6,6 +6,7 @@
+ #include <linux/stddef.h>
+ #include <asm/bitsperlong.h>
+ #include <asm/swab.h>
++#include <linux/compiler.h>
+ 
+ /*
+  * casts are necessary for constants, because we never know how for sure

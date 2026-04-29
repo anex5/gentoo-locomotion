@@ -1,4 +1,4 @@
-# Copyright 1999-2025 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -11,9 +11,11 @@ case ${PV} in
 	EGIT_REPO_URI="https://github.com/v4l2loopback/v4l2loopback"
 	;;
 *)
-	KEYWORDS="~amd64 ~x86"
-	SRC_URI="https://github.com/v4l2loopback/${PN}/archive/v${PV}.tar.gz -> ${P}.tar.gz"
+	KEYWORDS="~amd64 ~x86 ~arm64 ~arm ~x86"
+	COMMIT="94d18a57aea281559ccfb31f99325f822fa8ab4a"
+	SRC_URI="https://github.com/v4l2loopback/${PN}/archive/${COMMIT}.tar.gz -> ${P}-${COMMIT:0:7}.tar.gz"
 	RESTRICT="mirror"
+	S="${WORKDIR}/${PN}-${COMMIT}"
 	;;
 esac
 

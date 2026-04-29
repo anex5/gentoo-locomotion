@@ -38,6 +38,13 @@ PATCHES=(
 	"${FILESDIR}/0001-zstd-dev-patches.patch"
 )
 
+src_prepare() {
+	# TODO: May need forward porting to newer versions
+	use elibc_musl && eapply "${FILESDIR}"/${PN}-include-compiler.h-musl.patch || die
+
+	kernel-2_src_prepare
+}
+
 pkg_postinst() {
 	kernel-2_pkg_postinst
 	einfo "For more info on this patchset, and how to report problems, see:"
