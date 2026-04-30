@@ -4,7 +4,7 @@
 EAPI=8
 
 # Using Gentoos firefox patches as system libraries and lto are quite nice
-FIREFOX_PATCHSET="firefox-${PV%%.*}esr-patches-07.tar.xz"
+FIREFOX_PATCHSET="firefox-${PV%%.*}esr-patches-08.tar.xz"
 FIREFOX_LOONG_PATCHSET="firefox-139-loong-patches-02.tar.xz"
 
 LLVM_COMPAT=( {20..22} )
@@ -16,7 +16,7 @@ RUST_NEEDS_LLVM=1
 # If not building with clang we need at least rust 1.76
 RUST_MIN_VER=1.82.0
 
-PYTHON_COMPAT=( python3_{11..14} )
+PYTHON_COMPAT=( python3_{12..14} )
 PYTHON_REQ_USE="ncurses,sqlite,ssl"
 
 VIRTUALX_REQUIRED="manual"
@@ -969,22 +969,6 @@ src_prepare() {
 	# links it, it fails because of cbindings is 64-bit and the dependencies
 	# use the build information for 64-bit linking, which should be 32-bit.
 
-	#eapply "${DISTDIR}/${PN}-d4f5769.patch"
-	#eapply "${FILESDIR}/extra-patches/firefox-115e-remove-distutils-PR-18d19413472f.patch"
-	#eapply "${FILESDIR}/extra-patches/firefox-115e-python3.12-bug1874280.patch"
-	#eapply "${FILESDIR}/extra-patches/firefox-115e-python3.12-bug1866829.patch"
-	#eapply "${FILESDIR}/extra-patches/firefox-115e-python3.12-bug1860051.patch"
-	#eapply "${FILESDIR}/extra-patches/firefox-115e-python3.12-bug1831512.patch"
-	#eapply "${FILESDIR}/extra-patches/firefox-115e-PR-b1cc62489fae.patch"
-	#[[ "${EPYTHON//python}" == "3.13" ]] && eapply "${FILESDIR}/extra-patches/firefox-115e-python3.13-build-fix.patch"
-	if [[ "${EPYTHON//python}" == "3.14" ]] ; then
-		eapply "${FILESDIR}/extra-patches/5fcff175718cd308bc6d6f2996de14eb8a93e2a2.patch" || die
-		eapply "${FILESDIR}/extra-patches/23efd75219786d71acff0b4e7c1b0de297b84c4e.patch" || die
-		eapply "${FILESDIR}/extra-patches/b68b1f93a6e31188486458f32fbe37811257604f.patch" || die
-		eapply "${FILESDIR}/extra-patches/d4b3eb4f76e81f18c53863b1d55ee146d6ec7d10.patch" || die
-		eapply "${FILESDIR}/extra-patches/dbf9702ed87ea5c88c2a1ee615998532ac8f10cc.patch" || die
-	fi
-
 	# Allow to use system-ffmpeg completely.
 	if use system-ffmpeg; then
 		#eapply "${FILESDIR}/extra-patches/firefox-115e-allow-ffmpeg-decode-av1.patch"
@@ -1026,8 +1010,6 @@ src_prepare() {
 	for patch in 0013-gcc-lto-pgo-gentoo.patch 0016-bgo-929967-fix-pgo-on-musl.patch; do
 		cp "${FILESDIR}/${patch}" "${WORKDIR}/firefox-patches/${patch}" || die
 	done
-	# Modify patch to apply correctly
-	#sed -i -e 's/Firefox/IceCat/' "${WORKDIR}"/firefox-patches/0016-bgo-929967-fix-pgo-on-musl.patch || die
 
 	eapply "${WORKDIR}/firefox-patches"
 	use loong && eapply "${WORKDIR}/firefox-loong-patches"

@@ -4,7 +4,7 @@
 EAPI=8
 
 # Using Gentoos firefox patches as system libraries and lto are quite nice
-FIREFOX_PATCHSET="firefox-150-patches-01.tar.xz"
+FIREFOX_PATCHSET="firefox-150-patches-02.tar.xz"
 
 LLVM_COMPAT=( {20..22} )
 
@@ -25,7 +25,7 @@ WASI_SDK_VER=( [22]="32.0" [21]="30.0" [20]="27.0" )
 
 MOZ_ESR=
 
-MOZ_PV=150.0.0
+MOZ_PV=150.0.1
 MOZ_PV_SUFFIX=
 if [[ ${PV} =~ (_(alpha|beta|rc).*)$ ]] ; then
 	MOZ_PV_SUFFIX=${BASH_REMATCH[1]}
@@ -924,28 +924,6 @@ src_prepare() {
 	# Prevent audio perma mute with gcc with -Ofast.
 	eapply "${FILESDIR}/extra-patches/firefox-148.0-disable-broken-flags-js.patch"
 
-	# Only partial patching was done because the distro doesn't support
-	# multilib Python.  Only native ABI is supported.  This means cbindgen
-	# cannot load the 32-bit clang.  It will build the cargo parts.  When it
-	# links it, it fails because of cbindings is 64-bit and the dependencies
-	# use the build information for 64-bit linking, which should be 32-bit.
-
-	#eapply "${DISTDIR}/${PN}-d4f5769.patch"
-	#eapply "${FILESDIR}/extra-patches/firefox-115e-remove-distutils-PR-18d19413472f.patch"
-	#eapply "${FILESDIR}/extra-patches/firefox-115e-python3.12-bug1874280.patch"
-	#eapply "${FILESDIR}/extra-patches/firefox-115e-python3.12-bug1866829.patch"
-	#eapply "${FILESDIR}/extra-patches/firefox-115e-python3.12-bug1860051.patch"
-	#eapply "${FILESDIR}/extra-patches/firefox-115e-python3.12-bug1831512.patch"
-	#eapply "${FILESDIR}/extra-patches/firefox-115e-PR-b1cc62489fae.patch"
-	#[[ "${EPYTHON//python}" == "3.13" ]] && eapply "${FILESDIR}/extra-patches/firefox-115e-python3.13-build-fix.patch"
-	#if [[ "${EPYTHON//python}" == "3.14" ]] ; then
-	#	eapply "${FILESDIR}/extra-patches/5fcff175718cd308bc6d6f2996de14eb8a93e2a2.patch" || die
-	#	eapply "${FILESDIR}/extra-patches/23efd75219786d71acff0b4e7c1b0de297b84c4e.patch" || die
-	#	eapply "${FILESDIR}/extra-patches/b68b1f93a6e31188486458f32fbe37811257604f.patch" || die
-	#	eapply "${FILESDIR}/extra-patches/d4b3eb4f76e81f18c53863b1d55ee146d6ec7d10.patch" || die
-	#	eapply "${FILESDIR}/extra-patches/dbf9702ed87ea5c88c2a1ee615998532ac8f10cc.patch" || die
-	#fi
-
 	# Allow to use system-ffmpeg completely.
 	if use system-ffmpeg; then
 		#eapply "${FILESDIR}/extra-patches/firefox-115e-allow-ffmpeg-decode-av1.patch"
@@ -962,8 +940,6 @@ src_prepare() {
 	if [[ "${LLVM_SLOT}" =~ ("20"|"21"|"22") ]]; then
 		sed -e '/CXXFLAGS += \["-Werror=implicit-int-conversion"\]/d' -i "${S}/dom/canvas/moz.build" -i "${S}/dom/webgpu/moz.build" || die
 	fi
-
-	use llvm_slot_22 && ( eapply "${FILESDIR}/extra-patches/firefox-150.0.0-fix-encodings_rs-clang-22.patch" || die )
 
 	eapply "${FILESDIR}/extra-patches/firefox-128.3.0e-big-endian-image-decoders.patch"
 
@@ -1072,6 +1048,7 @@ src_prepare() {
 	# moz_clear_vendor_checksums crate
 	# glslopt: bgo#969412
 	moz_clear_vendor_checksums glslopt
+	moz_clear_vendor_checksums encoding_rs
 
 	# Respect choice for "jumbo-build"
 	# Changing the value for FILES_PER_UNIFIED_FILE may not work, see #905431
