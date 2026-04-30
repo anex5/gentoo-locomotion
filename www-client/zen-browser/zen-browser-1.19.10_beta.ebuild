@@ -950,6 +950,7 @@ src_prepare() {
 		rm -v "${WORKDIR}"/firefox-patches/*bgo-967694-musl-prctrl-exception-on-musl.patch || die
 	fi
 	rm -v "${WORKDIR}"/firefox-patches/*-bgo-928126-enable-jxl.patch || die
+	rm -v "${WORKDIR}"/firefox-patches/*-bmo-2023597-use-wasm32-wasip1-target-for-clang-22.patch || die
 	#rm -v "${WORKDIR}"/firefox-patches/0026-bmo-2022238-revert-bug-2001075-to-avoid-toolbar-freeze.patch || die
 
 	eapply "${WORKDIR}/firefox-patches"
