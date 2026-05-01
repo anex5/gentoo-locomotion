@@ -246,8 +246,8 @@ CDEPEND="
 	${SYSTEM_PYTHON_LIBS}
 	>=app-accessibility/at-spi2-core-2.46.0:2[${MULTILIB_USEDEP}]
 	>=dev-libs/glib-2.42:2[${MULTILIB_USEDEP}]
-	>=dev-libs/nspr-4.38.2[${MULTILIB_USEDEP}]
-	>=dev-libs/nss-3.121[${MULTILIB_USEDEP}]
+	>=dev-libs/nspr-4.38[${MULTILIB_USEDEP}]
+	>=dev-libs/nss-3.123.1[${MULTILIB_USEDEP}]
 	>=media-libs/fontconfig-2.7.0[${MULTILIB_USEDEP}]
 	>=media-libs/freetype-2.14.1[${MULTILIB_USEDEP}]
 	>=sys-libs/zlib-1.3.1[${MULTILIB_USEDEP}]
