@@ -5,7 +5,7 @@ EAPI=8
 
 # RelWithDebInfo sets -Og -g
 CMAKE_BUILD_TYPE=Release
-LUA_COMPAT=( lua5-{1..5} luajit )
+LUA_COMPAT=( lua5-{1..2} luajit )
 inherit cmake lua-single optfeature xdg
 
 DESCRIPTION="Vim-fork focused on extensibility and agility"
