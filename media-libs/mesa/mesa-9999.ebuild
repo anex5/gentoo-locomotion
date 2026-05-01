@@ -193,6 +193,7 @@ x86? (
 
 PATCHES=(
 	"${FILESDIR}/0002-mesa-enable-vaapi-on-lima-panfrost.patch"
+	"${FILESDIR}/${P}_nir-gather_info-clear-interpolation-qualifiers-only-.patch"
 )
 
 src_unpack() {

@@ -5,7 +5,7 @@ EAPI=8
 
 # RelWithDebInfo sets -Og -g
 CMAKE_BUILD_TYPE=Release
-LUA_COMPAT=( lua5-{1..2} luajit )
+LUA_COMPAT=( lua5-{1..5} luajit )
 inherit cmake lua-single optfeature xdg
 
 DESCRIPTION="Vim-fork focused on extensibility and agility"
@@ -45,7 +45,6 @@ DEPEND="${LUA_DEPS}
 	$(lua_gen_cond_dep '
 		dev-lua/lpeg[${LUA_USEDEP}]
 		dev-lua/mpack[${LUA_USEDEP}]
-		dev-lua/busted[${LUA_USEDEP}]
 	')
 	$(lua_gen_cond_dep '
 		dev-lua/LuaBitOp[${LUA_USEDEP}]
@@ -53,7 +52,7 @@ DEPEND="${LUA_DEPS}
 	>=dev-libs/libutf8proc-2.11.3:=[-cjk]
 	>=dev-libs/libuv-1.52.1:=
 	=dev-libs/tree-sitter-0.26*:=
-	=dev-libs/tree-sitter-c-0.24.1*
+	=dev-libs/tree-sitter-c-0.24.2
 	=dev-libs/tree-sitter-lua-0.5*
 	=dev-libs/tree-sitter-markdown-0.5*
 	=dev-libs/tree-sitter-query-0.8*
@@ -94,11 +93,11 @@ src_prepare() {
 }
 
 src_configure() {
-	# TODO: Investigate USE_BUNDLED, doesn't seem to be needed right now
 	local mycmakeargs=(
 		-DENABLE_LTO=$(usex lto)
 		-DPREFER_LUA=$(usex lua_single_target_luajit no "$(lua_get_version)")
 		-DLUA_PRG="${LUA}"
+		#-DENABLE_WASMTIME=OFF
 		#-DLUA_GEN_PRG="${ELUA}"
 		#-DUSE_BUNDLED=OFF
 		-DCOMPILE_LUA=0
