@@ -14,7 +14,7 @@ HOMEPAGE="https://openmp.llvm.org"
 
 LICENSE="Apache-2.0-with-LLVM-exceptions || ( UoI-NCSA MIT )"
 SLOT="0/${LLVM_SOABI}"
-#KEYWORDS="~amd64 ~arm ~arm64 ~loong ~mips ~ppc64 ~riscv ~x86 ~x64-macos"
+KEYWORDS="~amd64 ~arm ~arm64 ~loong ~mips ~ppc64 ~riscv ~x86 ~x64-macos"
 IUSE="debug gdb-plugin fortran hwloc ompt test"
 REQUIRED_USE="
 	gdb-plugin? ( ${PYTHON_REQUIRED_USE} )
@@ -50,6 +50,7 @@ pkg_setup() {
 	if use gdb-plugin || use test; then
 		python-single-r1_pkg_setup
 	fi
+	[[ ${MERGE_TYPE} != binary ]] && tc-check-openmp && FORTRAN_NEED_OPENMP=1
 }
 
 multilib_src_configure() {
@@ -68,7 +69,8 @@ multilib_src_configure() {
 		-DLIBOMP_USE_HWLOC=$(usex hwloc)
 		-DLIBOMP_OMPD_GDB_SUPPORT=$(multilib_native_usex gdb-plugin)
 		-DLIBOMP_OMPT_SUPPORT=$(usex ompt)
-		-DLIBOMP_FORTRAN_MODULES=$(usex fortran)
+		-DLIBOMP_FORTRAN_MODULES_COMPILER=$(usex fortran "$(tc-getFC)" "")
+		#-DLIBOMP_FORTRAN_MODULES=$(usex fortran)
 		# do not install libgomp.so & libiomp5.so aliases
 		-DLIBOMP_INSTALL_ALIASES=OFF
 		# disable unnecessary hack copying stuff back to srcdir
@@ -84,7 +86,7 @@ multilib_src_configure() {
 		-DOPENMP_TEST_CXX_COMPILER="$(type -P "${CHOST}-clang++")"
 		# disable Fortran tests for now
 		# (TODO: enable where we have flang keyworded)
-		-DOPENMP_TEST_Fortran_COMPILER=
+		#-DOPENMP_TEST_Fortran_COMPILER=
 	)
 	cmake_src_configure
 }
