@@ -40,7 +40,7 @@ PATCHES=(
 
 src_prepare() {
 	# TODO: May need forward porting to newer versions
-	use elibc_musl && eapply "${FILESDIR}"/${PN}-include-compiler.h-musl.patch || die
+	use elibc_musl && ( eapply "${FILESDIR}"/${PN}-include-compiler.h-musl.patch || die )
 
 	kernel-2_src_prepare
 }
