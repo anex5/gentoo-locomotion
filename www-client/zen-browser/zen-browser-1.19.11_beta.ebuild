@@ -81,7 +81,7 @@ CODEC_IUSE="
 IUSE+="
 ${CODEC_IUSE}
 alsa atk clang cpu_flags_arm_neon cups +dbus debug firejail hardened hwaccel \
-jack -jemalloc +jit libcanberra libnotify libproxy libsecret lld lto mold pgo \
+jack -jemalloc +jit libcanberra libnotify libproxy libsecret lld lto ml mold pgo \
 pulseaudio sndio selinux speech systemd +system-av1 +system-ffmpeg +system-graphite2 \
 +system-harfbuzz +system-icu +system-jpeg +system-libevent +system-libvpx +system-png \
 +system-pipewire -system-python-libs +system-webp test vaapi wayland +webrtc wifi webspeech X
@@ -1532,6 +1532,11 @@ _src_configure() {
 	multilib_is_native_abi && mozconfig_use_enable speech synth-speechd
 	mozconfig_use_enable webrtc
 	mozconfig_use_enable webspeech
+	if use ml ; then
+		mozconfig_add_options_ac 'Enabling ML' --enable-uniffi-fixtures
+	else
+		mozconfig_add_options_ac 'Disabling ML' --disable-uniffi-fixtures
+	fi
 
 	if use hardened ; then
 		mozconfig_add_options_ac "+hardened" --enable-hardening
@@ -1997,6 +2002,28 @@ _src_install() {
 	if use system-harfbuzz ; then
 		cat >>"${GENTOO_PREFS}" <<-EOF || die "failed to set gfx.font_rendering.graphite.enabled pref"
 		sticky_pref("gfx.font_rendering.graphite.enabled", true);
+		EOF
+	fi
+
+	# Force machine learning features
+	if use ml ; then
+		cat >>"${GENTOO_PREFS}" <<-EOF || die "failed to set ml pref"
+		sticky_pref("browser.ml.enable, true);
+		sticky_pref("browser.ml.chat.enabled, true);
+		sticky_pref("browser.ml.linkPreview.enabled, true);
+		sticky_pref("extensions.ml.enabled, true);
+		sticky_pref("browser.tabs.groups.smart.enabled, true);
+		sticky_pref("browser.ml.chat.sidebar, true);
+		EOF
+	else
+		cat >>"${GENTOO_PREFS}" <<-EOF || die "failed to set ml pref"
+		sticky_pref("browser.ml.enable, false); // Master switch
+		sticky_pref("browser.ml.chat.enabled, false);
+		sticky_pref("browser.ml.linkPreview.enabled, false);
+		sticky_pref("extensions.ml.enabled, false);
+		sticky_pref("browser.tabs.groups.smart.enabled, false);
+		sticky_pref("browser.ml.chat.sidebar, false);
+		sticky_pref("browser.ml.model-hub.url, "")
 		EOF
 	fi
 

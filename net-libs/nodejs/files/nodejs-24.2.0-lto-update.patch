@@ -1,5 +1,5 @@
---- node-v24.2.0.orig/common.gypi	2025-06-09 09:53:41.000000000 -0700
-+++ node-v24.2.0/common.gypi	2025-06-14 22:42:59.965065953 -0700
+--- a/common.gypi	2025-06-09 09:53:41.000000000 -0700
++++ b/common.gypi	2025-06-14 22:42:59.965065953 -0700
 @@ -188,11 +188,21 @@
              }, {
                'MSVC_runtimeType': 2   # MultiThreadedDLL (/MD)
@@ -8,7 +8,7 @@
 -              'lto': ' -flto ', # Clang
 -            }, {
 +            ['clang==0', {
-               'lto': ' -flto=4 -fuse-linker-plugin -ffat-lto-objects ', # GCC
+               'lto': ' -flto=4 -ffat-lto-objects ', # GCC
              }],
 +            ['clang==1 and with_goldlto=="true"', {
 +              'lto': ' -flto', # Clang Gold LTO
@@ -55,8 +55,8 @@
                    '-Wl,--section-ordering-file=<(node_section_ordering_info)',
                  ],
                }],
---- node-v24.2.0.orig/configure.py	2025-06-09 09:53:41.000000000 -0700
-+++ node-v24.2.0/configure.py	2025-06-14 22:42:27.954879696 -0700
+--- a/configure.py	2025-06-09 09:53:41.000000000 -0700
++++ b/configure.py	2025-06-14 22:42:27.954879696 -0700
 @@ -704,6 +704,24 @@ parser.add_argument('--use-section-order
           'Node.js be linked using the gold linker. The gold linker must have ' +
           'version 1.2 or greater.')

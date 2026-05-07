@@ -4,30 +4,28 @@
 EAPI=8
 
 CONFIG_CHECK="~ADVISE_SYSCALLS"
-PYTHON_COMPAT=( python3_{13..14} )
+PYTHON_COMPAT=( python3_{11..14} )
 PYTHON_REQ_USE="threads(+)"
-MULTIPLEXER_VER="11"
 
-inherit bash-completion-r1 check-reqs flag-o-matic linux-info ninja-utils pax-utils python-any-r1 toolchain-funcs xdg-utils
+inherit bash-completion-r1 check-reqs flag-o-matic linux-info
+inherit ninja-utils pax-utils python-any-r1 toolchain-funcs xdg-utils
 
 DESCRIPTION="A JavaScript runtime built on Chrome's V8 JavaScript engine"
 HOMEPAGE="https://nodejs.org/"
 LICENSE="Apache-1.1 Apache-2.0 BSD BSD-2 MIT npm? ( Artistic-2 )"
 
-SLOT_MAJOR="$(ver_cut 1 ${PV})"
-SLOT="${SLOT_MAJOR}/$(ver_cut 1-2 ${PV})"
-
 if [[ ${PV} == *9999 ]]; then
 	inherit git-r3
 	EGIT_REPO_URI="https://github.com/nodejs/node"
-	SLOT="25/25.9"
+	SLOT="0/26.1"
 else
 	SRC_URI="https://nodejs.org/dist/v${PV}/node-v${PV}.tar.xz"
+	SLOT="0/$(ver_cut 1)"
 	KEYWORDS="~amd64 ~arm ~arm64 ~loong ~ppc64 ~riscv ~x86 ~x64-macos"
 	S="${WORKDIR}/node-v${PV}"
 fi
 
-IUSE="+asm cpu_flags_x86_sse2 debug doc fips +icu inspector +lief +jit \
+IUSE="+asm +corepack cpu_flags_x86_sse2 debug doc fips +icu inspector +lief +jit \
 lto lld man mold +npm pax-kernel pointer-compression +snapshot +ssl \
 system-icu +system-ssl +system-lief test v8-sandbox"
 REQUIRED_USE="
@@ -47,36 +45,32 @@ RESTRICT="
 "
 
 CDEPEND="
-	>=app-arch/brotli-1.1.0
+	>=app-arch/brotli-1.2.0
 	dev-db/sqlite:3
 	>=dev-cpp/ada-3.3.0:=
 	>=dev-cpp/simdutf-7.3.4:=
 	>=dev-libs/libuv-1.51.0:=
 	>=dev-libs/simdjson-4.0.7:=
-	>=net-dns/c-ares-1.34.5:=
+	>=net-dns/c-ares-1.34.6:=
 	>=net-libs/nghttp2-1.67.1:=
 	>=net-libs/nghttp3-1.7.0:=
 	virtual/zlib:=
+	corepack? ( !sys-apps/yarn )
 	system-icu? (
-		>=dev-libs/icu-77.1:=
+		>=dev-libs/icu-78.2:=
 	)
 	system-lief? (
 		>=dev-util/lief-0.17.2:=
 	)
 	system-ssl? (
 		>=net-libs/ngtcp2-1.11.0:=
-		>=dev-libs/openssl-3.5.4:0[asm?,fips?]
+		>=dev-libs/openssl-3.5.5:0[asm?,fips?]
 	)
 	!system-ssl? ( >=net-libs/ngtcp2-1.11.0:=[-gnutls] )
 	|| (
 		sys-devel/gcc:*
 		llvm-runtimes/libatomic-stub
 	)
-"
-
-RDEPEND="
-	!net-libs/nodejs:0
-	>=app-eselect/eselect-nodejs-20250106
 "
 
 BDEPEND="${PYTHON_DEPS}
@@ -223,6 +217,25 @@ src_prepare() {
 		sed -i -e "s|out/Release/|out/Debug/|g" tools/install.py || die
 		CONFIGURATION="Debug"
 	fi
+
+	# All this test does is check if the npm CLI produces warnings of any sort,
+	# failing if it does. Overkill, much? Especially given one possible warning
+	# is that there is a newer version of npm available upstream (yes, it does
+	# use the network if available), thus making it a real possibility for this
+	# test to begin failing one day even though it was fine before.
+	rm -f "test/parallel/test-release-npm.js"
+
+	if [[ "${NM}" == "llvm-nm" ]] ; then
+		# llvm-nm: error: : --format value should be one of
+		# bsd, posix, sysv, darwin, just-symbols
+		einfo "Detected llvm-nm: -f p -> -f posix"
+		sed -i -e "s|nm -gD -f p |nm -gD -f posix |g" \
+			"deps/npm/node_modules/node-gyp/gyp/pylib/gyp/generator/ninja.py" \
+			|| die
+		sed -i -e "s|nm -gD -f p |nm -gD -f posix |g" \
+			"tools/gyp/pylib/gyp/generator/ninja.py" \
+			|| die
+	fi
 }
 
 src_configure() {
@@ -295,6 +308,7 @@ src_configure() {
 	fi
 	#use system-llhttp || myconf+=( --without-system-llhttp )
 	use lief || myconf+=( --without-lief )
+	use corepack && myconf+=( --with-corepack )
 	use inspector || myconf+=( --without-inspector )
 	use npm || myconf+=( --without-npm )
 	use snapshot || myconf+=( --without-node-snapshot )
@@ -361,36 +375,18 @@ src_install() {
 	local LIBDIR="${ED}/usr/$(get_libdir)"
 	default
 
-	local REL_D_BASE="usr/$(get_libdir)"
-	local D_BASE="/${REL_D_BASE}"
-	local ED_BASE="${ED}/${REL_D_BASE}"
-
-	${EPYTHON} "tools/install.py" install \
-		--dest-dir "${D}" \
-		--prefix "${EPREFIX}"/usr \
-		|| die
-
-	mv "${ED}/usr/bin/node" "${ED}/usr/bin/node${SLOT_MAJOR}" || die
-	dosym "node${SLOT_MAJOR}" "/usr/bin/node"
-
-	use pax-kernel && pax-mark -m "${ED}/usr/bin/node${SLOT_MAJOR}"
+	use pax-kernel && pax-mark -m "${ED}/usr/bin/node"
 
 	# set up a symlink structure that node-gyp expects..
-	local D_INCLUDE_BASE="/usr/include/node${SLOT_MAJOR}"
-	dodir "${D_INCLUDE_BASE}/deps/"{"v8","uv"}
-	dosym "." "${D_INCLUDE_BASE}/src"
-	local var
+	dodir /usr/include/node/deps/{v8,uv}
+	dosym . /usr/include/node/src
 	for var in deps/{uv,v8}/include; do
-		dosym "../.." "${D_INCLUDE_BASE}/${var}"
+		dosym ../.. /usr/include/node/${var}
 	done
 
-	# Avoid merge conflict
-	mv "${ED}/usr/include/node/"* "${ED}${D_INCLUDE_BASE}" || die
-	rm -rf "${ED}/usr/include/node" || die
-
-	if use doc ; then
-		insinto "/usr/share/node/${SLOT_MAJOR}/share/doc/${PF}/html"
-		doins -r "${S}/doc/"*
+	if use doc; then
+		docinto html
+		dodoc -r "${S}"/doc/*
 	fi
 
 	if use npm; then
@@ -427,12 +423,10 @@ src_install() {
 			\) \) -exec rm -rf "{}" \;
 	fi
 
-	mv "${ED}"/usr/share/doc/node "${ED}"/usr/share/doc/${PF} || die
+	use corepack &&
+		"${D}"/usr/bin/corepack enable --install-directory "${D}"/usr/bin
 
-	cp --remove-destination "${FILESDIR}/node-multiplexer-v${MULTIPLEXER_VER}" "${ED}/usr/bin/node" || die
-	sed -e "s|__EPREFIX__|${EPREFIX}|g" -i "${ED}/usr/bin/node" || die
-	fperms 0755 "/usr/bin/node" || die
-	fowners -R root:root "/usr/bin/node" || die
+	mv "${ED}"/usr/share/doc/node "${ED}"/usr/share/doc/${PF} || die
 }
 
 src_test() {
@@ -498,19 +492,7 @@ src_test() {
 
 pkg_postinst() {
 	if use npm; then
-		ewarn "remember to run: source /etc/profile if you plan to use nodejs"
+		ewarn "remember to run: source /etc/profile if you plan to use nodejs "
 		ewarn "in your current shell"
 	fi
-	if has_version ">net-libs/nodejs-${PV}" ; then
-		einfo "Found higher slots, manually change the headers with \`eselect nodejs\`."
-	else
-		eselect nodejs set "node${SLOT_MAJOR}"
-	fi
-	grep -q -F "NODE_VERSION" "${EROOT}/usr/bin/node" || die "Wrapper did not copy."
-	einfo
-	einfo "When compiling with nodejs multislot, you to switch via"
-	einfo "\`eselect nodejs\` in order to compile against the headers matching the"
-	einfo "corresponding SLOT.  This means that you cannot compile with different"
-	einfo "SLOTS simultaneously."
-	einfo
 }

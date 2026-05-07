@@ -562,10 +562,3 @@ user_pref("ui.prefersReducedMotion", 0);
 user_pref("browser.tabs.allow_transparent_browser", true);
 user_pref("zen.widget.linux.transparency", true);
 
-# ML
-user_pref("browser.ml.enable, false); // Master switch 
-user_pref("browser.ml.chat.enabled, false);
-user_pref("browser.ml.linkPreview.enabled, false);
-user_pref("extensions.ml.enabled, false);
-user_pref("browser.tabs.groups.smart.enabled, false);
-user_pref("browser.ml.chat.sidebar, false); 
