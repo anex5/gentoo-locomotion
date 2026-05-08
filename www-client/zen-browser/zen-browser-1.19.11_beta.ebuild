@@ -931,7 +931,7 @@ src_prepare() {
 	fi
 
 	# Machine learning
-	if use ml ; then
+	if ! use ml ; then
 		eapply "${FILESDIR}/extra-patches/firefox-150.0.0-disable-ML.patch"
 		sed -e '/\@BINPATH\@\/\@DLL_PREFIX\@mozinference\@DLL_SUFFIX\@/d' -i browser/installer/package-manifest.in || die
 	fi
