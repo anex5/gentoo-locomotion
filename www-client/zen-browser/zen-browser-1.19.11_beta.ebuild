@@ -930,18 +930,24 @@ src_prepare() {
 		eapply "${FILESDIR}/extra-patches/firefox-128e-disable-ffvpx.patch" || die
 	fi
 
+	# Machine learning
+	if use ml ; then
+		eapply "${FILESDIR}/extra-patches/firefox-150.0.0-disable-ML.patch"
+		sed -e '/\@BINPATH\@\/\@DLL_PREFIX\@mozinference\@DLL_SUFFIX\@/d' -i browser/installer/package-manifest.in || die
+	fi
+
 	# Prevent tab crash
-	eapply "${FILESDIR}/extra-patches/firefox-143.0.3-disable-broken-flags-dom-bindings.patch" || die
+	eapply "${FILESDIR}/extra-patches/firefox-143.0.3-disable-broken-flags-dom-bindings.patch"
 
 	# Prevent video seek bug
-	eapply "${FILESDIR}/extra-patches/firefox-122.0-disable-broken-flags-ipc-chromium-chromium-config.patch" || die
+	eapply "${FILESDIR}/extra-patches/firefox-122.0-disable-broken-flags-ipc-chromium-chromium-config.patch"
+
+	eapply "${FILESDIR}/extra-patches/firefox-128.3.0e-big-endian-image-decoders.patch"
 
 	# Build with clang-20
 	if [[ "${LLVM_SLOT}" =~ ("20"|"21"|"22") ]]; then
 		sed -e '/CXXFLAGS += \["-Werror=implicit-int-conversion"\]/d' -i "${S}/dom/canvas/moz.build" -i "${S}/dom/webgpu/moz.build" || die
 	fi
-
-	eapply "${FILESDIR}/extra-patches/firefox-128.3.0e-big-endian-image-decoders.patch"
 
 	# Workaround for bug #915651 on musl
 	if use elibc_glibc ; then
@@ -1532,11 +1538,7 @@ _src_configure() {
 	multilib_is_native_abi && mozconfig_use_enable speech synth-speechd
 	mozconfig_use_enable webrtc
 	mozconfig_use_enable webspeech
-	if use ml ; then
-		mozconfig_add_options_ac 'Enabling ML' --enable-uniffi-fixtures
-	else
-		mozconfig_add_options_ac 'Disabling ML' --disable-uniffi-fixtures
-	fi
+	mozconfig_add_options_ac '-uniffi' --disable-uniffi-fixtures
 
 	if use hardened ; then
 		mozconfig_add_options_ac "+hardened" --enable-hardening

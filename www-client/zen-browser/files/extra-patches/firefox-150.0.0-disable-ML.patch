@@ -1,0 +1,948 @@
+From 7ed080d5b90d87c71f3cf3574a96f0782fd01d63 Mon Sep 17 00:00:00 2001
+From: Henry Wilkes <henry@torproject.org>
+Date: Wed, 6 Aug 2025 11:46:41 +0100
+Subject: [PATCH] BB 44045: Disable ML features.
+
+---
+ browser/base/content/browser-init.js          |  5 +-
+ browser/base/content/main-popupset.inc.xhtml  |  5 +-
+ browser/base/content/nsContextMenu.sys.mjs    | 26 ++++------
+ browser/components/BrowserComponents.manifest |  4 +-
+ .../components/DesktopActorRegistry.sys.mjs   | 49 ++-----------------
+ .../aiwindow/ui/modules/AIWindow.sys.mjs      |  4 +-
+ browser/components/moz.build                  |  2 +-
+ browser/components/preferences/main.js        | 43 +++++++---------
+ browser/components/sidebar/sidebar-main.mjs   | 21 ++------
+ .../tabbrowser/content/tabbrowser.js          | 11 ++---
+ .../tabbrowser/content/tabgroup-menu.js       | 15 +++---
+ browser/components/tabbrowser/moz.build       |  3 +-
+ .../content/selectTranslationsPanel.js        |  1 +
+ .../components/urlbar/QuickSuggest.sys.mjs    |  5 +-
+ .../urlbar/UrlbarController.sys.mjs           | 12 -----
+ .../urlbar/UrlbarProvidersManager.sys.mjs     |  7 +--
+ browser/components/urlbar/moz.build           |  9 ++--
+ browser/installer/package-manifest.in         |  1 -
+ config/external/moz.build                     |  3 --
+ docshell/base/nsAboutRedirector.cpp           |  7 ++-
+ docshell/build/components.conf                |  8 +--
+ dom/webidl/moz.build                          |  6 ---
+ .../components/extensions/ext-toolkit.json    |  6 ---
+ .../extensions/parent/ext-trial-ml.js         |  2 +
+ toolkit/components/moz.build                  |  5 +-
+ .../pdfjs/content/PdfjsParent.sys.mjs         |  4 ++
+ toolkit/components/places/moz.build           |  5 +-
+ .../actors/TranslationsChild.sys.mjs          |  3 ++
+ .../actors/TranslationsParent.sys.mjs         |  2 +
+ .../components/translations/actors/moz.build  | 12 +++--
+ toolkit/components/translations/jar.mn        |  6 +--
+ toolkit/modules/ActorManagerParent.sys.mjs    | 43 +++-------------
+ .../mozapps/extensions/content/aboutaddons.js |  4 ++
+ .../components/addon-mlmodel-details.mjs      |  2 +
+ .../mlmodel-card-list-additions.mjs           |  2 +
+ .../mozapps/extensions/extensions.manifest    |  2 +-
+ toolkit/mozapps/extensions/internal/moz.build |  3 +-
+ 37 files changed, 120 insertions(+), 228 deletions(-)
+
+diff --git a/browser/base/content/browser-init.js b/browser/base/content/browser-init.js
+index b64d2f52ed1e..d0394c28de6d 100644
+--- a/browser/base/content/browser-init.js
++++ b/browser/base/content/browser-init.js
+@@ -1169,10 +1169,7 @@ var gBrowserInit = {
+     }
+     CustomKeys.uninitWindow(window);
+ 
+-    // Bug 1952900 to allow switching to unload category without leaking
+-    ChromeUtils.importESModule(
+-      "moz-src:///browser/components/genai/LinkPreview.sys.mjs"
+-    ).LinkPreview.teardown(window);
++    // LinkPreview.sys.mjs is missing. tor-browser#44045.
+ 
+     FirefoxViewHandler.uninit();
+ 
+diff --git a/browser/base/content/main-popupset.inc.xhtml b/browser/base/content/main-popupset.inc.xhtml
+index 81b3d0a744b9..12f71ed06c4d 100644
+--- a/browser/base/content/main-popupset.inc.xhtml
++++ b/browser/base/content/main-popupset.inc.xhtml
+@@ -63,8 +63,9 @@
+     <menuitem id="context_duplicateTab" data-lazy-l10n-id="duplicate-tab"/>
+     <menuitem id="context_duplicateTabs" data-lazy-l10n-id="duplicate-tabs"/>
+     <menuseparator/>
+-    <menu id="context_askChat"/>
+-    <menuseparator/>
++    <!-- Hide the GenAI menu. tor-browser#44554. -->
++    <menu id="context_askChat" hidden="true"/>
++    <menuseparator hidden="true"/>
+     <menuitem id="context_bookmarkSelectedTabs"
+               hidden="true"
+               data-lazy-l10n-id="bookmark-selected-tabs"/>
+diff --git a/browser/base/content/nsContextMenu.sys.mjs b/browser/base/content/nsContextMenu.sys.mjs
+index 5ee0ee4246d1..4b733e584051 100644
+--- a/browser/base/content/nsContextMenu.sys.mjs
++++ b/browser/base/content/nsContextMenu.sys.mjs
+@@ -15,8 +15,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
+     "resource://gre/modules/ContextualIdentityService.sys.mjs",
+   DevToolsShim: "chrome://devtools-startup/content/DevToolsShim.sys.mjs",
+   E10SUtils: "resource://gre/modules/E10SUtils.sys.mjs",
+-  GenAI: "resource:///modules/GenAI.sys.mjs",
+-  LinkPreview: "moz-src:///browser/components/genai/LinkPreview.sys.mjs",
++  // GenAI.sys.mjs and LinkPreview.sys.mjs are missing. tor-browser#44045.
+   LoginHelper: "resource://gre/modules/LoginHelper.sys.mjs",
+   LoginManagerContextMenu:
+     "resource://gre/modules/LoginManagerContextMenu.sys.mjs",
+@@ -511,10 +510,8 @@ export class nsContextMenu {
+       shouldShow && !isWindowPrivate && showContainers
+     );
+     this.showItem("context-openlinkincurrent", this.onPlainTextLink);
+-    this.showItem(
+-      "context-previewlink",
+-      lazy.LinkPreview.shouldShowContextMenu(this)
+-    );
++    // LinkPreview.sys.mjs is missing. tor-browser#44045.
++    this.showItem("context-previewlink", false);
+     let isHiddenTab = !!window.gBrowser?.getTabForBrowser(this.browser)?.hidden;
+     this.showItem(
+       "context-openlinkinsplitview",
+@@ -873,12 +870,10 @@ export class nsContextMenu {
+ 
+     this.showAndFormatSearchContextItem();
+     this.showTranslateSelectionItem();
+-    lazy.GenAI.buildAskChatMenu(document.getElementById("context-ask-chat"), {
+-      browser: this.browser,
+-      selectionInfo: this.selectionInfo,
+-      showItem: this.showItem.bind(this),
+-      source: "page",
+-    });
++    // GenAI.sys.mjs is missing. tor-browser#44045.
++    // Need to remove the element from the DOM since otherwise it will cause an
++    // error due to `.menupopup === null`.
++    document.getElementById("context-ask-chat")?.remove();
+ 
+     // srcdoc cannot be opened separately due to concerns about web
+     // content with about:srcdoc in location bar masquerading as trusted
+@@ -2215,10 +2210,9 @@ export class nsContextMenu {
+     );
+   }
+ 
+-  previewLink(url = this.linkURL) {
+-    // If we're in a view-source tab, remove the view-source: prefix
+-    url = url.replace(/^view-source:/, "");
+-    lazy.LinkPreview.handleContextMenuClick(url, this);
++  previewLink(_url = this.linkURL) {
++    // LinkPreview.sys.mjs is missing. Unexpected to reach here since
++    // #context-previewlink is hidden. tor-browser#44045.
+   }
+ 
+   /**
+diff --git a/browser/components/BrowserComponents.manifest b/browser/components/BrowserComponents.manifest
+index fa588d9e450c..2913dbf87712 100644
+--- a/browser/components/BrowserComponents.manifest
++++ b/browser/components/BrowserComponents.manifest
+@@ -29,7 +29,7 @@ category browser-window-domcontentloaded moz-src:///browser/components/customiza
+ 
+ category browser-window-delayed-startup moz-src:///browser/components/contentanalysis/content/ContentAnalysis.sys.mjs ContentAnalysis.initialize
+ category browser-window-delayed-startup resource:///modules/HomePage.sys.mjs HomePage.delayedStartup
+-category browser-window-delayed-startup moz-src:///browser/components/genai/LinkPreview.sys.mjs LinkPreview.init
++# LinkPreview.sys.mjs is missing. tor-browser#44045.
+ category browser-window-delayed-startup moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs AIWindow.init
+ category browser-window-delayed-startup moz-src:///browser/components/reportbrokensite/ReportBrokenSite.sys.mjs ReportBrokenSite.init
+ category browser-window-delayed-startup moz-src:///browser/components/search/SearchUIUtils.sys.mjs SearchUIUtils.init
+@@ -67,7 +67,7 @@ category browser-idle-startup resource://gre/modules/RFPHelper.sys.mjs RFPHelper
+ category browser-idle-startup resource://gre/modules/Blocklist.sys.mjs Blocklist.loadBlocklistAsync
+ category browser-idle-startup resource://gre/modules/psm/RemoteSecuritySettings.sys.mjs RemoteSecuritySettings.init
+ category browser-idle-startup moz-src:///browser/components/tabbrowser/TabUnloader.sys.mjs TabUnloader.init
+-category browser-idle-startup resource:///modules/GenAI.sys.mjs GenAI.init
++# GenAI.sys.mjs is missing. tor-browser#44045.
+ category browser-idle-startup moz-src:///browser/components/urlbar/QuickSuggest.sys.mjs QuickSuggest.init
+ category browser-idle-startup moz-src:///browser/components/urlbar/UrlbarSearchTermsPersistence.sys.mjs UrlbarSearchTermsPersistence.init
+ category browser-idle-startup moz-src:///browser/components/search/SERPCategorization.sys.mjs SERPCategorization.init
+diff --git a/browser/components/DesktopActorRegistry.sys.mjs b/browser/components/DesktopActorRegistry.sys.mjs
+index 059edd72c3b2..b745b8375ea9 100644
+--- a/browser/components/DesktopActorRegistry.sys.mjs
++++ b/browser/components/DesktopActorRegistry.sys.mjs
+@@ -499,42 +499,7 @@ let JSWINDOWACTORS = {
+     allFrames: true,
+   },
+ 
+-  GenAI: {
+-    parent: {
+-      esModuleURI: "resource:///actors/GenAIParent.sys.mjs",
+-    },
+-    child: {
+-      esModuleURI: "resource:///actors/GenAIChild.sys.mjs",
+-      events: {
+-        mousedown: {},
+-        mouseup: {},
+-      },
+-    },
+-    allFrames: true,
+-    onAddActor(register, unregister) {
+-      let isRegistered = false;
+-
+-      // Register the actor if we have a provider or support provider-less
+-      const maybeRegister = () => {
+-        if (
+-          Services.prefs.getCharPref("browser.ml.chat.provider", "") ||
+-          Services.prefs.getBoolPref("browser.ml.chat.page")
+-        ) {
+-          if (!isRegistered) {
+-            register();
+-            isRegistered = true;
+-          }
+-        } else if (isRegistered) {
+-          unregister();
+-          isRegistered = false;
+-        }
+-      };
+-
+-      Services.prefs.addObserver("browser.ml.chat.page", maybeRegister);
+-      Services.prefs.addObserver("browser.ml.chat.provider", maybeRegister);
+-      maybeRegister();
+-    },
+-  },
++  // GenAIParent.sys.mjs and GenAIChild.sys.mjs are missing. tor-browser#44045.
+ 
+   LightweightTheme: {
+     child: {
+@@ -586,16 +551,8 @@ let JSWINDOWACTORS = {
+     messageManagerGroups: ["browsers"],
+   },
+ 
+-  LinkPreview: {
+-    parent: {
+-      esModuleURI: "resource:///actors/LinkPreviewParent.sys.mjs",
+-    },
+-    child: {
+-      esModuleURI: "resource:///actors/LinkPreviewChild.sys.mjs",
+-    },
+-    includeChrome: true,
+-    enablePreference: "browser.ml.linkPreview.enabled",
+-  },
++  // LinkPreviewParent.sys.mjs and LinkPreviewChild.sys.mjs are missing.
++  // tor-browser#44045.
+ 
+   PageAssist: {
+     parent: {
+diff --git a/browser/components/aiwindow/ui/modules/AIWindow.sys.mjs b/browser/components/aiwindow/ui/modules/AIWindow.sys.mjs
+index 30248666ea56..9c5cb97a0e60 100644
+--- a/browser/components/aiwindow/ui/modules/AIWindow.sys.mjs
++++ b/browser/components/aiwindow/ui/modules/AIWindow.sys.mjs
+@@ -9,7 +9,7 @@
+  */
+ 
+ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+-import { AIFeature } from "chrome://global/content/ml/AIFeature.sys.mjs";
++// import { AIFeature } from "chrome://global/content/ml/AIFeature.sys.mjs";
+ 
+ export const AIWINDOW_URL = "chrome://browser/content/aiwindow/aiWindow.html";
+ const AIWINDOW_URI = Services.io.newURI(AIWINDOW_URL);
+@@ -941,7 +941,7 @@ export const AIWindow = {
+   },
+ };
+ 
+-Object.setPrototypeOf(AIWindow, AIFeature);
++// Object.setPrototypeOf(AIWindow, AIFeature);
+ 
+ XPCOMUtils.defineLazyPreferenceGetter(
+   AIWindow,
+diff --git a/browser/components/moz.build b/browser/components/moz.build
+index 913558d43c8c..e76531b05d32 100644
+--- a/browser/components/moz.build
++++ b/browser/components/moz.build
+@@ -42,7 +42,7 @@ DIRS += [
+     "enterprisepolicies",
+     "extensions",
+     "firefoxview",
+-    "genai",
++    # Exclude "genai" component. tor-browser#44045.
+     "ipprotection",
+     "messagepreview",
+     "migration",
+diff --git a/browser/components/preferences/main.js b/browser/components/preferences/main.js
+index 8f8da3c4cabb..7cf32dd184d2 100644
+--- a/browser/components/preferences/main.js
++++ b/browser/components/preferences/main.js
+@@ -20,7 +20,7 @@
+ ChromeUtils.defineESModuleGetters(this, {
+   BackgroundUpdate: "resource://gre/modules/BackgroundUpdate.sys.mjs",
+   UpdateListener: "resource://gre/modules/UpdateListener.sys.mjs",
+-  LinkPreview: "moz-src:///browser/components/genai/LinkPreview.sys.mjs",
++  // LinkPreview.sys.mjs is missing. tor-browser#44045.
+   MigrationUtils: "resource:///modules/MigrationUtils.sys.mjs",
+   SelectableProfileService:
+     "resource:///modules/profiles/SelectableProfileService.sys.mjs",
+@@ -543,21 +543,14 @@ Preferences.addSetting(
+ Preferences.addSetting({
+   id: "linkPreviewEnabled",
+   pref: "browser.ml.linkPreview.enabled",
+-  deps: ["aiControlDefault", "aiControlLinkPreviews"],
+-  visible: ({ aiControlDefault, aiControlLinkPreviews }) => {
+-    return (
+-      canShowAiFeature(aiControlLinkPreviews, aiControlDefault) &&
+-      // @ts-ignore bug 1996860
+-      LinkPreview.canShowPreferences
+-    );
+-  },
++  visible: () => false, // LinkPreview is missing. tor-browser#44045.
+ });
+ Preferences.addSetting({
+   id: "linkPreviewKeyPoints",
+   pref: "browser.ml.linkPreview.optin",
+   // LinkPreview.canShowKeyPoints depends on the global genai pref.
+   // @ts-ignore bug 1996860
+-  visible: () => LinkPreview.canShowKeyPoints,
++  visible: () => false, // LinkPreview is missing. tor-browser#44045.
+ });
+ Preferences.addSetting({
+   id: "linkPreviewLongPress",
+@@ -3177,21 +3170,21 @@ SettingGroupManager.registerGroups({
+         supportPage: "extensionrecommendations",
+         subcategory: "cfrfeatures",
+       },
+-      {
+-        id: "linkPreviewEnabled",
+-        l10nId: "link-preview-settings-enable",
+-        subcategory: "link-preview",
+-        items: [
+-          {
+-            id: "linkPreviewKeyPoints",
+-            l10nId: "link-preview-settings-key-points",
+-          },
+-          {
+-            id: "linkPreviewLongPress",
+-            l10nId: "link-preview-settings-long-press",
+-          },
+-        ],
+-      },
++      // {
++      //   id: "linkPreviewEnabled",
++      //   l10nId: "link-preview-settings-enable",
++      //   subcategory: "link-preview",
++      //   items: [
++      //     {
++      //       id: "linkPreviewKeyPoints",
++      //       l10nId: "link-preview-settings-key-points",
++      //     },
++      //     {
++      //       id: "linkPreviewLongPress",
++      //       l10nId: "link-preview-settings-long-press",
++      //     },
++      //   ],
++      // },
+     ],
+   },
+   httpsOnly: {
+diff --git a/browser/components/sidebar/sidebar-main.mjs b/browser/components/sidebar/sidebar-main.mjs
+index 973fcffe1857..2cd46ad1f571 100644
+--- a/browser/components/sidebar/sidebar-main.mjs
++++ b/browser/components/sidebar/sidebar-main.mjs
+@@ -19,7 +19,7 @@ const lazy = {};
+ ChromeUtils.defineESModuleGetters(lazy, {
+   ASRouter: "resource:///modules/asrouter/ASRouter.sys.mjs",
+   ShortcutUtils: "resource://gre/modules/ShortcutUtils.sys.mjs",
+-  GenAI: "resource:///modules/GenAI.sys.mjs",
++  // GenAI.sys.mjs is missing. tor-browser#44045.
+ });
+ 
+ /**
+@@ -347,17 +347,7 @@ export default class SidebarMain extends MozLitElement {
+       .querySelectorAll("[customized-tool='true']")
+       .forEach(node => node.remove());
+ 
+-    const menuBuilders = {
+-      aichat: async () => {
+-        if (Services.prefs.getBoolPref("browser.ml.chat.page")) {
+-          await lazy.GenAI.buildAskChatMenu(this._contextMenu, {
+-            browser: window.gBrowser.selectedBrowser,
+-            selectionInfo: null,
+-            source: "tool",
+-          });
+-        }
+-      },
+-    };
++    const menuBuilders = {};
+ 
+     const builder = menuBuilders[toolId];
+     if (typeof builder === "function") {
+@@ -665,11 +655,8 @@ export default class SidebarMain extends MozLitElement {
+   getEntrypointValues(action) {
+     let providerInfo;
+     if (action.view === "viewGenaiChatSidebar") {
+-      providerInfo = lazy.GenAI.currentChatProviderInfo;
+-      action.iconUrl = providerInfo.iconUrl;
+-      // Sets the tooltip text for the action based on the chatbot provider's name.
+-      // This tooltip text is also used to set the action label
+-      action.tooltiptext = providerInfo.name;
++      // GenAI.sys.mjs is missing. tor-browser#44045.
++      return null;
+     }
+ 
+     if (action.disabled || action.hidden) {
+diff --git a/browser/components/tabbrowser/content/tabbrowser.js b/browser/components/tabbrowser/content/tabbrowser.js
+index 2643e1a2aa14..cd32269c5ab2 100644
+--- a/browser/components/tabbrowser/content/tabbrowser.js
++++ b/browser/components/tabbrowser/content/tabbrowser.js
+@@ -110,8 +110,8 @@
+         AsyncTabSwitcher:
+           "moz-src:///browser/components/tabbrowser/AsyncTabSwitcher.sys.mjs",
+         PictureInPicture: "resource://gre/modules/PictureInPicture.sys.mjs",
+-        SmartTabGroupingManager:
+-          "moz-src:///browser/components/tabbrowser/SmartTabGrouping.sys.mjs",
++        // SmartTabGrouping.sys.mjs is missing. tor-browser#44045.
++        // Unused in this context. See mozilla bug 1981785.
+         SponsorProtection:
+           "moz-src:///browser/components/newtab/SponsorProtection.sys.mjs",
+         TabMetrics:
+@@ -10452,10 +10452,7 @@ var TabContextMenu = {
+       !this.contextTab.pinned || !this.multiselected;
+ 
+     // Build Ask Chat items
+-    TabContextMenu.GenAI.buildTabMenu(
+-      document.getElementById("context_askChat"),
+-      this
+-    );
++    // GenAI is missing. tor-browser#44045.
+ 
+     // Move Tab items
+     let contextMoveTabOptions = document.getElementById(
+@@ -10977,6 +10974,6 @@ var TabContextMenu = {
+ };
+ 
+ ChromeUtils.defineESModuleGetters(TabContextMenu, {
+-  GenAI: "resource:///modules/GenAI.sys.mjs",
++  // GenAI.sys.mjs is missing. tor-browser#44045.
+   TabNotes: "moz-src:///browser/components/tabnotes/TabNotes.sys.mjs",
+ });
+diff --git a/browser/components/tabbrowser/content/tabgroup-menu.js b/browser/components/tabbrowser/content/tabgroup-menu.js
+index 88865847e8d8..958753b29d75 100644
+--- a/browser/components/tabbrowser/content/tabgroup-menu.js
++++ b/browser/components/tabbrowser/content/tabgroup-menu.js
+@@ -14,12 +14,12 @@
+     "resource:///modules/sessionstore/TabStateFlusher.sys.mjs"
+   );
+ 
+-  ChromeUtils.importESModule(
+-    "chrome://browser/content/genai/content/model-optin.mjs",
+-    {
+-      global: "current",
+-    }
+-  );
++  // genai/content/model-optin.mjs is missing. tor-browser#44045.
++  // NOTE: model-optin.mjs defines the <model-optin> custom element.
++  // At the time of implementation, model-optin is only created lazily if
++  // SmartTabGrouping is enabled via preferences
++  // browser.tabs.groups.smart.enabled and
++  // browser.tabs.groups.smart.userEnabled.
+ 
+   class MozTabbrowserTabGroupMenu extends MozXULElement {
+     static COLORS = [
+@@ -607,6 +607,9 @@
+       if (!this.smartTabGroupsEnabled || this.#smartTabGroupsInitiated) {
+         return;
+       }
++      // NOTE: In base-browser we rely on smartTabGroupsEnabled being false, so
++      // that the missing SmartTabGrouping.sys.mjs is not loaded.
++      // tor-browser#44045.
+       const { SmartTabGroupingManager } = ChromeUtils.importESModule(
+         "moz-src:///browser/components/tabbrowser/SmartTabGrouping.sys.mjs"
+       );
+diff --git a/browser/components/tabbrowser/moz.build b/browser/components/tabbrowser/moz.build
+index 49cd8f18288e..3bf0428b9361 100644
+--- a/browser/components/tabbrowser/moz.build
++++ b/browser/components/tabbrowser/moz.build
+@@ -18,7 +18,8 @@ MOZ_SRC_FILES += [
+     "GroupsList.sys.mjs",
+     "NewTabPagePreloading.sys.mjs",
+     "OpenInTabsUtils.sys.mjs",
+-    "SmartTabGrouping.sys.mjs",
++    # SmartTabGrouping.sys.mjs is excluded because it requires the missing "ml"
++    # component. tor-browser#44045.
+     "TabMetrics.sys.mjs",
+     "TabsList.sys.mjs",
+     "TabUnloader.sys.mjs",
+diff --git a/browser/components/translations/content/selectTranslationsPanel.js b/browser/components/translations/content/selectTranslationsPanel.js
+index a140ad4fb898..16afbefb6ad8 100644
+--- a/browser/components/translations/content/selectTranslationsPanel.js
++++ b/browser/components/translations/content/selectTranslationsPanel.js
+@@ -14,6 +14,7 @@ ChromeUtils.defineESModuleGetters(this, {
+     "chrome://browser/content/translations/TranslationsPanelShared.sys.mjs",
+   TranslationsUtils:
+     "chrome://global/content/translations/TranslationsUtils.mjs",
++  // NOTE: Translator.mjs is missing but should be unused. tor-browser#44045.
+   Translator: "chrome://global/content/translations/Translator.mjs",
+ });
+ 
+diff --git a/browser/components/urlbar/QuickSuggest.sys.mjs b/browser/components/urlbar/QuickSuggest.sys.mjs
+index bba73d62aa23..e871ecf2fe43 100644
+--- a/browser/components/urlbar/QuickSuggest.sys.mjs
++++ b/browser/components/urlbar/QuickSuggest.sys.mjs
+@@ -215,8 +215,7 @@ const FEATURES = {
+     "moz-src:///browser/components/urlbar/private/SportsSuggestions.sys.mjs",
+   SuggestBackendMerino:
+     "moz-src:///browser/components/urlbar/private/SuggestBackendMerino.sys.mjs",
+-  SuggestBackendMl:
+-    "moz-src:///browser/components/urlbar/private/SuggestBackendMl.sys.mjs",
++  // SuggestBackendMl.sys.mjs is missing. tor-browser#44045.
+   SuggestBackendRust:
+     "moz-src:///browser/components/urlbar/private/SuggestBackendRust.sys.mjs",
+   WeatherSuggestions:
+@@ -303,7 +302,7 @@ class _QuickSuggest {
+     return [
+       this.rustBackend,
+       this.#featuresByName.get("SuggestBackendMerino"),
+-      this.#featuresByName.get("SuggestBackendMl"),
++      // SuggestBackendMl.sys.mjs is missing. tor-browser#44045.
+     ].filter(b => b?.isEnabled);
+   }
+ 
+diff --git a/browser/components/urlbar/UrlbarController.sys.mjs b/browser/components/urlbar/UrlbarController.sys.mjs
+index 3b0b4e7eb6b9..2a7ff51eb212 100644
+--- a/browser/components/urlbar/UrlbarController.sys.mjs
++++ b/browser/components/urlbar/UrlbarController.sys.mjs
+@@ -19,8 +19,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
+     "moz-src:///browser/components/urlbar/UrlbarProvidersManager.sys.mjs",
+   SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
+   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
+-  UrlbarProviderSemanticHistorySearch:
+-    "moz-src:///browser/components/urlbar/UrlbarProviderSemanticHistorySearch.sys.mjs",
+   UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
+   UrlUtils: "resource://gre/modules/UrlUtils.sys.mjs",
+ });
+@@ -1320,16 +1318,6 @@ class TelemetryEvent {
+    */
+   #getAvailableSemanticSources() {
+     let sources = [];
+-    try {
+-      if (
+-        lazy.UrlbarProviderSemanticHistorySearch.semanticManager
+-          .canUseSemanticSearch
+-      ) {
+-        sources.push("history");
+-      }
+-    } catch (e) {
+-      lazy.logger.error("Error getting the semantic manager:", e);
+-    }
+     if (!sources.length) {
+       sources.push("none");
+     }
+diff --git a/browser/components/urlbar/UrlbarProvidersManager.sys.mjs b/browser/components/urlbar/UrlbarProvidersManager.sys.mjs
+index 08455d8d5da2..445cbc21bdc1 100644
+--- a/browser/components/urlbar/UrlbarProvidersManager.sys.mjs
++++ b/browser/components/urlbar/UrlbarProvidersManager.sys.mjs
+@@ -180,12 +180,7 @@ var localProviderModules = [
+       "moz-src:///browser/components/urlbar/UrlbarProviderSearchSuggestions.sys.mjs",
+     supportedSAPs: ["searchbar", "smartbar", "urlbar"],
+   },
+-  {
+-    name: "UrlbarProviderSemanticHistorySearch",
+-    module:
+-      "moz-src:///browser/components/urlbar/UrlbarProviderSemanticHistorySearch.sys.mjs",
+-    supportedSAPs: ["smartbar", "urlbar"],
+-  },
++  // UrlbarProviderSemanticHistorySearch.sys.mjs is missing. tor-browser#44045.
+   {
+     name: "UrlbarProviderTabToSearch",
+     module:
+diff --git a/browser/components/urlbar/moz.build b/browser/components/urlbar/moz.build
+index 470503585c94..acb36f4a13c3 100644
+--- a/browser/components/urlbar/moz.build
++++ b/browser/components/urlbar/moz.build
+@@ -48,7 +48,8 @@ MOZ_SRC_FILES += [
+     "UrlbarProviderRestrictKeywordsAutofill.sys.mjs",
+     "UrlbarProviderSearchSuggestions.sys.mjs",
+     "UrlbarProviderSearchTips.sys.mjs",
+-    "UrlbarProviderSemanticHistorySearch.sys.mjs",
++    # Exclude UrlbarProviderSemanticHistorySearch.sys.mjs because it requires
++    # the missing "ml" component. tor-browser#44045.
+     "UrlbarProvidersManager.sys.mjs",
+     "UrlbarProviderTabToSearch.sys.mjs",
+     "UrlbarProviderTokenAliasEngines.sys.mjs",
+@@ -74,11 +75,13 @@ MOZ_SRC_FILES += [
+     "private/ImpressionCaps.sys.mjs",
+     "private/MarketSuggestions.sys.mjs",
+     "private/MDNSuggestions.sys.mjs",
+-    "private/MLSuggest.sys.mjs",
++    # Exclude MLSuggest.sys.mjs because it requires the missing "ml" component.
++    # tor-browser#44045.
+     "private/RealtimeSuggestProvider.sys.mjs",
+     "private/SportsSuggestions.sys.mjs",
+     "private/SuggestBackendMerino.sys.mjs",
+-    "private/SuggestBackendMl.sys.mjs",
++    # Exclude SuggestBackendMl.sys.mjs because it requires the missing "ml"
++    # component. tor-browser#44045.
+     "private/SuggestBackendRust.sys.mjs",
+     "private/SuggestFeature.sys.mjs",
+     "private/WeatherSuggestions.sys.mjs",
+diff --git a/config/external/moz.build b/config/external/moz.build
+index 961353353255..d52feabfcd56 100644
+--- a/config/external/moz.build
++++ b/config/external/moz.build
+@@ -11,9 +11,6 @@ DIRS += [
+     "sqlite",
+ ]
+ 
+-if CONFIG["MOZ_WIDGET_TOOLKIT"] != "android":
+-    DIRS += ["mozinference"]
+-
+ if CONFIG["MOZ_USING_WASM_SANDBOXING"]:
+     DIRS += [
+         "rlbox_wasm2c_sandbox",
+diff --git a/docshell/base/nsAboutRedirector.cpp b/docshell/base/nsAboutRedirector.cpp
+index 76f707e5f1e8..3539fa239c22 100644
+--- a/docshell/base/nsAboutRedirector.cpp
++++ b/docshell/base/nsAboutRedirector.cpp
+@@ -134,7 +134,8 @@ static const RedirEntry kRedirMap[] = {
+      nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT |
+          nsIAboutModule::URI_CAN_LOAD_IN_CHILD | nsIAboutModule::ALLOW_SCRIPT |
+          nsIAboutModule::HIDE_FROM_ABOUTABOUT},
+-#if defined(NIGHTLY_BUILD)
++#if defined(NIGHTLY_BUILD) && !defined(BASE_BROWSER_VERSION)
++    // Do not include about:inference since "ml" is excluded. tor-browser#44045.
+     {"inference", "chrome://global/content/aboutInference.html",
+      nsIAboutModule::ALLOW_SCRIPT | nsIAboutModule::IS_SECURE_CHROME_UI},
+ #endif
+@@ -213,7 +214,9 @@ static const RedirEntry kRedirMap[] = {
+ #endif
+     {"telemetry", "chrome://global/content/aboutTelemetry.xhtml",
+      nsIAboutModule::ALLOW_SCRIPT | nsIAboutModule::IS_SECURE_CHROME_UI},
+-#ifndef MOZ_WIDGET_ANDROID
++#ifndef BASE_BROWSER_VERSION
++    // Remove about:translations since translations are disabled.
++    // See tor-browser#44045 and tor-browser#42872.
+     {"translations",
+      "chrome://global/content/translations/about-translations.html",
+      nsIAboutModule::ALLOW_SCRIPT |
+diff --git a/docshell/build/components.conf b/docshell/build/components.conf
+index 76a6380f849c..3f4aae5f7675 100644
+--- a/docshell/build/components.conf
++++ b/docshell/build/components.conf
+@@ -39,8 +39,8 @@ if defined('MOZ_CRASHREPORTER'):
+     about_pages.append('crashes')
+ if buildconfig.substs['MOZ_WIDGET_TOOLKIT'] != 'android':
+     about_pages.append('profiles')
+-if buildconfig.substs['MOZ_WIDGET_TOOLKIT'] != 'android':
+-    about_pages.append('translations')
++# Remove about:translations since translations are disabled.
++# See tor-browser#44045 and tor-browser#42872.
+ if buildconfig.substs['MOZ_WIDGET_TOOLKIT'] == 'android':
+     about_pages.append('crashcontentjava')
+     about_pages.append('home')
+@@ -51,8 +51,8 @@ if not defined('MOZ_GLEAN_ANDROID'):
+     about_pages.append('glean')
+ if buildconfig.substs['MOZ_WIDGET_TOOLKIT'] != 'android' and buildconfig.substs['MOZ_WIDGET_TOOLKIT'] != 'windows':
+     about_pages.append('webauthn')
+-if defined('NIGHTLY_BUILD'):
+-    about_pages.append('inference')
++# Do not include about:inference since "ml" component is missing.
++# tor-browser#44045.
+ 
+ Headers = ['/docshell/build/nsDocShellModule.h']
+ 
+diff --git a/dom/webidl/moz.build b/dom/webidl/moz.build
+index c0e01b595125..02a7f2d95bd2 100644
+--- a/dom/webidl/moz.build
++++ b/dom/webidl/moz.build
+@@ -1117,12 +1117,6 @@ WEBIDL_FILES = [
+     "XSLTProcessor.webidl",
+ ]
+ 
+-# Native llama.cpp for ml engine.
+-if CONFIG["MOZ_WIDGET_TOOLKIT"] != "android":
+-    WEBIDL_FILES += [
+-        "LlamaRunner.webidl",
+-    ]
+-
+ if CONFIG["MOZ_WEBRTC"]:
+     WEBIDL_FILES += [
+         "PeerConnectionImpl.webidl",
+diff --git a/toolkit/components/extensions/ext-toolkit.json b/toolkit/components/extensions/ext-toolkit.json
+index 3bc7733ac662..4dd182b18378 100644
+--- a/toolkit/components/extensions/ext-toolkit.json
++++ b/toolkit/components/extensions/ext-toolkit.json
+@@ -162,12 +162,6 @@
+     "manifest": ["theme"],
+     "paths": [["theme"]]
+   },
+-  "trial_ml": {
+-    "url": "chrome://extensions/content/parent/ext-trial-ml.js",
+-    "schema": "chrome://extensions/content/schemas/trial_ml.json",
+-    "scopes": ["addon_parent", "content_parent"],
+-    "paths": [["trial", "ml"]]
+-  },
+   "userScripts": {
+     "url": "chrome://extensions/content/parent/ext-userScripts.js",
+     "schema": "chrome://extensions/content/schemas/user_scripts.json",
+diff --git a/toolkit/components/extensions/parent/ext-trial-ml.js b/toolkit/components/extensions/parent/ext-trial-ml.js
+index 884c17e346c7..48d47dca93f6 100644
+--- a/toolkit/components/extensions/parent/ext-trial-ml.js
++++ b/toolkit/components/extensions/parent/ext-trial-ml.js
+@@ -4,6 +4,8 @@
+ 
+ "use strict";
+ 
++// This script should be excluded from `ext-toolkit.json` since "ml" is
++// missing. tor-browser#44045.
+ ChromeUtils.defineESModuleGetters(this, {
+   createEngine: "chrome://global/content/ml/EngineProcess.sys.mjs",
+   PipelineOptions: "chrome://global/content/ml/EngineProcess.sys.mjs",
+diff --git a/toolkit/components/moz.build b/toolkit/components/moz.build
+index fc14fc3bd7d1..fa9ac448c609 100644
+--- a/toolkit/components/moz.build
++++ b/toolkit/components/moz.build
+@@ -58,7 +58,7 @@ DIRS += [
+     "kvstore",
+     "media",
+     "mediasniffer",
+-    "ml",
++    # Exclude the "ml" component. tor-browser#44045.
+     "mozintl",
+     "mozprotocol",
+     "pageextractor",
+@@ -150,8 +150,7 @@ if CONFIG["MOZ_BACKGROUNDTASKS"]:
+ if CONFIG["MOZ_UNIFFI_FIXTURES"]:
+     DIRS += ["uniffi-bindgen-gecko-js/tests"]
+ 
+-if CONFIG["NIGHTLY_BUILD"]:
+-    DIRS += ["aboutinference"]
++# Exclude aboutinference (about:inference). tor-browser#44045.
+ 
+ UNIFIED_SOURCES += [
+     "/toolkit/components/antitracking/ContentBlockingAllowList.cpp",
+diff --git a/toolkit/components/pdfjs/content/PdfjsParent.sys.mjs b/toolkit/components/pdfjs/content/PdfjsParent.sys.mjs
+index 60a951390eaf..c0fe2c2636f2 100644
+--- a/toolkit/components/pdfjs/content/PdfjsParent.sys.mjs
++++ b/toolkit/components/pdfjs/content/PdfjsParent.sys.mjs
+@@ -21,8 +21,12 @@ const lazy = {};
+ 
+ ChromeUtils.defineESModuleGetters(lazy, {
+   clearTimeout: "resource://gre/modules/Timer.sys.mjs",
++  // EngineProcess.sys.mjs is missing but should be unused since
++  // pdfjs.enableGuessAltText is "false". tor-browser#44045.
+   createEngine: "chrome://global/content/ml/EngineProcess.sys.mjs",
+   IndexedDB: "resource://gre/modules/IndexedDB.sys.mjs",
++  // ml/Utils.sys.mjs is missing but should be unused since
++  // pdfjs.enableGuessAltText is "false". tor-browser#44045.
+   MLUninstallService: "chrome://global/content/ml/Utils.sys.mjs",
+   MultiProgressAggregator: "chrome://global/content/ml/Utils.sys.mjs",
+   PdfJsGuessAltTextFeature: "resource://pdf.js/PdfJsAIFeature.sys.mjs",
+diff --git a/toolkit/components/places/moz.build b/toolkit/components/places/moz.build
+index aab3f959f75e..1832883688ea 100644
+--- a/toolkit/components/places/moz.build
++++ b/toolkit/components/places/moz.build
+@@ -75,8 +75,9 @@ if CONFIG["MOZ_PLACES"]:
+         "PlacesFrecencyRecalculator.sys.mjs",
+         "PlacesPreviews.sys.mjs",
+         "PlacesQuery.sys.mjs",
+-        "PlacesSemanticHistoryDatabase.sys.mjs",
+-        "PlacesSemanticHistoryManager.sys.mjs",
++        # PlacesSemanticHistoryDatabase.sys.mjs and
++        # PlacesSemanticHistoryManager.sys.mjs modules are excluded because they
++        # require the missing "ml" component. tor-browser#44045.
+         "PlacesSyncUtils.sys.mjs",
+         "PlacesTransactions.sys.mjs",
+         "PlacesUtils.sys.mjs",
+diff --git a/toolkit/components/translations/actors/TranslationsChild.sys.mjs b/toolkit/components/translations/actors/TranslationsChild.sys.mjs
+index b328dab5b3a4..3dc85dedb28b 100644
+--- a/toolkit/components/translations/actors/TranslationsChild.sys.mjs
++++ b/toolkit/components/translations/actors/TranslationsChild.sys.mjs
+@@ -4,6 +4,9 @@
+ 
+ const lazy = {};
+ ChromeUtils.defineESModuleGetters(lazy, {
++  // translations-document.sys.mjs is missing. tor-browser#44045.
++  // NOTE: We don't expect these missing modules to be called since
++  // browser.translations.enable is false.
+   TranslationsDocument:
+     "chrome://global/content/translations/translations-document.sys.mjs",
+   LRUCache:
+diff --git a/toolkit/components/translations/actors/TranslationsParent.sys.mjs b/toolkit/components/translations/actors/TranslationsParent.sys.mjs
+index 925d5d4e0682..dcede46d0d81 100644
+--- a/toolkit/components/translations/actors/TranslationsParent.sys.mjs
++++ b/toolkit/components/translations/actors/TranslationsParent.sys.mjs
+@@ -94,6 +94,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
+     "chrome://global/content/translations/TranslationsTelemetry.sys.mjs",
+   TranslationsUtils:
+     "chrome://global/content/translations/TranslationsUtils.mjs",
++  // "EngineProcess.sys.mjs" is missing. Should be unused since
++  // browser.translations.enable is set to "false". tor-browser#44045.
+   EngineProcess: "chrome://global/content/ml/EngineProcess.sys.mjs",
+ });
+ 
+diff --git a/toolkit/components/translations/actors/moz.build b/toolkit/components/translations/actors/moz.build
+index 70743e82fd9a..6e6c1efef6b9 100644
+--- a/toolkit/components/translations/actors/moz.build
++++ b/toolkit/components/translations/actors/moz.build
+@@ -3,10 +3,14 @@
+ # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ 
+ FINAL_TARGET_FILES.actors += [
+-    "AboutTranslationsChild.sys.mjs",
+-    "AboutTranslationsParent.sys.mjs",
++    # Exclude AboutTranslationsChild.sys.mjs, AboutTranslationsParent.sys.mjs
++    # because translations are disabled. tor-browser#44045.
+     "TranslationsChild.sys.mjs",
+-    "TranslationsEngineChild.sys.mjs",
+-    "TranslationsEngineParent.sys.mjs",
++    # Exclude TranslationsEngineChild.sys.mjs and
++    # TranslationsEngineParent.sys.mjs because we do not want to include the ML
++    # engine in our build. tor-browser#44045.
++    # NOTE: Whilst we might want to exclude TranslationsParent.sys.mjs, which is
++    # not functional, this module is called from a few places, including
++    # geckoview, which would be difficult to disentangle.
+     "TranslationsParent.sys.mjs",
+ ]
+diff --git a/toolkit/components/translations/jar.mn b/toolkit/components/translations/jar.mn
+index ed20ce2b52df..0aca9d95a02c 100644
+--- a/toolkit/components/translations/jar.mn
++++ b/toolkit/components/translations/jar.mn
+@@ -6,11 +6,7 @@ toolkit.jar:
+     content/global/translations/about-translations.html       (content/about-translations.html)
+     content/global/translations/about-translations.css        (content/about-translations.css)
+     content/global/translations/about-translations.mjs        (content/about-translations.mjs)
+-    content/global/translations/bergamot-translator.js        (bergamot-translator/bergamot-translator.js)
+-    content/global/translations/translations-document.sys.mjs (content/translations-document.sys.mjs)
+-    content/global/translations/translations-engine.sys.mjs   (content/translations-engine.sys.mjs)
+-    content/global/translations/translations-engine.worker.js (content/translations-engine.worker.js)
+-    content/global/translations/Translator.mjs                (content/Translator.mjs)
++    # Exclude translations engine-related content scripts. tor-browser#44045.
+     content/global/translations/TranslationsTelemetry.sys.mjs (TranslationsTelemetry.sys.mjs)
+     content/global/translations/TranslationsFeature.sys.mjs   (TranslationsFeature.sys.mjs)
+     content/global/translations/TranslationsUtils.mjs         (TranslationsUtils.mjs)
+diff --git a/toolkit/modules/ActorManagerParent.sys.mjs b/toolkit/modules/ActorManagerParent.sys.mjs
+index 1d991bb225c7..0b776ea1878a 100644
+--- a/toolkit/modules/ActorManagerParent.sys.mjs
++++ b/toolkit/modules/ActorManagerParent.sys.mjs
+@@ -49,17 +49,8 @@ let JSPROCESSACTORS = {
+     },
+   },
+ 
+-  // A single process (shared with translations) that manages machine learning engines.
+-  MLEngine: {
+-    remoteTypes: ["inference"],
+-    parent: {
+-      esModuleURI: "resource://gre/actors/MLEngineParent.sys.mjs",
+-    },
+-    child: {
+-      esModuleURI: "resource://gre/actors/MLEngineChild.sys.mjs",
+-    },
+-    enablePreference: "browser.ml.enable",
+-  },
++  // MLEngineParent.sys.mjs and MLEngineChild.sys.mjs are missing.
++  // tor-browser#44045.
+ 
+   ProcessConduits: {
+     parent: {
+@@ -70,17 +61,8 @@ let JSPROCESSACTORS = {
+     },
+   },
+ 
+-  // A single process (shared with MLEngine) that controls all of the translations.
+-  TranslationsEngine: {
+-    remoteTypes: ["inference"],
+-    parent: {
+-      esModuleURI: "resource://gre/actors/TranslationsEngineParent.sys.mjs",
+-    },
+-    child: {
+-      esModuleURI: "resource://gre/actors/TranslationsEngineChild.sys.mjs",
+-    },
+-    enablePreference: "browser.translations.enable",
+-  },
++  // TranslationsEngineParent.sys.mjs and TranslationsEngineChild.sys.mjs are
++  // missing. tor-browser#44045.
+ };
+ 
+ /**
+@@ -780,21 +762,8 @@ if (AppConstants.platform != "android") {
+     allFrames: true,
+   };
+ 
+-  JSWINDOWACTORS.AboutTranslations = {
+-    parent: {
+-      esModuleURI: "resource://gre/actors/AboutTranslationsParent.sys.mjs",
+-    },
+-    child: {
+-      esModuleURI: "resource://gre/actors/AboutTranslationsChild.sys.mjs",
+-      events: {
+-        // Run the actor before any content of the page appears to inject functions.
+-        DOMDocElementInserted: {},
+-        DOMContentLoaded: {},
+-      },
+-    },
+-    matches: ["about:translations"],
+-    remoteTypes: ["privilegedabout"],
+-  };
++  // AboutTranslationsParent.sys.mjs and AboutTranslationsChild.sys.mjs are
++  // missing. tor-browser#44045.
+ 
+   JSWINDOWACTORS.ColorPicker = {
+     parent: {
+diff --git a/toolkit/mozapps/extensions/content/aboutaddons.js b/toolkit/mozapps/extensions/content/aboutaddons.js
+index dcaec3a3c9bc..ef93ea157d13 100644
+--- a/toolkit/mozapps/extensions/content/aboutaddons.js
++++ b/toolkit/mozapps/extensions/content/aboutaddons.js
+@@ -24,6 +24,10 @@ ChromeUtils.defineESModuleGetters(this, {
+   ExtensionParent: "resource://gre/modules/ExtensionParent.sys.mjs",
+   ExtensionPermissions: "resource://gre/modules/ExtensionPermissions.sys.mjs",
+   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
++  // ml/Utils.sys.mjs is missing. This should be unused since only addons with
++  // type "mlmodel" would use these methods. Such addons are probably excluded
++  // since ModelHubProvider.sys.mjs defines the "mlmodel" type, but is excluded
++  // from the build. tor-browser#44045.
+   recordListViewTelemetry: "chrome://global/content/ml/Utils.sys.mjs",
+   recordDetailsViewTelemetry: "chrome://global/content/ml/Utils.sys.mjs",
+   recordRemoveInitiatedTelemetry: "chrome://global/content/ml/Utils.sys.mjs",
+diff --git a/toolkit/mozapps/extensions/content/components/addon-mlmodel-details.mjs b/toolkit/mozapps/extensions/content/components/addon-mlmodel-details.mjs
+index c5bf503ff792..27c608568cb2 100644
+--- a/toolkit/mozapps/extensions/content/components/addon-mlmodel-details.mjs
++++ b/toolkit/mozapps/extensions/content/components/addon-mlmodel-details.mjs
+@@ -8,6 +8,8 @@ import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
+ const lazy = {};
+ ChromeUtils.defineESModuleGetters(lazy, {
+   DownloadUtils: "resource://gre/modules/DownloadUtils.sys.mjs",
++  // ml/Utils.sys.mjs is missing but should be unused since addons with type
++  // "mlmodel" should be excluded. tor-browser#44045.
+   featureEngineIdToFluentId: "chrome://global/content/ml/Utils.sys.mjs",
+   recordModelCardLinkTelemetry: "chrome://global/content/ml/Utils.sys.mjs",
+ });
+diff --git a/toolkit/mozapps/extensions/content/components/mlmodel-card-list-additions.mjs b/toolkit/mozapps/extensions/content/components/mlmodel-card-list-additions.mjs
+index 1fefad4a4bd6..483871f1e411 100644
+--- a/toolkit/mozapps/extensions/content/components/mlmodel-card-list-additions.mjs
++++ b/toolkit/mozapps/extensions/content/components/mlmodel-card-list-additions.mjs
+@@ -7,6 +7,8 @@ import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
+ 
+ const lazy = {};
+ ChromeUtils.defineESModuleGetters(lazy, {
++  // ml/Utils.sys.mjs is missing but should be unused since addons with type
++  // "mlmodel" should be excluded. tor-browser#44045.
+   featureEngineIdToFluentId: "chrome://global/content/ml/Utils.sys.mjs",
+ });
+ 
+diff --git a/toolkit/mozapps/extensions/extensions.manifest b/toolkit/mozapps/extensions/extensions.manifest
+index abb82cae6e70..899f483ec86a 100644
+--- a/toolkit/mozapps/extensions/extensions.manifest
++++ b/toolkit/mozapps/extensions/extensions.manifest
+@@ -6,7 +6,7 @@ category update-timer addonManager @mozilla.org/addons/integration;1,getService,
+ #ifndef MOZ_THUNDERBIRD
+ #ifndef MOZ_WIDGET_ANDROID
+ category addon-provider-module GMPProvider resource://gre/modules/addons/GMPProvider.sys.mjs
+-category addon-provider-module ModelHubProvider resource://gre/modules/addons/ModelHubProvider.sys.mjs
++# ModelHubProvider.sys.mjs is missing. tor-browser#44045.
+ category addon-provider-module SitePermsAddonProvider resource://gre/modules/addons/SitePermsAddonProvider.sys.mjs
+ #endif
+ #endif
+diff --git a/toolkit/mozapps/extensions/internal/moz.build b/toolkit/mozapps/extensions/internal/moz.build
+index 5e1b22f2f190..b3e254adf6b4 100644
+--- a/toolkit/mozapps/extensions/internal/moz.build
++++ b/toolkit/mozapps/extensions/internal/moz.build
+@@ -20,7 +20,8 @@ EXTRA_JS_MODULES.addons += [
+ if CONFIG["MOZ_WIDGET_TOOLKIT"] != "android":
+     EXTRA_JS_MODULES.addons += [
+         "GMPProvider.sys.mjs",
+-        "ModelHubProvider.sys.mjs",
++        # Exclude ModelHubProvider.sys.mjs, which requires the missing "ml"
++        # component. tor-browser#44045.
+         ## TODO consider extending it to mobile builds too (See Bug 1790084).
+         "SitePermsAddonProvider.sys.mjs",
+     ]
+-- 
+GitLab
+
