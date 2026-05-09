@@ -5,7 +5,7 @@
     Include it if we're hosted. */
  #if __STDC_HOSTED__ && __has_include_next(<limits.h>)
 -#include_next <limits.h>
-+#include "../../../usr/include/limits.h"
++#include "/usr/include/limits.h"
  #endif
  
  /* Many system headers try to "help us out" by defining these.  No really, we
