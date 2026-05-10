@@ -18,6 +18,7 @@ DESCRIPTION="A utility for batch-normalizing audio using ffmpeg"
 HOMEPAGE="
 	https://pypi.org/project/ffmpeg-normalize/
 	https://github.com/slhck/ffmpeg-normalize/
+	https://slhck.info/ffmpeg-normalize/
 "
 SRC_URI="https://github.com/slhck/ffmpeg-normalize/archive/refs/tags/v${PV}.tar.gz -> ${P}.tar.gz"
 LICENSE="MIT"
