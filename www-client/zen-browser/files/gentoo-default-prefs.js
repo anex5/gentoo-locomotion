@@ -32,7 +32,7 @@ user_pref("gfx.content.skia-font-cache-size", 20);
 user_pref("browser.cache.disk.enable", false);
 
 /** MEDIA CACHE ***/
-user_pref("media.memory_cache_max_size", 65536);
+user_pref("media.memory_cache_max_size", 262144);
 user_pref("media.cache_readahead_limit", 7200);
 user_pref("media.cache_resume_threshold", 3600);
 
@@ -480,6 +480,10 @@ user_pref("media.cache_resume_threshold", 6000);
 user_pref("media.devices.enumerate.legacy.enabled", false);
 user_pref("media.devices.insecure.enabled", true);
 user_pref("media.getusermedia.screensharing.enabled", false);
+user_pref("media.getusermedia.audio.processing.aec.enabled", false);
+user_pref("media.getusermedia.audio.processing.agc.enabled", false);
+user_pref("media.getusermedia.audio.processing.noise.enabled", false);
+user_pref("media.getusermedia.audio.processing.hpf.enabled", false);
 user_pref("media.gmp.storage.version.observed", 1);
 user_pref("media.hls.enabled", true);
 user_pref("media.mediasource.experimental.enabled", true);
@@ -530,6 +534,7 @@ user_pref("security.mixed_content.block_active_content", false);
 user_pref("security.mixed_content.upgrade_display_content", true);
 user_pref("security.sandbox.content.level", 2);
 user_pref("security.sandbox.socket.process.level", 0);
+user_pref("security.sandbox.content.read_path_whitelist", "/sys");
 user_pref("security.ssl3.ecdhe_ecdsa_aes_128_sha", false);
 user_pref("security.ssl3.ecdhe_ecdsa_aes_256_sha", false);
 user_pref("security.ssl3.ecdhe_rsa_aes_128_sha", false);
