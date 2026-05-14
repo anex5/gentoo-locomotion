@@ -4,7 +4,7 @@
 EAPI="8"
 ETYPE="sources"
 K_WANT_GENPATCHES="base extras experimental"
-K_GENPATCHES_VER="3"
+K_GENPATCHES_VER="8"
 
 inherit kernel-2
 detect_version
@@ -13,7 +13,7 @@ detect_arch
 DESCRIPTION="Full sources including the Gentoo patchset for the ${KV_MAJOR}.${KV_MINOR} kernel tree"
 HOMEPAGE="https://dev.gentoo.org/~alicef/genpatches"
 SRC_URI="${KERNEL_URI} ${GENPATCHES_URI} ${ARCH_URI}"
-KEYWORDS="~alpha ~amd64 ~arm ~arm64 ~hppa ~m68k ~mips ~ppc ~ppc64 ~riscv ~s390 ~sparc ~x86"
+KEYWORDS="~alpha ~amd64 ~arm ~arm64 ~hppa ~loong ~m68k ~mips ~ppc ~ppc64 ~riscv ~s390 ~sparc ~x86"
 IUSE="experimental"
 
 PATCHES=(
@@ -29,7 +29,7 @@ PATCHES=(
 	"${FILESDIR}/0001-iosched-7.0-introduce-ADIOS-I-O-scheduler.patch"
 	"${FILESDIR}/0001-mt76-patches.patch"
 	"${FILESDIR}/0001-ntfs-7.0-merge-changes-from-dev-tree.patch"
-	"${FILESDIR}/0001-PRJC-for-7.0.patch"
+	#"${FILESDIR}/0001-PRJC-for-7.0.patch"
 	"${FILESDIR}/0001-r8125-patches.patch"
 	"${FILESDIR}/0001-Reflex-CPUFreq-Governor-v0.3.0r2.patch"
 	"${FILESDIR}/0001-rt-patches.patch"
@@ -41,6 +41,8 @@ PATCHES=(
 src_prepare() {
 	# TODO: May need forward porting to newer versions
 	use elibc_musl && ( eapply "${FILESDIR}"/${PN}-include-compiler.h-musl.patch || die )
+
+	default
 
 	kernel-2_src_prepare
 }
