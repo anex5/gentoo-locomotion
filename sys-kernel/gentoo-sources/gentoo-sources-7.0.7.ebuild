@@ -4,7 +4,7 @@
 EAPI="8"
 ETYPE="sources"
 K_WANT_GENPATCHES="base extras experimental"
-K_GENPATCHES_VER="8"
+K_GENPATCHES_VER="9"
 
 inherit kernel-2
 detect_version
@@ -31,7 +31,7 @@ PATCHES=(
 	"${FILESDIR}/0001-ntfs-7.0-merge-changes-from-dev-tree.patch"
 	#"${FILESDIR}/0001-PRJC-for-7.0.patch"
 	"${FILESDIR}/0001-r8125-patches.patch"
-	"${FILESDIR}/0001-Reflex-CPUFreq-Governor-v0.3.0r2.patch"
+	#"${FILESDIR}/0001-Reflex-CPUFreq-Governor-v0.3.0r2.patch"
 	"${FILESDIR}/0001-rt-patches.patch"
 	"${FILESDIR}/0001-snd-codecs-patches.patch"
 	"${FILESDIR}/0001-vesa-patches.patch"
