@@ -3,8 +3,8 @@
 
 EAPI=8
 
-HOMEPAGE="https://sr.ht/~bptato/chawan"
-DESCRIPTION="Lightweight and featureful terminal web browser"
+DESCRIPTION="TUI web browser; supports CSS, images, JavaScript, and multiple web protocols"
+HOMEPAGE="https://chawan.net"
 
 inherit flag-o-matic toolchain-funcs
 
@@ -20,7 +20,13 @@ fi
 
 LICENSE="Unlicense"
 SLOT="0"
-IUSE="static-libs"
+IUSE="static-libs lto"
+
+DEPEND="
+    sys-libs/ncurses:=[unicode(+),static-libs?]
+    net-misc/curl:=[brotli,http2,openssl,ssl,ssh,adns,static-libs?]
+	>=virtual/zlib-1.2.9:=[static-libs?]
+"
 
 BDEPEND="
 	app-arch/unzip
@@ -28,12 +34,6 @@ BDEPEND="
 	llvm-runtimes/libatomic-stub
 	virtual/pkgconfig
 	virtual/pandoc
-"
-
-RDEPEND="
-    sys-libs/ncurses:=[unicode(+),static-libs?]
-    net-misc/curl:=[brotli,http2,openssl,ssl,ssh,adns,static-libs?]
-	>=virtual/zlib-1.2.9:=[static-libs?]
 "
 
 RESTRICT="mirror"
@@ -64,6 +64,14 @@ usr/libexec/chawan/cgi-bin/file
 usr/bin/mancha
 usr/bin/cha
 "
+
+src_prepare(){
+	default
+	if use lto; then
+		sed -i -E 's|^FLAGS\s+\+=.+|& -d:lto|' Makefile ||
+		die "Trying to sed the Makefile for lto failed!"
+	fi
+}
 
 src_compile() {
 	append-cflags "-ffile-prefix-map=${S}/="
