@@ -563,7 +563,7 @@ user_pref("trailhead.firstrun.didSeeAboutWelcome", true);
 user_pref("ui.key.menuAccessKey", 0);
 user_pref("ui.prefersReducedMotion", 0);
 
-# Transparency
+// Transparency
 user_pref("browser.tabs.allow_transparent_browser", true);
 user_pref("zen.widget.linux.transparency", true);
 

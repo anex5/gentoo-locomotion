@@ -4,7 +4,7 @@
 EAPI=8
 
 # Using Gentoos firefox patches as system libraries and lto are quite nice
-FIREFOX_PATCHSET="firefox-150-patches-02.tar.xz"
+FIREFOX_PATCHSET="firefox-151-patches-01.tar.xz"
 
 LLVM_COMPAT=( {20..22} )
 
@@ -25,7 +25,7 @@ WASI_SDK_VER=( [22]="32.0" [21]="30.0" [20]="27.0" )
 
 MOZ_ESR=
 
-MOZ_PV=150.0.2
+MOZ_PV=151.0.1
 MOZ_PV_SUFFIX=
 if [[ ${PV} =~ (_(alpha|beta|rc).*)$ ]] ; then
 	MOZ_PV_SUFFIX=${BASH_REMATCH[1]}
@@ -981,7 +981,7 @@ src_prepare() {
 
 	# Prevent YT stall prevention with clang with -Ofast.
 	# Prevent audio perma mute with gcc with -Ofast.
-	eapply "${FILESDIR}/extra-patches/firefox-148.0-disable-broken-flags-js.patch"
+	eapply "${FILESDIR}/extra-patches/firefox-151.0-disable-broken-flags-js.patch"
 
 	# Allow to use system-ffmpeg completely.
 	if use system-ffmpeg; then
@@ -1015,7 +1015,7 @@ src_prepare() {
 		rm -v "${WORKDIR}"/firefox-patches/*bgo-967694-musl-prctrl-exception-on-musl.patch || die
 	fi
 	rm -v "${WORKDIR}"/firefox-patches/*-bgo-928126-enable-jxl.patch || die
-	rm -v "${WORKDIR}"/firefox-patches/*-bmo-2023597-use-wasm32-wasip1-target-for-clang-22.patch || die
+	#rm -v "${WORKDIR}"/firefox-patches/*-bmo-2023597-use-wasm32-wasip1-target-for-clang-22.patch || die
 	#rm -v "${WORKDIR}"/firefox-patches/0026-bmo-2022238-revert-bug-2001075-to-avoid-toolbar-freeze.patch || die
 
 	eapply "${WORKDIR}/firefox-patches"
@@ -1072,12 +1072,12 @@ src_prepare() {
 			-e "s:%%WASI_SDK_LLVM_VER%%:${LLVM_SLOT}:" \
 			toolkit/moz.configure || die "Failed to update wasi-related paths."
 
-		if use llvm_slot_22; then
-			sed -e "s/\(wasm32-wasi\|wasm32-unknown-wasi\)/\1p1/g" \
-				-i build/moz.configure/toolchain.configure \
-				-i gfx/harfbuzz/src/wasm/sample/c/Makefile \
-				-i toolkit/moz.configure || die
-		fi
+		#if use llvm_slot_22; then
+	#		sed -e "s/\(wasm32-wasi\|wasm32-unknown-wasi\)/\1p1/g" \
+	#			-i build/moz.configure/toolchain.configure \
+	#			-i gfx/harfbuzz/src/wasm/sample/c/Makefile \
+	#			-i toolkit/moz.configure || die
+	#	fi
 	fi
 
 	# Make LTO & ICU respect MAKEOPTS
@@ -1179,6 +1179,9 @@ _fix_paths() {
 		| cut -f 1 -d "-")
 	export MOZILLA_FIVE_HOME="/usr/$(get_libdir)/${PN}"
 	export BUILD_OBJ_DIR="$(pwd)/ff"
+
+	# Set Endian for libc
+	export MOZ_BIG_ENDIAN=$([[$(tc-endian) == big]] && echo 1 || echo 0)
 
 	# Set MOZCONFIG
 	export MOZCONFIG="$(pwd)/.mozconfig"
