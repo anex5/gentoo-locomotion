@@ -74,7 +74,7 @@ src_install() {
 	doins "urd-confirm"
 	doins "urd-prompt"
 
-	use systemd && ( sed -e 's/LOGIND="loginctl"/LOGIND="systemctl"/' -i urd-logout-menu || die "Sed failed" )
+	use systemd && ( sed -e 's/LOGIND="loginctl/LOGIND="systemctl/' -i urd-logout-menu || die "Sed failed" )
 
 	local SNS=()
 	use bluetooth && SNS+=( "urd-bluetooth-connections,bluetooth-symbolic" )
