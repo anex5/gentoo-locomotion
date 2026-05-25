@@ -1001,7 +1001,8 @@ src_prepare() {
 	# Prevent video seek bug
 	eapply "${FILESDIR}/extra-patches/firefox-122.0-disable-broken-flags-ipc-chromium-chromium-config.patch"
 
-	eapply "${FILESDIR}/extra-patches/firefox-128.3.0e-big-endian-image-decoders.patch"
+	#eapply "${FILESDIR}/extra-patches/firefox-128.3.0e-big-endian-image-decoders.patch"
+	#eapply "${FILESDIR}/extra-patches/firefox-151.0.1-replace-MOZ_BIG_ENDIAN-macro.patch"
 
 	# Build with clang-20
 	if [[ "${LLVM_SLOT}" =~ ("20"|"21"|"22") ]]; then
@@ -1072,12 +1073,12 @@ src_prepare() {
 			-e "s:%%WASI_SDK_LLVM_VER%%:${LLVM_SLOT}:" \
 			toolkit/moz.configure || die "Failed to update wasi-related paths."
 
-		#if use llvm_slot_22; then
-	#		sed -e "s/\(wasm32-wasi\|wasm32-unknown-wasi\)/\1p1/g" \
-	#			-i build/moz.configure/toolchain.configure \
-	#			-i gfx/harfbuzz/src/wasm/sample/c/Makefile \
-	#			-i toolkit/moz.configure || die
-	#	fi
+		if [ ${LLVM_SLOT} -lt 22 ]; then
+			sed -e "s/\(wasm32-wasi\|wasm32-unknown-wasi\)p1/\1/g" \
+				-i build/moz.configure/toolchain.configure \
+				-i gfx/harfbuzz/src/wasm/sample/c/Makefile \
+				-i toolkit/moz.configure || die
+		fi
 	fi
 
 	# Make LTO & ICU respect MAKEOPTS
@@ -1180,8 +1181,6 @@ _fix_paths() {
 	export MOZILLA_FIVE_HOME="/usr/$(get_libdir)/${PN}"
 	export BUILD_OBJ_DIR="$(pwd)/ff"
 
-	# Set Endian for libc
-	export MOZ_BIG_ENDIAN=$([[$(tc-endian) == big]] && echo 1 || echo 0)
 
 	# Set MOZCONFIG
 	export MOZCONFIG="$(pwd)/.mozconfig"
@@ -1437,7 +1436,8 @@ _src_configure() {
 
 	# Set MOZILLA_FIVE_HOME
 	# MOZILLA_FIVE_HOME is dynamically generated per ABI in _fix_paths().
-	#export MOZILLA_FIVE_HOME="/usr/$(get_libdir)/${PN}"
+	#export MOZILLA_:wq
+	FIVE_HOME="/usr/$(get_libdir)/${PN}"
 
 	# python/mach/mach/mixin/process.py fails to detect SHELL
 	export SHELL="${EPREFIX}/bin/bash"
@@ -1449,6 +1449,7 @@ _src_configure() {
 	#export MOZCONFIG="${s}/.mozconfig"
 	# Set Gentoo defaults
 	export MOZILLA_OFFICIAL=1
+
 	# Initialize MOZCONFIG
 	mozconfig_add_options_ac '' --enable-application="browser"
 	mozconfig_add_options_ac '' --enable-project="browser"

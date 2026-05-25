@@ -1,0 +1,98 @@
+--- a/image/decoders/nsGIFDecoder2.cpp
++++ b/image/decoders/nsGIFDecoder2.cpp
+@@ -487,9 +487,9 @@ void nsGIFDecoder2::ConvertColormap(uint
+   MOZ_ASSERT(mSwizzleFn);
+   uint8_t* data = reinterpret_cast<uint8_t*>(aColormap);
+   mSwizzleFn(data, data, aColors);
+-#if MOZ_BIG_ENDIAN()
+-  SwizzleRow(SurfaceFormat::A8R8G8B8, SurfaceFormat::B8G8R8A8)(data, data, aColors);
+-#endif
++  if constexpr (std::endian::native == std::endian::big) {
++    SwizzleRow(SurfaceFormat::A8R8G8B8, SurfaceFormat::B8G8R8A8)(data, data, aColors);
++  }
+ }
+ 
+ LexerResult nsGIFDecoder2::DoDecode(SourceBufferIterator& aIterator,
+--- a/image/decoders/nsPNGDecoder.cpp
++++ b/image/decoders/nsPNGDecoder.cpp
+@@ -410,11 +410,11 @@ LexerResult nsPNGDecoder::DoDecode(Sourc
+                       MOZ_CRASH("Unknown State");
+                     });
+ 
+-#if MOZ_BIG_ENDIAN()
+-  if(res.is<TerminalState>() && res.as<TerminalState>() == TerminalState::SUCCESS) {
+-      NativeEndian::swapToLittleEndianInPlace<uint32_t>((uint32_t*)(mImageData), mImageDataLength / 4);
++  if constexpr (std::endian::native == std::endian::big) {
++    if(res.is<TerminalState>() && res.as<TerminalState>() == TerminalState::SUCCESS) {
++        NativeEndian::swapToLittleEndianInPlace<uint32_t>((uint32_t*)(mImageData), mImageDataLength / 4);
++    }
+   }
+-#endif
+ 
+   return res;
+ }
+--- a/image/decoders/nsWebPDecoder.cpp
++++ b/image/decoders/nsWebPDecoder.cpp
+@@ -252,12 +252,12 @@ nsresult nsWebPDecoder::CreateFrame(cons
+   // WebP doesn't guarantee that the alpha generated matches the hint in the
+   // header, so we always need to claim the input is BGRA. If the output is
+   // BGRX, swizzling will mask off the alpha channel.
+-#if MOZ_BIG_ENDIAN()
+-  mBuffer.colorspace = MODE_ARGB;
+-  SurfaceFormat inFormat = mFormat;
+-#else
+-  SurfaceFormat inFormat = SurfaceFormat::OS_RGBA;
+-#endif
++  if constexpr (std::endian::native == std::endian::big) {
++    mBuffer.colorspace = MODE_ARGB;
++    SurfaceFormat inFormat = mFormat;
++  } else {
++    SurfaceFormat inFormat = SurfaceFormat::OS_RGBA;
++  }
+ 
+   SurfacePipeFlags pipeFlags = SurfacePipeFlags();
+   if (mFormat == SurfaceFormat::OS_RGBA &&
+--- a/image/decoders/nsJPEGDecoder.cpp
++++ b/image/decoders/nsJPEGDecoder.cpp
+@@ -285,24 +285,24 @@ LexerTransition<nsJPEGDecoder::State> ns
+         case JCS_YCbCr:
+           // By default, we will output directly to BGRA. If we need to apply
+           // special color transforms, this may change.
+-#if MOZ_BIG_ENDIAN()
+-          mInfo.out_color_space = MOZ_JCS_EXT_NATIVE_ENDIAN_XRGB;
+-#else
+-          switch (SurfaceFormat::OS_RGBX) {
+-            case SurfaceFormat::B8G8R8X8:
+-              mInfo.out_color_space = JCS_EXT_BGRX;
+-              break;
+-            case SurfaceFormat::X8R8G8B8:
+-              mInfo.out_color_space = JCS_EXT_XRGB;
+-              break;
+-            case SurfaceFormat::R8G8B8X8:
+-              mInfo.out_color_space = JCS_EXT_RGBX;
+-              break;
+-            default:
+-              mState = JPEG_ERROR;
+-              return Transition::TerminateFailure();
++          if constexpr (std::endian::native == std::endian::big) {
++            mInfo.out_color_space = MOZ_JCS_EXT_NATIVE_ENDIAN_XRGB;
++          } else {
++              switch (SurfaceFormat::OS_RGBX) {
++              case SurfaceFormat::B8G8R8X8:
++                mInfo.out_color_space = JCS_EXT_BGRX;
++                break;
++              case SurfaceFormat::X8R8G8B8:
++                mInfo.out_color_space = JCS_EXT_XRGB;
++                break;
++              case SurfaceFormat::R8G8B8X8:
++                mInfo.out_color_space = JCS_EXT_RGBX;
++                break;
++              default:
++                mState = JPEG_ERROR;
++                return Transition::TerminateFailure();
++            }
+           }
+-#endif
+           break;
+         case JCS_CMYK:
+         case JCS_YCCK:
