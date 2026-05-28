@@ -2074,21 +2074,12 @@ _src_install() {
 	if use ml ; then
 		cat >>"${GENTOO_PREFS}" <<-EOF || die "failed to set ml pref"
 		sticky_pref("browser.ml.enable, true);
-		sticky_pref("browser.ml.chat.enabled, true);
-		sticky_pref("browser.ml.linkPreview.enabled, true);
-		sticky_pref("extensions.ml.enabled, true);
 		sticky_pref("browser.tabs.groups.smart.enabled, true);
-		sticky_pref("browser.ml.chat.sidebar, true);
 		EOF
 	else
 		cat >>"${GENTOO_PREFS}" <<-EOF || die "failed to set ml pref"
 		sticky_pref("browser.ml.enable, false); // Master switch
-		sticky_pref("browser.ml.chat.enabled, false);
-		sticky_pref("browser.ml.linkPreview.enabled, false);
-		sticky_pref("extensions.ml.enabled, false);
 		sticky_pref("browser.tabs.groups.smart.enabled, false);
-		sticky_pref("browser.ml.chat.sidebar, false);
-		sticky_pref("browser.ml.model-hub.url, "")
 		EOF
 	fi
 
