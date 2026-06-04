@@ -13,7 +13,7 @@ pref("accessibility.typeaheadfind",        true);
 pref("intl.locale.requested",              "");
 pref("layout.css.dpi",                     0);
 /* Disable DoH by default */
-pref("network.trr.mode",                   5);
+pref("network.trr.mode",                   3);
 /* Disable remote-settings from permissions manager by default but don't lock it
    so corporations can easily turn it back on if there's demand for that */
 pref("permissions.manager.remote.enabled", false);
@@ -32,12 +32,12 @@ user_pref("gfx.content.skia-font-cache-size", 20);
 user_pref("browser.cache.disk.enable", false);
 
 /** MEDIA CACHE ***/
-user_pref("media.memory_cache_max_size", 262144);
-user_pref("media.cache_readahead_limit", 7200);
+user_pref("media.memory_cache_max_size", 4194304);
+user_pref("media.cache_readahead_limit", 8192);
 user_pref("media.cache_resume_threshold", 3600);
 
 /** IMAGE CACHE ***/
-user_pref("image.mem.decode_bytes_at_a_time", 32768);
+user_pref("image.mem.decode_bytes_at_a_time", 262144);
 
 /** NETWORK ***/
 user_pref("network.http.max-connections", 1800);
@@ -53,6 +53,7 @@ user_pref("network.dns.disablePrefetchFromHTTPS", true);
 user_pref("network.prefetch-next", false);
 user_pref("network.predictor.enabled", false);
 user_pref("network.predictor.enable-prefetch", false);
+user_pref("network.notify.checkForProxies", false);
 
 /** EXPERIMENTAL ***/
 user_pref("layout.css.grid-template-masonry-value.enabled", true);
@@ -245,6 +246,7 @@ user_pref("browser.cache.offline.enable", true);
 user_pref("browser.cache.offline.storage.enable", true);
 user_pref("browser.cache.disk.enable", true);
 user_pref("browser.compactmode.show", true);
+user_pref("browser.rights.3.shown", true);
 user_pref("browser.urlbar.decodeURLsOnCopy", true);
 user_pref("browser.newtabpage.activity-stream.asrouter.userprefs.cfr", false);
 user_pref("identity.fxaccounts.enabled", false);
@@ -347,6 +349,13 @@ user_pref("dom.IntersectionObserver.enabled", true);
 user_pref("dom.abort_script_on_child_shutdown", true);
 user_pref("dom.animations.mainthread-synchronization-with-geometric-animations", false);
 user_pref("dom.block_download_insecure", false);
+user_pref("dom.battery.enabled", false);
+user_pref("dom.disable_beforeunload", true);
+user_pref("dom.disable_window_move_resize", true);
+user_pref("dom.forms.autocomplete.formautofill", true);
+user_pref("dom.gamepad.extensions.enabled", false);
+user_pref("dom.ipc.processCount.extension", 2);
+user_pref("dom.popup_maximum", 5);
 user_pref("dom.events.asyncClipboard.clipboardItem", true);
 user_pref("dom.events.asyncClipboard.dataTransfer", true);
 user_pref("dom.events.asyncClipboard.readText", true);
@@ -500,8 +509,10 @@ user_pref("network.cookie.cookieBehavior", 5);
 user_pref("network.cookie.sameSite.laxByDefault", true);
 user_pref("network.cookie.sameSite.noneRequiresSecure", true);
 user_pref("network.cookie.sameSite.schemeful", true);
+user_pref("network.dns.disablePrefetch", true);
 user_pref("network.notify.changed", false);
 user_pref("network.predictor.enabled", false);
+user_pref("network.prefetch-next", false);
 user_pref("network.protocol-handler.expose.magnet", false);
 user_pref("network.protocol-handler.external.mailto", false);
 user_pref("network.protocol-handler.external.news", false);

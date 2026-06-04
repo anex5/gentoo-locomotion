@@ -143,9 +143,9 @@ index fa588d9e450c..2913dbf87712 100644
  category browser-window-delayed-startup resource:///modules/HomePage.sys.mjs HomePage.delayedStartup
 -category browser-window-delayed-startup moz-src:///browser/components/genai/LinkPreview.sys.mjs LinkPreview.init
 +# LinkPreview.sys.mjs is missing. tor-browser#44045.
- category browser-window-delayed-startup moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs AIWindow.init
  category browser-window-delayed-startup moz-src:///browser/components/reportbrokensite/ReportBrokenSite.sys.mjs ReportBrokenSite.init
  category browser-window-delayed-startup moz-src:///browser/components/search/SearchUIUtils.sys.mjs SearchUIUtils.init
+ category browser-window-delayed-startup resource:///modules/taskbartabs/TaskbarTabsPageAction.sys.mjs TaskbarTabsPageAction.init
 @@ -67,7 +67,7 @@ category browser-idle-startup resource://gre/modules/RFPHelper.sys.mjs RFPHelper
  category browser-idle-startup resource://gre/modules/Blocklist.sys.mjs Blocklist.loadBlocklistAsync
  category browser-idle-startup resource://gre/modules/psm/RemoteSecuritySettings.sys.mjs RemoteSecuritySettings.init
@@ -498,23 +498,18 @@ diff --git a/browser/components/urlbar/UrlbarController.sys.mjs b/browser/compon
 index 3b0b4e7eb6b9..2a7ff51eb212 100644
 --- a/browser/components/urlbar/UrlbarController.sys.mjs
 +++ b/browser/components/urlbar/UrlbarController.sys.mjs
-@@ -19,8 +19,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
-     "moz-src:///browser/components/urlbar/UrlbarProvidersManager.sys.mjs",
-   SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
-   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
--  UrlbarProviderSemanticHistorySearch:
--    "moz-src:///browser/components/urlbar/UrlbarProviderSemanticHistorySearch.sys.mjs",
-   UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
-   UrlUtils: "resource://gre/modules/UrlUtils.sys.mjs",
- });
-@@ -1320,16 +1318,6 @@ class TelemetryEvent {
+@@ -1320,20 +1318,6 @@ class TelemetryEvent {
     */
    #getAvailableSemanticSources() {
      let sources = [];
 -    try {
+-      const semanticManager =
+-        lazy.UrlbarProviderSemanticHistorySearch.semanticManager;
+-      const isSmartbar = this._controller.input.sapName === "smartbar";
 -      if (
--        lazy.UrlbarProviderSemanticHistorySearch.semanticManager
--          .canUseSemanticSearch
+-        isSmartbar
+-          ? semanticManager.isEnabledForSmartWindow
+-          : semanticManager.canUseSemanticSearch
 -      ) {
 -        sources.push("history");
 -      }

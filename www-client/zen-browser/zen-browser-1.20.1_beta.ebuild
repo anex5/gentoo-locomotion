@@ -25,7 +25,7 @@ WASI_SDK_VER=( [22]="32.0" [21]="30.0" [20]="27.0" )
 
 MOZ_ESR=
 
-MOZ_PV=151.0.1
+MOZ_PV=151.0.2
 MOZ_PV_SUFFIX=
 if [[ ${PV} =~ (_(alpha|beta|rc).*)$ ]] ; then
 	MOZ_PV_SUFFIX=${BASH_REMATCH[1]}
@@ -991,7 +991,7 @@ src_prepare() {
 
 	# Machine learning
 	if ! use ml ; then
-		eapply "${FILESDIR}/extra-patches/firefox-150.0.0-disable-ML.patch"
+		eapply "${FILESDIR}/extra-patches/firefox-151.0.2-disable-ML.patch"
 		sed -e '/\@BINPATH\@\/\@DLL_PREFIX\@mozinference\@DLL_SUFFIX\@/d' -i browser/installer/package-manifest.in || die
 	fi
 
@@ -1028,7 +1028,7 @@ src_prepare() {
 	[[ -n ${CARGO_BUILD_JOBS} ]] || export CARGO_BUILD_JOBS="$(makeopts_jobs)"
 
 	# Workaround for bgo#915651
-	if ! use elibc_glibc ; then
+	if use elibc_musl ; then
 		if use amd64 ; then
 			export RUST_TARGET="x86_64-unknown-linux-musl"
 		elif use x86 ; then
@@ -2074,11 +2074,13 @@ _src_install() {
 	if use ml ; then
 		cat >>"${GENTOO_PREFS}" <<-EOF || die "failed to set ml pref"
 		sticky_pref("browser.ml.enable, true);
+		sticky_pref("extensions.ml.enable, true);
 		sticky_pref("browser.tabs.groups.smart.enabled, true);
 		EOF
 	else
 		cat >>"${GENTOO_PREFS}" <<-EOF || die "failed to set ml pref"
 		sticky_pref("browser.ml.enable, false); // Master switch
+		sticky_pref("extensions.ml.enable, true);
 		sticky_pref("browser.tabs.groups.smart.enabled, false);
 		EOF
 	fi
