@@ -4,14 +4,15 @@
 EAPI=8
 
 DISTUTILS_USE_PEP517=poetry
-PYTHON_COMPAT=( python3_{10..14} pypy3 )
+PYTHON_COMPAT=( python3_{13..15} pypy3 )
 
 inherit distutils-r1
 
 DESCRIPTION="Python client for Telegram"
 HOMEPAGE="https://github.com/paul-nameless/tg"
-
-SRC_URI="https://github.com/paul-nameless/tg/archive/v${PV}.tar.gz -> ${P}.gh.tar.gz"
+COMMIT="b0eee6f004e8df9556a9a9a0b42c9ebe0159c66b"
+SRC_URI="https://github.com/paul-nameless/tg/archive/${COMMIT}.tar.gz -> ${P}-${COMMIT:0:7}.gh.tar.gz"
+S="${WORKDIR}/${PN}-${COMMIT}"
 
 LICENSE="Unlicense"
 SLOT="0"

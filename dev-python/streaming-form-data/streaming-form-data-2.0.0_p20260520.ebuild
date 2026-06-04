@@ -3,7 +3,7 @@
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{11..14} )
+PYTHON_COMPAT=( python3_{13..15} )
 
 DISTUTILS_USE_PEP517=setuptools
 DISTUTILS_EXT=1
@@ -17,7 +17,9 @@ inherit distutils-r1 docs
 
 DESCRIPTION="Streaming multipart/form-data parser"
 HOMEPAGE="https://github.com/siddhantgoel/streaming-form-data"
-SRC_URI="https://github.com/siddhantgoel/${PN}/archive/refs/tags/v${PV}.tar.gz -> ${P}.tar.gz"
+COMMIT="c88be6b0e3163b22ee8456ecf81e64772c520105"
+SRC_URI="https://github.com/siddhantgoel/${PN}/archive/${COMMIT}.tar.gz -> ${P}-${COMMIT:0:7}.tar.gz"
+S="${WORKDIR}/${PN}-${COMMIT}"
 
 LICENSE="MIT"
 SLOT="0"

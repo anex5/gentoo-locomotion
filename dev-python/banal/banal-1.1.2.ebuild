@@ -1,9 +1,9 @@
-# Copyright 1999-2025 Gentoo Foundation
+# Copyright 1999-2026 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{11..13} )
+PYTHON_COMPAT=( python3_{13..15} )
 
 DISTUTILS_USE_PEP517=hatchling
 
@@ -14,8 +14,8 @@ HOMEPAGE="
 	https://pypi.org/project/banal/
 	https://github.com/pudo/banal/
 "
-COMMIT="41ac6ef959679b9a96e8217df2c5f756a47bec35"
-SRC_URI="https://github.com/pudo/banal/archive/${COMMIT}.tar.gz -> ${P}.tar.gz"
+COMMIT="d682c22187b498c2f67d78453e84ddc29663c198"
+SRC_URI="https://github.com/pudo/banal/archive/${COMMIT}.tar.gz -> ${P}-${COMMIT:0:7}.tar.gz"
 
 
 LICENSE="MIT"

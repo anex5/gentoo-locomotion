@@ -3,7 +3,7 @@
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{10..14} )
+PYTHON_COMPAT=( python3_{13..14} )
 
 DISTUTILS_USE_PEP517=setuptools
 DISTUTILS_EXT=1
@@ -15,13 +15,14 @@ HOMEPAGE="
 	https://github.com/alexander-akhmetov/python-telegram
 	https://pypi.org/project/python-telegram
 "
-SRC_URI="https://github.com/alexander-akhmetov/python-telegram/archive/refs/tags/${PV}/${P}.tar.gz"
+COMMIT="2b83f13c8d17103792f270f4611b5c252f482c3a"
+SRC_URI="https://github.com/alexander-akhmetov/python-telegram/archive/${COMMIT}.tar.gz -> ${P}-${COMMIT:0:7}.tar.gz"
 
 LICENSE="MIT"
 SLOT="0"
 KEYWORDS="amd64 arm arm64 x86"
 RESTRICT="mirror"
-#S="${WORKDIR}/${PV}"
+S="${WORKDIR}/${PN}-${COMMIT}"
 
 RDEPEND="${PYTHON_DEPS}"
 BDEPEND="

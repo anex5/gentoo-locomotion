@@ -1,9 +1,9 @@
-# Copyright 1999-2025 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{10..14} )
+PYTHON_COMPAT=( python3_{13..15} )
 
 DISTUTILS_USE_PEP517=setuptools
 
@@ -14,13 +14,14 @@ HOMEPAGE="
 	https://github.com/ianare/exif-py/
 	https://pypi.org/project/exif-py/
 "
-SRC_URI="https://github.com/ianare/exif-py/archive/refs/tags/${PV}/${P}.tar.gz"
+COMMIT="2adb9d14a60546adc6620f12b31907a025c5045d"
+SRC_URI="https://github.com/ianare/exif-py/archive/${COMMIT}.tar.gz -> ${P}-${COMMIT:0:7}.tar.gz"
 
 LICENSE="BSD"
 SLOT="0"
 KEYWORDS="amd64 arm arm64 ~riscv x86"
 RESTRICT="mirror"
-S="${WORKDIR}/exif-py-${PV}"
+S="${WORKDIR}/exif-py-${COMMIT}"
 
 RDEPEND+="${PYTHON_DEPS}"
 BDEPEND+="
