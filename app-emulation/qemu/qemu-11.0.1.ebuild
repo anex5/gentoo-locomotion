@@ -115,7 +115,7 @@ use_softmmu_targets=$(printf ' qemu_softmmu_targets_%s' ${IUSE_SOFTMMU_TARGETS})
 use_user_targets=$(printf ' qemu_user_targets_%s' ${IUSE_USER_TARGETS})
 IUSE+=" ${use_softmmu_targets} ${use_user_targets}"
 
-RESTRICT="!test? ( test )"
+RESTRICT="!test? ( test ) mirror"
 
 # Allow no targets to be built so that people can get a tools-only build.
 # Block USE flag configurations known to not work.
