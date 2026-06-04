@@ -3,7 +3,7 @@
 
 EAPI=8
 
-inherit fcaps meson optfeature
+inherit fcaps meson optfeature systemd
 
 DESCRIPTION="SwayFX: Sway, but with eye candy!"
 HOMEPAGE="https://github.com/WillPower3309/swayfx"
@@ -22,7 +22,7 @@ fi
 
 LICENSE="MIT"
 SLOT="0"
-IUSE="bash-completion fish-completion grimshot +man +swaybar +swaynag tray wallpapers x11-backend zsh-completion"
+IUSE="bash-completion fish-completion grimshot +man +swaybar +swaynag systemd tray wallpapers x11-backend zsh-completion"
 REQUIRED_USE="tray? ( swaybar )"
 
 DEPEND="
@@ -105,6 +105,10 @@ src_install() {
 	if use grimshot; then
 		use man && doman contrib/grimshot.1
 		dobin contrib/grimshot
+	fi
+
+	if use systemd; then
+		systemd_douserunit "${FILESDIR}/sway-session."{target,service}
 	fi
 }
 
