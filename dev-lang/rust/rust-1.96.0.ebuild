@@ -347,7 +347,7 @@ src_unpack() {
 	else
 		default
 	fi
-	#rm -f "${WORKDIR}/rust-patches-${RUST_PATCH_VER}/1.94.0-compiler-musl-dynamic-linking.patch"
+	rm -f "${WORKDIR}/rust-patches-${RUST_PATCH_VER}/1.94.0-compiler-musl-dynamic-linking.patch"
 }
 
 src_prepare() {

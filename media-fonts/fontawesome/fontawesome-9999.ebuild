@@ -23,10 +23,20 @@ LICENSE="CC-BY-4.0 OFL-1.1"
 SLOT="0/7"
 IUSE="+otf ttf"
 
+FONT_CONF="${FILESDIR}/60-fontawesome-7-free-fonts.conf"
+
 REQUIRED_USE="|| ( otf ttf )"
 
+BDEPEND="
+	media-libs/woff2
+"
+
 src_install() {
-	use otf && { FONT_S="${S}/otfs"; FONT_SUFFIX="otf "; }
-	use ttf && { FONT_S="${S}/webfonts"; FONT_SUFFIX+="ttf"; }
-	font_src_install
+	if use otf; then
+		FONT_S="${S}/otfs" FONT_SUFFIX="otf" font_src_install
+	fi
+	if use ttf; then
+		woff2_decompress "${S}"/webfonts/fa-*.woff2
+		FONT_S="${S}/webfonts" FONT_SUFFIX="ttf" font_src_install
+	fi
 }
