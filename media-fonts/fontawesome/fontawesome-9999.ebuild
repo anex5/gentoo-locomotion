@@ -18,7 +18,7 @@ else
 	S="${WORKDIR}/${MY_PN}-${PV}"
 fi
 
-RESTRICT="mirror"
+RESTRICT="mirror strip binchecks"
 LICENSE="CC-BY-4.0 OFL-1.1"
 SLOT="0/7"
 IUSE="+otf ttf"
