@@ -1,18 +1,18 @@
-# Copyright 1999-2025 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU Public License v2
 
 EAPI=8
 
-inherit meson
+inherit meson flag-o-matic
 
 if [[ ${PV} == 9999 ]]; then
 	inherit git-r3
 	EGIT_REPO_URI="https://github.com/wlrfx/scenefx"
 else
 	#MY_PV=${PV/_rc/-rc}
-	MY_PV="7490662894305924840129be0b70cb5183f6287f"
-	SRC_URI="https://github.com/wlrfx/scenefx/archive/${MY_PV}.tar.gz -> ${P}.tar.gz"
-	S="${WORKDIR}/${PN}-${MY_PV}"
+	COMMIT="ad987a32b9fe0e640fe1abf4092737699dec5a0f"
+	SRC_URI="https://github.com/wlrfx/scenefx/archive/${COMMIT}.tar.gz -> ${P}-${COMMIT:0:7}.gh.tar.gz"
+	S="${WORKDIR}/${PN}-${COMMIT}"
 	KEYWORDS="~amd64 ~arm64 ~arm ~loong ~ppc64 ~riscv ~x86"
 fi
 
@@ -23,10 +23,10 @@ SLOT="0"
 IUSE="X man examples"
 
 DEPEND="
-	>=dev-libs/wayland-1.23.0
+	>=dev-libs/wayland-1.23.1
 	>=x11-libs/libdrm-2.4.122
 	media-libs/mesa[egl(+),gles2(+)]
-	>=x11-libs/pixman-0.42.0
+	>=x11-libs/pixman-0.43.0
 	media-libs/libglvnd
 	x11-libs/libxkbcommon
 	X? (
@@ -40,12 +40,15 @@ DEPEND+="
 	>=gui-libs/wlroots-0.19:=[X?]
 	<gui-libs/wlroots-0.20:=[X?]
 "
-RDEPEND="${DEPEND}"
+RDEPEND="
+	${DEPEND}
+"
 BDEPEND="
-	>=dev-libs/wayland-protocols-1.35
-	>=dev-build/meson-0.59.0
-	dev-util/glslang
 	app-alternatives/ninja
+	>=dev-libs/wayland-protocols-1.35
+	>=dev-build/meson-1.3
+	dev-util/glslang
+	dev-util/wayland-scanner
 	virtual/pkgconfig
 	virtual/libc
 "
@@ -58,6 +61,7 @@ RESTRICT="mirror"
 #)
 
 src_configure() {
+	! use elibc_glibc && append-cppflags "-D__always_inline=__attribute__((always_inline))"
 	local emesonargs=(
 		-Drenderers=auto
 		$(meson_use examples)

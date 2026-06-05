@@ -1,9 +1,9 @@
-# Copyright 1999-2025 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-inherit fcaps meson optfeature systemd
+inherit fcaps flag-o-matic meson optfeature systemd
 
 DESCRIPTION="SwayFX: Sway, but with eye candy!"
 HOMEPAGE="https://github.com/WillPower3309/swayfx"
@@ -14,10 +14,11 @@ if [[ ${PV} == 9999 ]]; then
 	SCENEFX_PV=9999
 else
 	MY_PV=${PV/_rc/-rc}
-	SRC_URI="https://github.com/WillPower3309/swayfx/archive/${MY_PV}.tar.gz -> ${P}.tar.gz"
+	SRC_URI="https://github.com/WillPower3309/swayfx/archive/${MY_PV}.tar.gz -> ${P}.tar.gz
+		https://github.com/WillPower3309/swayfx/archive/${MY_PV}.tar.gz.sig -> ${P}.tar.gz.sig"
 	KEYWORDS="amd64 arm64 ~arm ~loong ~ppc64 ~riscv ~x86"
 	S="${WORKDIR}/${PN}-${MY_PV}"
-	SCENEFX_PV=0.4
+	SCENEFX_PV=0.4.1
 fi
 
 LICENSE="MIT"
@@ -27,11 +28,11 @@ REQUIRED_USE="tray? ( swaybar )"
 
 DEPEND="
 	>=dev-libs/json-c-0.13:0=
-	>=dev-libs/libinput-1.21.0:0=
+	>=dev-libs/libinput-1.26.0:0=
 	virtual/libudev
 	sys-auth/seatd:=
 	dev-libs/libpcre2
-	>=dev-libs/wayland-1.20.0
+	>=dev-libs/wayland-1.21.0
 	>=gui-libs/scenefx-${SCENEFX_PV}
 	x11-libs/cairo
 	>=x11-libs/libxkbcommon-1.5.0:0=
@@ -51,6 +52,7 @@ DEPEND="
 	)
 "
 RDEPEND="
+	${DEPEND}
 	x11-misc/xkeyboard-config
 	grimshot? (
 		app-misc/jq
@@ -60,12 +62,11 @@ RDEPEND="
 		x11-libs/libnotify
 	)
 	!!gui-wm/sway
-	${DEPEND}
 "
 BDEPEND="
 	man? ( >=app-text/scdoc-1.9.3 )
-	>=dev-libs/wayland-protocols-1.24
-	>=dev-build/meson-0.60.0
+	>=dev-libs/wayland-protocols-1.41
+	>=dev-build/meson-1.3
 	virtual/pkgconfig
 "
 
@@ -81,6 +82,7 @@ src_prepare() {
 }
 
 src_configure() {
+	! use elibc_glibc && append-cppflags "-D__always_inline=__attribute__((always_inline))"
 	local emesonargs=(
 		$(meson_feature man man-pages)
 		$(meson_feature tray)
