@@ -3,10 +3,10 @@
 
 EAPI=8
 
-LLVM_COMPAT=( {18..22} )
+LLVM_COMPAT=( {19..22} )
 LLVM_OPTIONAL=1
 CARGO_OPTIONAL=1
-PYTHON_COMPAT=( python3_{11..14} )
+PYTHON_COMPAT=( python3_{12..15} )
 
 inherit flag-o-matic llvm-r2 meson-multilib python-any-r1 linux-info
 
@@ -28,7 +28,7 @@ RUST_OPTIONAL=1
 inherit cargo
 
 DESCRIPTION="OpenGL-like graphic library for Linux"
-HOMEPAGE="https://www.mesa3d.org/ https://mesa.freedesktop.org/"
+HOMEPAGE="https://mesa3d.org/"
 
 if [[ ${PV} == 9999 ]]; then
 	EGIT_REPO_URI="https://gitlab.freedesktop.org/mesa/mesa.git"
@@ -416,6 +416,7 @@ multilib_src_configure() {
 		-Dgallium-drivers=$(driver_list "${GALLIUM_DRIVERS[*]}")
 		-Dvulkan-drivers=$(driver_list "${VULKAN_DRIVERS[*]}")
 		-Db_ndebug=$(usex debug false true)
+		-Dallow-broken-lto=true
 	)
 	meson_src_configure
 }

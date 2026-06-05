@@ -262,7 +262,7 @@ pkg_setup() {
 	pre_build_checks
 	python-any-r1_pkg_setup
 
-	# export LIBGIT2_NO_PKG_CONFIG=1 #749381
+	#export LIBGIT2_NO_PKG_CONFIG=1 #749381
 	if tc-is-cross-compiler; then
 		use system-llvm && die "USE=system-llvm not allowed when cross-compiling"
 		local cross_llvm_target="$(llvm_tuple_to_target "${CBUILD}")"

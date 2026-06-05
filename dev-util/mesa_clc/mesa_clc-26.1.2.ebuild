@@ -4,9 +4,9 @@
 EAPI=8
 
 LLVM_COMPAT=( {19..22} )
-PYTHON_COMPAT=( python3_{11..14} )
+PYTHON_COMPAT=( python3_{12..15} )
 
-inherit llvm-r1 meson python-any-r1
+inherit llvm-r2 meson python-any-r1
 
 MY_PV="${PV/_/-}"
 
