@@ -12,8 +12,10 @@ if [[ ${PV} == 9999 ]]; then
 	EGIT_REPO_URI="https://github.com/kiltum/zxcpp.git"
 	KEYWORDS=""
 else
-	SRC_URI="https://github.com/kiltum/zxcpp/archive/v${PV}.tar.gz -> ${P}.tar.gz"
+	COMMIT="5a19cc52d92cd061c9a4a6e3e15095439b530c5c"
+	SRC_URI="https://github.com/kiltum/zxcpp/archive/${COMMIT}.tar.gz -> ${P}-${COMMIT:0:7}.gh.tar.gz"
 	KEYWORDS="~amd64 ~arm ~arm64 ~loong ~ppc ~ppc64 ~riscv ~sparc ~x86"
+	S="${WORKDIR}/${PN}-${COMMIT}"
 fi
 #S="${WORKDIR}/iotop-${PV}"
 
