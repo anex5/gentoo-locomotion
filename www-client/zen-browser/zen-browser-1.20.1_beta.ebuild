@@ -441,8 +441,8 @@ BDEPEND+="
 	|| (
 		>=dev-lang/rust-1.87.0[${MULTILIB_USEDEP}]
 		>=dev-lang/rust-bin-1.87.0[${MULTILIB_USEDEP}]
-		<dev-lang/rust-1.96.0[${MULTILIB_USEDEP}]
-		<dev-lang/rust-bin-1.96.0[${MULTILIB_USEDEP}]
+		<dev-lang/rust-1.97.0[${MULTILIB_USEDEP}]
+		<dev-lang/rust-bin-1.97.0[${MULTILIB_USEDEP}]
 	)
 	app-alternatives/awk
 	app-arch/unzip

@@ -10,7 +10,7 @@ FIREFOX_PATCHSET="firefox-${PV%%.*}esr-patches-10.tar.xz"
 FIREFOX_LOONG_PATCHSET="firefox-139-loong-patches-02.tar.xz"
 
 LLVM_COMPAT=( {20..22} )
-PP="1"
+PP="2"
 GV="1"
 
 # This will also filter rust versions that don't match LLVM_COMPAT in the non-clang path; this is fine.
@@ -1005,7 +1005,6 @@ src_prepare() {
 	if use llvm_slot_22 ; then
 		eapply "${FILESDIR}/extra-patches/firefox-140.8.0-skia-m142-update.patch" || die
 		eapply "${FILESDIR}/extra-patches/firefox-140.8.0-update-rust-bindgen-to-fix-clang22-build.patch" || die
-		eapply "${FILESDIR}/extra-patches/firefox-140.8.0-fix-build-encodings_rs-clang-22.patch" || die
 	fi
 
 	# Use modified patch that isn't mangled
@@ -1111,7 +1110,7 @@ src_prepare() {
 	# Clear checksums from cargo crates we've manually patched.
 	# moz_clear_vendor_checksums crate
 	#moz_clear_vendor_checksums glslopt
-    #moz_clear_vendor_checksums encoding_rs
+    moz_clear_vendor_checksums encoding_rs
 
 	# Respect choice for "jumbo-build"
 	# Changing the value for FILES_PER_UNIFIED_FILE may not work, see #905431
