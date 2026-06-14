@@ -1,7 +1,7 @@
-From 6ef65a06dfce5551fbb7bdd4274b4001d157204c Mon Sep 17 00:00:00 2001
+From 512b3de4928a8741fe4b8e2a3f6d82559cda3125 Mon Sep 17 00:00:00 2001
 From: Natalie Vock <natalie.vock@gmx.de>
 Date: Sun, 31 Aug 2025 17:17:20 +0200
-Subject: [PATCH 1/6] cgroup/dmem: Add queries for protection values
+Subject: [PATCH 1/8] cgroup/dmem: Add queries for protection values
 
 Callers can use this feedback to be more aggressive in making space for
 allocations of a cgroup if they know it is protected.
@@ -49,10 +49,10 @@ index dd4869f1d..1a88cd0c9 100644
  { }
  
 diff --git a/kernel/cgroup/dmem.c b/kernel/cgroup/dmem.c
-index 9d95824dc..28227405f 100644
+index 003cd8651..b980a73d3 100644
 --- a/kernel/cgroup/dmem.c
 +++ b/kernel/cgroup/dmem.c
-@@ -694,6 +694,68 @@ int dmem_cgroup_try_charge(struct dmem_cgroup_region *region, u64 size,
+@@ -695,6 +695,68 @@ int dmem_cgroup_try_charge(struct dmem_cgroup_region *region, u64 size,
  }
  EXPORT_SYMBOL_GPL(dmem_cgroup_try_charge);
  
@@ -122,13 +122,13 @@ index 9d95824dc..28227405f 100644
  {
  	struct dmem_cgroup_region *region;
 -- 
-2.53.0
+2.54.0
 
 
-From c5f354c8bdae6719f7ca35a06951ca36cae51b18 Mon Sep 17 00:00:00 2001
+From 40a6c01a214a1ef0e19b5ac81b4a3639f054917e Mon Sep 17 00:00:00 2001
 From: Natalie Vock <natalie.vock@gmx.de>
 Date: Sun, 14 Sep 2025 18:35:45 +0200
-Subject: [PATCH 2/6] cgroup,cgroup/dmem: Add (dmem_)cgroup_common_ancestor
+Subject: [PATCH 2/8] cgroup,cgroup/dmem: Add (dmem_)cgroup_common_ancestor
  helper
 
 This helps to find a common subtree of two resources, which is important
@@ -146,7 +146,7 @@ Signed-off-by: Natalie Vock <natalie.vock@gmx.de>
  3 files changed, 59 insertions(+)
 
 diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-index bc892e3b3..560ae995e 100644
+index b61b9b784..bdebbfdb7 100644
 --- a/include/linux/cgroup.h
 +++ b/include/linux/cgroup.h
 @@ -561,6 +561,27 @@ static inline struct cgroup *cgroup_ancestor(struct cgroup *cgrp,
@@ -205,10 +205,10 @@ index 1a88cd0c9..9d72457c4 100644
  { }
  
 diff --git a/kernel/cgroup/dmem.c b/kernel/cgroup/dmem.c
-index 28227405f..29197d380 100644
+index b980a73d3..7c9853b05 100644
 --- a/kernel/cgroup/dmem.c
 +++ b/kernel/cgroup/dmem.c
-@@ -756,6 +756,35 @@ bool dmem_cgroup_below_low(struct dmem_cgroup_pool_state *root,
+@@ -757,6 +757,35 @@ bool dmem_cgroup_below_low(struct dmem_cgroup_pool_state *root,
  }
  EXPORT_SYMBOL_GPL(dmem_cgroup_below_low);
  
@@ -245,13 +245,13 @@ index 28227405f..29197d380 100644
  {
  	struct dmem_cgroup_region *region;
 -- 
-2.53.0
+2.54.0
 
 
-From b91aa635b548583bc59884bf52c066f8205cc5ac Mon Sep 17 00:00:00 2001
+From 06c3414f1dece7d2e9325405cd5e33d4494f9064 Mon Sep 17 00:00:00 2001
 From: Natalie Vock <natalie.vock@gmx.de>
 Date: Wed, 15 Oct 2025 14:43:26 +0200
-Subject: [PATCH 3/6] drm/ttm: Extract code for attempting allocation in a
+Subject: [PATCH 3/8] drm/ttm: Extract code for attempting allocation in a
  place
 
 Move all code for attempting allocation for a specific place to
@@ -273,11 +273,11 @@ No functional change intended.
 Signed-off-by: Natalie Vock <natalie.vock@gmx.de>
 Reviewed-by: Tvrtko Ursulin <tvrtko.ursulin@igalia.com>
 ---
- drivers/gpu/drm/ttm/ttm_bo.c | 101 +++++++++++++++++++++++++++--------
- 1 file changed, 79 insertions(+), 22 deletions(-)
+ drivers/gpu/drm/ttm/ttm_bo.c | 117 ++++++++++++++++++++++++++---------
+ 1 file changed, 89 insertions(+), 28 deletions(-)
 
 diff --git a/drivers/gpu/drm/ttm/ttm_bo.c b/drivers/gpu/drm/ttm/ttm_bo.c
-index 0765d6942..ef68197e3 100644
+index 08d07ffbb..ef68197e3 100644
 --- a/drivers/gpu/drm/ttm/ttm_bo.c
 +++ b/drivers/gpu/drm/ttm/ttm_bo.c
 @@ -489,6 +489,62 @@ int ttm_bo_evict_first(struct ttm_device *bdev, struct ttm_resource_manager *man
@@ -407,7 +407,7 @@ index 0765d6942..ef68197e3 100644
 -		may_evict = (force_space && place->mem_type != TTM_PL_SYSTEM);
 -		ret = ttm_resource_alloc(bo, place, res, force_space ? &limit_pool : NULL);
 -		if (ret) {
--			if (ret != -ENOSPC && ret != -EAGAIN) {
+-			if (ret != -ENOSPC) {
 -				dmem_cgroup_pool_state_put(limit_pool);
 -				return ret;
 -			}
@@ -440,14 +440,38 @@ index 0765d6942..ef68197e3 100644
  		}
  
  		ret = ttm_bo_add_pipelined_eviction_fences(bo, man, ctx->no_wait_gpu);
+@@ -1178,13 +1235,17 @@ ttm_bo_swapout_cb(struct ttm_lru_walk *walk, struct ttm_buffer_object *bo)
+ 		bdev->funcs->swap_notify(bo);
+ 
+ 	if (ttm_tt_is_populated(tt)) {
++		spin_lock(&bdev->lru_lock);
++		ttm_resource_del_bulk_move(bo->resource, bo);
++		spin_unlock(&bdev->lru_lock);
++
+ 		ret = ttm_tt_swapout(bdev, tt, swapout_walk->gfp_flags);
+-		if (!ret) {
+-			spin_lock(&bdev->lru_lock);
+-			ttm_resource_del_bulk_move_unevictable(bo->resource, bo);
+-			ttm_resource_move_to_lru_tail(bo->resource);
+-			spin_unlock(&bdev->lru_lock);
+-		}
++
++		spin_lock(&bdev->lru_lock);
++		if (ret)
++			ttm_resource_add_bulk_move(bo->resource, bo);
++		ttm_resource_move_to_lru_tail(bo->resource);
++		spin_unlock(&bdev->lru_lock);
+ 	}
+ 
+ out:
 -- 
-2.53.0
+2.54.0
 
 
-From 51bde8eedfac60cafa9f963fca869f3d4eb74414 Mon Sep 17 00:00:00 2001
+From 8c5194d4ff7be2eb0227b5608d920b3966b0645e Mon Sep 17 00:00:00 2001
 From: Natalie Vock <natalie.vock@gmx.de>
 Date: Wed, 25 Feb 2026 11:29:40 +0100
-Subject: [PATCH 4/6] drm/ttm: Split cgroup charge and resource allocation
+Subject: [PATCH 4/8] drm/ttm: Split cgroup charge and resource allocation
 
 Coupling resource allocation and cgroup charging is racy when charging
 succeeds, but subsequent resource allocation fails. Certain eviction
@@ -472,9 +496,9 @@ a different ttm_place.
 Signed-off-by: Natalie Vock <natalie.vock@gmx.de>
 ---
  drivers/gpu/drm/ttm/ttm_bo.c       | 66 ++++++++++++++++++++----------
- drivers/gpu/drm/ttm/ttm_resource.c | 54 ++++++++++++++++--------
+ drivers/gpu/drm/ttm/ttm_resource.c | 64 ++++++++++++++++-------------
  include/drm/ttm/ttm_resource.h     |  6 ++-
- 3 files changed, 88 insertions(+), 38 deletions(-)
+ 3 files changed, 85 insertions(+), 51 deletions(-)
 
 diff --git a/drivers/gpu/drm/ttm/ttm_bo.c b/drivers/gpu/drm/ttm/ttm_bo.c
 index ef68197e3..45a54e404 100644
@@ -606,17 +630,33 @@ index ef68197e3..45a54e404 100644
  			return ret;
  		}
 diff --git a/drivers/gpu/drm/ttm/ttm_resource.c b/drivers/gpu/drm/ttm/ttm_resource.c
-index 192fca24f..a8a836f6e 100644
+index bfd9c68fc..a8a836f6e 100644
 --- a/drivers/gpu/drm/ttm/ttm_resource.c
 +++ b/drivers/gpu/drm/ttm/ttm_resource.c
-@@ -373,30 +373,52 @@ void ttm_resource_fini(struct ttm_resource_manager *man,
+@@ -292,19 +292,6 @@ void ttm_resource_del_bulk_move(struct ttm_resource *res,
+ 		ttm_lru_bulk_move_del(bo->bulk_move, res);
+ }
+ 
+-/*
+- * Remove a resource from its bulk_move, bypassing the unevictable check.
+- * Use only when the resource is known to still be tracked in the range despite
+- * the BO having just become unevictable; asserts that this is the case.
+- */
+-void ttm_resource_del_bulk_move_unevictable(struct ttm_resource *res,
+-					    struct ttm_buffer_object *bo)
+-{
+-	WARN_ON_ONCE(!ttm_resource_unevictable(res, bo));
+-	if (bo->bulk_move)
+-		ttm_lru_bulk_move_del(bo->bulk_move, res);
+-}
+-
+ /* Move a resource to the LRU or bulk tail */
+ void ttm_resource_move_to_lru_tail(struct ttm_resource *res)
+ {
+@@ -386,33 +373,52 @@ void ttm_resource_fini(struct ttm_resource_manager *man,
  }
  EXPORT_SYMBOL(ttm_resource_fini);
  
--int ttm_resource_alloc(struct ttm_buffer_object *bo,
--		       const struct ttm_place *place,
--		       struct ttm_resource **res_ptr,
--		       struct dmem_cgroup_pool_state **ret_limit_pool)
 +/**
 + * ttm_resource_try_charge - charge a resource manager's cgroup pool
 + * @bo: buffer for which an allocation should be charged
@@ -649,9 +689,10 @@ index 192fca24f..a8a836f6e 100644
 +				      ret_limit_pool);
 +}
 +
-+int ttm_resource_alloc(struct ttm_buffer_object *bo,
-+		       const struct ttm_place *place,
-+		       struct ttm_resource **res_ptr,
+ int ttm_resource_alloc(struct ttm_buffer_object *bo,
+ 		       const struct ttm_place *place,
+ 		       struct ttm_resource **res_ptr,
+-		       struct dmem_cgroup_pool_state **ret_limit_pool)
 +		       struct dmem_cgroup_pool_state *charge_pool)
  {
  	struct ttm_resource_manager *man =
@@ -661,8 +702,11 @@ index 192fca24f..a8a836f6e 100644
  
 -	if (man->cg) {
 -		ret = dmem_cgroup_try_charge(man->cg, bo->base.size, &pool, ret_limit_pool);
--		if (ret)
+-		if (ret) {
+-			if (ret == -EAGAIN)
+-				ret = -ENOSPC;
 -			return ret;
+-		}
 -	}
 -
  	ret = man->func->alloc(man, bo, place, res_ptr);
@@ -679,10 +723,10 @@ index 192fca24f..a8a836f6e 100644
  	spin_lock(&bo->bdev->lru_lock);
  	ttm_resource_add_bulk_move(*res_ptr, bo);
 diff --git a/include/drm/ttm/ttm_resource.h b/include/drm/ttm/ttm_resource.h
-index 33e80f30b..549b5b796 100644
+index a5d386583..e567b7ec8 100644
 --- a/include/drm/ttm/ttm_resource.h
 +++ b/include/drm/ttm/ttm_resource.h
-@@ -456,10 +456,14 @@ void ttm_resource_init(struct ttm_buffer_object *bo,
+@@ -458,10 +458,14 @@ void ttm_resource_init(struct ttm_buffer_object *bo,
  void ttm_resource_fini(struct ttm_resource_manager *man,
  		       struct ttm_resource *res);
  
@@ -699,13 +743,13 @@ index 33e80f30b..549b5b796 100644
  bool ttm_resource_intersects(struct ttm_device *bdev,
  			     struct ttm_resource *res,
 -- 
-2.53.0
+2.54.0
 
 
-From 32f4042af7463fe2170387ee1a7a5e764e2108a3 Mon Sep 17 00:00:00 2001
+From 29c4341e7eb180178474e601e5994f178007cdb0 Mon Sep 17 00:00:00 2001
 From: Natalie Vock <natalie.vock@gmx.de>
 Date: Thu, 11 Sep 2025 11:30:59 +0200
-Subject: [PATCH 5/6] drm/ttm: Be more aggressive when allocating below
+Subject: [PATCH 5/8] drm/ttm: Be more aggressive when allocating below
  protection limit
 
 When the cgroup's memory usage is below the low/min limit and allocation
@@ -803,13 +847,13 @@ index 45a54e404..24657ddfc 100644
  		goto retry;
  	}
 -- 
-2.53.0
+2.54.0
 
 
-From 44888253323dfcb239b89d6b72dfda7363d691a0 Mon Sep 17 00:00:00 2001
+From 58b5d6bd498af5a6505f9b8db326df68750a2895 Mon Sep 17 00:00:00 2001
 From: Natalie Vock <natalie.vock@gmx.de>
 Date: Sun, 14 Sep 2025 18:45:08 +0200
-Subject: [PATCH 6/6] drm/ttm: Use common ancestor of evictor and evictee as
+Subject: [PATCH 6/8] drm/ttm: Use common ancestor of evictor and evictee as
  limit pool
 
 When checking whether to skip certain buffers because they're protected
@@ -894,5 +938,122 @@ index 24657ddfc..73b19c5d0 100644
  
  	if (bo->pin_count || !bo->bdev->funcs->eviction_valuable(bo, evict_walk->place))
 -- 
-2.53.0
+2.54.0
+
+
+From 661ab6a8972ba4491ba4a9d98af0d9e43c20e028 Mon Sep 17 00:00:00 2001
+From: Peter Jung <admin@ptr1337.dev>
+Date: Sat, 23 May 2026 17:27:29 +0200
+Subject: [PATCH 7/8] drm/ttm: Restore ttm_resource_del_bulk_move_unevictable()
+
+The cgroup-vram rebase dropped the implementation while leaving call
+sites in ttm_bo_util.c and the header declaration, causing a modpost
+failure. Also restore the swapout bulk_move fix lost in de1e2dc753c1.
+
+Fixes: f33c397ed6a9 ("drm/ttm: Split cgroup charge and resource allocation")
+Fixes: de1e2dc753c1 ("drm/ttm: Extract code for attempting allocation in a place")
+---
+ drivers/gpu/drm/ttm/ttm_bo.c       | 16 ++++++----------
+ drivers/gpu/drm/ttm/ttm_resource.c | 13 +++++++++++++
+ 2 files changed, 19 insertions(+), 10 deletions(-)
+
+diff --git a/drivers/gpu/drm/ttm/ttm_bo.c b/drivers/gpu/drm/ttm/ttm_bo.c
+index 73b19c5d0..0ec6e1a8f 100644
+--- a/drivers/gpu/drm/ttm/ttm_bo.c
++++ b/drivers/gpu/drm/ttm/ttm_bo.c
+@@ -1341,17 +1341,13 @@ ttm_bo_swapout_cb(struct ttm_lru_walk *walk, struct ttm_buffer_object *bo)
+ 		bdev->funcs->swap_notify(bo);
+ 
+ 	if (ttm_tt_is_populated(tt)) {
+-		spin_lock(&bdev->lru_lock);
+-		ttm_resource_del_bulk_move(bo->resource, bo);
+-		spin_unlock(&bdev->lru_lock);
+-
+ 		ret = ttm_tt_swapout(bdev, tt, swapout_walk->gfp_flags);
+-
+-		spin_lock(&bdev->lru_lock);
+-		if (ret)
+-			ttm_resource_add_bulk_move(bo->resource, bo);
+-		ttm_resource_move_to_lru_tail(bo->resource);
+-		spin_unlock(&bdev->lru_lock);
++		if (!ret) {
++			spin_lock(&bdev->lru_lock);
++			ttm_resource_del_bulk_move_unevictable(bo->resource, bo);
++			ttm_resource_move_to_lru_tail(bo->resource);
++			spin_unlock(&bdev->lru_lock);
++		}
+ 	}
+ 
+ out:
+diff --git a/drivers/gpu/drm/ttm/ttm_resource.c b/drivers/gpu/drm/ttm/ttm_resource.c
+index a8a836f6e..d4a1d1c38 100644
+--- a/drivers/gpu/drm/ttm/ttm_resource.c
++++ b/drivers/gpu/drm/ttm/ttm_resource.c
+@@ -292,6 +292,19 @@ void ttm_resource_del_bulk_move(struct ttm_resource *res,
+ 		ttm_lru_bulk_move_del(bo->bulk_move, res);
+ }
+ 
++/*
++ * Remove a resource from its bulk_move, bypassing the unevictable check.
++ * Use only when the resource is known to still be tracked in the range despite
++ * the BO having just become unevictable; asserts that this is the case.
++ */
++void ttm_resource_del_bulk_move_unevictable(struct ttm_resource *res,
++					    struct ttm_buffer_object *bo)
++{
++	WARN_ON_ONCE(!ttm_resource_unevictable(res, bo));
++	if (bo->bulk_move)
++		ttm_lru_bulk_move_del(bo->bulk_move, res);
++}
++
+ /* Move a resource to the LRU or bulk tail */
+ void ttm_resource_move_to_lru_tail(struct ttm_resource *res)
+ {
+-- 
+2.54.0
+
+
+From c3fcee35f975ea992c09f5fbe2e5a30c88d0ca98 Mon Sep 17 00:00:00 2001
+From: Eric Naim <dnaim@cachyos.org>
+Date: Sat, 6 Jun 2026 10:16:57 +0700
+Subject: [PATCH 8/8] fixup! cgroup,cgroup/dmem: Add
+ (dmem_)cgroup_common_ancestor helper
+
+Signed-off-by: Eric Naim <dnaim@cachyos.org>
+---
+ kernel/cgroup/dmem.c | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/kernel/cgroup/dmem.c b/kernel/cgroup/dmem.c
+index 7c9853b05..f16adcfca 100644
+--- a/kernel/cgroup/dmem.c
++++ b/kernel/cgroup/dmem.c
+@@ -771,6 +771,7 @@ struct dmem_cgroup_pool_state *dmem_cgroup_get_common_ancestor(struct dmem_cgrou
+ {
+ 	struct cgroup *ancestor_cgroup;
+ 	struct cgroup_subsys_state *ancestor_css;
++	struct dmem_cgroup_pool_state *pool = NULL;
+ 
+ 	if (!a || !b)
+ 		return NULL;
+@@ -779,10 +780,15 @@ struct dmem_cgroup_pool_state *dmem_cgroup_get_common_ancestor(struct dmem_cgrou
+ 	if (!ancestor_cgroup)
+ 		return NULL;
+ 
++	rcu_read_lock();
+ 	ancestor_css = cgroup_e_css(ancestor_cgroup, &dmem_cgrp_subsys);
+-	css_get(ancestor_css);
++	if (css_tryget(ancestor_css))
++		pool = get_cg_pool_unlocked(css_to_dmemcs(ancestor_css), a->region);
++	if (!pool)
++		css_put(ancestor_css);
++	rcu_read_unlock();
+ 
+-	return get_cg_pool_unlocked(css_to_dmemcs(ancestor_css), a->region);
++	return pool;
+ }
+ EXPORT_SYMBOL_GPL(dmem_cgroup_get_common_ancestor);
+ 
+-- 
+2.54.0
 

@@ -4,7 +4,7 @@
 EAPI=8
 
 CONFIG_CHECK="~ADVISE_SYSCALLS"
-PYTHON_COMPAT=( python3_{11..14} )
+PYTHON_COMPAT=( python3_{13..15} )
 PYTHON_REQ_USE="threads(+)"
 
 inherit bash-completion-r1 check-reqs flag-o-matic linux-info
@@ -17,7 +17,7 @@ LICENSE="Apache-1.1 Apache-2.0 BSD BSD-2 MIT npm? ( Artistic-2 )"
 if [[ ${PV} == *9999 ]]; then
 	inherit git-r3
 	EGIT_REPO_URI="https://github.com/nodejs/node"
-	SLOT="0/26.1"
+	SLOT="0"
 else
 	SRC_URI="https://nodejs.org/dist/v${PV}/node-v${PV}.tar.xz"
 	SLOT="0/$(ver_cut 1)"
@@ -279,6 +279,8 @@ src_configure() {
 		--shared-simdutf
 		--shared-sqlite
 		--shared-zlib
+		--shared-ffi
+		--shared-zstd
 	)
 	if ! use asm && ! use system-ssl ; then
 		myconf+=( --openssl-no-asm )
@@ -451,6 +453,16 @@ src_test() {
 		test/parallel/test-strace-openat-openssl.js
 		test/sequential/test-tls-session-timeout.js
 		test/sequential/test-util-debug.js
+		# Breaking change in nghttp2 1.67.1, see
+		# https://github.com/nodejs/node/issues/60661
+		# https://github.com/nodejs/node/commit/b426a47c05e6b039ed65798d0ad3b3698b35fd97
+		# https://github.com/nghttp2/nghttp2/issues/2604
+		test/parallel/test-http2-client-unescaped-path.js
+		test/parallel/test-http2-multi-content-length.js
+		test/parallel/test-http2-reset-flood.js
+		test/parallel/test-http2-max-invalid-frames.js
+		test/parallel/test-http2-misbehaving-flow-control.js
+		test/parallel/test-http2-misbehaving-flow-control-paused.js
 	)
 	[[ "$(nice)" -gt 10 ]] && drop_tests+=( "test/parallel/test-os.js" )
 	# https://bugs.gentoo.org/963649

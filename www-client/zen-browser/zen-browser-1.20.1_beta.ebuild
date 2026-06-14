@@ -2073,15 +2073,15 @@ _src_install() {
 	# Force machine learning features
 	if use ml ; then
 		cat >>"${GENTOO_PREFS}" <<-EOF || die "failed to set ml pref"
-		sticky_pref("browser.ml.enable, true);
-		sticky_pref("extensions.ml.enabled, true);
-		sticky_pref("browser.tabs.groups.smart.enabled, true);
+		sticky_pref("browser.ml.enable", true);
+		sticky_pref("extensions.ml.enabled", true);
+		sticky_pref("browser.tabs.groups.smart.enabled", true);
 		EOF
 	else
 		cat >>"${GENTOO_PREFS}" <<-EOF || die "failed to set ml pref"
-		sticky_pref("browser.ml.enable, false); // Master switch
-		sticky_pref("extensions.ml.enabled, false);
-		sticky_pref("browser.tabs.groups.smart.enabled, false);
+		sticky_pref("browser.ml.enable", false); // Master switch
+		sticky_pref("extensions.ml.enabled", false);
+		sticky_pref("browser.tabs.groups.smart.enabled", false);
 		EOF
 	fi
 
