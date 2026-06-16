@@ -1,0 +1,1444 @@
+From 264fe770d8ee47760e3e481b8694a7f6f5684e89 Mon Sep 17 00:00:00 2001
+From: abdo <dev@abdo.wtf>
+Date: Wed, 15 Apr 2026 12:42:36 -0400
+Subject: [PATCH] feat: render thumbnails in CLI via offscreen OpenGL
+
+Closes #7878.
+
+The CLI accepts --thumbnails and printer-profile thumbnail sizes but
+silently discards them for non-3MF input: get_thumbnail_generator_cli()
+returns an empty lambda, and the declared thumbnails never make it into
+the exported gcode. Fix that by generating the thumbnails in-process
+using a platform-native offscreen OpenGL context plus a small dedicated
+renderer.
+
+The renderer lives in a new wx-free static library (libslic3r_cli_thumbnails)
+linked only into the CLI target, so the GUI code path and libslic3r_gui
+are untouched.
+
+The offscreen context is created natively on each platform:
+  - macOS     : CGLCreateContext with no drawable, GL 3.2 core
+  - Linux/BSD : EGL; tries EGL_MESA_platform_surfaceless first (via the
+                core eglGetPlatformDisplay entry point with a fallback to
+                eglGetPlatformDisplayEXT for older stacks) and falls back
+                to eglGetDisplay(EGL_DEFAULT_DISPLAY) + a pbuffer surface
+                if any step of the surfaceless path fails, including a
+                probe eglMakeCurrent() to catch drivers that accept the
+                surfaceless display but fail to make it current
+  - Windows   : hidden HWND + wglCreateContextAttribsARB
+
+OSMesa is deliberately not used: it was removed upstream in Mesa 25.1.0.
+EGL_MESA_platform_surfaceless makes the Linux/BSD path work on truly
+headless hosts (CI, Docker, servers with no X/Wayland), addressing the
+failure mode that limited the earlier EGL-only attempt in #15327 to
+Linux only.
+
+The render path reuses the stock shaders/140/gouraud_light shaders and
+resolves the per-volume colour the same way the GUI does
+(Plater::get_extruder_colors_from_plater_config): extruder_colour first,
+filament_colour as fallback. Framing is an isometric ortho projection
+fit to the scene bounding box in view space, so thumbnails of any
+aspect (portrait, landscape, square) render the full model without
+clipping.
+
+Output is not byte-for-byte identical to the GUI thumbnail: the CLI
+path does not render the print bed. export_gcode() requests
+show_bed=true, so GUI thumbnails include the bed plate while CLI
+thumbnails show only the model. Rendering the bed in the CLI would
+require pulling the bed model and its assets through wxWidgets, which
+would bring wx into the CLI target; that is intentionally out of scope
+for this change. The CLI logs at debug level when show_bed is requested
+so the divergence is discoverable.
+
+On any failure (no GPU, context creation fails, shader compile fails,
+FBO incomplete), the renderer logs a warning and returns an empty list,
+so the CLI behaves exactly as it does today -- no regression path.
+
+Verified end-to-end on macOS 26.4 (CGL) and on Ubuntu 24.04 headless in
+Docker (EGL surfaceless with Mesa llvmpipe, no X or Wayland); both
+produce pixel-identical output for landscape and portrait thumbnails.
+The Windows WGL backend is written and CMake-guarded but has not been
+runtime-tested. There is no Catch2 coverage: the new paths are all
+GL-dependent and not cheaply mockable; validation here is end-to-end.
+---
+ src/CLI/ProcessActions.cpp                    |  35 +-
+ src/CMakeLists.txt                            |   3 +-
+ .../CLIThumbnailRenderer.cpp                  | 516 ++++++++++++++++++
+ .../CLIThumbnailRenderer.hpp                  |  31 ++
+ src/libslic3r_cli_thumbnails/CMakeLists.txt   |  58 ++
+ .../OffscreenGLContext.hpp                    |  53 ++
+ .../OffscreenGLContext_CGL.cpp                | 102 ++++
+ .../OffscreenGLContext_EGL.cpp                | 262 +++++++++
+ .../OffscreenGLContext_Stub.cpp               |  29 +
+ .../OffscreenGLContext_WGL.cpp                | 170 ++++++
+ 10 files changed, 1255 insertions(+), 4 deletions(-)
+ create mode 100644 src/libslic3r_cli_thumbnails/CLIThumbnailRenderer.cpp
+ create mode 100644 src/libslic3r_cli_thumbnails/CLIThumbnailRenderer.hpp
+ create mode 100644 src/libslic3r_cli_thumbnails/CMakeLists.txt
+ create mode 100644 src/libslic3r_cli_thumbnails/OffscreenGLContext.hpp
+ create mode 100644 src/libslic3r_cli_thumbnails/OffscreenGLContext_CGL.cpp
+ create mode 100644 src/libslic3r_cli_thumbnails/OffscreenGLContext_EGL.cpp
+ create mode 100644 src/libslic3r_cli_thumbnails/OffscreenGLContext_Stub.cpp
+ create mode 100644 src/libslic3r_cli_thumbnails/OffscreenGLContext_WGL.cpp
+
+diff --git a/src/CLI/ProcessActions.cpp b/src/CLI/ProcessActions.cpp
+index 14dd7ec89a0..2f181124e68 100644
+--- a/src/CLI/ProcessActions.cpp
++++ b/src/CLI/ProcessActions.cpp
+@@ -35,10 +35,13 @@
+ #include "libslic3r/PNGReadWrite.hpp"
+ #include "libslic3r/MultipleBeds.hpp"
+ #include "libslic3r/BuildVolume.hpp"
++#include "libslic3r/Utils.hpp"
+ 
+ #include "CLI/CLI.hpp"
+ #include "CLI/ProfilesSharingUtils.hpp"
+ 
++#include "CLIThumbnailRenderer.hpp"
++
+ #define STB_IMAGE_RESIZE_IMPLEMENTATION
+ #include "stb_image_resize2.h"
+ 
+@@ -199,7 +202,10 @@ static ThumbnailData resize_and_crop(const std::vector<unsigned char>& data, int
+ }
+ 
+ 
+-static std::function<ThumbnailsList(const ThumbnailsParams&)> get_thumbnail_generator_cli(const std::string& filename)
++static std::function<ThumbnailsList(const ThumbnailsParams&)> get_thumbnail_generator_cli(
++    const std::string& filename,
++    const Model& model,
++    const DynamicPrintConfig& print_config)
+ {
+     if (boost::iends_with(filename, ".3mf")) {
+         return [filename](const ThumbnailsParams& params) {
+@@ -249,7 +255,29 @@ static std::function<ThumbnailsList(const ThumbnailsParams&)> get_thumbnail_gene
+         };
+     }
+ 
+-    return [](const ThumbnailsParams&) ->ThumbnailsList { return {}; };
++    // Non-3MF input: render thumbnails into an offscreen OpenGL context.
++    // On any failure (no GPU/driver, missing resources, bad shader), the
++    // renderer returns an empty list and the CLI proceeds unchanged from
++    // the pre-#7878 behaviour.
++    //
++    // Capture-by-reference is deliberate: `model` and `print_config` are the
++    // lambda caller's parameters, which alias `fff_print.model()` and the
++    // `print_config` local in process_actions(). Both outlive the callback.
++    // This lambda must only be invoked synchronously from within the same
++    // `export_gcode()` call that receives it; the 3MF branch above does not
++    // have this constraint because it captures by value.
++    return [&model, &print_config](const ThumbnailsParams& params) -> ThumbnailsList {
++        try {
++            return Slic3r::CLIThumbnails::render_thumbnails(
++                model, print_config, params, Slic3r::resources_dir());
++        } catch (const std::exception& ex) {
++            boost::nowide::cerr << "CLI thumbnail render failed: " << ex.what() << std::endl;
++            return {};
++        } catch (...) {
++            boost::nowide::cerr << "CLI thumbnail render failed: unknown exception" << std::endl;
++            return {};
++        }
++    };
+ }
+ 
+ static void update_instances_outside_state(Model& model, const DynamicPrintConfig& config)
+@@ -387,7 +415,8 @@ bool process_actions(Data& cli, const DynamicPrintConfig& print_config, std::vec
+                 if (printer_technology == ptFFF) {
+                     // The outfile is processed by a PlaceholderParser.
+                     const std::string input_file = fff_print.model().objects.empty() ? "" : fff_print.model().objects.front()->input_file;
+-                    outfile = fff_print.export_gcode(outfile, nullptr, get_thumbnail_generator_cli(input_file));
++                    outfile = fff_print.export_gcode(outfile, nullptr,
++                        get_thumbnail_generator_cli(input_file, fff_print.model(), print_config));
+                     outfile_final = fff_print.print_statistics().finalize_output_path(outfile);
+                 }
+                 else {
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index c6ddf2e1d49..2b20c1a93bf 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -21,6 +21,7 @@ endif ()
+ add_subdirectory(slic3r-arrange)
+ add_subdirectory(slic3r-arrange-wrapper)
+ add_subdirectory(libseqarrange)
++add_subdirectory(libslic3r_cli_thumbnails)
+ 
+ 
+ if (SLIC3R_GUI)
+@@ -141,7 +142,7 @@ if (NOT WIN32 AND NOT APPLE)
+ endif ()
+ 
+ 
+-target_link_libraries(PrusaSlicer PRIVATE libslic3r libcereal slic3r-arrange-wrapper libseqarrange stb_image)
++target_link_libraries(PrusaSlicer PRIVATE libslic3r libcereal slic3r-arrange-wrapper libseqarrange libslic3r_cli_thumbnails stb_image)
+ 
+ if (APPLE)
+ #    add_compile_options(-stdlib=libc++)
+diff --git a/src/libslic3r_cli_thumbnails/CLIThumbnailRenderer.cpp b/src/libslic3r_cli_thumbnails/CLIThumbnailRenderer.cpp
+new file mode 100644
+index 00000000000..7767ad49896
+--- /dev/null
++++ b/src/libslic3r_cli_thumbnails/CLIThumbnailRenderer.cpp
+@@ -0,0 +1,516 @@
++///|/ Copyright (c) Prusa Research 2026 — CLI thumbnail renderer
++///|/
++///|/ The render logic below mirrors what the GUI does in
++///|/ GLCanvas3D::_render_thumbnail_internal(): pick a scene-fitting ortho
++///|/ camera, bind gouraud_light, and draw each printable ModelVolume with its
++///|/ world transform. We reuse PrusaSlicer's stock `gouraud_light` shaders
++///|/ (version 140) rather than introducing a new one so output matches the GUI
++///|/ as closely as practical for a CLI path.
++///|/
++///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
++///|/
++#include "CLIThumbnailRenderer.hpp"
++#include "OffscreenGLContext.hpp"
++
++#include <GL/glew.h>
++
++#include <algorithm>
++#include <cmath>
++#include <cstring>
++#include <limits>
++#include <sstream>
++#include <string>
++#include <vector>
++
++#include <boost/log/trivial.hpp>
++#include <boost/nowide/fstream.hpp>
++
++#include "libslic3r/BoundingBox.hpp"
++#include "libslic3r/Color.hpp"
++#include "libslic3r/Config.hpp"
++#include "libslic3r/Model.hpp"
++#include "libslic3r/Point.hpp"
++#include "libslic3r/PrintConfig.hpp"
++#include "libslic3r/TriangleMesh.hpp"
++
++namespace Slic3r {
++namespace CLIThumbnails {
++namespace {
++
++std::string read_file(const std::string &path)
++{
++    boost::nowide::ifstream f(path.c_str(), std::ios::binary);
++    if (!f.good()) return {};
++    std::stringstream ss;
++    ss << f.rdbuf();
++    return ss.str();
++}
++
++GLuint compile_shader(GLenum type, const std::string &src, const char *tag)
++{
++    GLuint id = glCreateShader(type);
++    const char *ptr = src.c_str();
++    const GLint  len = static_cast<GLint>(src.size());
++    glShaderSource(id, 1, &ptr, &len);
++    glCompileShader(id);
++    GLint ok = 0;
++    glGetShaderiv(id, GL_COMPILE_STATUS, &ok);
++    if (!ok) {
++        char    log[4096];
++        GLsizei log_len = 0;
++        glGetShaderInfoLog(id, sizeof(log), &log_len, log);
++        BOOST_LOG_TRIVIAL(error) << "CLI thumbnail " << tag
++                                 << " shader compile failed: "
++                                 << std::string(log, log_len);
++        glDeleteShader(id);
++        return 0;
++    }
++    return id;
++}
++
++GLuint link_program(GLuint vs, GLuint fs)
++{
++    GLuint id = glCreateProgram();
++    glAttachShader(id, vs);
++    glAttachShader(id, fs);
++    glLinkProgram(id);
++    GLint ok = 0;
++    glGetProgramiv(id, GL_LINK_STATUS, &ok);
++    if (!ok) {
++        char    log[4096];
++        GLsizei log_len = 0;
++        glGetProgramInfoLog(id, sizeof(log), &log_len, log);
++        BOOST_LOG_TRIVIAL(error) << "CLI thumbnail program link failed: "
++                                 << std::string(log, log_len);
++        glDeleteProgram(id);
++        return 0;
++    }
++    return id;
++}
++
++struct MeshBuffers
++{
++    GLuint        vao         = 0;
++    GLuint        vbo         = 0;
++    GLuint        ibo         = 0;
++    GLsizei       index_count = 0;
++    Transform3d   world       = Transform3d::Identity();
++    ColorRGBA     color       = ColorRGBA::GRAY();
++    BoundingBoxf3 local_box;
++};
++
++MeshBuffers upload_mesh(const TriangleMesh &mesh, GLuint prog)
++{
++    const indexed_triangle_set &its = mesh.its;
++    const size_t                nv  = its.vertices.size();
++    const size_t                nt  = its.indices.size();
++
++    MeshBuffers mb;
++    if (nv == 0 || nt == 0) return mb;
++
++    // Smooth vertex normals: each vertex gets the normalized sum of the
++    // face normals of the triangles it belongs to. Use `auto` throughout
++    // because stl_vertex / stl_triangle_vertex_indices are Eigen matrix
++    // types with DontAlign that don't bind to plain Vec3f / Vec3i refs.
++    std::vector<Vec3f> normals(nv, Vec3f::Zero());
++    for (const auto &tri : its.indices) {
++        const auto &a = its.vertices[tri[0]];
++        const auto &b = its.vertices[tri[1]];
++        const auto &c = its.vertices[tri[2]];
++        Vec3f n = (Vec3f(b) - Vec3f(a)).cross(Vec3f(c) - Vec3f(a));
++        const float m = n.norm();
++        if (m > 0.0f) n /= m;
++        normals[tri[0]] += n;
++        normals[tri[1]] += n;
++        normals[tri[2]] += n;
++    }
++    for (Vec3f &n : normals) {
++        const float m = n.norm();
++        n = (m > 0.0f) ? (n / m) : Vec3f(0.0f, 0.0f, 1.0f);
++    }
++
++    std::vector<float> verts(nv * 6);
++    for (size_t i = 0; i < nv; ++i) {
++        const auto &v = its.vertices[i];
++        verts[i * 6 + 0] = v.x();
++        verts[i * 6 + 1] = v.y();
++        verts[i * 6 + 2] = v.z();
++        verts[i * 6 + 3] = normals[i].x();
++        verts[i * 6 + 4] = normals[i].y();
++        verts[i * 6 + 5] = normals[i].z();
++    }
++    std::vector<uint32_t> idx(nt * 3);
++    for (size_t i = 0; i < nt; ++i) {
++        const auto &t = its.indices[i];
++        idx[i * 3 + 0] = static_cast<uint32_t>(t[0]);
++        idx[i * 3 + 1] = static_cast<uint32_t>(t[1]);
++        idx[i * 3 + 2] = static_cast<uint32_t>(t[2]);
++    }
++
++    mb.index_count = static_cast<GLsizei>(nt * 3);
++
++    glGenVertexArrays(1, &mb.vao);
++    glBindVertexArray(mb.vao);
++
++    glGenBuffers(1, &mb.vbo);
++    glBindBuffer(GL_ARRAY_BUFFER, mb.vbo);
++    glBufferData(GL_ARRAY_BUFFER,
++                 static_cast<GLsizeiptr>(verts.size() * sizeof(float)),
++                 verts.data(), GL_STATIC_DRAW);
++
++    glGenBuffers(1, &mb.ibo);
++    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mb.ibo);
++    glBufferData(GL_ELEMENT_ARRAY_BUFFER,
++                 static_cast<GLsizeiptr>(idx.size() * sizeof(uint32_t)),
++                 idx.data(), GL_STATIC_DRAW);
++
++    const GLint loc_pos = glGetAttribLocation(prog, "v_position");
++    const GLint loc_nrm = glGetAttribLocation(prog, "v_normal");
++    if (loc_pos >= 0) {
++        glEnableVertexAttribArray(loc_pos);
++        glVertexAttribPointer(loc_pos, 3, GL_FLOAT, GL_FALSE,
++                              6 * sizeof(float), reinterpret_cast<void *>(0));
++    }
++    if (loc_nrm >= 0) {
++        glEnableVertexAttribArray(loc_nrm);
++        glVertexAttribPointer(loc_nrm, 3, GL_FLOAT, GL_FALSE,
++                              6 * sizeof(float),
++                              reinterpret_cast<void *>(3 * sizeof(float)));
++    }
++    glBindVertexArray(0);
++
++    mb.local_box = mesh.bounding_box();
++    return mb;
++}
++
++// Build the same extruder color table the GUI uses (Plater.cpp
++// ::get_extruder_colors_from_plater_config): start with `extruder_colour`,
++// fall back to `filament_colour` for any empty entries. Unparseable values
++// fall through to `ColorRGBA::GRAY()`.
++std::vector<ColorRGBA> build_extruder_colors(const DynamicPrintConfig &cfg)
++{
++    std::vector<ColorRGBA> out;
++    std::vector<std::string> extruder_strs;
++    if (const auto *opt = cfg.option<ConfigOptionStrings>("extruder_colour"))
++        extruder_strs = opt->values;
++    std::vector<std::string> filament_strs;
++    if (const auto *opt = cfg.option<ConfigOptionStrings>("filament_colour"))
++        filament_strs = opt->values;
++
++    const size_t n = std::max(extruder_strs.size(), filament_strs.size());
++    out.reserve(n);
++    for (size_t i = 0; i < n; ++i) {
++        const std::string src =
++            (i < extruder_strs.size() && !extruder_strs[i].empty())
++                ? extruder_strs[i]
++                : (i < filament_strs.size() ? filament_strs[i] : std::string{});
++        ColorRGBA c = ColorRGBA::GRAY();
++        if (!src.empty() && !decode_color(src, c))
++            c = ColorRGBA::GRAY();
++        out.push_back(c);
++    }
++    if (out.empty()) out.push_back(ColorRGBA::GRAY());
++    return out;
++}
++
++// Extruder index used by a given volume, 1-based (PrusaSlicer convention).
++// Falls back up the chain: volume.config -> object.config -> 1.
++// ModelConfig is not a ConfigBase subclass — it wraps DynamicPrintConfig
++// internally and only exposes the non-templated option() — so we cast
++// explicitly here instead of using the template form from ConfigOptionResolver.
++int extruder_id_for_volume(const ModelObject &obj, const ModelVolume &vol)
++{
++    if (const auto *opt = vol.config.option("extruder"))
++        if (const auto *v = dynamic_cast<const ConfigOptionInt *>(opt))
++            return std::max(1, v->value);
++    if (const auto *opt = obj.config.option("extruder"))
++        if (const auto *v = dynamic_cast<const ConfigOptionInt *>(opt))
++            return std::max(1, v->value);
++    return 1;
++}
++
++Transform3d look_at(const Vec3d &eye, const Vec3d &target, const Vec3d &up_hint)
++{
++    const Vec3d f = (target - eye).normalized();
++    const Vec3d r = f.cross(up_hint).normalized();
++    const Vec3d u = r.cross(f);
++
++    Transform3d m = Transform3d::Identity();
++    m(0, 0) = r.x();  m(0, 1) = r.y();  m(0, 2) = r.z();  m(0, 3) = -r.dot(eye);
++    m(1, 0) = u.x();  m(1, 1) = u.y();  m(1, 2) = u.z();  m(1, 3) = -u.dot(eye);
++    m(2, 0) = -f.x(); m(2, 1) = -f.y(); m(2, 2) = -f.z(); m(2, 3) =  f.dot(eye);
++    return m;
++}
++
++Transform3d ortho(double l, double r, double b, double t, double n, double fa)
++{
++    Transform3d m = Transform3d::Identity();
++    m(0, 0) = 2.0 / (r - l);
++    m(1, 1) = 2.0 / (t - b);
++    m(2, 2) = -2.0 / (fa - n);
++    m(0, 3) = -(r + l) / (r - l);
++    m(1, 3) = -(t + b) / (t - b);
++    m(2, 3) = -(fa + n) / (fa - n);
++    return m;
++}
++
++} // namespace
++
++ThumbnailsList render_thumbnails(const Model &model,
++                                 const DynamicPrintConfig &print_config,
++                                 const ThumbnailsParams &params,
++                                 const std::string      &resources_dir)
++{
++    if (params.sizes.empty()) return {};
++
++    int max_w = 0, max_h = 0;
++    for (const Vec2d &s : params.sizes) {
++        max_w = std::max(max_w, static_cast<int>(std::lround(s.x())));
++        max_h = std::max(max_h, static_cast<int>(std::lround(s.y())));
++    }
++    if (max_w <= 0 || max_h <= 0) return {};
++
++    std::string err;
++    std::unique_ptr<OffscreenGLContext> ctx =
++        OffscreenGLContext::create(max_w, max_h, &err);
++    if (!ctx) {
++        BOOST_LOG_TRIVIAL(warning)
++            << "CLI thumbnails skipped: offscreen GL unavailable (" << err << ")";
++        return {};
++    }
++    if (!ctx->make_current()) {
++        BOOST_LOG_TRIVIAL(warning) << "CLI thumbnails skipped: make_current failed";
++        return {};
++    }
++    BOOST_LOG_TRIVIAL(info) << "CLI thumbnails: offscreen backend = "
++                            << ctx->backend_name();
++
++    glewExperimental = GL_TRUE;
++    const GLenum ge = glewInit();
++    // GLEW returns a non-OK error on EGL core-profile contexts because
++    // glGetString(GL_EXTENSIONS) is removed in core profiles; despite the
++    // error, glewExperimental causes GLEW to load function pointers via
++    // glGetStringi(). We verify that by checking a core 3.2 function pointer
++    // we actually use, and only bail if it's genuinely unavailable.
++    while (glGetError() != GL_NO_ERROR) { /* drain glewInit-spurious error */ }
++    if (ge != GLEW_OK && glCreateShader == nullptr) {
++        BOOST_LOG_TRIVIAL(warning)
++            << "CLI thumbnails skipped: glewInit failed and core GL not usable: "
++            << glewGetErrorString(ge);
++        return {};
++    }
++    if (ge != GLEW_OK) {
++        BOOST_LOG_TRIVIAL(debug)
++            << "glewInit returned non-OK (" << glewGetErrorString(ge)
++            << ") but core GL function pointers loaded — proceeding";
++    }
++
++    const std::string shader_dir = resources_dir + "/shaders/140/";
++    const std::string vs_src = read_file(shader_dir + "gouraud_light.vs");
++    const std::string fs_src = read_file(shader_dir + "gouraud_light.fs");
++    if (vs_src.empty() || fs_src.empty()) {
++        BOOST_LOG_TRIVIAL(warning) << "CLI thumbnails skipped: could not read shaders from "
++                                   << shader_dir;
++        return {};
++    }
++
++    const GLuint vs   = compile_shader(GL_VERTEX_SHADER,   vs_src, "vertex");
++    const GLuint fs   = compile_shader(GL_FRAGMENT_SHADER, fs_src, "fragment");
++    const GLuint prog = (vs && fs) ? link_program(vs, fs) : 0;
++    if (vs) glDeleteShader(vs);
++    if (fs) glDeleteShader(fs);
++    if (!prog) return {};
++
++    const std::vector<ColorRGBA> extruder_colors = build_extruder_colors(print_config);
++
++    std::vector<MeshBuffers> meshes;
++    BoundingBoxf3            scene_box;
++    for (const ModelObject *obj : model.objects) {
++        if (!obj) continue;
++        for (const ModelVolume *vol : obj->volumes) {
++            if (!vol || !vol->is_model_part()) continue;
++            const int extruder_id = extruder_id_for_volume(*obj, *vol);
++            const ColorRGBA color = extruder_colors[std::min<size_t>(
++                static_cast<size_t>(extruder_id - 1), extruder_colors.size() - 1)];
++            for (const ModelInstance *inst : obj->instances) {
++                if (!inst || !inst->printable) continue;
++                MeshBuffers mb = upload_mesh(vol->mesh(), prog);
++                if (mb.index_count == 0) continue;
++                mb.world = inst->get_matrix() * vol->get_matrix();
++                mb.color = color;
++                scene_box.merge(mb.local_box.transformed(mb.world));
++                meshes.push_back(std::move(mb));
++            }
++        }
++    }
++
++    auto cleanup_and_return = [&](ThumbnailsList result) -> ThumbnailsList {
++        for (const MeshBuffers &mb : meshes) {
++            if (mb.ibo) glDeleteBuffers(1, &mb.ibo);
++            if (mb.vbo) glDeleteBuffers(1, &mb.vbo);
++            if (mb.vao) glDeleteVertexArrays(1, &mb.vao);
++        }
++        glDeleteProgram(prog);
++        ctx->release();
++        return result;
++    };
++
++    if (meshes.empty() || !scene_box.defined) {
++        BOOST_LOG_TRIVIAL(info) << "CLI thumbnails: no printable volumes";
++        return cleanup_and_return({});
++    }
++
++    const Vec3d  center  = scene_box.center();
++    const double radius  = std::max(1.0, 0.5 * scene_box.size().norm());
++    const Vec3d  eye_dir = Vec3d(1.0, -1.0, 1.0).normalized();
++    const Vec3d  eye     = center + eye_dir * (radius * 4.0);
++    const Transform3d view = look_at(eye, center, Vec3d(0, 0, 1));
++
++    // Project the 8 scene bbox corners through the view matrix to get the
++    // actual 2D extents of the content in view space. Fitting against this
++    // box rather than the bounding sphere handles non-square thumbnails
++    // (notably portrait, where aspect < 1) without clipping the model.
++    double content_min_x =  std::numeric_limits<double>::max();
++    double content_max_x = -std::numeric_limits<double>::max();
++    double content_min_y =  std::numeric_limits<double>::max();
++    double content_max_y = -std::numeric_limits<double>::max();
++    for (int i = 0; i < 8; ++i) {
++        const Vec3d corner(
++            (i & 1) ? scene_box.max.x() : scene_box.min.x(),
++            (i & 2) ? scene_box.max.y() : scene_box.min.y(),
++            (i & 4) ? scene_box.max.z() : scene_box.min.z());
++        const Vec3d v = view * corner;
++        content_min_x = std::min(content_min_x, v.x());
++        content_max_x = std::max(content_max_x, v.x());
++        content_min_y = std::min(content_min_y, v.y());
++        content_max_y = std::max(content_max_y, v.y());
++    }
++    const double content_half_w = 0.5 * (content_max_x - content_min_x);
++    const double content_half_h = 0.5 * (content_max_y - content_min_y);
++    const double content_cx     = 0.5 * (content_min_x + content_max_x);
++    const double content_cy     = 0.5 * (content_min_y + content_max_y);
++
++    GLuint fbo = 0, color_rb = 0, depth_rb = 0;
++    glGenFramebuffers(1, &fbo);
++    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
++    glGenRenderbuffers(1, &color_rb);
++    glBindRenderbuffer(GL_RENDERBUFFER, color_rb);
++    glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, max_w, max_h);
++    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
++                              GL_RENDERBUFFER, color_rb);
++    glGenRenderbuffers(1, &depth_rb);
++    glBindRenderbuffer(GL_RENDERBUFFER, depth_rb);
++    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, max_w, max_h);
++    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
++                              GL_RENDERBUFFER, depth_rb);
++
++    const GLenum fbs = glCheckFramebufferStatus(GL_FRAMEBUFFER);
++    if (fbs != GL_FRAMEBUFFER_COMPLETE) {
++        BOOST_LOG_TRIVIAL(warning)
++            << "CLI thumbnails skipped: framebuffer incomplete: 0x"
++            << std::hex << fbs;
++        glDeleteRenderbuffers(1, &color_rb);
++        glDeleteRenderbuffers(1, &depth_rb);
++        glDeleteFramebuffers(1, &fbo);
++        return cleanup_and_return({});
++    }
++
++    glUseProgram(prog);
++    const GLint loc_proj     = glGetUniformLocation(prog, "projection_matrix");
++    const GLint loc_vm       = glGetUniformLocation(prog, "view_model_matrix");
++    const GLint loc_vn       = glGetUniformLocation(prog, "view_normal_matrix");
++    const GLint loc_color    = glGetUniformLocation(prog, "uniform_color");
++    const GLint loc_emission = glGetUniformLocation(prog, "emission_factor");
++
++    // show_bed is honoured by the GUI but not by this CLI path: PrusaSlicer's
++    // bed model is loaded through the GUI layer, and dragging wxWidgets into
++    // the CLI just to render a background plate is out of scope for this
++    // change. Log once per call when it was requested so users have a
++    // breadcrumb if the CLI thumbnail differs from their GUI expectation.
++    if (params.show_bed)
++        BOOST_LOG_TRIVIAL(debug) << "CLI thumbnails: show_bed requested but not supported (ignored).";
++
++    ThumbnailsList out;
++    out.reserve(params.sizes.size());
++
++    for (const Vec2d &sz : params.sizes) {
++        const int w = static_cast<int>(std::lround(sz.x()));
++        const int h = static_cast<int>(std::lround(sz.y()));
++        if (w <= 0 || h <= 0) continue;
++
++        glViewport(0, 0, w, h);
++
++        // Fit the content bbox (in view space) to the thumbnail aspect so
++        // portrait and landscape aspects both cover the whole model.
++        const double margin = 1.1;
++        const double aspect = static_cast<double>(w) / static_cast<double>(h);
++        double half_w, half_h;
++        if (content_half_h <= 0.0 || content_half_w / content_half_h > aspect) {
++            // Content is wider than the viewport — fit width.
++            half_w = content_half_w * margin;
++            half_h = half_w / std::max(aspect, 1e-6);
++        } else {
++            // Content is taller than the viewport — fit height.
++            half_h = content_half_h * margin;
++            half_w = half_h * aspect;
++        }
++        const double near_z = 0.1;
++        const double far_z  = radius * 16.0;
++        const Transform3d proj = ortho(
++            content_cx - half_w, content_cx + half_w,
++            content_cy - half_h, content_cy + half_h,
++            near_z, far_z);
++
++        if (params.transparent_background)
++            // Match the GUI's convention: alpha 0 but RGB 0.4 so viewers that
++            // drop the alpha channel show gray instead of solid black.
++            glClearColor(0.4f, 0.4f, 0.4f, 0.0f);
++        else
++            glClearColor(0.4f, 0.4f, 0.4f, 1.0f);
++        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
++        glEnable(GL_DEPTH_TEST);
++        glDisable(GL_CULL_FACE);
++
++        if (loc_proj >= 0) {
++            const Eigen::Matrix4f proj_f = proj.matrix().cast<float>();
++            glUniformMatrix4fv(loc_proj, 1, GL_FALSE, proj_f.data());
++        }
++        if (loc_emission >= 0) glUniform1f(loc_emission, 0.0f);
++
++        for (const MeshBuffers &mb : meshes) {
++            const Transform3d      vm   = view * mb.world;
++            const Eigen::Matrix4f  vm_f = vm.matrix().cast<float>();
++            const Eigen::Matrix3d  vn_d = view.linear()
++                * mb.world.linear().inverse().transpose();
++            const Eigen::Matrix3f  vn_f = vn_d.cast<float>();
++
++            if (loc_vm    >= 0) glUniformMatrix4fv(loc_vm, 1, GL_FALSE, vm_f.data());
++            if (loc_vn    >= 0) glUniformMatrix3fv(loc_vn, 1, GL_FALSE, vn_f.data());
++            if (loc_color >= 0)
++                glUniform4f(loc_color, mb.color.r(), mb.color.g(),
++                            mb.color.b(), mb.color.a());
++
++            glBindVertexArray(mb.vao);
++            glDrawElements(GL_TRIANGLES, mb.index_count, GL_UNSIGNED_INT, nullptr);
++        }
++
++        glFinish();
++
++        ThumbnailData data;
++        data.set(w, h);
++        // Matches the GUI's convention (see GLCanvas3D::_render_thumbnail_*):
++        // glReadPixels writes bottom-up; the PNG / QOI / JPEG encoders in
++        // GCodeThumbnails all flip vertically during encoding, so we must NOT
++        // flip here or the embedded thumbnails end up upside down.
++        glReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, data.pixels.data());
++        out.push_back(std::move(data));
++    }
++
++    glDeleteRenderbuffers(1, &color_rb);
++    glDeleteRenderbuffers(1, &depth_rb);
++    glDeleteFramebuffers(1, &fbo);
++    return cleanup_and_return(std::move(out));
++}
++
++} // namespace CLIThumbnails
++} // namespace Slic3r
+diff --git a/src/libslic3r_cli_thumbnails/CLIThumbnailRenderer.hpp b/src/libslic3r_cli_thumbnails/CLIThumbnailRenderer.hpp
+new file mode 100644
+index 00000000000..c20216541d2
+--- /dev/null
++++ b/src/libslic3r_cli_thumbnails/CLIThumbnailRenderer.hpp
+@@ -0,0 +1,31 @@
++///|/ Copyright (c) Prusa Research 2026 — CLI thumbnail renderer
++///|/
++///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
++///|/
++#ifndef slic3r_cli_CLIThumbnailRenderer_hpp_
++#define slic3r_cli_CLIThumbnailRenderer_hpp_
++
++#include <string>
++
++#include "libslic3r/Model.hpp"
++#include "libslic3r/PrintConfig.hpp"
++#include "libslic3r/GCode/ThumbnailData.hpp"
++
++namespace Slic3r {
++namespace CLIThumbnails {
++
++// Render thumbnails of `model` at each size requested by `params` using an
++// offscreen GL context. Returns an empty list if rendering is not possible
++// (e.g. no offscreen GL backend, no GPU, init failed). Never throws.
++//
++// The `resources_dir` argument must point at PrusaSlicer's `resources/`
++// directory so the renderer can load the `gouraud_light` shader source.
++ThumbnailsList render_thumbnails(const Model              &model,
++                                 const DynamicPrintConfig &print_config,
++                                 const ThumbnailsParams   &params,
++                                 const std::string        &resources_dir);
++
++} // namespace CLIThumbnails
++} // namespace Slic3r
++
++#endif
+diff --git a/src/libslic3r_cli_thumbnails/CMakeLists.txt b/src/libslic3r_cli_thumbnails/CMakeLists.txt
+new file mode 100644
+index 00000000000..4d5089e0060
+--- /dev/null
++++ b/src/libslic3r_cli_thumbnails/CMakeLists.txt
+@@ -0,0 +1,58 @@
++#/|/ Copyright (c) Prusa Research 2026 — CLI thumbnail renderer
++#/|/
++#/|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
++
++set(LIBSLIC3R_CLI_THUMBNAILS_SOURCES
++    OffscreenGLContext.hpp
++    CLIThumbnailRenderer.hpp
++    CLIThumbnailRenderer.cpp
++)
++
++if(APPLE)
++    list(APPEND LIBSLIC3R_CLI_THUMBNAILS_SOURCES OffscreenGLContext_CGL.cpp)
++elseif(WIN32)
++    list(APPEND LIBSLIC3R_CLI_THUMBNAILS_SOURCES OffscreenGLContext_WGL.cpp)
++elseif(UNIX)
++    list(APPEND LIBSLIC3R_CLI_THUMBNAILS_SOURCES OffscreenGLContext_EGL.cpp)
++else()
++    list(APPEND LIBSLIC3R_CLI_THUMBNAILS_SOURCES OffscreenGLContext_Stub.cpp)
++endif()
++
++add_library(libslic3r_cli_thumbnails STATIC ${LIBSLIC3R_CLI_THUMBNAILS_SOURCES})
++
++target_include_directories(libslic3r_cli_thumbnails PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
++
++# libslic3r gives us Model / TriangleMesh / BoundingBox / Color / Point plus
++# the GCode/ThumbnailData and PrintConfig types we use. No wxWidgets pulled in.
++target_link_libraries(libslic3r_cli_thumbnails PUBLIC libslic3r)
++
++# GL function loading: GLEW (the deps bundle already builds it; PrusaSlicer's
++# top-level CMakeLists.txt calls find_package(GLEW REQUIRED) unconditionally).
++target_link_libraries(libslic3r_cli_thumbnails PUBLIC GLEW::GLEW OpenGL::GL)
++
++# Platform offscreen-context libs.
++if(APPLE)
++    # CGL lives in the OpenGL framework. OpenGL::GL covers this on macOS; add
++    # explicitly for clarity + to silence deprecation warnings on the .cpp file.
++    target_compile_options(libslic3r_cli_thumbnails PRIVATE -Wno-deprecated-declarations)
++elseif(WIN32)
++    # opengl32.lib covers WGL symbols; OpenGL::GL brings it in. gdi32/user32
++    # for window creation.
++    target_link_libraries(libslic3r_cli_thumbnails PUBLIC gdi32 user32)
++elseif(UNIX)
++    # EGL is separate from the core OpenGL lib on Linux.
++    find_package(OpenGL COMPONENTS EGL)
++    if(TARGET OpenGL::EGL)
++        target_link_libraries(libslic3r_cli_thumbnails PUBLIC OpenGL::EGL)
++    else()
++        # Older CMake / Mesa without the EGL component: fall back to plain -lEGL.
++        target_link_libraries(libslic3r_cli_thumbnails PUBLIC EGL)
++    endif()
++endif()
++
++# source_group for IDE clarity
++foreach(_source IN ITEMS ${LIBSLIC3R_CLI_THUMBNAILS_SOURCES})
++    get_filename_component(_source_path "${_source}" PATH)
++    string(REPLACE "/" "\\" _group_path "${_source_path}")
++    source_group("${_group_path}" FILES "${_source}")
++endforeach()
+diff --git a/src/libslic3r_cli_thumbnails/OffscreenGLContext.hpp b/src/libslic3r_cli_thumbnails/OffscreenGLContext.hpp
+new file mode 100644
+index 00000000000..e736617989a
+--- /dev/null
++++ b/src/libslic3r_cli_thumbnails/OffscreenGLContext.hpp
+@@ -0,0 +1,53 @@
++///|/ Copyright (c) Prusa Research 2026 — CLI thumbnail renderer
++///|/ Portions inspired by OrcaSlicer's CLI thumbnail support (AGPL-3.0,
++///|/ Copyright (c) SoftFever and Bambu Lab).
++///|/
++///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
++///|/
++#ifndef slic3r_cli_OffscreenGLContext_hpp_
++#define slic3r_cli_OffscreenGLContext_hpp_
++
++#include <memory>
++#include <string>
++
++namespace Slic3r {
++namespace CLIThumbnails {
++
++// Platform-neutral offscreen OpenGL context for use by the CLI thumbnail
++// renderer. The concrete backend is chosen at runtime by `create()`:
++//   Linux   -> EGL (EGL_MESA_platform_surfaceless, then PBuffer fallback)
++//   macOS   -> CGL (no drawable)
++//   Windows -> WGL (transient hidden window for context, then destroyed)
++//
++// Contract: `create()` returns nullptr on any failure, writing a human-readable
++// reason into `error_out` if provided. Callers log and proceed without
++// thumbnails; never throw.
++class OffscreenGLContext
++{
++public:
++    static std::unique_ptr<OffscreenGLContext> create(int width, int height,
++                                                      std::string *error_out = nullptr);
++
++    virtual ~OffscreenGLContext() = default;
++
++    virtual bool        make_current() = 0;
++    virtual void        release()      = 0;
++    virtual const char* backend_name() const = 0;
++
++    int width()  const { return m_width; }
++    int height() const { return m_height; }
++
++protected:
++    OffscreenGLContext(int w, int h) : m_width(w), m_height(h) {}
++    int m_width  = 0;
++    int m_height = 0;
++
++private:
++    OffscreenGLContext(const OffscreenGLContext&) = delete;
++    OffscreenGLContext& operator=(const OffscreenGLContext&) = delete;
++};
++
++} // namespace CLIThumbnails
++} // namespace Slic3r
++
++#endif // slic3r_cli_OffscreenGLContext_hpp_
+diff --git a/src/libslic3r_cli_thumbnails/OffscreenGLContext_CGL.cpp b/src/libslic3r_cli_thumbnails/OffscreenGLContext_CGL.cpp
+new file mode 100644
+index 00000000000..c75f0c9de77
+--- /dev/null
++++ b/src/libslic3r_cli_thumbnails/OffscreenGLContext_CGL.cpp
+@@ -0,0 +1,102 @@
++///|/ Copyright (c) Prusa Research 2026 — CLI thumbnail renderer (macOS/CGL)
++///|/
++///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
++///|/
++#ifdef __APPLE__
++
++#include "OffscreenGLContext.hpp"
++
++#include <boost/log/trivial.hpp>
++
++// OpenGL on macOS has been marked deprecated since 10.14. It still ships in
++// macOS 26 and is what PrusaSlicer's GUI uses via wxGLContext. We silence the
++// deprecation warnings here so the compile stays clean.
++#define GL_SILENCE_DEPRECATION 1
++#include <OpenGL/OpenGL.h>
++#include <OpenGL/gl.h>
++
++namespace Slic3r {
++namespace CLIThumbnails {
++namespace {
++
++class OffscreenGLContextCGL final : public OffscreenGLContext
++{
++public:
++    OffscreenGLContextCGL(int w, int h, CGLContextObj ctx)
++        : OffscreenGLContext(w, h), m_ctx(ctx) {}
++
++    ~OffscreenGLContextCGL() override
++    {
++        if (m_ctx) {
++            if (::CGLGetCurrentContext() == m_ctx)
++                ::CGLSetCurrentContext(nullptr);
++            ::CGLDestroyContext(m_ctx);
++        }
++    }
++
++    bool make_current() override
++    {
++        if (!m_ctx) return false;
++        const CGLError err = ::CGLSetCurrentContext(m_ctx);
++        if (err != kCGLNoError) {
++            BOOST_LOG_TRIVIAL(error) << "CGLSetCurrentContext failed: "
++                                     << ::CGLErrorString(err);
++            return false;
++        }
++        return true;
++    }
++
++    void release() override
++    {
++        ::CGLSetCurrentContext(nullptr);
++    }
++
++    const char *backend_name() const override { return "CGL"; }
++
++private:
++    CGLContextObj m_ctx = nullptr;
++};
++
++} // namespace
++
++std::unique_ptr<OffscreenGLContext>
++OffscreenGLContext::create(int width, int height, std::string *error_out)
++{
++    // FBOs don't require a drawable, so we don't ask for PBuffer attributes
++    // (which are deprecated on macOS since 10.7). We just need a context with
++    // accelerated rendering and reasonable color/depth/stencil sizes.
++    const CGLPixelFormatAttribute attrs[] = {
++        kCGLPFAAccelerated,
++        kCGLPFAOpenGLProfile, (CGLPixelFormatAttribute)kCGLOGLPVersion_3_2_Core,
++        kCGLPFAColorSize,   (CGLPixelFormatAttribute)24,
++        kCGLPFAAlphaSize,   (CGLPixelFormatAttribute)8,
++        kCGLPFADepthSize,   (CGLPixelFormatAttribute)24,
++        kCGLPFAStencilSize, (CGLPixelFormatAttribute)8,
++        (CGLPixelFormatAttribute)0,
++    };
++
++    CGLPixelFormatObj pix = nullptr;
++    GLint num_virtual_screens = 0;
++    CGLError err = ::CGLChoosePixelFormat(attrs, &pix, &num_virtual_screens);
++    if (err != kCGLNoError || pix == nullptr) {
++        const char *msg = ::CGLErrorString(err);
++        if (error_out) *error_out = std::string("CGLChoosePixelFormat: ") + (msg ? msg : "unknown");
++        return nullptr;
++    }
++
++    CGLContextObj ctx = nullptr;
++    err = ::CGLCreateContext(pix, nullptr, &ctx);
++    ::CGLDestroyPixelFormat(pix);
++    if (err != kCGLNoError || ctx == nullptr) {
++        const char *msg = ::CGLErrorString(err);
++        if (error_out) *error_out = std::string("CGLCreateContext: ") + (msg ? msg : "unknown");
++        return nullptr;
++    }
++
++    return std::make_unique<OffscreenGLContextCGL>(width, height, ctx);
++}
++
++} // namespace CLIThumbnails
++} // namespace Slic3r
++
++#endif // __APPLE__
+diff --git a/src/libslic3r_cli_thumbnails/OffscreenGLContext_EGL.cpp b/src/libslic3r_cli_thumbnails/OffscreenGLContext_EGL.cpp
+new file mode 100644
+index 00000000000..89bcde441c3
+--- /dev/null
++++ b/src/libslic3r_cli_thumbnails/OffscreenGLContext_EGL.cpp
+@@ -0,0 +1,262 @@
++///|/ Copyright (c) Prusa Research 2026 — CLI thumbnail renderer (Linux/BSD EGL)
++///|/
++///|/ Portions inspired by the approach in prusa3d/PrusaSlicer#15327 (EGL-only,
++///|/ closed without merge). This implementation generalizes the approach to
++///|/ also work truly headless via EGL_MESA_platform_surfaceless, which is the
++///|/ modern Mesa replacement for the removed OSMesa API.
++///|/
++///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
++///|/
++// Complement of the Stub guard below. Must match the CMake rule that picks
++// OffscreenGLContext_EGL.cpp on UNIX-but-not-Apple — i.e. Linux plus the
++// supported BSDs. Explicitly enumerating rather than using __unix__ because
++// __unix__ is also defined by Apple clang on macOS.
++#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) \
++ || defined(__NetBSD__) || defined(__DragonFly__)
++
++#include "OffscreenGLContext.hpp"
++
++#include <boost/log/trivial.hpp>
++#include <cstring>
++#include <string>
++
++#include <EGL/egl.h>
++#include <EGL/eglext.h>
++
++namespace Slic3r {
++namespace CLIThumbnails {
++namespace {
++
++// Returns true if `needle` appears as a space-separated token in the
++// extensions string `haystack` (the EGL/GL extension-list convention).
++bool has_token(const char *haystack, const char *needle)
++{
++    if (!haystack || !needle) return false;
++    const size_t n = std::strlen(needle);
++    for (const char *p = haystack; *p; ) {
++        while (*p == ' ') ++p;
++        const char *start = p;
++        while (*p && *p != ' ') ++p;
++        if (static_cast<size_t>(p - start) == n && std::memcmp(start, needle, n) == 0)
++            return true;
++    }
++    return false;
++}
++
++class OffscreenGLContextEGL final : public OffscreenGLContext
++{
++public:
++    OffscreenGLContextEGL(int w, int h, EGLDisplay dpy, EGLContext ctx, EGLSurface surf)
++        : OffscreenGLContext(w, h), m_dpy(dpy), m_ctx(ctx), m_surf(surf) {}
++
++    ~OffscreenGLContextEGL() override
++    {
++        if (m_dpy != EGL_NO_DISPLAY) {
++            eglMakeCurrent(m_dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
++            if (m_surf != EGL_NO_SURFACE)
++                eglDestroySurface(m_dpy, m_surf);
++            if (m_ctx != EGL_NO_CONTEXT)
++                eglDestroyContext(m_dpy, m_ctx);
++            eglTerminate(m_dpy);
++        }
++    }
++
++    bool make_current() override
++    {
++        return eglMakeCurrent(m_dpy, m_surf, m_surf, m_ctx) == EGL_TRUE;
++    }
++
++    void release() override
++    {
++        eglMakeCurrent(m_dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
++    }
++
++    const char *backend_name() const override
++    {
++        return m_surf == EGL_NO_SURFACE ? "EGL(surfaceless)" : "EGL(pbuffer)";
++    }
++
++private:
++    EGLDisplay m_dpy  = EGL_NO_DISPLAY;
++    EGLContext m_ctx  = EGL_NO_CONTEXT;
++    EGLSurface m_surf = EGL_NO_SURFACE;
++};
++
++// Try to open a surfaceless EGL display. Returns EGL_NO_DISPLAY if the
++// platform isn't advertised or the required entry point isn't reachable.
++//
++// Tries two entry points in order:
++//   1. eglGetPlatformDisplay   — EGL 1.5 core (preferred)
++//   2. eglGetPlatformDisplayEXT — EGL_EXT_platform_base extension
++// Some stacks only ship the EXT variant (e.g. older Mesa or EGL-on-GLVND
++// without full 1.5 client), so we try both. The surfaceless platform is
++// identified by the same enum in both cases; only the attrib-list element
++// type differs (EGLAttrib vs EGLint), which is irrelevant when we pass
++// nullptr.
++//
++// EGL_PLATFORM_SURFACELESS_MESA == 0x31DD. Defined in eglext.h on Mesa
++// builds that ship the extension; we fall back to a literal if the header
++// is older.
++#ifndef EGL_PLATFORM_SURFACELESS_MESA
++#define EGL_PLATFORM_SURFACELESS_MESA 0x31DD
++#endif
++EGLDisplay try_surfaceless_display()
++{
++    const char *client_exts = eglQueryString(EGL_NO_DISPLAY, EGL_EXTENSIONS);
++    if (!has_token(client_exts, "EGL_MESA_platform_surfaceless"))
++        return EGL_NO_DISPLAY;
++
++    using PFN_core = EGLDisplay (EGLAPIENTRY *)(EGLenum, void *, const EGLAttrib *);
++    using PFN_ext  = EGLDisplay (EGLAPIENTRY *)(EGLenum, void *, const EGLint *);
++
++    if (auto core = reinterpret_cast<PFN_core>(eglGetProcAddress("eglGetPlatformDisplay"))) {
++        EGLDisplay dpy = core(EGL_PLATFORM_SURFACELESS_MESA, EGL_DEFAULT_DISPLAY, nullptr);
++        if (dpy != EGL_NO_DISPLAY)
++            return dpy;
++    }
++    if (auto ext = reinterpret_cast<PFN_ext>(eglGetProcAddress("eglGetPlatformDisplayEXT"))) {
++        return ext(EGL_PLATFORM_SURFACELESS_MESA, EGL_DEFAULT_DISPLAY, nullptr);
++    }
++    return EGL_NO_DISPLAY;
++}
++
++// Try to stand up an EGL context on the given display. Returns null on any
++// failure, cleaning up whatever was allocated. `dpy` is eglTerminate'd on
++// failure so the caller can try another display afterward without leaking.
++std::unique_ptr<OffscreenGLContext>
++try_initialize(EGLDisplay dpy, bool surfaceless, int width, int height, std::string *err)
++{
++    if (dpy == EGL_NO_DISPLAY) {
++        if (err) *err = "no display";
++        return nullptr;
++    }
++
++    EGLint major = 0, minor = 0;
++    if (eglInitialize(dpy, &major, &minor) != EGL_TRUE) {
++        if (err) *err = "eglInitialize failed";
++        return nullptr;
++    }
++
++    if (eglBindAPI(EGL_OPENGL_API) != EGL_TRUE) {
++        if (err) *err = "eglBindAPI(EGL_OPENGL_API) failed — desktop GL not supported by this EGL";
++        eglTerminate(dpy);
++        return nullptr;
++    }
++
++    // Ask for a pbuffer-renderable config even in surfaceless mode so we get
++    // sane colour/depth/stencil formats to attach to our own FBO.
++    const EGLint cfg_attrs[] = {
++        EGL_SURFACE_TYPE,    EGL_PBUFFER_BIT,
++        EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT,
++        EGL_RED_SIZE,        8,
++        EGL_GREEN_SIZE,      8,
++        EGL_BLUE_SIZE,       8,
++        EGL_ALPHA_SIZE,      8,
++        EGL_DEPTH_SIZE,      24,
++        EGL_STENCIL_SIZE,    8,
++        EGL_NONE
++    };
++    EGLConfig cfg;
++    EGLint    num_cfgs = 0;
++    if (eglChooseConfig(dpy, cfg_attrs, &cfg, 1, &num_cfgs) != EGL_TRUE || num_cfgs == 0) {
++        if (err) *err = "eglChooseConfig: no matching EGLConfig";
++        eglTerminate(dpy);
++        return nullptr;
++    }
++
++    const EGLint ctx_attrs[] = {
++        EGL_CONTEXT_MAJOR_VERSION, 3,
++        EGL_CONTEXT_MINOR_VERSION, 2,
++        EGL_CONTEXT_OPENGL_PROFILE_MASK, EGL_CONTEXT_OPENGL_COMPATIBILITY_PROFILE_BIT,
++        EGL_NONE
++    };
++    EGLContext ctx = eglCreateContext(dpy, cfg, EGL_NO_CONTEXT, ctx_attrs);
++    if (ctx == EGL_NO_CONTEXT) {
++        // Retry with a core profile in case compat isn't supported.
++        const EGLint core_attrs[] = {
++            EGL_CONTEXT_MAJOR_VERSION, 3,
++            EGL_CONTEXT_MINOR_VERSION, 2,
++            EGL_CONTEXT_OPENGL_PROFILE_MASK, EGL_CONTEXT_OPENGL_CORE_PROFILE_BIT,
++            EGL_NONE
++        };
++        ctx = eglCreateContext(dpy, cfg, EGL_NO_CONTEXT, core_attrs);
++    }
++    if (ctx == EGL_NO_CONTEXT) {
++        if (err) *err = "eglCreateContext failed for GL 3.2";
++        eglTerminate(dpy);
++        return nullptr;
++    }
++
++    EGLSurface surf = EGL_NO_SURFACE;
++    if (!surfaceless) {
++        const EGLint pb_attrs[] = {
++            EGL_WIDTH,  width  > 0 ? width  : 1,
++            EGL_HEIGHT, height > 0 ? height : 1,
++            EGL_NONE
++        };
++        surf = eglCreatePbufferSurface(dpy, cfg, pb_attrs);
++        if (surf == EGL_NO_SURFACE) {
++            if (err) *err = "eglCreatePbufferSurface failed";
++            eglDestroyContext(dpy, ctx);
++            eglTerminate(dpy);
++            return nullptr;
++        }
++    }
++
++    // Validate that the context can actually be made current. On some drivers,
++    // creating a surfaceless display + context succeeds but the first
++    // eglMakeCurrent(surfaceless) fails — without this check the failure would
++    // surface in the renderer, by which time the factory has no way to retry
++    // with the default display + pbuffer path. Probing now lets create() do
++    // the real fallback.
++    if (eglMakeCurrent(dpy, surf, surf, ctx) != EGL_TRUE) {
++        if (err) *err = "eglMakeCurrent failed on this display/context";
++        if (surf != EGL_NO_SURFACE) eglDestroySurface(dpy, surf);
++        eglDestroyContext(dpy, ctx);
++        eglTerminate(dpy);
++        return nullptr;
++    }
++    // Release again so the caller controls when the context goes current.
++    eglMakeCurrent(dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
++
++    BOOST_LOG_TRIVIAL(info) << "EGL offscreen context ready ("
++                            << (surfaceless ? "surfaceless" : "pbuffer")
++                            << "), EGL " << major << "." << minor;
++    return std::make_unique<OffscreenGLContextEGL>(width, height, dpy, ctx, surf);
++}
++
++} // namespace
++
++std::unique_ptr<OffscreenGLContext>
++OffscreenGLContext::create(int width, int height, std::string *error_out)
++{
++    // Prefer the surfaceless platform on systems that advertise it (modern
++    // Mesa on headless hosts). If it fails for any reason after returning a
++    // display — e.g. the driver can't produce a desktop GL 3.2 context on the
++    // surfaceless display — fall through to the normal EGL_DEFAULT_DISPLAY
++    // path with a pbuffer. This is the portability guarantee the PR claims.
++    std::string err_surfaceless;
++    if (EGLDisplay sd = try_surfaceless_display(); sd != EGL_NO_DISPLAY) {
++        if (auto ctx = try_initialize(sd, /*surfaceless=*/true, width, height, &err_surfaceless))
++            return ctx;
++        BOOST_LOG_TRIVIAL(info)
++            << "EGL surfaceless path unavailable (" << err_surfaceless
++            << "); falling back to default display.";
++    }
++
++    std::string err_default;
++    if (auto ctx = try_initialize(eglGetDisplay(EGL_DEFAULT_DISPLAY),
++                                  /*surfaceless=*/false, width, height, &err_default))
++        return ctx;
++
++    if (error_out) {
++        *error_out = "EGL surfaceless: " + err_surfaceless +
++                     "; EGL default: " + err_default;
++    }
++    return nullptr;
++}
++
++} // namespace CLIThumbnails
++} // namespace Slic3r
++
++#endif // __linux__ && !__APPLE__
+diff --git a/src/libslic3r_cli_thumbnails/OffscreenGLContext_Stub.cpp b/src/libslic3r_cli_thumbnails/OffscreenGLContext_Stub.cpp
+new file mode 100644
+index 00000000000..cba88a4c879
+--- /dev/null
++++ b/src/libslic3r_cli_thumbnails/OffscreenGLContext_Stub.cpp
+@@ -0,0 +1,29 @@
++///|/ Copyright (c) Prusa Research 2026 — CLI thumbnail renderer (stub fallback)
++///|/
++///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
++///|/
++// Used on platforms for which no real offscreen backend is compiled in.
++// `create()` always returns nullptr and the CLI proceeds with no thumbnails,
++// preserving current behaviour. Guard must be the strict complement of the
++// platform backends — see OffscreenGLContext_EGL.cpp for the Linux/BSD list.
++#if !defined(__APPLE__) && !defined(_WIN32) \
++ && !defined(__linux__) && !defined(__FreeBSD__) && !defined(__OpenBSD__) \
++ && !defined(__NetBSD__) && !defined(__DragonFly__)
++
++#include "OffscreenGLContext.hpp"
++
++namespace Slic3r {
++namespace CLIThumbnails {
++
++std::unique_ptr<OffscreenGLContext>
++OffscreenGLContext::create(int /*width*/, int /*height*/, std::string *error_out)
++{
++    if (error_out)
++        *error_out = "No offscreen GL backend built for this platform; CLI thumbnails disabled.";
++    return nullptr;
++}
++
++} // namespace CLIThumbnails
++} // namespace Slic3r
++
++#endif
+diff --git a/src/libslic3r_cli_thumbnails/OffscreenGLContext_WGL.cpp b/src/libslic3r_cli_thumbnails/OffscreenGLContext_WGL.cpp
+new file mode 100644
+index 00000000000..5300d779d8c
+--- /dev/null
++++ b/src/libslic3r_cli_thumbnails/OffscreenGLContext_WGL.cpp
+@@ -0,0 +1,170 @@
++///|/ Copyright (c) Prusa Research 2026 — CLI thumbnail renderer (Windows/WGL)
++///|/
++///|/ PrusaSlicer is released under the terms of the AGPLv3 or higher
++///|/
++#if defined(_WIN32)
++
++#include "OffscreenGLContext.hpp"
++
++#include <boost/log/trivial.hpp>
++
++// Minimize Win32 header surface; we only need GDI + OpenGL.
++#define WIN32_LEAN_AND_MEAN
++#include <windows.h>
++#include <GL/gl.h>
++
++// WGL_ARB_create_context and WGL_ARB_pixel_format constants. We pull only what
++// we need to avoid a full `wglext.h` dependency.
++#ifndef WGL_CONTEXT_MAJOR_VERSION_ARB
++#define WGL_CONTEXT_MAJOR_VERSION_ARB            0x2091
++#define WGL_CONTEXT_MINOR_VERSION_ARB            0x2092
++#define WGL_CONTEXT_PROFILE_MASK_ARB             0x9126
++#define WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB 0x00000002
++#define WGL_CONTEXT_CORE_PROFILE_BIT_ARB         0x00000001
++#endif
++
++namespace Slic3r {
++namespace CLIThumbnails {
++namespace {
++
++using PFNWGLCREATECONTEXTATTRIBSARBPROC = HGLRC (WINAPI *)(HDC, HGLRC, const int *);
++
++class OffscreenGLContextWGL final : public OffscreenGLContext
++{
++public:
++    OffscreenGLContextWGL(int w, int h, HWND hwnd, HDC hdc, HGLRC hglrc, ATOM atom, HINSTANCE hinst)
++        : OffscreenGLContext(w, h), m_hwnd(hwnd), m_hdc(hdc), m_hglrc(hglrc), m_atom(atom), m_hinst(hinst) {}
++
++    ~OffscreenGLContextWGL() override
++    {
++        if (m_hglrc) {
++            if (wglGetCurrentContext() == m_hglrc)
++                wglMakeCurrent(nullptr, nullptr);
++            wglDeleteContext(m_hglrc);
++        }
++        if (m_hdc && m_hwnd)
++            ReleaseDC(m_hwnd, m_hdc);
++        if (m_hwnd)
++            DestroyWindow(m_hwnd);
++        if (m_atom && m_hinst)
++            UnregisterClassW(reinterpret_cast<LPCWSTR>(static_cast<uintptr_t>(m_atom)), m_hinst);
++    }
++
++    bool make_current() override
++    {
++        return wglMakeCurrent(m_hdc, m_hglrc) == TRUE;
++    }
++
++    void release() override
++    {
++        wglMakeCurrent(nullptr, nullptr);
++    }
++
++    const char *backend_name() const override { return "WGL"; }
++
++private:
++    HWND      m_hwnd  = nullptr;
++    HDC       m_hdc   = nullptr;
++    HGLRC     m_hglrc = nullptr;
++    ATOM      m_atom  = 0;
++    HINSTANCE m_hinst = nullptr;
++};
++
++} // namespace
++
++std::unique_ptr<OffscreenGLContext>
++OffscreenGLContext::create(int width, int height, std::string *error_out)
++{
++    HINSTANCE hinst = GetModuleHandleW(nullptr);
++
++    WNDCLASSW wc = {};
++    wc.style         = CS_OWNDC;
++    wc.lpfnWndProc   = DefWindowProcW;
++    wc.hInstance     = hinst;
++    wc.lpszClassName = L"PrusaSlicerCLIThumbWnd";
++    const ATOM atom = RegisterClassW(&wc);
++    if (!atom) {
++        if (error_out) *error_out = "RegisterClassW failed";
++        return nullptr;
++    }
++
++    HWND hwnd = CreateWindowExW(0, wc.lpszClassName, L"", WS_POPUP,
++                                0, 0, 1, 1, nullptr, nullptr, hinst, nullptr);
++    if (!hwnd) {
++        if (error_out) *error_out = "CreateWindowExW failed";
++        UnregisterClassW(wc.lpszClassName, hinst);
++        return nullptr;
++    }
++
++    HDC hdc = GetDC(hwnd);
++    if (!hdc) {
++        if (error_out) *error_out = "GetDC failed";
++        DestroyWindow(hwnd);
++        UnregisterClassW(wc.lpszClassName, hinst);
++        return nullptr;
++    }
++
++    PIXELFORMATDESCRIPTOR pfd = {};
++    pfd.nSize        = sizeof(pfd);
++    pfd.nVersion     = 1;
++    pfd.dwFlags      = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
++    pfd.iPixelType   = PFD_TYPE_RGBA;
++    pfd.cColorBits   = 32;
++    pfd.cDepthBits   = 24;
++    pfd.cStencilBits = 8;
++    pfd.iLayerType   = PFD_MAIN_PLANE;
++
++    const int pf = ChoosePixelFormat(hdc, &pfd);
++    if (!pf || !SetPixelFormat(hdc, pf, &pfd)) {
++        if (error_out) *error_out = "ChoosePixelFormat/SetPixelFormat failed";
++        ReleaseDC(hwnd, hdc);
++        DestroyWindow(hwnd);
++        UnregisterClassW(wc.lpszClassName, hinst);
++        return nullptr;
++    }
++
++    // Bootstrap a legacy context so we can query wglCreateContextAttribsARB.
++    HGLRC legacy = wglCreateContext(hdc);
++    if (!legacy) {
++        if (error_out) *error_out = "wglCreateContext (legacy) failed";
++        ReleaseDC(hwnd, hdc);
++        DestroyWindow(hwnd);
++        UnregisterClassW(wc.lpszClassName, hinst);
++        return nullptr;
++    }
++    wglMakeCurrent(hdc, legacy);
++
++    auto wgl_create_context_attribs = reinterpret_cast<PFNWGLCREATECONTEXTATTRIBSARBPROC>(
++        wglGetProcAddress("wglCreateContextAttribsARB"));
++
++    HGLRC final_ctx = nullptr;
++    if (wgl_create_context_attribs) {
++        const int attribs[] = {
++            WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
++            WGL_CONTEXT_MINOR_VERSION_ARB, 2,
++            WGL_CONTEXT_PROFILE_MASK_ARB,  WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB,
++            0
++        };
++        final_ctx = wgl_create_context_attribs(hdc, nullptr, attribs);
++    }
++
++    if (final_ctx) {
++        wglMakeCurrent(nullptr, nullptr);
++        wglDeleteContext(legacy);
++    } else {
++        // Fall back to the legacy context. Most drivers give at least 2.1 here,
++        // which is below PrusaSlicer's minimum (3.2), but we try anyway and let
++        // the renderer detect that and skip gracefully.
++        final_ctx = legacy;
++    }
++
++    wglMakeCurrent(hdc, final_ctx);
++    (void)width; (void)height;  // window size irrelevant — we render to FBOs.
++
++    return std::make_unique<OffscreenGLContextWGL>(width, height, hwnd, hdc, final_ctx, atom, hinst);
++}
++
++} // namespace CLIThumbnails
++} // namespace Slic3r
++
++#endif // _WIN32

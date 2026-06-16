@@ -1,4 +1,4 @@
-# Copyright 1999-2025 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -25,16 +25,18 @@ LICENSE="AGPL-3 Boost-1.0 GPL-2 LGPL-3 MIT"
 SLOT="0"
 IUSE="debug -gui -step test"
 
-RESTRICT="!test? ( test )"
+RESTRICT="!test? ( test ) mirror"
 
 RDEPEND="
 	dev-cpp/eigen:3
 	dev-cpp/tbb:=
+	dev-cpp/nlohmann_json:=
 	dev-libs/boost:=[nls]
 	dev-libs/cereal
 	dev-libs/expat
 	dev-libs/glib:2
 	dev-libs/gmp:=
+	dev-libs/hidapi
 	dev-libs/mpfr:=
 	media-gfx/openvdb:=
 	media-gfx/libbgcode
@@ -49,7 +51,7 @@ RDEPEND="
 	sci-mathematics/cgal:=
 	sci-mathematics/z3:=
 	sys-apps/dbus
-	sys-libs/zlib:=
+	virtual/zlib:=
 	gui? (
 		x11-libs/gtk+:3
 		x11-libs/wxGTK:${WX_GTK_VER}=[opengl,webkit]
@@ -60,7 +62,7 @@ RDEPEND="
 "
 DEPEND="${RDEPEND}
 	media-libs/qhull[static-libs]
-	test? ( =dev-cpp/catch-3.8* )
+	test? ( >=dev-cpp/catch-3.8 )
 "
 
 PATCHES=(
@@ -70,15 +72,32 @@ PATCHES=(
 	"${FILESDIR}/${PN}-2.8.1-fix-libsoup-double-linking.patch"
 	"${FILESDIR}/${PN}-2.8.1-boost-1.87.patch"
 	"${FILESDIR}/${PN}-2.9.2-boost-1.88.patch"
+	"${FILESDIR}/${PN}-2.9.4-boost-1.89.patch"
+	"${FILESDIR}/${PN}-2.9.5-test_emboss-property-map.patch"
+	"${FILESDIR}/${PN}-2.9.5-libigl-2.6.0-Hit-template.patch"
+	"${FILESDIR}/${PN}-2.9.5-fix-build-with-eigen-5.patch"
+	"${FILESDIR}/${PN}-2.9.5-thumbnails-offscreen-OpenGL-PR15355.patch"
 )
 
 src_prepare() {
 	use gui || ( sed -e '/find_package(OpenGL REQUIRED)/d' -i CMakeLists.txt || die )
-
+	sed -e 's/find_package(Eigen3 3.3.7 REQUIRED)/find_package(Eigen3 REQUIRED)/' -i CMakeLists.txt || die
 
 	if has_version ">=sci-libs/opencascade-7.8.0"; then
 		eapply "${FILESDIR}/prusaslicer-2.8.1-opencascade-7.8.0.patch"
 	fi
+
+	# Unbundle libs
+	sed -e '/add_subdirectory(libigl)/d' -i bundled_deps/CMakeLists.txt || die
+	sed -e '/^target_include_directories(libslic3r PUBLIC \${EXPAT_INCLUDE_DIRS})$/s/)$/ ${LIBIGL_INCLUDE_DIRS})/' -i src/libslic3r/CMakeLists.txt || die
+	sed -e 's/libigl$/igl\:\:igl_core/' -i src/libslic3r/CMakeLists.txt || die
+	#sed -e '/add_subdirectory(miniz)/d' -i bundled_deps/CMakeLists.txt || die
+	#sed -e '/^target_include_directories(libslic3r PUBLIC \${EXPAT_INCLUDE_DIRS})$/s/)$/ ${MINIZ_INCLUDE_DIRS})/' -i src/libslic3r/CMakeLists.txt || die
+
+	sed -e '/find_package(Eigen3 REQUIRED)/a find_package(libigl REQUIRED CONFIG)' -i CMakeLists.txt || die
+	#sed -e '/find_package(Eigen3 REQUIRED)/a find_package(miniz REQUIRED CONFIG)' -i CMakeLists.txt || die
+	rm -rv "${S}/bundled_deps/libigl" || die
+	#rm -rv "${S}/bundled_deps/miniz" || die
 
 	sed -i -e 's/PrusaSlicer-${SLIC3R_VERSION}+UNKNOWN/PrusaSlicer-${SLIC3R_VERSION}+Gentoo/g' version.inc || die
 
@@ -97,6 +116,8 @@ src_configure() {
 
 	local mycmakeargs=(
 		-DOPENVDB_FIND_MODULE_PATH="/usr/$(get_libdir)/cmake/OpenVDB"
+		-Dlibigl_DIR="${EPREFIX}/usr/lib/cmake/igl"
+		#-DMINIZ_INCLUDE_DIRS="${EPREFIX}/usr/include/miniz"
 		-DSLIC3R_BUILD_TESTS=$(usex test)
 		-DSLIC3R_ENABLE_FORMAT_STEP=$(usex step)
 		-DSLIC3R_FHS=ON
@@ -106,7 +127,7 @@ src_configure() {
 		-DSLIC3R_PCH=OFF
 		-DSLIC3R_STATIC=OFF
 		-DSLIC3R_WX_STABLE=ON
-		#-Wno-dev
+		-Wno-dev
 	)
 	tc-is-cross-compiler && mycmakeargs+=(
 		-DIS_CROSS_COMPILE=ON

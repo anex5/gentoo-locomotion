@@ -1,0 +1,204 @@
+--- a/src/libslic3r/AABBTreeIndirect.hpp
++++ b/src/libslic3r/AABBTreeIndirect.hpp
+@@ -23,6 +23,8 @@
+ // Definition of the ray intersection hit structure.
+ #include <igl/Hit.h>
+
++using Hit = igl::Hit<float>;
++
+ namespace Slic3r {
+ namespace AABBTreeIndirect {
+ 
+@@ -263,7 +263,7 @@ namespace detail {
+ 
+     template<typename VertexType, typename IndexedFaceType, typename TreeType, typename VectorType>
+     struct RayIntersectorHits : RayIntersector<VertexType, IndexedFaceType, TreeType, VectorType> {
+-		std::vector<igl::Hit>				 hits;
++		std::vector<Hit>				 hits;
+ 	};
+ 
+ 	//FIXME implement SSE for float AABB trees with float ray queries.
+@@ -403,7 +403,7 @@ namespace detail {
+         RayIntersectorType 	   &ray_intersector,
+         size_t 				    node_idx,
+         Scalar                  min_t,
+-        igl::Hit 			   &hit)
++        Hit 			   &hit)
+ 	{
+         const auto &node = ray_intersector.tree.node(node_idx);
+         assert(node.is_valid());
+@@ -420,7 +420,7 @@ namespace detail {
+ 		    		ray_intersector.vertices[face(0)], ray_intersector.vertices[face(1)], ray_intersector.vertices[face(2)], 
+                     t, u, v, ray_intersector.eps)
+ 		    	&& t > 0.) {
+-                hit = igl::Hit { int(node.idx), -1, float(u), float(v), float(t) };
++                hit = Hit { int(node.idx), -1, float(u), float(v), float(t) };
+ 				return true;
+ 		    } else
+ 		    	return false;
+@@ -428,8 +428,8 @@ namespace detail {
+ 			// Left / right child node index.
+ 			size_t left  = node_idx * 2 + 1;
+ 			size_t right = left + 1;
+-			igl::Hit left_hit;
+-			igl::Hit right_hit;
++			Hit left_hit;
++			Hit right_hit;
+ 	        bool left_ret = intersect_ray_recursive_first_hit(ray_intersector, left,  min_t, left_hit);
+ 			if (left_ret && left_hit.t < min_t) {
+ 	    		min_t = left_hit.t;
+@@ -465,7 +465,7 @@ namespace detail {
+ 		    		ray_intersector.vertices[face(0)], ray_intersector.vertices[face(1)], ray_intersector.vertices[face(2)], 
+                     t, u, v, ray_intersector.eps)
+ 		    	&& t > 0.) {
+-                ray_intersector.hits.emplace_back(igl::Hit{ int(node.idx), -1, float(u), float(v), float(t) });
++                ray_intersector.hits.emplace_back(Hit{ int(node.idx), -1, float(u), float(v), float(t) });
+ 			}
+ 	  	} else {
+ 			// Left / right child node index.
+@@ -738,7 +738,7 @@ inline bool intersect_ray_first_hit(
+ 	// Direction of the ray.
+ 	const VectorType 					&dir,
+ 	// First intersection of the ray with the indexed triangle set.
+-	igl::Hit 							&hit,
++	Hit 							&hit,
+ 	// Epsilon for the ray-triangle intersection, it should be proportional to an average triangle edge length.
+ 	const double 						 eps = 0.000001)
+ {
+@@ -770,7 +770,7 @@ inline bool intersect_ray_all_hits(
+ 	// Direction of the ray.
+ 	const VectorType 					&dir,
+ 	// All intersections of the ray with the indexed triangle set, sorted by parameter t.
+-	std::vector<igl::Hit> 				&hits,
++	std::vector<Hit> 				&hits,
+ 	// Epsilon for the ray-triangle intersection, it should be proportional to an average triangle edge length.
+ 	const double 						 eps = 0.000001)
+ {
+--- a/src/libslic3r/AABBMesh.cpp
++++ b/src/libslic3r/AABBMesh.cpp
+@@ -40,7 +40,7 @@ public:
+     void intersect_ray(const indexed_triangle_set &its,
+                        const Vec3d &               s,
+                        const Vec3d &               dir,
+-                       igl::Hit &                  hit)
++                       Hit &                  hit)
+     {
+         AABBTreeIndirect::intersect_ray_first_hit(its.vertices, its.indices,
+                                                   m_tree, s, dir, hit, m_triangle_ray_epsilon);
+@@ -49,7 +49,7 @@ public:
+     void intersect_ray(const indexed_triangle_set &its,
+                        const Vec3d &               s,
+                        const Vec3d &               dir,
+-                       std::vector<igl::Hit> &     hits)
++                       std::vector<Hit> &     hits)
+     {
+         AABBTreeIndirect::intersect_ray_all_hits(its.vertices, its.indices,
+                                                  m_tree, s, dir, hits, m_triangle_ray_epsilon);
+@@ -158,7 +158,7 @@ AABBMesh::hit_result
+ AABBMesh::query_ray_hit(const Vec3d &s, const Vec3d &dir) const
+ {
+     assert(is_approx(dir.norm(), 1.));
+-    igl::Hit hit{-1, -1, 0.f, 0.f, 0.f};
++    Hit hit{-1, -1, 0.f, 0.f, 0.f};
+     hit.t = std::numeric_limits<float>::infinity();
+ 
+ #ifdef SLIC3R_HOLE_RAYCASTER
+@@ -187,23 +187,23 @@ std::vector<AABBMesh::hit_result>
+ AABBMesh::query_ray_hits(const Vec3d &s, const Vec3d &dir) const
+ {
+     std::vector<AABBMesh::hit_result> outs;
+-    std::vector<igl::Hit> hits;
++    std::vector<Hit> hits;
+     m_aabb->intersect_ray(*m_tm, s, dir, hits);
+ 
+     // The sort is necessary, the hits are not always sorted.
+     std::sort(hits.begin(), hits.end(),
+-              [](const igl::Hit& a, const igl::Hit& b) { return a.t < b.t; });
++              [](const Hit& a, const Hit& b) { return a.t < b.t; });
+ 
+     // Remove duplicates. They sometimes appear, for example when the ray is cast
+     // along an axis of a cube due to floating-point approximations in igl (?)
+     hits.erase(std::unique(hits.begin(), hits.end(),
+-                           [](const igl::Hit& a, const igl::Hit& b)
++                           [](const Hit& a, const Hit& b)
+                            { return a.t == b.t; }),
+                hits.end());
+ 
+-    //  Convert the igl::Hit into hit_result
++    //  Convert the Hit into hit_result
+     outs.reserve(hits.size());
+-    for (const igl::Hit& hit : hits) {
++    for (const Hit& hit : hits) {
+         outs.emplace_back(AABBMesh::hit_result(*this));
+         outs.back().m_t = double(hit.t);
+         outs.back().m_dir = dir;
+--- a/src/libslic3r/GCode/ModelVisibility.hpp
++++ b/src/libslic3r/GCode/ModelVisibility.hpp
+@@ -11,6 +11,7 @@
+ #include "libslic3r/Model.hpp"
+ #include "libslic3r/TriangleSetSampling.hpp"
+ 
++using Hit = igl::Hit<float>;
+ namespace Slic3r::ModelInfo {
+ namespace Impl {
+ 
+--- a/src/libslic3r/GCode/ModelVisibility.cpp
++++ b/src/libslic3r/GCode/ModelVisibility.cpp
+@@ -125,7 +125,7 @@ std::vector<float> raycast_visibility(
+             [&triangles, &precomputed_sample_directions, model_contains_negative_parts, negative_volumes_start_index,
+                     &raycasting_tree, &result, &samples, &params](tbb::blocked_range<size_t> r) {
+                 // Maintaining hits memory outside of the loop, so it does not have to be reallocated for each query.
+-                std::vector<igl::Hit> hits;
++                std::vector<Hit> hits;
+                 for (size_t s_idx = r.begin(); s_idx < r.end(); ++s_idx) {
+                     result[s_idx] = 1.0f;
+                     const float decrease_step = 1.0f
+@@ -140,7 +140,7 @@ std::vector<float> raycast_visibility(
+                     for (const auto &dir : precomputed_sample_directions) {
+                         Vec3f final_ray_dir = (f.to_world(dir));
+                         if (!model_contains_negative_parts) {
+-                            igl::Hit hitpoint;
++                            Hit hitpoint;
+                             // FIXME: This AABBTTreeIndirect query will not compile for float ray origin and
+                             // direction.
+                             Vec3d final_ray_dir_d = final_ray_dir.cast<double>();
+--- a/src/libslic3r/TriangleSelectorWrapper.cpp
++++ b/src/libslic3r/TriangleSelectorWrapper.cpp
+@@ -14,6 +14,7 @@
+ #include "libslic3r/TriangleMesh.hpp"
+ #include "libslic3r/TriangleSelector.hpp"
+ 
++using Hit = igl::Hit<float>;
+ namespace Slic3r {
+ 
+ TriangleSelectorWrapper::TriangleSelectorWrapper(const TriangleMesh &mesh, const Transform3d& mesh_transform) :
+@@ -22,7 +23,7 @@ TriangleSelectorWrapper::TriangleSelecto
+ }
+ 
+ void TriangleSelectorWrapper::enforce_spot(const Vec3f &point, const Vec3f &origin, float radius) {
+-    std::vector<igl::Hit> hits;
++    std::vector<Hit> hits;
+     Vec3f dir = (point - origin).normalized();
+     static constexpr const auto eps_angle = 89.99f;
+     Transform3d trafo_no_translate = mesh_transform;
+@@ -32,7 +33,7 @@ void TriangleSelectorWrapper::enforce_sp
+             Vec3d(dir.cast<double>()),
+             hits)) {
+         for (int hit_idx = hits.size() - 1; hit_idx >= 0; --hit_idx) {
+-            const igl::Hit &hit = hits[hit_idx];
++            const Hit &hit = hits[hit_idx];
+             Vec3f pos = origin + dir * hit.t;
+             Vec3f face_normal = its_face_normal(mesh.its, hit.id);
+             if ((point - pos).norm() < radius && face_normal.dot(dir) < 0) {
+--- a/src/libslic3r/BranchingTree/PointCloud.cpp
++++ b/src/libslic3r/BranchingTree/PointCloud.cpp
+@@ -55,7 +55,8 @@ std::vector<Node> sample_mesh(const inde
+     Eigen::MatrixXd V;
+     Eigen::MatrixXi F;
+     to_eigen_mesh(its, V, F);
+-    igl::random_points_on_mesh(N, V, F, B, FI);
++    Eigen::MatrixXd X;
++    igl::random_points_on_mesh(N, V, F, B, FI, X);
+ 
+     ret.reserve(size_t(N));
+     for (int i = 0; i < FI.size(); i++) {

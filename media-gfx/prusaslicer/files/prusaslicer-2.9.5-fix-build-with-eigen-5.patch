@@ -1,0 +1,125 @@
+--- a/src/libslic3r/Line.hpp
++++ b/src/libslic3r/Line.hpp
+@@ -80,79 +80,78 @@ auto angle_to_x(const L &l)
+ }
+ 
+ // Distance to the closest point of line.
+-template<class L>
+-inline double distance_to_squared(const L &line, const Vec<Dim<L>, Scalar<L>> &point, Vec<Dim<L>, Scalar<L>> *nearest_point)
++template<typename L, typename VecTypeIn, typename VecTypeOut>
++inline double distance_to_squared(const L &line, const VecTypeIn &point, VecTypeOut *nearest_point)
+ {
+-    using VecType = Vec<Dim<L>, double>;
+-    const VecType  v  = (get_b(line) - get_a(line)).template cast<double>();
+-    const VecType  va = (point  - get_a(line)).template cast<double>();
+-    const double  l2 = v.squaredNorm();
+-    if (l2 == 0.0) {
+-        // a == b case
+-        *nearest_point = get_a(line);
+-        return va.squaredNorm();
++    auto vd = (line.b.template cast<double>() - line.a.template cast<double>()).eval();
++    auto wd = (point.template cast<double>() - line.a.template cast<double>()).eval();
++    
++    double c1 = wd.dot(vd);
++    if (c1 <= 0) {
++        if (nearest_point) *nearest_point = line.a.template cast<typename VecTypeOut::Scalar>();
++        return wd.squaredNorm();
+     }
+-    // Consider the line extending the segment, parameterized as a + t (b - a).
+-    // We find projection of this point onto the line.
+-    // It falls where t = [(this-a) . (b-a)] / |b-a|^2
+-    const double t = va.dot(v);
+-    if (t <= 0.0) {
+-        // beyond the 'a' end of the segment
+-        *nearest_point = get_a(line);
+-        return va.squaredNorm();
+-    } else if (t >= l2) {
+-        // beyond the 'b' end of the segment
+-        *nearest_point = get_b(line);
+-        return (point - get_b(line)).template cast<double>().squaredNorm();
++    double c2 = vd.dot(vd);
++    if (c2 <= c1) {
++        if (nearest_point) *nearest_point = line.b.template cast<typename VecTypeOut::Scalar>();
++        return (point.template cast<double>() - line.b.template cast<double>()).squaredNorm();
+     }
+-
+-    const VecType w = ((t / l2) * v).eval();
+-    *nearest_point = (get_a(line).template cast<double>() + w).template cast<Scalar<L>>();
+-    return (w - va).squaredNorm();
++    double b = c1 / c2;
++    auto pb = line.a.template cast<double>() + b * vd;
++    if (nearest_point) *nearest_point = pb.template cast<typename VecTypeOut::Scalar>();
++    return (point.template cast<double>() - pb).squaredNorm();
+ }
+ 
+ // Distance to the closest point of line.
+-template<class L>
+-double distance_to_squared(const L &line, const Vec<Dim<L>, Scalar<L>> &point)
++template<typename L, typename VecType>
++inline double distance_to_squared(const L &line, const VecType &point)
+ {
+-    Vec<Dim<L>, Scalar<L>> nearest_point;
+-    return distance_to_squared<L>(line, point, &nearest_point);
++    using ScalarType = typename L::Scalar; 
++    constexpr int Dim = L::Dim;
++    using ExpectedVec = Eigen::Matrix<ScalarType, Dim, 1>;
++    
++    return distance_to_squared<L, VecType, ExpectedVec>(line, point, nullptr);
+ }
+ 
+-template<class L>
+-double distance_to(const L &line, const Vec<Dim<L>, Scalar<L>> &point)
++template<typename L, typename VecType>
++inline double distance_to(const L &line, const VecType &point)
+ {
+-    return std::sqrt(distance_to_squared(line, point));
++    return sqrt(distance_to_squared(line, point));
+ }
+ 
+ // Returns a squared distance to the closest point on the infinite.
+ // Returned nearest_point (and returned squared distance to this point) could be beyond the 'a' and 'b' ends of the segment.
+-template<class L>
+-double distance_to_infinite_squared(const L &line, const Vec<Dim<L>, Scalar<L>> &point, Vec<Dim<L>, Scalar<L>> *closest_point)
++
++template<class L, typename VecTypeIn, typename VecTypeOut>
++double distance_to_infinite_squared(const L &line, const VecTypeIn &point, VecTypeOut *closest_point)
+ {
+-    const Vec<Dim<L>, double> v  = (get_b(line) - get_a(line)).template cast<double>();
+-    const Vec<Dim<L>, double> va = (point - get_a(line)).template cast<double>();
+-    const double              l2 = v.squaredNorm(); // avoid a sqrt
++    const auto v  = (get_b(line).template cast<double>() - get_a(line).template cast<double>()).eval();
++    const auto va = (point.template cast<double>() - get_a(line).template cast<double>()).eval();
++    
++    const double l2 = v.squaredNorm(); // avoid a sqrt
+     if (l2 == 0.) {
+         // a == b case
+-        *closest_point = get_a(line);
++        if (closest_point) *closest_point = get_a(line).template cast<typename VecTypeOut::Scalar>();
+         return va.squaredNorm();
+     }
+     // Consider the line extending the segment, parameterized as a + t (b - a).
+     // We find projection of this point onto the line.
+     // It falls where t = [(this-a) . (b-a)] / |b-a|^2
+     const double t = va.dot(v) / l2;
+-    *closest_point = (get_a(line).template cast<double>() + t * v).template cast<Scalar<L>>();
++    if (closest_point) {
++        *closest_point = (get_a(line).template cast<double>() + t * v).template cast<typename VecTypeOut::Scalar>();
++    }
+     return (t * v - va).squaredNorm();
+ }
+ 
+ // Returns a squared distance to the closest point on the infinite.
+ // Closest point (and returned squared distance to this point) could be beyond the 'a' and 'b' ends of the segment.
+-template<class L>
+-double distance_to_infinite_squared(const L &line, const Vec<Dim<L>, Scalar<L>> &point)
++template<typename L, typename VecType>
++inline double distance_to_infinite_squared(const L &line, const VecType &point)
+ {
+-    Vec<Dim<L>, Scalar<L>> nearest_point;
+-    return distance_to_infinite_squared<L>(line, point, &nearest_point);
++    auto vd = (line.b.template cast<double>() - line.a.template cast<double>()).eval();
++    auto wd = (point.template cast<double>() - line.a.template cast<double>()).eval();
++    return wd.squaredNorm() - pow(wd.dot(vd), 2) / vd.squaredNorm();
+ }
+ 
+ // Returns a distance to the closest point on the infinite.
