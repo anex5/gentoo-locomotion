@@ -90,7 +90,7 @@ src_prepare() {
 	# Unbundle libs
 	sed -e '/add_subdirectory(libigl)/d' -i bundled_deps/CMakeLists.txt || die
 	sed -e '/^target_include_directories(libslic3r PUBLIC \${EXPAT_INCLUDE_DIRS})$/s/)$/ ${LIBIGL_INCLUDE_DIRS})/' -i src/libslic3r/CMakeLists.txt || die
-	sed -e 's/libigl$/igl\:\:igl_core/' -i src/libslic3r/CMakeLists.txt || die
+	sed -e 's/ libigl/ igl\:\:igl_core/' -i src/libslic3r/CMakeLists.txt || die
 	#sed -e '/add_subdirectory(miniz)/d' -i bundled_deps/CMakeLists.txt || die
 	#sed -e '/^target_include_directories(libslic3r PUBLIC \${EXPAT_INCLUDE_DIRS})$/s/)$/ ${MINIZ_INCLUDE_DIRS})/' -i src/libslic3r/CMakeLists.txt || die
 
