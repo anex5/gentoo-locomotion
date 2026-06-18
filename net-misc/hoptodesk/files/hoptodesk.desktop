@@ -1,0 +1,19 @@
+[Desktop Entry]
+Version=1.5
+Name=HopToDesk
+GenericName=Remote Desktop
+Comment=Remote Desktop
+Exec=hoptodesk %u
+Icon=hoptodesk
+Terminal=false
+Type=Application
+StartupNotify=true
+Categories=Network;RemoteAccess;GTK;
+Keywords=internet;
+Actions=new-window;
+
+X-Desktop-File-Install-Version=0.23
+
+[Desktop Action new-window]
+Name=Open a New Window
+Exec=hoptodesk %u

@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=HopToDeskURL Scheme Handler
+NoDisplay=true
+MimeType=x-scheme-handler/hoptodesk;
+TryExec=hoptodesk
+Exec=hoptodesk --connect "%u"
+Icon=hoptodesk
+Terminal=false
+Type=Application
+StartupNotify=false
+Version=1.5
