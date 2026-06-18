@@ -1,4 +1,4 @@
-From 512b3de4928a8741fe4b8e2a3f6d82559cda3125 Mon Sep 17 00:00:00 2001
+From 8faf3eef87f9bc9b8aef300f9887c335cb57a9ad Mon Sep 17 00:00:00 2001
 From: Natalie Vock <natalie.vock@gmx.de>
 Date: Sun, 31 Aug 2025 17:17:20 +0200
 Subject: [PATCH 1/8] cgroup/dmem: Add queries for protection values
@@ -49,7 +49,7 @@ index dd4869f1d..1a88cd0c9 100644
  { }
  
 diff --git a/kernel/cgroup/dmem.c b/kernel/cgroup/dmem.c
-index 003cd8651..b980a73d3 100644
+index 4753a67d0..be8499a5b 100644
 --- a/kernel/cgroup/dmem.c
 +++ b/kernel/cgroup/dmem.c
 @@ -695,6 +695,68 @@ int dmem_cgroup_try_charge(struct dmem_cgroup_region *region, u64 size,
@@ -125,7 +125,7 @@ index 003cd8651..b980a73d3 100644
 2.54.0
 
 
-From 40a6c01a214a1ef0e19b5ac81b4a3639f054917e Mon Sep 17 00:00:00 2001
+From ec200ec4b09e329eb2ff168415b6fb2f42bc0402 Mon Sep 17 00:00:00 2001
 From: Natalie Vock <natalie.vock@gmx.de>
 Date: Sun, 14 Sep 2025 18:35:45 +0200
 Subject: [PATCH 2/8] cgroup,cgroup/dmem: Add (dmem_)cgroup_common_ancestor
@@ -146,10 +146,10 @@ Signed-off-by: Natalie Vock <natalie.vock@gmx.de>
  3 files changed, 59 insertions(+)
 
 diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-index b61b9b784..bdebbfdb7 100644
+index c5648fcf7..c0b7c857a 100644
 --- a/include/linux/cgroup.h
 +++ b/include/linux/cgroup.h
-@@ -561,6 +561,27 @@ static inline struct cgroup *cgroup_ancestor(struct cgroup *cgrp,
+@@ -623,6 +623,27 @@ static inline struct cgroup *cgroup_ancestor(struct cgroup *cgrp,
  	return cgrp->ancestors[ancestor_level];
  }
  
@@ -205,7 +205,7 @@ index 1a88cd0c9..9d72457c4 100644
  { }
  
 diff --git a/kernel/cgroup/dmem.c b/kernel/cgroup/dmem.c
-index b980a73d3..7c9853b05 100644
+index be8499a5b..7d22536be 100644
 --- a/kernel/cgroup/dmem.c
 +++ b/kernel/cgroup/dmem.c
 @@ -757,6 +757,35 @@ bool dmem_cgroup_below_low(struct dmem_cgroup_pool_state *root,
@@ -248,7 +248,7 @@ index b980a73d3..7c9853b05 100644
 2.54.0
 
 
-From 06c3414f1dece7d2e9325405cd5e33d4494f9064 Mon Sep 17 00:00:00 2001
+From 70959f871c80461f04e6d22968d2ef092eef6acb Mon Sep 17 00:00:00 2001
 From: Natalie Vock <natalie.vock@gmx.de>
 Date: Wed, 15 Oct 2025 14:43:26 +0200
 Subject: [PATCH 3/8] drm/ttm: Extract code for attempting allocation in a
@@ -277,10 +277,10 @@ Reviewed-by: Tvrtko Ursulin <tvrtko.ursulin@igalia.com>
  1 file changed, 89 insertions(+), 28 deletions(-)
 
 diff --git a/drivers/gpu/drm/ttm/ttm_bo.c b/drivers/gpu/drm/ttm/ttm_bo.c
-index 08d07ffbb..ef68197e3 100644
+index bcd76f6bb..7abb32064 100644
 --- a/drivers/gpu/drm/ttm/ttm_bo.c
 +++ b/drivers/gpu/drm/ttm/ttm_bo.c
-@@ -489,6 +489,62 @@ int ttm_bo_evict_first(struct ttm_device *bdev, struct ttm_resource_manager *man
+@@ -488,6 +488,62 @@ int ttm_bo_evict_first(struct ttm_device *bdev, struct ttm_resource_manager *man
  	return ret;
  }
  
@@ -343,7 +343,7 @@ index 08d07ffbb..ef68197e3 100644
  /**
   * struct ttm_bo_evict_walk - Parameters for the evict walk.
   */
-@@ -504,12 +560,13 @@ struct ttm_bo_evict_walk {
+@@ -503,12 +559,13 @@ struct ttm_bo_evict_walk {
  	/** @evicted: Number of successful evictions. */
  	unsigned long evicted;
  
@@ -359,7 +359,7 @@ index 08d07ffbb..ef68197e3 100644
  };
  
  static s64 ttm_bo_evict_cb(struct ttm_lru_walk *walk, struct ttm_buffer_object *bo)
-@@ -518,8 +575,9 @@ static s64 ttm_bo_evict_cb(struct ttm_lru_walk *walk, struct ttm_buffer_object *
+@@ -517,8 +574,9 @@ static s64 ttm_bo_evict_cb(struct ttm_lru_walk *walk, struct ttm_buffer_object *
  		container_of(walk, typeof(*evict_walk), walk);
  	s64 lret;
  
@@ -371,7 +371,7 @@ index 08d07ffbb..ef68197e3 100644
  		return 0;
  
  	if (bo->pin_count || !bo->bdev->funcs->eviction_valuable(bo, evict_walk->place))
-@@ -561,7 +619,7 @@ static int ttm_bo_evict_alloc(struct ttm_device *bdev,
+@@ -560,7 +618,7 @@ static int ttm_bo_evict_alloc(struct ttm_device *bdev,
  			      struct ttm_operation_ctx *ctx,
  			      struct ww_acquire_ctx *ticket,
  			      struct ttm_resource **res,
@@ -380,7 +380,7 @@ index 08d07ffbb..ef68197e3 100644
  {
  	struct ttm_bo_evict_walk evict_walk = {
  		.walk = {
-@@ -574,7 +632,7 @@ static int ttm_bo_evict_alloc(struct ttm_device *bdev,
+@@ -573,7 +631,7 @@ static int ttm_bo_evict_alloc(struct ttm_device *bdev,
  		.place = place,
  		.evictor = evictor,
  		.res = res,
@@ -389,7 +389,7 @@ index 08d07ffbb..ef68197e3 100644
  	};
  	s64 lret;
  
-@@ -725,9 +783,8 @@ static int ttm_bo_alloc_resource(struct ttm_buffer_object *bo,
+@@ -724,9 +782,8 @@ static int ttm_bo_alloc_resource(struct ttm_buffer_object *bo,
  
  	for (i = 0; i < placement->num_placement; ++i) {
  		const struct ttm_place *place = &placement->placement[i];
@@ -400,7 +400,7 @@ index 08d07ffbb..ef68197e3 100644
  
  		man = ttm_manager_type(bdev, place->mem_type);
  		if (!man || !ttm_resource_manager_used(man))
-@@ -737,25 +794,25 @@ static int ttm_bo_alloc_resource(struct ttm_buffer_object *bo,
+@@ -736,25 +793,25 @@ static int ttm_bo_alloc_resource(struct ttm_buffer_object *bo,
  				    TTM_PL_FLAG_FALLBACK))
  			continue;
  
@@ -440,7 +440,7 @@ index 08d07ffbb..ef68197e3 100644
  		}
  
  		ret = ttm_bo_add_pipelined_eviction_fences(bo, man, ctx->no_wait_gpu);
-@@ -1178,13 +1235,17 @@ ttm_bo_swapout_cb(struct ttm_lru_walk *walk, struct ttm_buffer_object *bo)
+@@ -1177,13 +1234,17 @@ ttm_bo_swapout_cb(struct ttm_lru_walk *walk, struct ttm_buffer_object *bo)
  		bdev->funcs->swap_notify(bo);
  
  	if (ttm_tt_is_populated(tt)) {
@@ -468,7 +468,7 @@ index 08d07ffbb..ef68197e3 100644
 2.54.0
 
 
-From 8c5194d4ff7be2eb0227b5608d920b3966b0645e Mon Sep 17 00:00:00 2001
+From 7aaac43487ecc3600b37f3b2d1fc87ceeaffdc87 Mon Sep 17 00:00:00 2001
 From: Natalie Vock <natalie.vock@gmx.de>
 Date: Wed, 25 Feb 2026 11:29:40 +0100
 Subject: [PATCH 4/8] drm/ttm: Split cgroup charge and resource allocation
@@ -501,10 +501,10 @@ Signed-off-by: Natalie Vock <natalie.vock@gmx.de>
  3 files changed, 85 insertions(+), 51 deletions(-)
 
 diff --git a/drivers/gpu/drm/ttm/ttm_bo.c b/drivers/gpu/drm/ttm/ttm_bo.c
-index ef68197e3..45a54e404 100644
+index 7abb32064..c0c4f8fcb 100644
 --- a/drivers/gpu/drm/ttm/ttm_bo.c
 +++ b/drivers/gpu/drm/ttm/ttm_bo.c
-@@ -490,8 +490,12 @@ int ttm_bo_evict_first(struct ttm_device *bdev, struct ttm_resource_manager *man
+@@ -489,8 +489,12 @@ int ttm_bo_evict_first(struct ttm_device *bdev, struct ttm_resource_manager *man
  }
  
  struct ttm_bo_alloc_state {
@@ -517,7 +517,7 @@ index ef68197e3..45a54e404 100644
  };
  
  /**
-@@ -520,28 +524,39 @@ static int ttm_bo_alloc_at_place(struct ttm_buffer_object *bo,
+@@ -519,28 +523,39 @@ static int ttm_bo_alloc_at_place(struct ttm_buffer_object *bo,
  	bool may_evict;
  	int ret;
  
@@ -573,7 +573,7 @@ index ef68197e3..45a54e404 100644
  	return 0;
  }
  
-@@ -596,8 +611,9 @@ static s64 ttm_bo_evict_cb(struct ttm_lru_walk *walk, struct ttm_buffer_object *
+@@ -595,8 +610,9 @@ static s64 ttm_bo_evict_cb(struct ttm_lru_walk *walk, struct ttm_buffer_object *
  
  	evict_walk->evicted++;
  	if (evict_walk->res)
@@ -585,7 +585,7 @@ index ef68197e3..45a54e404 100644
  	if (lret == 0)
  		return 1;
  out:
-@@ -636,6 +652,8 @@ static int ttm_bo_evict_alloc(struct ttm_device *bdev,
+@@ -635,6 +651,8 @@ static int ttm_bo_evict_alloc(struct ttm_device *bdev,
  	};
  	s64 lret;
  
@@ -594,7 +594,7 @@ index ef68197e3..45a54e404 100644
  	evict_walk.walk.arg.trylock_only = true;
  	lret = ttm_lru_walk_for_evict(&evict_walk.walk, bdev, man, 1);
  
-@@ -666,6 +684,7 @@ static int ttm_bo_evict_alloc(struct ttm_device *bdev,
+@@ -665,6 +683,7 @@ static int ttm_bo_evict_alloc(struct ttm_device *bdev,
  		goto retry;
  	}
  out:
@@ -602,7 +602,7 @@ index ef68197e3..45a54e404 100644
  	if (lret < 0)
  		return lret;
  	if (lret == 0)
-@@ -798,6 +817,7 @@ static int ttm_bo_alloc_resource(struct ttm_buffer_object *bo,
+@@ -797,6 +816,7 @@ static int ttm_bo_alloc_resource(struct ttm_buffer_object *bo,
  				res, &alloc_state);
  
  		if (ret == -ENOSPC) {
@@ -610,7 +610,7 @@ index ef68197e3..45a54e404 100644
  			dmem_cgroup_pool_state_put(alloc_state.limit_pool);
  			continue;
  		} else if (ret == -EBUSY) {
-@@ -806,11 +826,15 @@ static int ttm_bo_alloc_resource(struct ttm_buffer_object *bo,
+@@ -805,11 +825,15 @@ static int ttm_bo_alloc_resource(struct ttm_buffer_object *bo,
  
  			dmem_cgroup_pool_state_put(alloc_state.limit_pool);
  
@@ -630,7 +630,7 @@ index ef68197e3..45a54e404 100644
  			return ret;
  		}
 diff --git a/drivers/gpu/drm/ttm/ttm_resource.c b/drivers/gpu/drm/ttm/ttm_resource.c
-index bfd9c68fc..a8a836f6e 100644
+index 154d67392..c1d2ae0a6 100644
 --- a/drivers/gpu/drm/ttm/ttm_resource.c
 +++ b/drivers/gpu/drm/ttm/ttm_resource.c
 @@ -292,19 +292,6 @@ void ttm_resource_del_bulk_move(struct ttm_resource *res,
@@ -746,7 +746,7 @@ index a5d386583..e567b7ec8 100644
 2.54.0
 
 
-From 29c4341e7eb180178474e601e5994f178007cdb0 Mon Sep 17 00:00:00 2001
+From c5c2e2a9859e8e2b024b6c35f538947294343ef6 Mon Sep 17 00:00:00 2001
 From: Natalie Vock <natalie.vock@gmx.de>
 Date: Thu, 11 Sep 2025 11:30:59 +0200
 Subject: [PATCH 5/8] drm/ttm: Be more aggressive when allocating below
@@ -764,10 +764,10 @@ Signed-off-by: Natalie Vock <natalie.vock@gmx.de>
  1 file changed, 48 insertions(+), 3 deletions(-)
 
 diff --git a/drivers/gpu/drm/ttm/ttm_bo.c b/drivers/gpu/drm/ttm/ttm_bo.c
-index 45a54e404..24657ddfc 100644
+index c0c4f8fcb..5fcb090bc 100644
 --- a/drivers/gpu/drm/ttm/ttm_bo.c
 +++ b/drivers/gpu/drm/ttm/ttm_bo.c
-@@ -496,6 +496,10 @@ struct ttm_bo_alloc_state {
+@@ -495,6 +495,10 @@ struct ttm_bo_alloc_state {
  	struct dmem_cgroup_pool_state *limit_pool;
  	/** @in_evict: Whether we are currently evicting buffers */
  	bool in_evict;
@@ -778,7 +778,7 @@ index 45a54e404..24657ddfc 100644
  };
  
  /**
-@@ -545,6 +549,42 @@ static int ttm_bo_alloc_at_place(struct ttm_buffer_object *bo,
+@@ -544,6 +548,42 @@ static int ttm_bo_alloc_at_place(struct ttm_buffer_object *bo,
  		}
  	}
  
@@ -821,7 +821,7 @@ index 45a54e404..24657ddfc 100644
  	ret = ttm_resource_alloc(bo, place, res, alloc_state->charge_pool);
  	if (ret) {
  		if (ret == -ENOSPC && may_evict)
-@@ -657,8 +697,12 @@ static int ttm_bo_evict_alloc(struct ttm_device *bdev,
+@@ -656,8 +696,12 @@ static int ttm_bo_evict_alloc(struct ttm_device *bdev,
  	evict_walk.walk.arg.trylock_only = true;
  	lret = ttm_lru_walk_for_evict(&evict_walk.walk, bdev, man, 1);
  
@@ -836,7 +836,7 @@ index 45a54e404..24657ddfc 100644
  		evict_walk.try_low = true;
  		lret = ttm_lru_walk_for_evict(&evict_walk.walk, bdev, man, 1);
  	}
-@@ -679,7 +723,8 @@ static int ttm_bo_evict_alloc(struct ttm_device *bdev,
+@@ -678,7 +722,8 @@ static int ttm_bo_evict_alloc(struct ttm_device *bdev,
  	} while (!lret && evict_walk.evicted);
  
  	/* We hit the low limit? Try once more */
@@ -850,7 +850,7 @@ index 45a54e404..24657ddfc 100644
 2.54.0
 
 
-From 58b5d6bd498af5a6505f9b8db326df68750a2895 Mon Sep 17 00:00:00 2001
+From decba405576da32c8b468b255c055dd2c5b97928 Mon Sep 17 00:00:00 2001
 From: Natalie Vock <natalie.vock@gmx.de>
 Date: Sun, 14 Sep 2025 18:45:08 +0200
 Subject: [PATCH 6/8] drm/ttm: Use common ancestor of evictor and evictee as
@@ -882,10 +882,10 @@ Signed-off-by: Natalie Vock <natalie.vock@gmx.de>
  1 file changed, 40 insertions(+), 3 deletions(-)
 
 diff --git a/drivers/gpu/drm/ttm/ttm_bo.c b/drivers/gpu/drm/ttm/ttm_bo.c
-index 24657ddfc..73b19c5d0 100644
+index 5fcb090bc..815e9e835 100644
 --- a/drivers/gpu/drm/ttm/ttm_bo.c
 +++ b/drivers/gpu/drm/ttm/ttm_bo.c
-@@ -628,11 +628,48 @@ static s64 ttm_bo_evict_cb(struct ttm_lru_walk *walk, struct ttm_buffer_object *
+@@ -627,11 +627,48 @@ static s64 ttm_bo_evict_cb(struct ttm_lru_walk *walk, struct ttm_buffer_object *
  {
  	struct ttm_bo_evict_walk *evict_walk =
  		container_of(walk, typeof(*evict_walk), walk);
@@ -941,7 +941,7 @@ index 24657ddfc..73b19c5d0 100644
 2.54.0
 
 
-From 661ab6a8972ba4491ba4a9d98af0d9e43c20e028 Mon Sep 17 00:00:00 2001
+From 9fa6fee49156ccc6be25329dafff8b859c66415a Mon Sep 17 00:00:00 2001
 From: Peter Jung <admin@ptr1337.dev>
 Date: Sat, 23 May 2026 17:27:29 +0200
 Subject: [PATCH 7/8] drm/ttm: Restore ttm_resource_del_bulk_move_unevictable()
@@ -958,10 +958,10 @@ Fixes: de1e2dc753c1 ("drm/ttm: Extract code for attempting allocation in a place
  2 files changed, 19 insertions(+), 10 deletions(-)
 
 diff --git a/drivers/gpu/drm/ttm/ttm_bo.c b/drivers/gpu/drm/ttm/ttm_bo.c
-index 73b19c5d0..0ec6e1a8f 100644
+index 815e9e835..2aba86174 100644
 --- a/drivers/gpu/drm/ttm/ttm_bo.c
 +++ b/drivers/gpu/drm/ttm/ttm_bo.c
-@@ -1341,17 +1341,13 @@ ttm_bo_swapout_cb(struct ttm_lru_walk *walk, struct ttm_buffer_object *bo)
+@@ -1340,17 +1340,13 @@ ttm_bo_swapout_cb(struct ttm_lru_walk *walk, struct ttm_buffer_object *bo)
  		bdev->funcs->swap_notify(bo);
  
  	if (ttm_tt_is_populated(tt)) {
@@ -986,7 +986,7 @@ index 73b19c5d0..0ec6e1a8f 100644
  
  out:
 diff --git a/drivers/gpu/drm/ttm/ttm_resource.c b/drivers/gpu/drm/ttm/ttm_resource.c
-index a8a836f6e..d4a1d1c38 100644
+index c1d2ae0a6..02eca679c 100644
 --- a/drivers/gpu/drm/ttm/ttm_resource.c
 +++ b/drivers/gpu/drm/ttm/ttm_resource.c
 @@ -292,6 +292,19 @@ void ttm_resource_del_bulk_move(struct ttm_resource *res,
@@ -1013,7 +1013,7 @@ index a8a836f6e..d4a1d1c38 100644
 2.54.0
 
 
-From c3fcee35f975ea992c09f5fbe2e5a30c88d0ca98 Mon Sep 17 00:00:00 2001
+From 500e2470796d9d853bafb2fb6eca5d9736b44885 Mon Sep 17 00:00:00 2001
 From: Eric Naim <dnaim@cachyos.org>
 Date: Sat, 6 Jun 2026 10:16:57 +0700
 Subject: [PATCH 8/8] fixup! cgroup,cgroup/dmem: Add
@@ -1025,7 +1025,7 @@ Signed-off-by: Eric Naim <dnaim@cachyos.org>
  1 file changed, 8 insertions(+), 2 deletions(-)
 
 diff --git a/kernel/cgroup/dmem.c b/kernel/cgroup/dmem.c
-index 7c9853b05..f16adcfca 100644
+index 7d22536be..2c7ba6a36 100644
 --- a/kernel/cgroup/dmem.c
 +++ b/kernel/cgroup/dmem.c
 @@ -771,6 +771,7 @@ struct dmem_cgroup_pool_state *dmem_cgroup_get_common_ancestor(struct dmem_cgrou

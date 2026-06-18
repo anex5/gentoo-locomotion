@@ -1,4 +1,4 @@
-From aab6fa965088c2a677303af256c93270a0b685be Mon Sep 17 00:00:00 2001
+From 590e5bb4ad58af80e4fcdd10f88cfa3b7df226c8 Mon Sep 17 00:00:00 2001
 From: Christian Loehle <christian.loehle@arm.com>
 Date: Thu, 5 Sep 2024 10:26:39 +0100
 Subject: [PATCH] cpuidle: Prefer teo over menu governor
@@ -14,7 +14,7 @@ Signed-off-by: Christian Loehle <christian.loehle@arm.com>
  3 files changed, 3 insertions(+), 6 deletions(-)
 
 diff --git a/drivers/cpuidle/Kconfig b/drivers/cpuidle/Kconfig
-index cac5997dc..ae67a4640 100644
+index d6d8386d3..b65bb25b8 100644
 --- a/drivers/cpuidle/Kconfig
 +++ b/drivers/cpuidle/Kconfig
 @@ -5,7 +5,7 @@ config CPU_IDLE
@@ -37,10 +37,10 @@ index cac5997dc..ae67a4640 100644
  	bool "Haltpoll governor (for virtualized systems)"
  	depends on KVM_GUEST
 diff --git a/drivers/cpuidle/governors/menu.c b/drivers/cpuidle/governors/menu.c
-index 899ff16ff..b5c419630 100644
+index 544a5d593..4d8e1246d 100644
 --- a/drivers/cpuidle/governors/menu.c
 +++ b/drivers/cpuidle/governors/menu.c
-@@ -524,7 +524,7 @@ static int menu_enable_device(struct cpuidle_driver *drv,
+@@ -527,7 +527,7 @@ static int menu_enable_device(struct cpuidle_driver *drv,
  
  static struct cpuidle_governor menu_governor = {
  	.name =		"menu",
@@ -50,10 +50,10 @@ index 899ff16ff..b5c419630 100644
  	.select =	menu_select,
  	.reflect =	menu_reflect,
 diff --git a/drivers/cpuidle/governors/teo.c b/drivers/cpuidle/governors/teo.c
-index bec014237..4bc648e30 100644
+index ac43b9b01..ecb23f3c5 100644
 --- a/drivers/cpuidle/governors/teo.c
 +++ b/drivers/cpuidle/governors/teo.c
-@@ -576,7 +576,7 @@ static int teo_enable_device(struct cpuidle_driver *drv,
+@@ -563,7 +563,7 @@ static int teo_enable_device(struct cpuidle_driver *drv,
  
  static struct cpuidle_governor teo_governor = {
  	.name =		"teo",
@@ -63,5 +63,5 @@ index bec014237..4bc648e30 100644
  	.select =	teo_select,
  	.reflect =	teo_reflect,
 -- 
-2.53.0
+2.54.0
 

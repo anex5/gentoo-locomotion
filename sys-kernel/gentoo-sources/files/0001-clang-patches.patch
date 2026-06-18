@@ -1,4 +1,4 @@
-From a85cda88f9cd56524446c60271b7423aa591f7cd Mon Sep 17 00:00:00 2001
+From 62a83f60468ba7d6d6f3d798e93991a6f20b9b22 Mon Sep 17 00:00:00 2001
 From: Peter Jung <admin@ptr1337.dev>
 Date: Thu, 12 Dec 2024 17:28:45 +0100
 Subject: [PATCH 1/4] kbuild: Add support for Clang's polyhedral loop
@@ -46,10 +46,10 @@ Signed-off-by: Peter Jung <admin@ptr1337.dev>
  2 files changed, 29 insertions(+)
 
 diff --git a/Makefile b/Makefile
-index 36d0a32fb..d6428fb32 100644
+index 408f070d4..6c3c8b02e 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -903,6 +903,22 @@ endif
+@@ -940,6 +940,22 @@ endif
  KBUILD_RUSTFLAGS += -Cdebug-assertions=$(if $(CONFIG_RUST_DEBUG_ASSERTIONS),y,n)
  KBUILD_RUSTFLAGS += -Coverflow-checks=$(if $(CONFIG_RUST_OVERFLOW_CHECKS),y,n)
  
@@ -73,10 +73,10 @@ index 36d0a32fb..d6428fb32 100644
  ifdef CONFIG_CC_IS_GCC
  # gcc-10 renamed --param=allow-store-data-races=0 to
 diff --git a/init/Kconfig b/init/Kconfig
-index 7484cd703..c65859b3c 100644
+index 2937c4d30..a66218fd4 100644
 --- a/init/Kconfig
 +++ b/init/Kconfig
-@@ -307,6 +307,19 @@ config BUILD_SALT
+@@ -316,6 +316,19 @@ config BUILD_SALT
  	  This is mostly useful for distributions which want to ensure the
  	  build is unique between builds. It's safe to leave the default.
  
@@ -97,10 +97,10 @@ index 7484cd703..c65859b3c 100644
  	bool
  
 -- 
-2.53.0
+2.54.0
 
 
-From e9cec1916629a1170cba6f4ab8d471a789fe54ca Mon Sep 17 00:00:00 2001
+From 35575500a25cc8afc34c0b959cd420f9524ae2d4 Mon Sep 17 00:00:00 2001
 From: Username404-59 <w.iron.zombie@gmail.com>
 Date: Thu, 12 Dec 2024 21:25:40 +0100
 Subject: [PATCH 2/4] kbuild: Update old polly option
@@ -111,10 +111,10 @@ Signed-off-by: Username404-59 <w.iron.zombie@gmail.com>
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/Makefile b/Makefile
-index d6428fb32..039e63ad7 100644
+index 6c3c8b02e..3095c156e 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -907,7 +907,7 @@ ifdef CONFIG_POLLY_CLANG
+@@ -944,7 +944,7 @@ ifdef CONFIG_POLLY_CLANG
  KBUILD_CFLAGS	+= -mllvm -polly \
  		   -mllvm -polly-ast-use-context \
  		   -mllvm -polly-invariant-load-hoisting \
@@ -124,10 +124,10 @@ index d6428fb32..039e63ad7 100644
  		   -mllvm -polly-vectorizer=stripmine
  # Polly may optimise loops with dead paths beyound what the linker
 -- 
-2.53.0
+2.54.0
 
 
-From 13f90683744d99e5e106ddc08ae8613f60e87878 Mon Sep 17 00:00:00 2001
+From a5a60439cf41a040f5aef6f0ed5ce0a5a18aea2e Mon Sep 17 00:00:00 2001
 From: Username404-59 <w.iron.zombie@gmail.com>
 Date: Thu, 12 Dec 2024 21:41:01 +0100
 Subject: [PATCH 3/4] kbuild: load polly llvm plugin
@@ -138,10 +138,10 @@ Signed-off-by: Username404-59 <w.iron.zombie@gmail.com>
  1 file changed, 2 insertions(+), 1 deletion(-)
 
 diff --git a/Makefile b/Makefile
-index 039e63ad7..b11246092 100644
+index 3095c156e..f34d1c711 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -904,7 +904,8 @@ KBUILD_RUSTFLAGS += -Cdebug-assertions=$(if $(CONFIG_RUST_DEBUG_ASSERTIONS),y,n)
+@@ -941,7 +941,8 @@ KBUILD_RUSTFLAGS += -Cdebug-assertions=$(if $(CONFIG_RUST_DEBUG_ASSERTIONS),y,n)
  KBUILD_RUSTFLAGS += -Coverflow-checks=$(if $(CONFIG_RUST_OVERFLOW_CHECKS),y,n)
  
  ifdef CONFIG_POLLY_CLANG
@@ -152,10 +152,10 @@ index 039e63ad7..b11246092 100644
  		   -mllvm -polly-invariant-load-hoisting \
  		   -mllvm -polly-loopfusion-greedy \
 -- 
-2.53.0
+2.54.0
 
 
-From 960a2674f7ae67fa0823518beb1990c0901fecd2 Mon Sep 17 00:00:00 2001
+From 20d75fab6a9ef67a5f380e28ea6bfaedff92d9e3 Mon Sep 17 00:00:00 2001
 From: Peter Jung <admin@ptr1337.dev>
 Date: Fri, 13 Dec 2024 11:39:24 +0100
 Subject: [PATCH 4/4] kbuild: Fix polly config call
@@ -166,10 +166,10 @@ Signed-off-by: Peter Jung <admin@ptr1337.dev>
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/init/Kconfig b/init/Kconfig
-index c65859b3c..0c7412da2 100644
+index a66218fd4..25ece1782 100644
 --- a/init/Kconfig
 +++ b/init/Kconfig
-@@ -309,7 +309,7 @@ config BUILD_SALT
+@@ -318,7 +318,7 @@ config BUILD_SALT
  
  config POLLY_CLANG
  	bool "Use Clang Polly optimizations"
@@ -179,5 +179,5 @@ index c65859b3c..0c7412da2 100644
  	help
  	  This option enables Clang's polyhedral loop optimizer known as
 -- 
-2.53.0
+2.54.0
 
