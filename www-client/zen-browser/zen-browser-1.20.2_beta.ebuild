@@ -4,7 +4,7 @@
 EAPI=8
 
 # Using Gentoos firefox patches as system libraries and lto are quite nice
-FIREFOX_PATCHSET="firefox-151-patches-01.tar.xz"
+FIREFOX_PATCHSET="firefox-152-patches-01.tar.xz"
 
 LLVM_COMPAT=( {20..22} )
 
@@ -25,7 +25,7 @@ WASI_SDK_VER=( [22]="32.0" [21]="30.0" [20]="27.0" )
 
 MOZ_ESR=
 
-MOZ_PV=151.0.2
+MOZ_PV=152.0
 MOZ_PV_SUFFIX=
 if [[ ${PV} =~ (_(alpha|beta|rc).*)$ ]] ; then
 	MOZ_PV_SUFFIX=${BASH_REMATCH[1]}
@@ -1003,6 +1003,7 @@ src_prepare() {
 
 	#eapply "${FILESDIR}/extra-patches/firefox-128.3.0e-big-endian-image-decoders.patch"
 	#eapply "${FILESDIR}/extra-patches/firefox-151.0.1-replace-MOZ_BIG_ENDIAN-macro.patch"
+	eapply "${FILESDIR}/extra-patches/firefox-152-remove-pub-qualifiers-c4aab1ba6aad.patch"
 
 	# Build with clang-20
 	if [[ "${LLVM_SLOT}" =~ ("20"|"21"|"22") ]]; then
@@ -1015,9 +1016,6 @@ src_prepare() {
 		rm -v "${WORKDIR}"/firefox-patches/*bmo-1988166-musl-remove-nonexisting-system-header-req.patch || die
 		rm -v "${WORKDIR}"/firefox-patches/*bgo-967694-musl-prctrl-exception-on-musl.patch || die
 	fi
-	rm -v "${WORKDIR}"/firefox-patches/*-bgo-928126-enable-jxl.patch || die
-	#rm -v "${WORKDIR}"/firefox-patches/*-bmo-2023597-use-wasm32-wasip1-target-for-clang-22.patch || die
-	#rm -v "${WORKDIR}"/firefox-patches/0026-bmo-2022238-revert-bug-2001075-to-avoid-toolbar-freeze.patch || die
 
 	eapply "${WORKDIR}/firefox-patches"
 
