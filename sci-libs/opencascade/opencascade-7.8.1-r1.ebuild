@@ -1,9 +1,9 @@
-# Copyright 1999-2024 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-inherit cmake flag-o-matic virtualx
+inherit cmake cuda flag-o-matic multiprocessing virtualx xdg-utils
 
 DESCRIPTION="Development platform for CAD/CAE, 3D surface/solid modeling and data exchange"
 HOMEPAGE="https://www.opencascade.com"
@@ -31,11 +31,12 @@ fi
 
 LICENSE="|| ( Open-CASCADE-LGPL-2.1-Exception-1.0 LGPL-2.1 )"
 SLOT="0/$(ver_cut 1-2)"
-IUSE="X debug doc draco examples ffmpeg freeimage freetype gles2-only inspector jemalloc json +opengl optimize tbb test testprograms tk vtk"
+IUSE="X debug doc draco examples ffmpeg freeimage freetype gles2 inspector jemalloc json opengl optimize tbb test testprograms tk truetype vtk"
+
 
 REQUIRED_USE="
 	?? ( optimize tbb )
-	?? ( opengl gles2-only )
+	|| ( opengl gles2 )
 	test? ( freeimage json opengl )
 "
 
@@ -54,7 +55,7 @@ RDEPEND="
 		media-libs/fontconfig
 		media-libs/freetype:2
 	)
-	gles2-only? (
+	gles2? (
 		media-libs/libglvnd
 	)
 	opengl? (
@@ -64,13 +65,13 @@ RDEPEND="
 		x11-libs/libX11
 	)
 	examples? (
-		dev-qt/qtcore:5
-		dev-qt/qtgui:5
-		dev-qt/qtquickcontrols2:5
-		dev-qt/qtwidgets:5
-		dev-qt/qtxml:5
+		dev-qt/qtcore:6
+		dev-qt/qtgui:6
+		dev-qt/qtquickcontrols2:6
+		dev-qt/qtwidgets:6
+		dev-qt/qtxml:6
 	)
-	ffmpeg? ( <media-video/ffmpeg-8:= )
+	ffmpeg? ( <media-video/ffmpeg-9:= )
 	freeimage? ( media-libs/freeimage )
 	inspector? (
 		dev-qt/qtcore:6
@@ -82,8 +83,7 @@ RDEPEND="
 	jemalloc? ( dev-libs/jemalloc )
 	tbb? ( dev-cpp/tbb:= )
 	vtk? (
-		dev-lang/tk:=
-		sci-libs/vtk:=[rendering]
+		sci-libs/vtk:=[rendering,truetype?]
 		tbb? (
 			sci-libs/vtk:=[tbb,-cuda]
 		)
@@ -138,6 +138,9 @@ src_unpack() {
 }
 
 src_prepare() {
+	# File DEFINES has not been found in
+	touch src/TKOpenGles/DEFINES || die
+
 	cmake_src_prepare
 
 	sed -e 's|/lib\$|/'"$(get_libdir)"'\$|' \
@@ -195,7 +198,7 @@ src_configure() {
 		-DUSE_FREEIMAGE="$(usex freeimage)"
 		-DUSE_FREETYPE="$(usex freetype)"
 		# Indicates whether OpenGL ES 2.0 should be used in OCCT visualization module
-		-DUSE_GLES2="$(usex gles2-only)"
+		-DUSE_GLES2="$(usex gles2)"
 		# Indicates whether OpenGL desktop should be used in OCCT visualization module
 		-DUSE_OPENGL="$(usex opengl)"
 		# no package in tree
@@ -255,6 +258,14 @@ src_configure() {
 			-D3RDPARTY_VTK_INCLUDE_DIR="${ESYSROOT}/usr/include/vtk-${vtk_ver}"
 			-D3RDPARTY_VTK_LIBRARY_DIR="${ESYSROOT}/usr/$(get_libdir)"
 		)
+
+		# USE=vtk depends on sci-lib/vtk, which looks up a cuda compiler when build with USE=cuda.
+		# We therefore need to set the correct CUDAHOSTCXX and setup the sandbox.
+		if has_version "sci-libs/vtk[cuda]"; then
+			cuda_add_sandbox
+			addpredict "/dev/char"
+			export CUDAHOSTCXX="$(cuda_gccdir)"
+		fi
 	fi
 
 	cmake_src_configure
@@ -278,13 +289,15 @@ src_configure() {
 }
 
 src_test() {
-	echo "export CSF_OCCTDataPath=${WORKDIR}/data" >> "${BUILD_DIR}/custom.sh" || die
+	cat >> "${BUILD_DIR}/custom.sh" <<- _EOF_ || die
+		export CSF_TestDataPath="${WORKDIR}/${PN}-dataset-${MY_TEST_PV}"
+	_EOF_
 
 	if has_version media-fonts/dejavu; then
 		cp "${ESYSROOT}/usr/share/fonts/dejavu/DejaVuSans.ttf" "${WORKDIR}/data/" # no die here as this isn't fatal
 	fi
 
-	local test_file=${T}/testscript.tcl
+	local test_file="${T}/testscript.tcl"
 
 	local draw_opts=(
 		i # see ${BUILD_DIR}/custom*.sh
@@ -298,15 +311,21 @@ src_test() {
 	local test_opts=( # run single tests
 		-overwrite
 	)
+
+	local test_name
 	for test_name in "${test_names[@]}"; do
+		mkdir -vp "$(dirname "${BUILD_DIR}/test_results/${test_name// /\/}.html")" || die
 		cat >> "${test_file}" <<- _EOF_ || die
 			test ${test_name} -outfile "${BUILD_DIR}/test_results/${test_name// /\/}.html" ${test_opts[@]}
 		_EOF_
 	done
 
-	local testgrid_opts=()
+	local testgrid_opts=(
+		-overwrite
+	)
 
 	local SKIP_TESTS=()
+	local DEL_TESTS=()
 
 	if [[ "${OCCT_OPTIONAL_TESTS}" != "true" ]]; then
 		SKIP_TESTS+=(
@@ -324,10 +343,14 @@ src_test() {
 			'opengles3'
 
 			'demo draw bug30430'
+
+			'offset wire_closed_inside_0_005 D1'
 		)
 
-		local DEL_TESTS=(
+		DEL_TESTS+=(
 			'opengl/data/background/bug27836'
+			'opengl/data/text/bug22149'
+			'opengl/data/text/C2'
 			'perf/mesh/bug26965'
 			'v3d/trsf/bug26029'
 		)
@@ -337,11 +360,33 @@ src_test() {
 		done
 	fi
 
+	if ! use gles2; then
+		DEL_TESTS+=(
+			'opengl/drivers/opengles'
+			'opengles3'
+		)
+	fi
+
+	if use gles2 || use opengl; then
+		xdg_environment_reset
+		addwrite '/dev/dri/'
+		[[ -c /dev/udmabuf ]] && addwrite /dev/udmabuf
+	fi
+
+	if ! use tk || ! use vtk; then
+		DEL_TESTS+=(
+			'opengl/data/transparency/oit'
+		)
+	fi
+
 	if ! use vtk; then
 		SKIP_TESTS+=(
 			'vtk'
 		)
-		echo "IGNORE /Could not open: libTKIVtkDraw/skip VTK" >> "${CMAKE_USE_DIR}/tests/opengl/parse.rules"
+		cat >> "${CMAKE_USE_DIR}/tests/opengl/parse.rules" <<- _EOF_ || die
+			IGNORE /Could not open: libTKIVtkDraw/skip VTK
+		_EOF_
+
 	fi
 
 	if [[ -n "${SKIP_TESTS[*]}" ]]; then
@@ -351,23 +396,24 @@ src_test() {
 	testgrid_opts+=(
 		# -refresh 5
 		-overwrite
+		-parallel "$(makeopts_jobs)"
 	)
 	cat >> "${test_file}" <<- _EOF_ || die
 		testgrid -outdir "${BUILD_DIR}/test_results" ${testgrid_opts[@]}
 	_EOF_
 
-	# # regenerate summary in case we have to
-	# cat >> "${test_file}" <<- _EOF_ || die
-	# 	testsummarize "${BUILD_DIR}/test_results"
-	# _EOF_
+	# regenerate summary in case we have to
+	cat >> "${test_file}" <<- _EOF_ || die
+		testsummarize "${BUILD_DIR}/test_results"
+	_EOF_
 
 	# Work around zink warnings
 	export LIBGL_ALWAYS_SOFTWARE="true"
 
-	export CASROOT="${BUILD_DIR}"
+	local -x CASROOT="${BUILD_DIR}"
 
 	virtx \
-	"${BUILD_DIR}/draw.sh" \
+		"${BUILD_DIR}/draw.sh" \
 		"${draw_opts[@]}" \
 		-f "${test_file}"
 

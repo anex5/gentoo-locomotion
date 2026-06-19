@@ -1,26 +1,26 @@
-# Copyright 1999-2023 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
 inherit edo multilib-minimal flag-o-matic toolchain-funcs
 
-WXSUBVERSION="${PV}-gtk3"				# 3.2.9-gtk3
-WXVERSION="$(ver_cut 1-3)"				# 3.2.9
 # Make sure that this matches the number of components in ${PV}
-WXRELEASE="$(ver_cut 1-2)-gtk3"			# 3.2-gtk3
-WXRELEASE_NODOT=${WXRELEASE//./}		# 32-gtk3
+WXSUBVERSION="${PV}-gtk3"				# 3.3.2-gtk3
+WXVERSION="$(ver_cut 1-3)"				# 3.3.2
+# Make sure that this matches the number of components in ${PV}
+WXRELEASE="$(ver_cut 1-2)-gtk3"			# 3.3-gtk3
+WXRELEASE_NODOT="${WXRELEASE//./}"		# 33-gtk3
+WXRELEASE_NODOTSLASH="${WXRELEASE//-/}"	# 32gtk3
 
 DESCRIPTION="GTK version of wxWidgets, a cross-platform C++ GUI toolkit"
 HOMEPAGE="https://wxwidgets.org/"
-SRC_URI="
-	https://github.com/wxWidgets/wxWidgets/releases/download/v${PV}/wxWidgets-${PV}.tar.bz2
+SRC_URI="https://github.com/wxWidgets/wxWidgets/releases/download/v${PV}/wxWidgets-${PV}.tar.bz2
 	doc? ( https://github.com/wxWidgets/wxWidgets/releases/download/v${PV}/wxWidgets-${PV}-docs-html.tar.bz2 )"
 S="${WORKDIR}/wxWidgets-${PV}"
-
 LICENSE="wxWinLL-3 GPL-2 doc? ( wxWinFDL-3 )"
 SLOT="${WXRELEASE}/$(ver_cut 1-2)"
-KEYWORDS="~alpha ~amd64 ~arm ~arm64 ~hppa ~loong ~ia64 ~mips ~ppc ~ppc64 ~riscv ~sparc ~x86 ~amd64-linux ~x86-linux"
+KEYWORDS="~alpha ~amd64 ~arm ~arm64 ~hppa ~loong ~mips ~ppc ~ppc64 ~riscv ~sparc ~x86"
 IUSE="+gui curl doc debug keyring gstreamer libnotify +lzma opengl pch sdl +spell test tiff wayland webkit X"
 REQUIRED_USE="
 	test? ( tiff )
@@ -33,27 +33,27 @@ RESTRICT="!test? ( test ) mirror"
 RDEPEND="
 	>=app-eselect/eselect-wxwidgets-20131230
 	dev-libs/expat[${MULTILIB_USEDEP}]
-	dev-libs/libpcre2[pcre16,pcre32,unicode]
+	dev-libs/libpcre2[pcre16,pcre32,unicode,${MULTILIB_USEDEP}]
 	sdl? ( media-libs/libsdl2[${MULTILIB_USEDEP}] )
-	curl? ( net-misc/curl )
-	lzma? ( app-arch/xz-utils )
+	curl? ( net-misc/curl[${MULTILIB_USEDEP}] )
+	lzma? ( app-arch/xz-utils[${MULTILIB_USEDEP}] )
 	gui? (
 		>=dev-libs/glib-2.22:2[${MULTILIB_USEDEP}]
 		media-libs/libjpeg-turbo:=[${MULTILIB_USEDEP}]
 		media-libs/libpng:0=[${MULTILIB_USEDEP}]
 		virtual/zlib[${MULTILIB_USEDEP}]
 		x11-libs/cairo[${MULTILIB_USEDEP}]
-		x11-libs/gtk+:3[wayland?,${MULTILIB_USEDEP}]
+		>=x11-libs/gtk+-3.24.41-r1:3[wayland?,X?,${MULTILIB_USEDEP}]
 		x11-libs/gdk-pixbuf:2[${MULTILIB_USEDEP}]
 		X? (
 			x11-libs/libSM[${MULTILIB_USEDEP}]
 			x11-libs/libX11[${MULTILIB_USEDEP}]
-			x11-libs/libXtst
+			x11-libs/libXtst[${MULTILIB_USEDEP}]
 			x11-libs/libXxf86vm[${MULTILIB_USEDEP}]
 		)
-		media-libs/fontconfig
+		media-libs/fontconfig[${MULTILIB_USEDEP}]
 		x11-libs/pango[${MULTILIB_USEDEP}]
-		keyring? ( app-crypt/libsecret )
+		keyring? ( app-crypt/libsecret[${MULTILIB_USEDEP}] )
 		gstreamer? (
 			media-libs/gstreamer:1.0[${MULTILIB_USEDEP}]
 			media-libs/gst-plugins-base:1.0[${MULTILIB_USEDEP}]
@@ -61,21 +61,23 @@ RDEPEND="
 		)
 		libnotify? ( x11-libs/libnotify[${MULTILIB_USEDEP}] )
 		opengl? (
-			X? ( virtual/opengl[${MULTILIB_USEDEP}] )
-			wayland? ( dev-libs/wayland )
+			virtual/opengl[X?,${MULTILIB_USEDEP}]
+			wayland? ( dev-libs/wayland[${MULTILIB_USEDEP}] )
 		)
 		spell? ( app-text/gspell:= )
 		tiff? ( media-libs/tiff:=[${MULTILIB_USEDEP}] )
-		webkit? ( net-libs/webkit-gtk:4= )
+		webkit? ( net-libs/webkit-gtk:4.1= )
 	)
 "
 DEPEND="${RDEPEND}
 	opengl? ( virtual/glu[${MULTILIB_USEDEP}] )
+	X? ( x11-base/xorg-proto )
 "
 BDEPEND="
 	test? ( >=dev-util/cppunit-1.8.0 )
 	>=app-eselect/eselect-wxwidgets-20131230
-	virtual/pkgconfig"
+	virtual/pkgconfig
+"
 
 # Note about the gst-plugin-base dep: The build system queries for it,
 # but doesn't link it for some reason?  Either way - probably best to
@@ -88,8 +90,8 @@ PATCHES=(
 	#"${WORKDIR}"/wxGTK-3.0.5_p20210214/
 	"${FILESDIR}/${PN}-3.2.8-gtk3-translation-domain.patch"
 	#"${FILESDIR}"/wxGTK-ignore-c++-abi.patch #676878
-	"${FILESDIR}/${PN}-3.2.1-configure-tests.patch"
-	"${FILESDIR}/${PN}-3.2.1-wayland-control.patch"
+	"${FILESDIR}/${PN}-3.3.1-configure-tests.patch"
+	"${FILESDIR}/${PN}-3.3.2-wayland-control.patch"
 	"${FILESDIR}/${PN}-3.2.1-prefer-lib64-in-tests.patch"
 	"${FILESDIR}/${PN}-3.2.5-dont-break-flags.patch"
 )
@@ -132,10 +134,10 @@ src_prepare() {
 
 multilib_src_configure() {
 	# defang automagic dependencies, bug #927952
-	#use wayland || append-cflags -DGENTOO_GTK_HIDE_WAYLAND
-	#use X || append-cflags -DGENTOO_GTK_HIDE_X11
-	use wayland || append-cflags -DGENTOO_GTK_HIDE_WAYLAND -DGENTOO_GTK_HIDE_X11
-	use X || append-cflags -DGENTOO_GTK_HIDE_WAYLAND -DGENTOO_GTK_HIDE_X11
+	use wayland || append-cppflags -DGENTOO_GTK_HIDE_WAYLAND
+	use X || append-cppflags -DGENTOO_GTK_HIDE_X11
+	#use wayland || append-cflags -DGENTOO_GTK_HIDE_WAYLAND -DGENTOO_GTK_HIDE_X11
+	#use X || append-cflags -DGENTOO_GTK_HIDE_WAYLAND -DGENTOO_GTK_HIDE_X11
 
 	# Workaround for bug #915154
 	append-ldflags $(test-flags-CCLD -Wl,--undefined-version)
@@ -145,6 +147,7 @@ multilib_src_configure() {
 		--with-zlib=sys
 		--with-expat=sys
 		--disable-compat30
+		--disable-compat32
 		--enable-xrc
 		--disable-symver
 		$(use_with sdl)
@@ -255,13 +258,13 @@ multilib_src_install_all() {
 	rm "${ED}"/usr/bin/wx-config || die
 	rm "${ED}"/usr/bin/wxrc || die
 	# wxwin.m4 is owned by eselect-wxwidgets
-	# mv "${ED}"/usr/share/aclocal/wxwin.m4 "${ED}"/usr/share/aclocal/wxwin${WXRELEASE_NODOT}.m4 || die
+	#mv "${ED}"/usr/share/aclocal/wxwin.m4 "${ED}"/usr/share/aclocal/wxwin"${WXRELEASE_NODOT}".m4 || die
 
 	# version bakefile presets
 	pushd "${ED}"/usr/share/bakefile/presets >/dev/null || die
 	local f
 	for f in wx*; do
-		mv "${f}" "${f/wx/wx32gtk3}" || die
+		mv "${f}" "${f/wx/wx${WXRELEASE_NODOTSLASH}}" || die
 	done
 	popd >/dev/null || die
 }

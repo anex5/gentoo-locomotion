@@ -1030,18 +1030,10 @@ _HWCODEC_EXTERNALS_COMMIT="8903740a1f47884906a6e347ad3d8d56304d9771"
 # git ls-tree HEAD libs/hbb_common
 #_HBB_COMMON_COMMIT="48c37de3e6c4e399af6f51ca20e8e3e1fd037976"
 _HBB_COMMON_COMMIT="387603f47cbb15c0d3dc3d67ae3396d3eb707daf"
-# fix: kcp-sys-*/kcp is a empty directory
-# git clone https://github.com/rustdesk-org/kcp-sys
-# git ls-tree HEAD kcp
-_KCP_COMMIT="7f9805887b0909c52c825925f123e7a84da37167"
 SRC_URI="
 	https://gitlab.com/hoptodesk/hoptodesk/-/archive/${PV}/hoptodesk-${PV}.tar.gz -> ${P}.tar.gz
 	https://github.com/webmproject/libwebm/archive/${_LIBWEBM_COMMIT}.tar.gz
 		-> libwebm-${_LIBWEBM_COMMIT}.tar.gz
-	https://github.com/skywind3000/kcp/archive/${_KCP_COMMIT}.tar.gz
-		-> kcp-${_KCP_COMMIT}.tar.gz
-	https://github.com/rustdesk/hbb_common/archive/${_HBB_COMMON_COMMIT}.tar.gz
-		-> hbb_common-${_HBB_COMMON_COMMIT}.tar.gz
 	https://github.com/rustdesk-org/externals/archive/${_HWCODEC_EXTERNALS_COMMIT}.tar.gz
 		-> hwcodec-externals-${_HWCODEC_EXTERNALS_COMMIT}.tar.gz
 	https://raw.githubusercontent.com/c-smile/sciter-sdk/master/bin.lnx/x64/libsciter-gtk.so
@@ -1059,7 +1051,7 @@ LICENSE+="
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
 
-IUSE="cli flutter hwcodec mediacodec packui plugin_framework screencapturekit +dasp rubato samplerate vram"
+IUSE="cli flutter hwcodec mediacodec packui plugin_framework screencapturekit +dasp rubato samplerate vram wayland"
 
 RESTRICT="mirror"
 
@@ -1102,9 +1094,6 @@ src_prepare() {
 	cd "${S}"/.. || die
 	eapply "${FILESDIR}"/rust-sciter.patch
 
-	#rm -rf "${S}"/libs/hbb_common || die
-	#ln -s "${WORKDIR}/hbb_common-${_HBB_COMMON_COMMIT}" "${S}"/libs/hbb_common || die
-
 	local _RUSTWEBM_COMMIT=`echo "${GIT_CRATES[webm]}" | awk -F';' '{print $2}'`
 	rm -rf "${WORKDIR}/rust-webm-${_RUSTWEBM_COMMIT}"/src/sys/libwebm || die
 	ln -s "${WORKDIR}/libwebm-${_LIBWEBM_COMMIT}" "${WORKDIR}/rust-webm-${_RUSTWEBM_COMMIT}"/src/sys/libwebm || die
@@ -1112,17 +1101,13 @@ src_prepare() {
 	local _HWCODEC_COMMIT=`echo "${GIT_CRATES[hwcodec]}" | awk -F';' '{print $2}'`
 	rm -rf "${WORKDIR}/hwcodec-${_HWCODEC_COMMIT}"/externals || die
 	ln -s "${WORKDIR}/externals-${_HWCODEC_EXTERNALS_COMMIT}" "${WORKDIR}/hwcodec-${_HWCODEC_COMMIT}"/externals || die
-
-	#local _KCPSYS_COMMIT=`echo "${GIT_CRATES[kcp-sys]}" | awk -F';' '{print $2}'`
-	#rm -rf "${WORKDIR}/kcp-sys-${_KCPSYS_COMMIT}"/kcp || die
-	#ln -s "${WORKDIR}/kcp-${_KCP_COMMIT}" "${WORKDIR}/kcp-sys-${_KCPSYS_COMMIT}"/kcp || die
 }
 
 src_configure() {
 	local myfeatures=(
 		$(usev cli)
 		$(usev flutter)
-		$(usev hwcodec)
+		$(usev hwaccel hwcodec)
 		$(usev mediacodec)
 		$(usev packui)
 		$(usev plugin_framework)
@@ -1134,10 +1119,6 @@ src_configure() {
 	)
 
 	cargo_src_configure
-}
-
-src_compile() {
-	cargo_src_compile
 }
 
 src_install() {

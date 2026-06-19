@@ -116,7 +116,7 @@ src_configure() {
 
 	local mycmakeargs=(
 		-DOPENVDB_FIND_MODULE_PATH="/usr/$(get_libdir)/cmake/OpenVDB"
-		-Dlibigl_DIR="${EPREFIX}/usr/lib/cmake/igl"
+		-Dlibigl_DIR="${EPREFIX}/usr/$(get_libdir)/cmake/igl"
 		#-DMINIZ_INCLUDE_DIRS="${EPREFIX}/usr/include/miniz"
 		-DSLIC3R_BUILD_TESTS=$(usex test)
 		-DSLIC3R_ENABLE_FORMAT_STEP=$(usex step)

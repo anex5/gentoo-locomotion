@@ -19,6 +19,7 @@ else
 	COMMIT="1551ea0d39ce546b32a15808b9b1241018a89fc8"
 	SRC_URI="https://github.com/pothosware/SoapySDR/archive/${COMMIT}.tar.gz -> ${P}-${COMMIT:0:7}.tar.gz"
 	S="${WORKDIR}/SoapySDR-${COMMIT}"
+	RESTRICT="mirror"
 fi
 
 LICENSE="Boost-1.0"

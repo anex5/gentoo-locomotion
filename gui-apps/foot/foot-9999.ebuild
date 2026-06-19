@@ -47,8 +47,8 @@ DEPEND="
 RDEPEND="
 	${COMMON_DEPEND}
 	|| (
-		~gui-apps/foot-terminfo-${PV}
 		>=sys-libs/ncurses-6.3[-minimal]
+		~gui-apps/foot-terminfo-${PV}
 	)
 	utempter? ( sys-libs/libutempter )
 "
@@ -96,6 +96,15 @@ src_configure() {
 		-Dutmp-backend=$(usex utempter libutempter none)
 		-Dutmp-default-helper-path="/usr/$(get_libdir)/misc/utempter/utempter"
 	)
+
+	if use lto; then
+		emesonargs+=( -Db_lto=true )
+	fi
+
+	if use pgo; then
+		emesonargs+=( -Db_pgo=generate )
+	fi
+
 	meson_src_configure
 
 	use systemd && ( sed 's|@bindir@|/usr/bin|g' "${S}"/foot-server.service.in > foot-server.service || die )
@@ -108,7 +117,7 @@ src_install() {
 		systemd_douserunit foot-server.service "${S}"/foot-server.socket
 	else
 		exeinto /etc/user/init.d
-		newexe "${FILESDIR}"/footserver.user.initd footserver
+		newexe "${FILESDIR}"/footserver.user.initd foot-server
 	fi
 }
 

@@ -1,9 +1,9 @@
-# Copyright 1999-2024 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-inherit meson
+inherit meson systemd
 
 if [[ ${PV} == *9999* ]]; then
 	inherit git-r3
@@ -11,7 +11,7 @@ if [[ ${PV} == *9999* ]]; then
 	EGIT_SUBMODULES=()
 else
 	COMMIT="abeffbd9a9fd0b2133343e1149e65d4a795a43d0"
-	SRC_URI="https://codeberg.org/dnkl/${PN}/archive/${COMMIT}.tar.gz -> ${P}-${COMMIT}.tar.gz"
+	SRC_URI="https://codeberg.org/dnkl/${PN}/archive/${COMMIT}.tar.gz -> ${P}-${COMMIT:0:7}.cb.tar.gz"
 	S="${WORKDIR}/${PN}"
 	KEYWORDS="~amd64 ~arm64 ~arm ~x86"
 fi
@@ -20,7 +20,7 @@ DESCRIPTION="Simplistic and highly configurable status panel for X and Wayland"
 HOMEPAGE="https://codeberg.org/dnkl/yambar"
 LICENSE="MIT"
 SLOT="0"
-IUSE="alsa backlight battery +clock +cpu debug +disk-io dwl +foreign-toplevel man +memory mpd mpris niri i3 +label +network pipewire pulseaudio removables river +script +shared-plugins sway-xkb wayland X xkb xwindow"
+IUSE="alsa backlight battery +clock +cpu debug +disk-io dwl +foreign-toplevel man +memory mpd mpris niri i3 +label +network pipewire pulseaudio removables river +script static-libs sway-xkb systemd wayland X xkb xwindow"
 REQUIRED_USE="
 	|| ( wayland X )
 	sway-xkb? ( wayland )
@@ -35,6 +35,7 @@ RDEPEND="
 	backlight? ( virtual/libudev:= )
 	battery? ( virtual/libudev:= )
 	dwl? ( gui-wm/dwl )
+	i3? ( dev-libs/json-c )
 	mpris? (
 		sys-apps/dbus
 		media-sound/mpd
@@ -55,10 +56,12 @@ RDEPEND="
 		dev-libs/json-c
 	)
 	x11-libs/pixman
+	x11-libs/libxcb:0=[xkb]
 	X? (
-		x11-libs/libxcb:0=[xkb]
 		x11-libs/xcb-util
 		x11-libs/xcb-util-cursor
+		x11-libs/xcb-util-errors
+		x11-libs/xcb-util-renderutil
 		x11-libs/xcb-util-wm
 	)
 	wayland? ( dev-libs/wayland )
@@ -69,6 +72,8 @@ BDEPEND="
 	>=dev-libs/tllist-1.0.1
 	>=dev-build/meson-1.1.0
 	virtual/pkgconfig
+	app-alternatives/yacc
+	app-alternatives/lex
 	wayland? (
 		dev-libs/wayland-protocols
 		dev-util/wayland-scanner
@@ -99,7 +104,7 @@ src_configure() {
 	local emesonargs=(
 		$(meson_feature wayland backend-wayland)
 		$(meson_feature X backend-x11)
-		$(meson_use shared-plugins core-plugins-as-shared-libraries)
+		$(meson_use !static-libs core-plugins-as-shared-libraries)
 		$(meson_feature alsa plugin-alsa)
 		$(meson_feature backlight plugin-backlight)
 		$(meson_feature battery plugin-battery)
@@ -132,11 +137,17 @@ src_configure() {
 
 src_install() {
 	meson_src_install
-	if use shared-plugins; then
+
+	if use !static-libs; then
 		echo "LDPATH=${EPREFIX}/usr/$(get_libdir)/${PN}/" > 99yambar || die
 		doenvd 99yambar
 	fi
-	rm -rf "${D}/usr/share/doc/${PN}" || die
+
+	rm -rv "${ED}/usr/share/doc/${PN}" || die
+	local -x DOCS=( LICENSE README.md CHANGELOG.md )
+	einstalldocs
+
+	use systemd && systemd_douserunit "${FILESDIR}/${PN}.service"
 }
 
 pkg_postinst() {
