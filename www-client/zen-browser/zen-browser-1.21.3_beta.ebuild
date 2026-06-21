@@ -25,7 +25,7 @@ WASI_SDK_VER=( [22]="32.0" [21]="30.0" [20]="27.0" )
 
 MOZ_ESR=
 
-MOZ_PV=152.0
+MOZ_PV=152.0.1
 MOZ_PV_SUFFIX=
 if [[ ${PV} =~ (_(alpha|beta|rc).*)$ ]] ; then
 	MOZ_PV_SUFFIX=${BASH_REMATCH[1]}
@@ -1003,7 +1003,6 @@ src_prepare() {
 
 	#eapply "${FILESDIR}/extra-patches/firefox-128.3.0e-big-endian-image-decoders.patch"
 	#eapply "${FILESDIR}/extra-patches/firefox-151.0.1-replace-MOZ_BIG_ENDIAN-macro.patch"
-	eapply "${FILESDIR}/extra-patches/firefox-152-remove-pub-qualifiers-c4aab1ba6aad.patch"
 
 	# Build with clang-20
 	if [[ "${LLVM_SLOT}" =~ ("20"|"21"|"22") ]]; then

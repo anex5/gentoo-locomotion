@@ -270,67 +270,6 @@ index 8f8da3c4cabb..7cf32dd184d2 100644
    MigrationUtils: "resource:///modules/MigrationUtils.sys.mjs",
    SelectableProfileService:
      "resource:///modules/profiles/SelectableProfileService.sys.mjs",
-@@ -543,21 +543,14 @@ Preferences.addSetting(
- Preferences.addSetting({
-   id: "linkPreviewEnabled",
-   pref: "browser.ml.linkPreview.enabled",
--  deps: ["aiControlDefault", "aiControlLinkPreviews"],
--  visible: ({ aiControlDefault, aiControlLinkPreviews }) => {
--    return (
--      canShowAiFeature(aiControlLinkPreviews, aiControlDefault) &&
--      // @ts-ignore bug 1996860
--      LinkPreview.canShowPreferences
--    );
--  },
-+  visible: () => false, // LinkPreview is missing. tor-browser#44045.
- });
- Preferences.addSetting({
-   id: "linkPreviewKeyPoints",
-   pref: "browser.ml.linkPreview.optin",
-   // LinkPreview.canShowKeyPoints depends on the global genai pref.
-   // @ts-ignore bug 1996860
--  visible: () => LinkPreview.canShowKeyPoints,
-+  visible: () => false, // LinkPreview is missing. tor-browser#44045.
- });
- Preferences.addSetting({
-   id: "linkPreviewLongPress",
-@@ -3177,21 +3170,21 @@ SettingGroupManager.registerGroups({
-         supportPage: "extensionrecommendations",
-         subcategory: "cfrfeatures",
-       },
--      {
--        id: "linkPreviewEnabled",
--        l10nId: "link-preview-settings-enable",
--        subcategory: "link-preview",
--        items: [
--          {
--            id: "linkPreviewKeyPoints",
--            l10nId: "link-preview-settings-key-points",
--          },
--          {
--            id: "linkPreviewLongPress",
--            l10nId: "link-preview-settings-long-press",
--          },
--        ],
--      },
-+      // {
-+      //   id: "linkPreviewEnabled",
-+      //   l10nId: "link-preview-settings-enable",
-+      //   subcategory: "link-preview",
-+      //   items: [
-+      //     {
-+      //       id: "linkPreviewKeyPoints",
-+      //       l10nId: "link-preview-settings-key-points",
-+      //     },
-+      //     {
-+      //       id: "linkPreviewLongPress",
-+      //       l10nId: "link-preview-settings-long-press",
-+      //     },
-+      //   ],
-+      // },
-     ],
-   },
-   httpsOnly: {
 diff --git a/browser/components/sidebar/sidebar-main.mjs b/browser/components/sidebar/sidebar-main.mjs
 index 973fcffe1857..2cd46ad1f571 100644
 --- a/browser/components/sidebar/sidebar-main.mjs
@@ -870,21 +809,6 @@ index 1d991bb225c7..0b776ea1878a 100644
  
    JSWINDOWACTORS.ColorPicker = {
      parent: {
-diff --git a/toolkit/mozapps/extensions/content/aboutaddons.js b/toolkit/mozapps/extensions/content/aboutaddons.js
-index dcaec3a3c9bc..ef93ea157d13 100644
---- a/toolkit/mozapps/extensions/content/aboutaddons.js
-+++ b/toolkit/mozapps/extensions/content/aboutaddons.js
-@@ -24,6 +24,10 @@ ChromeUtils.defineESModuleGetters(this, {
-   ExtensionParent: "resource://gre/modules/ExtensionParent.sys.mjs",
-   ExtensionPermissions: "resource://gre/modules/ExtensionPermissions.sys.mjs",
-   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
-+  // ml/Utils.sys.mjs is missing. This should be unused since only addons with
-+  // type "mlmodel" would use these methods. Such addons are probably excluded
-+  // since ModelHubProvider.sys.mjs defines the "mlmodel" type, but is excluded
-+  // from the build. tor-browser#44045.
-   recordListViewTelemetry: "chrome://global/content/ml/Utils.sys.mjs",
-   recordDetailsViewTelemetry: "chrome://global/content/ml/Utils.sys.mjs",
-   recordRemoveInitiatedTelemetry: "chrome://global/content/ml/Utils.sys.mjs",
 diff --git a/toolkit/mozapps/extensions/content/components/addon-mlmodel-details.mjs b/toolkit/mozapps/extensions/content/components/addon-mlmodel-details.mjs
 index c5bf503ff792..27c608568cb2 100644
 --- a/toolkit/mozapps/extensions/content/components/addon-mlmodel-details.mjs
