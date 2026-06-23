@@ -14,8 +14,8 @@ if [[ ${PV} = *9999 ]]; then
 	EGIT_BRANCH="master"
 	KEYWORDS=""
 else
-	COMMIT="b7c0329f1dcc159bb20148afa65b113a34c51efa"
-	SRC_URI="https://github.com/Klipper3d/${PN}/archive/${COMMIT}.tar.gz -> ${P}-${COMMIT:0:7}.tar.gz
+	COMMIT="c707dd19214709dc23684b254a68e3bf69e4cfb3"
+	SRC_URI="https://github.com/Klipper3d/${PN}/archive/${COMMIT}.tar.gz -> ${P}-${COMMIT:0:7}.gh.tar.gz
 	dict? ( https://github.com/Klipper3d/klipper/files/7491378/klipper-dict-20211106.tar.gz )"
 	KEYWORDS="~amd64 ~x86 ~arm ~arm64"
 	S="${WORKDIR}/${PN}-${COMMIT}"

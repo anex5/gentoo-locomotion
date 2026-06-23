@@ -1,11 +1,11 @@
-# Copyright 1999-2025 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
 DISTUTILS_USE_PEP517=pdm-backend
-PYTHON_COMPAT=( python3_{11..14} )
-PDM_BUILD_SCM_VERSION="${PV}"
+PYTHON_COMPAT=( python3_{13..15} )
+PDM_BUILD_SCM_VERSION="${PV/_*}"
 
 inherit distutils-r1 systemd
 
@@ -17,8 +17,10 @@ if [[ ${PV} = *9999 ]]; then
 	EGIT_BRANCH="master"
 	KEYWORDS=""
 else
-	SRC_URI="https://github.com/Arksine/${PN}/archive/v${PV}.tar.gz -> ${P}.tar.gz"
+	COMMIT="82bd1af810e8349e89cf4557c7469853036ff581"
+	SRC_URI="https://github.com/Arksine/${PN}/archive/${COMMIT}.tar.gz -> ${P}-${COMMIT:0:7}.gh.tar.gz"
 	KEYWORDS="~amd64 ~x86 ~arm ~arm64 mips"
+	S="${WORKDIR}/${PN}-${COMMIT}"
 fi
 
 LICENSE="GPL-3"
@@ -32,21 +34,21 @@ DEPEND="
 RDEPEND="${DEPEND}
 	${PYTHON_DEPS}
 	app-misc/klipper
-	>=dev-python/apprise-1.9.6[${PYTHON_USEDEP}]
+	>=dev-python/apprise-1.9.8[${PYTHON_USEDEP}]
 	>=dev-python/distro-1.9.0[${PYTHON_USEDEP}]
 	>=dev-python/inotify-simple-2.0.1[${PYTHON_USEDEP}]
-	>=dev-python/importlib-metadata-4.13.0[${PYTHON_USEDEP}]
+	>=dev-python/importlib-metadata-6.7.0[${PYTHON_USEDEP}]
 	>=dev-python/streaming-form-data-1.19.1[${PYTHON_USEDEP}]
 	>=dev-python/dbus-fast-2.28.0[${PYTHON_USEDEP}]
 	>=dev-python/paho-mqtt-1.6.1[${PYTHON_USEDEP}]
 	>=dev-python/ldap3-2.9.1[${PYTHON_USEDEP}]
 	>=dev-python/jinja2-3.1.6[${PYTHON_USEDEP}]
 	>=dev-python/libnacl-2.1.0[${PYTHON_USEDEP}]
-	>=dev-python/pillow-9.5.0[${PYTHON_USEDEP}]
+	>=dev-python/pillow-12.2.0[${PYTHON_USEDEP}]
 	>=dev-python/pyserial-3.4[${PYTHON_USEDEP}]
 	>=dev-python/preprocess-cancellation-0.2.1[${PYTHON_USEDEP}]
 	>=dev-python/python-periphery-2.4.1[${PYTHON_USEDEP}]
-	>=dev-python/tornado-6.2[${PYTHON_USEDEP}]
+	>=dev-python/tornado-6.5.6[${PYTHON_USEDEP}]
 	>=dev-python/zeroconf-0.131.0[${PYTHON_USEDEP}]
 "
 
@@ -76,7 +78,7 @@ src_prepare() {
 }
 
 src_compile() {
-	local -x PDM_BUILD_SCM_VERSION=${PV}
+	local -x PDM_BUILD_SCM_VERSION=${PV/_*}
 	distutils-r1_src_compile
 }
 
