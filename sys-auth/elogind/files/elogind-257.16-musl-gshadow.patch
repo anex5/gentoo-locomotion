@@ -1,0 +1,17 @@
+--- a/src/shared/user-record-nss.h
++++ b/src/shared/user-record-nss.h
+@@ -3,3 +3,14 @@
+ #include <grp.h>
++#if __has_include(<gshadow.h>)
+ #include <gshadow.h>
++#else
++#include <errno.h>
++struct sgrp {
++    char *sg_namp;
++    char *sg_passwd;
++    char **sg_adm;
++    char **sg_mem;
++};
++#define getsgnam_r(name, sbuf, buf, buflen, res) (*(res) = NULL, ENOENT)
++#endif
+ #include <pwd.h>

@@ -1,0 +1,47 @@
+--- a/meson.build
++++ b/meson.build
+@@ -2926,7 +2926,9 @@ subdir('src/login')
+ # subdir('src/nss-mymachines')
+ # subdir('src/nss-resolve')
+ #endif // 0
+-subdir('src/nss-elogind')
++if get_option('nss-elogind')
++  subdir('src/nss-elogind')
++endif
+ #if 0 /// UNNEEDED by elogind
+ # subdir('src/oom')
+ # subdir('src/path')
+@@ -2970,7 +2972,10 @@ subdir('src/nss-elogind')
+ # subdir('src/update-utmp')
+ # subdir('src/user-sessions')
+ #endif // 0
+-subdir('src/userdb')
++
++if get_option('userdb')
++  subdir('src/userdb')
++endif
+ #if 0 /// elogind: varlinkctl requires the real varlink implementation
+ # subdir('src/varlinkctl')
+ #else // 0
+--- a/src/shared/meson.build
++++ b/src/shared/meson.build
+@@ -271,7 +271,7 @@ shared_sources = files(
+         'user-record.c',
+         'userdb-dropin.c',
+         'userdb.c',
++        'user-record-nss.c',
+-        'varlink-io.systemd.UserDatabase.c',
+         'verbs.c',
+         'wall.c',
+         'xml.c',
+@@ -283,6 +280,10 @@ if get_option('nss-elogind') != false
+ 	shared_sources += files('user-record-nss.c')
+ endif
+ 
++if get_option('varlink') != false
++	shared_sources += files('varlink-io.systemd.UserDatabase.c')
++endif
++
+ #endif // 0
+ 
+ if get_option('tests') != 'false'

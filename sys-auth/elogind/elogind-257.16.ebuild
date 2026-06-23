@@ -1,9 +1,9 @@
-# Copyright 1999-2025 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{12..14} )
+PYTHON_COMPAT=( python3_{13..15} )
 
 if [[ ${PV} = *9999* ]]; then
 	EGIT_BRANCH="v255-stable"
@@ -21,7 +21,7 @@ HOMEPAGE="https://github.com/elogind/elogind"
 
 LICENSE="CC0-1.0 LGPL-2.1+ public-domain"
 SLOT="0"
-IUSE="+acl audit cgroup-hybrid debug doc +pam +policykit selinux test"
+IUSE="+acl audit cgroup-hybrid debug doc man +pam +policykit selinux test"
 RESTRICT="!test? ( test )"
 
 BDEPEND="
@@ -55,13 +55,11 @@ DOCS=( README.md )
 
 PATCHES=(
 	# all downstream patches:
-	"${FILESDIR}/${PN}-252.9-nodocs.patch"
+	#"${FILESDIR}/${PN}-252.9-nodocs.patch"
 	# See also:
 	# https://github.com/elogind/elogind/issues/285
-	"${FILESDIR}/${PN}-255.17-revert-s2idle.patch" # bug 939042
-	"${FILESDIR}/${PN}-255.22-revert-openrc-user.patch" # bug 966481
 	"${FILESDIR}/${PN}-255.22-include-stat.h.patch"
-	"${FILESDIR}/${PN}-255.22-include-prctl.h.patch"
+	"${FILESDIR}/${PN}-257.16-fix-meson-build-with-new-options.patch"
 )
 
 python_check_deps() {
@@ -84,9 +82,9 @@ src_prepare() {
 			#"${FILESDIR}/${PN}-252.9-musl-sigfillset.patch"
 			"${FILESDIR}/${PN}-252.9-musl-rlim-max.patch"
 			"${FILESDIR}/${PN}-252.9-musl-getdents.patch"
-			"${FILESDIR}/${PN}-252.9-musl-gshadow.patch"
-			"${FILESDIR}/${PN}-252.9-musl-strerror_r.patch"
-			"${FILESDIR}/${PN}-252.9-musl-more-strerror_r.patch"
+			"${FILESDIR}/${PN}-257.16-musl-gshadow.patch"
+			#"${FILESDIR}/${PN}-252.9-musl-strerror_r.patch"
+			#"${FILESDIR}/${PN}-252.9-musl-more-strerror_r.patch"
 		)
 	fi
 	default
@@ -116,7 +114,8 @@ src_configure() {
 		--libexecdir="lib/elogind"
 		--localstatedir="${EPREFIX}"/var
 		-Dbashcompletiondir="${EPREFIX}/usr/share/bash-completion/completions"
-		-Dman=auto
+		-Dman=$(usex man enabled disabled)
+		-Dhtml=$(usex doc enabled disabled)
 		-Dsmack=false
 		-Dcgroup-controller=openrc
 		-Ddefault-hierarchy=${cgroupmode}
@@ -131,6 +130,9 @@ src_configure() {
 		-Dutmp=$(usex elibc_musl false true)
 		-Dmode=release
 		-Defi=true
+		-Dnss-elogind=$(usex elibc_glibc true false)
+		-Duserdb=$(usex elibc_glibc true false)
+		-Dvarlink=$(usex elibc_glibc true false)
 
 		# Ensure consistency between merged-usr and split-usr (bug 945965)
 		-Dhalt-path="${EPREFIX}/sbin/halt"
