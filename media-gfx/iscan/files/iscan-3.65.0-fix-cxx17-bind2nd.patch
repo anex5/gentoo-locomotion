@@ -1,0 +1,28 @@
+--- a/drivers/esci/vector.hpp
++++ b/drivers/esci/vector.hpp
+@@ -21,6 +21,7 @@
+ #ifndef drivers_esci_vector_hpp_
+ #define drivers_esci_vector_hpp_
+ 
++#include <vector>
+ #include <algorithm>
+ #include <functional>
+ #include <iostream>
+@@ -82,14 +83,14 @@ namespace esci {
+     vector& operator*= (const T& t)
+     {
+       std::transform (this->begin (), this->end (), this->begin (),
+-                      std::bind2nd (std::multiplies<T> (), t));
++                      [t](const T& val) { return val * t; });
+       return *this;
+     }
+ 
+     vector& operator/= (const T& t)
+     {
+       std::transform (this->begin (), this->end (), this->begin (),
+-                      std::bind2nd (std::divides<T> (), t));
++                      [t](const T& val) { return val / t; });
+       return *this;
+     }
+ 
+

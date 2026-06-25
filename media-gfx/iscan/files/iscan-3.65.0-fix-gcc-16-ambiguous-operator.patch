@@ -1,0 +1,31 @@
+--- a/drivers/combo.cpp
++++ b/drivers/combo.cpp
+@@ -106,7 +106,7 @@ scanner::scanner (const kv_list& kvs, co
+ 
+           constraint::ptr cp ((*sp->options ())[key].constraint ());
+ 
+-          if (cp && val == (*cp) (val))
++          if (cp && val == utsushi::string((*cp) (val)))
+             {
+               (*sp->options ())[key] = val;
+             }
+@@ -114,7 +114,7 @@ scanner::scanner (const kv_list& kvs, co
+             {                   // expand shorthand
+               if (val == "adf") val = "ADF";
+               if (val == "fb")  val = "Document Table";
+-              if (!cp || val == (*cp) (val))
++              if (!cp || val == utsushi::string((*cp) (val)))
+                 {
+                   (*sp->options ())[key] = val;
+                 }
+--- a/drivers/esci/compound-scanner.cpp
++++ b/drivers/esci/compound-scanner.cpp
+@@ -1338,7 +1338,7 @@ compound_scanner::set_up_scan_area ()
+     }
+ 
+   if (val_.count ("doc-source")
+-      && string ("ADF") == val_["doc-source"])
++      && string ("ADF") == utsushi::string(val_["doc-source"]))
+     {
+       if (val_.count ("border-fill"))
+         {
