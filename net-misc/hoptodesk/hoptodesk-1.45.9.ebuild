@@ -1049,18 +1049,24 @@ LICENSE+="
 	Unicode-DFS-2016 Unlicense WTFPL-2 ZLIB
 "
 SLOT="0"
-KEYWORDS="~amd64 ~x86"
+#KEYWORDS="~amd64 ~x86"
 
-IUSE="cli flutter hwcodec mediacodec packui plugin_framework screencapturekit +dasp rubato samplerate vram wayland"
+IUSE="cli flutter hwaccel mediacodec packui plugin_framework screencapturekit +dasp rubato samplerate systemd vram wayland"
 
 RESTRICT="mirror"
 
 RDEPEND="
 	media-libs/alsa-lib
 	x11-libs/gtk+:3[X]
-	media-libs/libva
+	x11-libs/libxcb
+	x11-libs/libXfixes
+	media-libs/libpulse
+	x11-misc/xdotool
+	media-libs/libva[X]
 	wayland? ( media-video/pipewire[gstreamer] )
+	hwaccel? ( x11-libs/libvdpau )
 "
+
 BDEPEND="
 	dev-lang/nasm
 	dev-lang/yasm
@@ -1068,6 +1074,7 @@ BDEPEND="
 	media-libs/libpulse
 	dev-build/cmake
 	dev-build/ninja
+	media-libs/libyuv
 	media-libs/gstreamer
 	media-libs/gst-plugins-base
 	x11-libs/libX11
@@ -1121,6 +1128,10 @@ src_configure() {
 	cargo_src_configure
 }
 
+src_compile() {
+	VCPKG_ROOT="$WORKDIR"/vcpkg cargo_src_compile
+}
+
 src_install() {
 	local hoptodesk_dir="/usr/share/${PN}"
 
@@ -1138,7 +1149,7 @@ src_install() {
 	newicon -s 256 res/128x128@2x.png hoptodesk.png
 
 	domenu "${FILESDIR}"/hoptodesk{,-link}.desktop
-	systemd_dounit "${FILESDIR}"/hoptodesk.service
+	use systemd && systemd_dounit "${FILESDIR}"/hoptodesk.service
 
 	einstalldocs
 }

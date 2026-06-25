@@ -95,7 +95,7 @@ RDEPEND="
 			opencl? (
 				dev-util/spirv-llvm-translator:\${LLVM_SLOT}
 				llvm-core/clang:\${LLVM_SLOT}[llvm_targets_AMDGPU(+),${MULTILIB_USEDEP}]
-				=llvm-core/libclc-\${LLVM_SLOT}*[spirv(-)]
+				=llvm-runtimes/libclc-\${LLVM_SLOT}*[spirv(-)]
 			)
 		")
 		video_cards_r600? (
@@ -108,7 +108,7 @@ RDEPEND="
 	lm-sensors? ( sys-apps/lm-sensors:=[${MULTILIB_USEDEP}] )
 	opencl? (
 		>=virtual/opencl-3
-		llvm-core/libclc[spirv(-)]
+		llvm-runtimes/libclc[spirv(-)]
 		virtual/libelf:0=
 	)
 	vaapi? (
@@ -152,7 +152,7 @@ DEPEND="${RDEPEND}
 
 CLC_DEPSTRING="
 	~dev-util/mesa_clc-${PV}[video_cards_asahi?,video_cards_panfrost?]
-	llvm-core/libclc[spirv(-)]
+	llvm-runtimes/libclc[spirv(-)]
 "
 BDEPEND="
 	${PYTHON_DEPS}
@@ -192,6 +192,7 @@ x86? (
 )"
 
 PATCHES=(
+	"${FILESDIR}"/${PN}-26.1.2-remove-bogus-const.patch
 	"${FILESDIR}/0002-mesa-enable-vaapi-on-lima-panfrost.patch"
 )
 
