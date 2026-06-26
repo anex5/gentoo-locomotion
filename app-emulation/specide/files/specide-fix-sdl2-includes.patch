@@ -1,0 +1,87 @@
+--- a/source/src/Screen.cc
++++ b/source/src/Screen.cc
+@@ -295,71 +295,71 @@ void Screen::pollEvents() {
+ 
+             case Event::KeyPressed:
+                 switch (event.key.scancode) {
+-                    case Keyboard::Scan::Menu:  // fall-through
+-                    case Keyboard::Scan::F1:    // Show menu
++                    case Keyboard::Menu:  // fall-through
++                    case Keyboard::F1:    // Show menu
+                         menu = true;
+                         break;
+-                    case Keyboard::Scan::F2:    // Window/Fullscreen
++                    case Keyboard::F2:    // Window/Fullscreen
+                         fullscreen = !fullscreen;
+                         reopenWindow(fullscreen);
+                         setFullScreen(fullscreen);
+                         break;
+-                    case Keyboard::Scan::F3:    // Save DSK to disk
++                    case Keyboard::F3:    // Save DSK to disk
+                         if (event.key.shift) {
+                             createEmptyDisk();
+                         } else {
+                             saveDisk();
+                         }
+                         break;
+-                    case Keyboard::Scan::F4:    // Select DSK from list
++                    case Keyboard::F4:    // Select DSK from list
+                         if (event.key.shift) {
+                             selectPreviousDisk();
+                         } else {
+                             selectNextDisk();
+                         }
+                         break;
+-                    case Keyboard::Scan::F5:    // Reset Computer
++                    case Keyboard::F5:    // Reset Computer
+                         reset();
+                         break;
+-                    case Keyboard::Scan::F6:    // Clear save data
++                    case Keyboard::F6:    // Clear save data
+                         if (event.key.shift) {
+                             appendLoadTape();
+                         } else {
+                             clearSaveTape();
+                         }
+                         break;
+-                    case Keyboard::Scan::F7:
++                    case Keyboard::F7:
+                         if (event.key.shift) {
+                             selectSaveTape();   // Use save data to load
+                         } else {
+                             writeSaveTape();    // Write save data
+                         }
+                         break;
+-                    case Keyboard::Scan::F8:
++                    case Keyboard::F8:
+                         if (event.key.shift) {
+                             togglePsgType();    // Toggle PSG chip type
+                         } else {
+                             toggleFlashTap();   // Toggle flashloading of tapes
+                         }
+                         break;
+-                    case Keyboard::Scan::F9:    // Toggle sound ON/OFF
++                    case Keyboard::F9:    // Toggle sound ON/OFF
+                         if (event.key.shift) {
+                             toggleTapeSound();
+                         } else {
+                             toggleSound();
+                         }
+                         break;
+-                    case Keyboard::Scan::F10:   // Quit
++                    case Keyboard::F10:   // Quit
+                         done = true;
+                         break;
+-                    case Keyboard::Scan::F11:   // Play/Stop tape
++                    case Keyboard::F11:   // Play/Stop tape
+                         if (event.key.shift) {
+                             resetTapeCounter();
+                         } else {
+                             startStopTape();
+                         }
+                         break;
+-                    case Keyboard::Scan::F12:
++                    case Keyboard::F12:
+                         if (event.key.shift) {
+                             rewindTape(true);
+                         } else {
