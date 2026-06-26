@@ -6,7 +6,7 @@
 EAPI=8
 
 # Using Gentoos firefox patches as system libraries and lto are quite nice
-FIREFOX_PATCHSET="firefox-${PV%%.*}esr-patches-10.tar.xz"
+FIREFOX_PATCHSET="firefox-${PV%%.*}esr-patches-12.tar.xz"
 FIREFOX_LOONG_PATCHSET="firefox-139-loong-patches-02.tar.xz"
 
 LLVM_COMPAT=( {20..22} )
@@ -23,6 +23,10 @@ PYTHON_REQ_USE="ncurses,sqlite,ssl"
 
 VIRTUALX_REQUIRED="manual"
 
+# Browser version (please rev-bump if changed)
+# Used when cloning patches repository.
+KONFORM_PV="${PV/_p/-}"
+
 # Information about the bundled wasi toolchain from
 # https://github.com/WebAssembly/wasi-sdk/
 declare -A WASI_SDK_VER
@@ -34,9 +38,7 @@ inherit autotools check-reqs desktop flag-o-matic gnome2-utils linux-info llvm-r
 	multilib-minimal optfeature pax-utils python-any-r1 readme.gentoo-r1 rust toolchain-funcs unpacker virtualx xdg
 
 SRC_URI="
-	!buildtarball? (
-		https://gitlab.com/api/v4/projects/32909921/packages/generic/${PN}/${PV}-gnu${GV}/${P}-${PP}gnu${GV}.tar.zst
-	)
+	https://codeberg.org/konform-browser/source/releases/download/${PV/_p/.}/${PN}-${KONFORM_PV}.source.tar.gz -> ${P}.cb.tar.gz
 	https://dev.gentoo.org/~juippis/mozilla/patchsets/${FIREFOX_PATCHSET}
 	loong? (
 		https://dev.gentoo.org/~xen0n/distfiles/www-client/firefox/${FIREFOX_LOONG_PATCHSET}
@@ -55,13 +57,12 @@ SRC_URI="
 	)
 "
 
-DESCRIPTION="GNU IceCat Web Browser"
-HOMEPAGE="https://www.gnu.org/software/gnuzilla/"
-
+DESCRIPTION="Konform Browser"
+HOMEPAGE="https://konform-browser.codeberg.page/"
 
 LICENSE="MPL-2.0 GPL-2 LGPL-2.1"
 SLOT="0"
-KEYWORDS="amd64 arm64 ~ppc64 ~riscv ~x86"
+#KEYWORDS="amd64 arm64 ~ppc64 ~riscv ~x86"
 
 CODEC_IUSE="
 -aac
@@ -73,7 +74,7 @@ CODEC_IUSE="
 "
 IUSE+="
 ${CODEC_IUSE}
-alsa atk buildtarball clang cpu_flags_arm_neon cups +dbus debug firejail hardened hwaccel \
+alsa atk buildtarball clang cpu_flags_arm_neon cups +dbus debug eme-free firejail hardened hwaccel \
 jack -jemalloc +jit jpegxl libcanberra libnotify libproxy libsecret lld lto mold pgo \
 pulseaudio sndio selinux speech systemd +system-av1 +system-ffmpeg +system-graphite2 \
 +system-harfbuzz +system-icu +system-jpeg +system-libevent +system-libvpx +system-png \
@@ -453,9 +454,6 @@ BDEPEND+="
 	app-alternatives/awk
 	app-arch/unzip
 	app-arch/zip
-	buildtarball? (
-		~www-client/makeicecat-"${PV}"[buildtarball]
-	)
 	mold? (
 		sys-devel/mold
 	)
@@ -491,7 +489,7 @@ PDEPEND+="
 
 RESTRICT="mirror"
 
-S="${WORKDIR}/${PN}-${PV%_*}"
+S="${WORKDIR}/${PN}-${KONFORM_PV}"
 
 llvm_check_deps() {
 	if ! has_version -b "llvm-core/clang:${LLVM_SLOT}" ; then
@@ -522,52 +520,15 @@ llvm_check_deps() {
 }
 
 MOZ_LANGS=(
-	af ar ast be bg br ca cak cs cy da de dsb
-	el en-CA en-GB en-US es-AR es-ES et eu
-	fi fr fy-NL ga-IE gd gl he hr hsb hu
-	id is it ja ka kab kk ko lt lv ms nb-NO nl nn-NO
-	pa-IN pl pt-BR pt-PT rm ro ru
-	sk sl sq sr sv-SE th tr uk uz vi zh-CN zh-TW
+	ace ach af ak an ar as ast az be bg bn bn-BD bn-IN bo bqi br brx bs ca cak ca-valencia
+	ckb crh cs csb cy da de dsb el en-CA en-GB en-ZA eo es es-AR es-CL es-ES es-MX et eu fa
+	ff fi fr frp fur fy-NL ga ga-IE gd gl gn gu-IN gv he hi-IN hr hsb hto hu hy-AM hye ia id
+	ilo is it ixl ja ja-JP-mac ka kab kk km kmr kn ko kok ks ku kw lb lg lij lo lt ltg lv mai
+	meh mix mk ml mn mr ms my nb-NO ne-NP nl nn-NO nr nso ny oc or pai pa-IN pbb pl ppl pt-BR
+	pt-PT quy qvi rm ro ru rw sah sat sc scn sco si sk skr sl son sq sr ss st sv-SE sw szl ta
+	ta-LK te tg th tl tn tr trs ts tsz uk ur uz ve vi wo xcl xh zam zh-CN zh-TW zu
 )
-
-# Firefox-only LANGS
-MOZ_LANGS+=( ach )
-MOZ_LANGS+=( an )
-MOZ_LANGS+=( az )
-MOZ_LANGS+=( bn )
-MOZ_LANGS+=( bs )
-MOZ_LANGS+=( ca-valencia )
-MOZ_LANGS+=( eo )
-MOZ_LANGS+=( es-CL )
-MOZ_LANGS+=( es-MX )
-MOZ_LANGS+=( fa )
-MOZ_LANGS+=( ff )
-MOZ_LANGS+=( fur )
-MOZ_LANGS+=( gn )
-MOZ_LANGS+=( gu-IN )
-MOZ_LANGS+=( hi-IN )
-MOZ_LANGS+=( hy-AM )
-MOZ_LANGS+=( ia )
-MOZ_LANGS+=( km )
-MOZ_LANGS+=( kn )
-MOZ_LANGS+=( lij )
-MOZ_LANGS+=( mk )
-MOZ_LANGS+=( mr )
-MOZ_LANGS+=( my )
-MOZ_LANGS+=( ne-NP )
-MOZ_LANGS+=( oc )
-MOZ_LANGS+=( sc )
-MOZ_LANGS+=( sco )
-MOZ_LANGS+=( si )
-MOZ_LANGS+=( skr )
-MOZ_LANGS+=( son )
-MOZ_LANGS+=( szl )
-MOZ_LANGS+=( ta )
-MOZ_LANGS+=( te )
-MOZ_LANGS+=( tl )
-MOZ_LANGS+=( trs )
-MOZ_LANGS+=( ur )
-MOZ_LANGS+=( xh )
+MOZ_LANG_MAP=()
 
 mozilla_set_globals() {
 	# https://bugs.gentoo.org/587334
@@ -913,24 +874,20 @@ pkg_setup() {
 
 src_unpack() {
 	unpack "${FIREFOX_PATCHSET}"
+	local _lp_dir="${WORKDIR}/language_packs"
+	local _src_file
 
-	if use wasm-sandbox; then
-		use amd64 && (
-			use llvm_slot_20 && ( unpack wasi-sdk-${WASI_SDK_VER[20]}-x86_64-linux.tar.gz || eerror "Failed to unpack" )
-			use llvm_slot_21 && ( unpack wasi-sdk-${WASI_SDK_VER[21]}-x86_64-linux.tar.gz || eerror "Failed to unpack" )
-			use llvm_slot_22 && ( unpack wasi-sdk-${WASI_SDK_VER[22]}-x86_64-linux.tar.gz || eerror "Failed to unpack" )
-		)
-		use arm64 && (
-			use llvm_slot_20 && ( unpack wasi-sdk-${WASI_SDK_VER[20]}-arm64-linux.tar.gz || eerror "Failed to unpack" )
-			use llvm_slot_21 && ( unpack wasi-sdk-${WASI_SDK_VER[21]}-arm64-linux.tar.gz || eerror "Failed to unpack" )
-			use llvm_slot_22 && ( unpack wasi-sdk-${WASI_SDK_VER[22]}-arm64-linux.tar.gz || eerror "Failed to unpack" )
-		)
+	if [[ ! -d "${_lp_dir}" ]] ; then
+		mkdir "${_lp_dir}" || die
 	fi
-	if use buildtarball; then
-		unpack "icecat-${PV}-${PP}gnu${GV}.tar.bz2" || eerror "Tarball is missing, check that www-client/makeicecat has use flag buildtarball enabled."
-	else
-		unpacker "icecat-${PV}-${PP}gnu${GV}.tar.zst" || eerror "Failed to unpack."
-	fi
+
+	for _src_file in ${A} ; do
+		if [[ ${_src_file} == *.xpi ]]; then
+			cp "${DISTDIR}/${_src_file}" "${_lp_dir}" || die "Failed to copy '${_src_file}' to '${_lp_dir}'!"
+		else
+			unpack ${_src_file}
+		fi
+	done
 }
 
 _get_s() {
@@ -942,16 +899,17 @@ _get_s() {
 }
 
 src_prepare() {
-	use atk || eapply "${FILESDIR}/icecat-no-atk.patch"
-	use dbus || eapply "${FILESDIR}/icecat-no-dbus.patch"
-	eapply "${FILESDIR}/icecat-no-fribidi.patch"
-	eapply "${FILESDIR}/icecat-fix-clang-as.patch"
-	eapply "${FILESDIR}/icecat-system-gtests.patch"
+	use atk || eapply "${FILESDIR}/firefox-no-atk.patch"
+	use dbus || eapply "${FILESDIR}/firefox-no-dbus.patch"
+	eapply "${FILESDIR}/firefox-no-fribidi.patch"
+	eapply "${FILESDIR}/firefox-fix-clang-as.patch"
+	eapply "${FILESDIR}/firefox-system-gtests.patch"
 
-	if use lto; then
-		rm -v "${WORKDIR}"/firefox-patches/*-LTO-Only-enable-LTO-*.patch || die
-		rm -v "${WORKDIR}"/firefox-patches/*-gcc-lto-pgo-gentoo.patch || die
-	fi
+	# Konform Browser has this.
+	rm -v \
+		"${WORKDIR}"/firefox-patches/00*-bmo-1970223-python-3.14-support.patch \
+		"${WORKDIR}"/firefox-patches/00*-LTO-Only-enable-LTO-*.patch \
+		"${WORKDIR}"/firefox-patches/00*-gcc-lto-pgo-gentoo.patch || die
 
 	#if ! use ppc64; then
 	#	rm -v "${WORKDIR}"/firefox-patches/*ppc64*.patch
@@ -990,11 +948,9 @@ src_prepare() {
 
 	# Build with clang-20
 	if [[ "${LLVM_SLOT}" =~ ("20"|"21"|"22") ]]; then
-		#eapply "${FILESDIR}/icecat-128.12.0-clang21.patch"
 		sed -e '/CXXFLAGS += \["-Werror=implicit-int-conversion"\]/d' -i "${S}/dom/canvas/moz.build" -i "${S}/dom/webgpu/moz.build" || die
 	fi
 
-	#eapply "${FILESDIR}/extra-patches/firefox-128.3.0e-allow-flac-no-ffvpx.patch"
 	eapply "${FILESDIR}/extra-patches/firefox-128.3.0e-big-endian-image-decoders.patch"
 
 	# Workaround for bug #915651 on musl
@@ -1007,15 +963,18 @@ src_prepare() {
 		fi
 	fi
 
-	if use llvm_slot_22 ; then
-		eapply "${FILESDIR}/extra-patches/firefox-140.8.0-skia-m142-update.patch" || die
-		eapply "${FILESDIR}/extra-patches/firefox-140.8.0-update-rust-bindgen-to-fix-clang22-build.patch" || die
-	fi
+	#if use llvm_slot_22 ; then
+		#eapply "${FILESDIR}/extra-patches/firefox-140.8.0-skia-m142-update.patch" || die
+		#eapply "${FILESDIR}/extra-patches/firefox-140.8.0-update-rust-bindgen-to-fix-clang22-build.patch" || die
+	#fi
 
 	# Use modified patch that isn't mangled
-	for patch in 0013-gcc-lto-pgo-gentoo.patch 0016-bgo-929967-fix-pgo-on-musl.patch; do
-		cp "${FILESDIR}/${patch}" "${WORKDIR}/firefox-patches/${patch}" || die
-	done
+	#for patch in 0013-gcc-lto-pgo-gentoo.patch 0016-bgo-929967-fix-pgo-on-musl.patch; do
+		#cp "${FILESDIR}/${patch}" "${WORKDIR}/firefox-patches/${patch}" || die
+	#done
+	#if use elibc_musl; then
+	#	eapply "${FILESDIR}/extra-patches/firefox-128.3.0e-fix-webrtc-glibcisms.patch"
+	#fi
 
 	eapply "${WORKDIR}/firefox-patches"
 	use loong && eapply "${WORKDIR}/firefox-loong-patches"
@@ -1115,7 +1074,7 @@ src_prepare() {
 	# Clear checksums from cargo crates we've manually patched.
 	# moz_clear_vendor_checksums crate
 	#moz_clear_vendor_checksums glslopt
-    moz_clear_vendor_checksums encoding_rs
+    #moz_clear_vendor_checksums encoding_rs
 
 	# Respect choice for "jumbo-build"
 	# Changing the value for FILES_PER_UNIFIED_FILE may not work, see #905431
@@ -1503,6 +1462,16 @@ _src_configure() {
 			--disable-ffmpeg
 	fi
 
+	mozconfig_add_options_ac 'Konform Branding' \
+		--with-app-name="konform-browser" \
+		--with-app-basename="konform" \
+		--with-branding=browser/branding/librewolf
+	export MOZ_APP_REMOTINGNAME=konform
+
+	mozconfig_add_options_ac 'Konform Localization' \
+		--with-l10n-base=$PWD/lw/l10n
+
+	export MOZ_REQUIRE_SIGNING=
 	# mozconfig_add_options_ac \
 	#	'' \
 	#	--with-libclang-path="$(${CHOST}-llvm-config --libdir)"
@@ -1597,6 +1566,8 @@ _src_configure() {
 	multilib_is_native_abi && mozconfig_use_enable speech synth-speechd
 	mozconfig_use_enable webrtc
 	mozconfig_use_enable webspeech
+
+	use eme-free && mozconfig_add_options_ac '+eme-free' --disable-eme
 
 	# The upstream default is hardening on even if unset.
 	if use hardened ; then
@@ -2107,8 +2078,8 @@ _src_install() {
 	done
 
 	# Install menu
-	local app_name="GNU IceCat"
-	local desktop_file="${FILESDIR}/icon/${PN}-r3.desktop"
+	local app_name="Konform Browser"
+	local desktop_file="${FILESDIR}/icon/${MOZ_PN}-r3.desktop"
 	local desktop_filename="${PN}-esr-${ABI}.desktop"
 	local exec_command="${PN}-${ABI}"
 	local icon="${PN}"
@@ -2232,7 +2203,7 @@ pkg_postinst() {
 	# bug 835078
 	if use hwaccel && has_version "x11-drivers/xf86-video-nouveau"; then
 		ewarn "You have nouveau drivers installed in your system and 'hwaccel' "
-		ewarn "enabled for IceCat. Nouveau / your GPU might not support the "
+		ewarn "enabled for Konform Browser. Nouveau / your GPU might not support the "
 		ewarn "required EGL, so either disable 'hwaccel' or try the workaround "
 		ewarn "explained in https://bugs.gentoo.org/835078#c5 if Firefox crashes."
 	fi
