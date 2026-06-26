@@ -12,10 +12,10 @@ case ${PV} in
 	;;
 *)
 	KEYWORDS="~amd64 ~x86 ~arm64 ~arm ~x86"
-	COMMIT="94d18a57aea281559ccfb31f99325f822fa8ab4a"
-	SRC_URI="https://github.com/v4l2loopback/${PN}/archive/${COMMIT}.tar.gz -> ${P}-${COMMIT:0:7}.tar.gz"
+	#COMMIT="94d18a57aea281559ccfb31f99325f822fa8ab4a"
+	SRC_URI="https://github.com/v4l2loopback/${PN}/archive/v${PV}.tar.gz -> ${P}.gh.tar.gz"
 	RESTRICT="mirror"
-	S="${WORKDIR}/${PN}-${COMMIT}"
+	#S="${WORKDIR}/${PN}-${COMMIT}"
 	;;
 esac
 
