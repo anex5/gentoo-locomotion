@@ -13,12 +13,12 @@ if [[ ${PV} == *9999* ]]; then
 	EGIT_REPO_URI="https://codeberg.org/dnkl/foot.git"
 	KEYWORDS="-*"
 else
-	SRC_URI="https://codeberg.org/dnkl/foot/releases/download/${PV}/${P}.tar.gz
-	verify-sig? ( https://codeberg.org/dnkl/foot/releases/download/${PV}/${P}.tar.gz.sig )"
+	SRC_URI="https://codeberg.org/dnkl/foot/releases/download/${PV}/${P}.tar.gz -> ${P}.cb.tar.gz
+	verify-sig? ( https://codeberg.org/dnkl/foot/releases/download/${PV}/${P}.tar.gz.sig -> ${P}.cb.tar.gz.sig )"
 	KEYWORDS="~amd64 ~arm64 ~arm ~x86"
 fi
 
-IUSE="+grapheme-clustering +completions ime man systemd test themes utempter verify-sig"
+IUSE="+grapheme-clustering +completions ime lto man pgo systemd test themes utempter verify-sig"
 LICENSE="MIT"
 SLOT="0"
 RESTRICT="

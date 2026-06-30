@@ -13,11 +13,12 @@ if [[ ${PV} == 9999 ]]; then
 	EGIT_REPO_URI="https://github.com/WillPower3309/swayfx"
 	SCENEFX_PV=9999
 else
-	MY_PV=${PV/_rc/-rc}
-	SRC_URI="https://github.com/WillPower3309/swayfx/archive/${MY_PV}.tar.gz -> ${P}.tar.gz
-		https://github.com/WillPower3309/swayfx/archive/${MY_PV}.tar.gz.sig -> ${P}.tar.gz.sig"
+	MY_PV=${PV/_*/}
+	COMMIT="a131cfb71665de7bad26030c2c02ef6279300551"
+	SRC_URI="https://github.com/WillPower3309/swayfx/archive/${COMMIT}.tar.gz -> ${P}.gh.tar.gz"
+	#	https://github.com/WillPower3309/swayfx/archive/${MY_PV}.tar.gz.sig -> ${P}.gh.tar.gz.sig"
 	KEYWORDS="amd64 arm64 ~arm ~loong ~ppc64 ~riscv ~x86"
-	S="${WORKDIR}/${PN}-${MY_PV}"
+	S="${WORKDIR}/${PN}-${COMMIT}"
 	SCENEFX_PV=0.4.1
 fi
 
@@ -117,7 +118,7 @@ src_install() {
 pkg_postinst() {
 	fcaps_pkg_postinst
 
-	optfeature_header "There are several packages that may be useful with sway:"
+	optfeature_header "There are several packages that may be useful with swayfx:"
 	optfeature "wallpaper utility" gui-apps/swaybg
 	optfeature "idle management utility" gui-apps/swayidle
 	optfeature "simple screen locker" gui-apps/swaylock
