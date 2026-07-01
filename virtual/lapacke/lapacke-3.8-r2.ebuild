@@ -17,8 +17,9 @@ RDEPEND="
 	!flexiblas? (
 		eselect-ldso? (
 			|| (
-				>=sci-libs/lapack-3.8.0[lapacke,eselect-ldso(-)]
-				>=sci-libs/openblas-0.3.10[eselect-ldso(-)]
+				>=sci-libs/lapack-3.8.0[eselect-ldso(-),index64(-)?,lapacke]
+				>=sci-libs/openblas-0.3.33[eselect-ldso(-),index64(-)?,lapacke]
+				>=sci-libs/semicolon-lapack[eselect-ldso(-),index64(-)?]
 			)
 		)
 	)
