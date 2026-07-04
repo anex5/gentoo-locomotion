@@ -14,12 +14,12 @@ HOMEPAGE="
 	https://github.com/tree-sitter/py-tree-sitter/
 	https://pypi.org/project/tree-sitter/
 "
-COMMIT="2d3fb3a2a7a23995791f2f7b621e933cf300ec7d"
+#COMMIT="2d3fb3a2a7a23995791f2f7b621e933cf300ec7d"
 SRC_URI="
-	https://github.com/tree-sitter/py-tree-sitter/archive/${COMMIT}.tar.gz
-		-> ${P}-${COMMIT:0:7}.gh.tar.gz
+	https://github.com/tree-sitter/py-tree-sitter/archive/${PV}.tar.gz
+		-> ${P}.gh.tar.gz
 "
-S=${WORKDIR}/py-${PN}-${COMMIT}
+S=${WORKDIR}/py-${P}
 RESTRICT="mirror"
 
 LICENSE="MIT"

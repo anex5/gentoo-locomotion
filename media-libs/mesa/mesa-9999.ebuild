@@ -6,7 +6,7 @@ EAPI=8
 LLVM_COMPAT=( {19..22} )
 LLVM_OPTIONAL=1
 CARGO_OPTIONAL=1
-PYTHON_COMPAT=( python3_{12..15} )
+PYTHON_COMPAT=( python3_{12..14} )
 
 inherit flag-o-matic llvm-r2 meson-multilib python-any-r1 linux-info
 
@@ -192,7 +192,6 @@ x86? (
 )"
 
 PATCHES=(
-	"${FILESDIR}"/${PN}-26.1.2-remove-bogus-const.patch
 	"${FILESDIR}/0002-mesa-enable-vaapi-on-lima-panfrost.patch"
 )
 
