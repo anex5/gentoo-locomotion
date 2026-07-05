@@ -16,7 +16,7 @@ HOMEPAGE="
 "
 #COMMIT="2d3fb3a2a7a23995791f2f7b621e933cf300ec7d"
 SRC_URI="
-	https://github.com/tree-sitter/py-tree-sitter/archive/${PV}.tar.gz
+	https://github.com/tree-sitter/py-tree-sitter/archive/v${PV}.tar.gz
 		-> ${P}.gh.tar.gz
 "
 S=${WORKDIR}/py-${P}
