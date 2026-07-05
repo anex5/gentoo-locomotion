@@ -71,6 +71,11 @@ src_prepare(){
 		sed -i -E 's|^FLAGS\s+\+=.+|& -d:lto|' Makefile ||
 		die "Trying to sed the Makefile for lto failed!"
 	fi
+	# Build native chac
+	sed -e "/^\$(OBJDIR)\/chac.*$/,/^$/s|\$(NIMC)|env NIMFLAGS="" CROSS_COMPILE="" CFLAGS="" CXXFLAGS="" \
+		CC=$(tc-getBUILD_CC) CXX=$(tc-getBUILD_CXX) \$(NIMC)\
+		--skipCfg --skipUserCfg --skipParentCfg --skipProjCfg --cc:env --path:lib/monoucha0 --path:src \
+		--cpu:$(tc-arch ${CBUILD}) --os:linux --nimcache:\$(OBJDIR)\/nimcache-host|" -i Makefile || die
 }
 
 src_configure(){
@@ -94,7 +99,7 @@ src_configure(){
 		gcc.cpp.options.debug:"${CXXFLAGS}"
 		gcc.cpp.options.always:"${CPPFLAGS}"
 		gcc.cpp.options.linker:"${LDFLAGS}"
-		EOF
+	EOF
 	default
 }
 
@@ -102,7 +107,7 @@ src_compile() {
 	append-cflags "-ffile-prefix-map=${S}/="
 	use x86 && appnd-cflags "-fpermissive"
 	export STATIC_LINK=$(usex static-libs 1 0)
-	default
+	emake all
 }
 
 src_install(){
