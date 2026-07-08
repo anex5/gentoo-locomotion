@@ -67,6 +67,7 @@ CRATES="
 	bindgen@0.59.2
 	bindgen@0.65.1
 	bindgen@0.69.4
+	bindgen@0.72.1
 	bit_field@0.10.2
 	bitflags@1.3.2
 	bitflags@2.9.1
@@ -981,8 +982,10 @@ declare -A GIT_CRATES=(
 	[cpal]='https://github.com/rustdesk-org/cpal;6b374bcaed076750ca8fce6da518ab39b882e14a;cpal-%commit%'
 	[evdev]='https://github.com/rustdesk-org/evdev;cec616e37790293d2cd2aa54a96601ed6b1b35a9;evdev-%commit%'
 	[hwcodec]='https://github.com/rustdesk-org/hwcodec;0ea7e709d3c48bb6446e33a9cc8fd0e0da5709b9;hwcodec-%commit%'
+	[impersonate_system]='https://github.com/rustdesk-org/impersonate-system;2f429010a5a10b1fe5eceb553c6672fd53d20167;impersonate-system-%commit%'
+	[kcp-sys]='https://github.com/rustdesk-org/kcp-sys;32a6c09fc6223f54aea83981a6aa8995931d29be;kcp-sys-%commit%'
 	[keepawake]='https://github.com/rustdesk-org/keepawake-rs;64d568586dd16551d02120e19668d2b0fec8e3c9;keepawake-rs-%commit%'
-	[magnum-opus]='https://github.com/rustdesk-org/magnum-opus;5cd2bf989c148662fa3a2d9d539a71d71fd1d256;magnum-opus-%commit%'
+	[magnum-opus]='https://github.com/rustdesk-org/magnum-opus;588c6e1f9ed50c3a01fa64f3bd3e7cdb0378a114;magnum-opus-%commit%'
 	[nokhwa-bindings-linux]='https://github.com/rustdesk-org/nokhwa;f32e7d68be61db9b1e99016b24edb14543d0383b;nokhwa-%commit%/nokhwa-bindings-linux'
 	[nokhwa-bindings-macos]='https://github.com/rustdesk-org/nokhwa;f32e7d68be61db9b1e99016b24edb14543d0383b;nokhwa-%commit%/nokhwa-bindings-macos'
 	[nokhwa-bindings-windows]='https://github.com/rustdesk-org/nokhwa;f32e7d68be61db9b1e99016b24edb14543d0383b;nokhwa-%commit%/nokhwa-bindings-windows'
@@ -994,7 +997,7 @@ declare -A GIT_CRATES=(
 	[rdev]='https://github.com/rustdesk-org/rdev;f9b60b1dd0f3300a1b797d7a74c116683cd232c8;rdev-%commit%'
 	[reqwest]='https://github.com/rustdesk-org/reqwest;9e859438203a71eb86ddc294fbebfde14cba7f7c;reqwest-%commit%'
 	[rust-pulsectl]='https://github.com/rustdesk-org/pulsectl;aa34dde499aa912a3abc5289cc0b547bd07dd6e2;pulsectl-%commit%'
-	[sciter-rs]='https://github.com/open-trade/rust-sciter;5322f3a755a0e6bf999fbc60d1efc35246c0f821;rust-sciter-%commit%'
+	[sciter-rs]='https://github.com/rustdesk-org/rust-sciter;5322f3a755a0e6bf999fbc60d1efc35246c0f821;rust-sciter-%commit%'
 	[sysinfo]='https://github.com/rustdesk-org/sysinfo;90b1705d909a4902dbbbdea37ee64db17841077d;sysinfo-%commit%'
 	[tao-macros]='https://github.com/rustdesk-org/tao;288c219cb0527e509590c2b2d8e7072aa9feb2d3;tao-%commit%/tao-macros'
 	[tao]='https://github.com/rustdesk-org/tao;288c219cb0527e509590c2b2d8e7072aa9feb2d3;tao-%commit%'
@@ -1006,7 +1009,6 @@ declare -A GIT_CRATES=(
 	[webm]='https://github.com/rustdesk-org/rust-webm;d2c4d3ac133c7b0e4c0f656da710b48391981e64;rust-webm-%commit%'
 	[x11-clipboard]='https://github.com/clslaid/x11-clipboard;5fc2e73bc01ada3681159b34cf3ea8f0d14cd904;x11-clipboard-%commit%'
 	[x11]='https://github.com/bjornsnoen/x11-rs;c2e9bfaa7b196938f8700245564d8ac5d447786a;x11-rs-%commit%/x11'
-	[impersonate_system]='https://github.com/rustdesk-org/impersonate-system;2f429010a5a10b1fe5eceb553c6672fd53d20167;impersonate-system-%commit%'
 )
 
 LLVM_COMPAT=( {20..22} )
@@ -1032,6 +1034,7 @@ _HWCODEC_EXTERNALS_COMMIT="8903740a1f47884906a6e347ad3d8d56304d9771"
 _HBB_COMMON_COMMIT="387603f47cbb15c0d3dc3d67ae3396d3eb707daf"
 SRC_URI="
 	https://gitlab.com/hoptodesk/hoptodesk/-/archive/${PV}/hoptodesk-${PV}.tar.gz -> ${P}.tar.gz
+	https://github.com/gentoo-zh-drafts/rustdesk-vcpkg/releases/download/1.4.8/rustdesk-1.4.8-vcpkg-${_VCPKG_TAG}-lite.tar.gz
 	https://github.com/webmproject/libwebm/archive/${_LIBWEBM_COMMIT}.tar.gz
 		-> libwebm-${_LIBWEBM_COMMIT}.tar.gz
 	https://github.com/rustdesk-org/externals/archive/${_HWCODEC_EXTERNALS_COMMIT}.tar.gz
@@ -1051,7 +1054,7 @@ LICENSE+="
 SLOT="0"
 #KEYWORDS="~amd64 ~x86"
 
-IUSE="cli flutter hwaccel mediacodec packui plugin_framework screencapturekit +dasp rubato samplerate systemd vram wayland"
+IUSE="cli flutter hwaccel packui plugin screencapture +dasp rubato samplerate systemd vram wayland"
 
 RESTRICT="mirror"
 
@@ -1061,6 +1064,7 @@ RDEPEND="
 	x11-libs/libxcb
 	x11-libs/libXfixes
 	media-libs/libpulse
+	media-libs/opus
 	x11-misc/xdotool
 	media-libs/libva[X]
 	wayland? ( media-video/pipewire[gstreamer] )
@@ -1074,6 +1078,7 @@ BDEPEND="
 	media-libs/libpulse
 	dev-build/cmake
 	dev-build/ninja
+	media-libs/opus
 	media-libs/libyuv
 	media-libs/gstreamer
 	media-libs/gst-plugins-base
@@ -1086,10 +1091,12 @@ BDEPEND="
 	')
 "
 
-QA_PRESTRIPPED="
-	/usr/share/${PN}/${PN}
-	/usr/share/${PN}/libsciter-gtk.so
-"
+QA_PRESTRIPPED="usr/share/${PN}/libsciter-gtk.so"
+
+PATCHES=(
+	"${FILESDIR}"/${P}-fix-llvm22-bindgen.patch
+	"${FILESDIR}"/${P}-disable-check-x11.patch
+)
 
 pkg_setup() {
 	llvm-r1_pkg_setup
@@ -1098,6 +1105,9 @@ pkg_setup() {
 
 src_prepare() {
 	default
+
+	sed -e 's/open-trade/rustdesk-org/' -i Cargo.toml Cargo.lock libs/virtual_display/Cargo.lock || die
+
 	cd "${S}"/.. || die
 	eapply "${FILESDIR}"/rust-sciter.patch
 
@@ -1115,21 +1125,23 @@ src_configure() {
 		$(usev cli)
 		$(usev flutter)
 		$(usev hwaccel hwcodec)
-		$(usev mediacodec)
+		$(usev hwaccel mediacodec)
 		$(usev packui)
-		$(usev plugin_framework)
-		$(usev screencapturekit)
+		$(usev plugin plugin_framework)
+		$(usev screencapture screencapturekit)
 		$(usev dasp use_dasp)
 		$(usev rubato use_rubato)
 		$(usev samplerate use_samplerate)
 		$(usev vram)
+		magnum-opus/linux-pkg-config
+		scrap/linux-pkg-config
 	)
 
 	cargo_src_configure
 }
 
 src_compile() {
-	VCPKG_ROOT="$WORKDIR"/vcpkg cargo_src_compile
+	VCPKG_ROOT="${WORKDIR}"/vcpkg cargo_src_compile
 }
 
 src_install() {

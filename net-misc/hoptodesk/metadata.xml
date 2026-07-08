@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "https://gentoo.org">
+<pkgmetadata>
+    <maintainer type="person">
+        <email>anex5.2008@gmail.com</email>
+        <name>Алексей Прохоренко</name>
+    </maintainer>
+    <upstream>
+        <remote-id type="gitlab">hoptodesk/hoptodesk</remote-id>
+    </upstream>
+</pkgmetadata>
