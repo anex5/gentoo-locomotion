@@ -1,21 +1,20 @@
-# Copyright 1999-2025 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{11..13} )
+PYTHON_COMPAT=( python3_{12..14} )
 inherit flag-o-matic pam python-single-r1 toolchain-funcs
 
 DESCRIPTION="Hardware authentication for Linux using ordinary flash media (USB & Card based)."
 HOMEPAGE="https://github.com/mcdope/pam_usb"
-
 
 if [[ ${PV} == 9999 ]]; then
 	EGIT_REPO_URI="https://github.com/mcdope/pam_usb"
 	inherit git-r3
 else
 	SRC_URI="https://github.com/mcdope/pam_usb/archive/refs/tags/${PV}.tar.gz -> ${P}.tar.gz"
-	KEYWORDS="~alpha ~amd64 ~arm ~arm64 ~hppa ~loong ~mips ~ppc ~ppc64 ~riscv ~s390 ~sparc ~x86 ~amd64-linux ~x86-linux ~x64-solaris"
+	KEYWORDS="~alpha ~amd64 ~arm ~arm64 ~hppa ~loong ~mips ~ppc ~ppc64 ~riscv ~s390 ~sparc ~x86"
 	RESTRICT="mirror"
 fi
 
@@ -26,10 +25,9 @@ IUSE="doc man systemd"
 
 REQUIRED_USE="${PYTHON_REQUIRED_USE}"
 
-BDEPEND="
-	${PYTHON_DEPS}
-"
+BDEPEND="${PYTHON_DEPS}"
 RDEPEND="
+	${PYTHON_DEPS}
 	$(python_gen_cond_dep '
 		dev-python/pygobject:3[${PYTHON_USEDEP}]
 	')

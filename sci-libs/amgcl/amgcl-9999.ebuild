@@ -1,9 +1,11 @@
-Copyright 1999-2024 Gentoo Foundation
+# Copyright 1999-2026 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-inherit cmake
+PYTHON_COMPAT=( python3_{12..14} )
+
+inherit cmake python-single-r1
 
 DESCRIPTION="An accelerated algebraic multigrid for C++"
 HOMEPAGE="https://github.com/ddemidov/amgcl"
@@ -20,7 +22,7 @@ fi
 LICENSE="MIT"
 SLOT="0"
 KEYWORDS="~x86 ~amd64"
-IUSE="doc examples icb icbexmm -lp64 mpi python"
+IUSE="doc examples icb icbexmm index64 mpi python"
 
 RDEPEND="
 	virtual/blas
@@ -51,7 +53,7 @@ src_configure() {
 		-DEXAMPLES=$(usex examples)
 		-DICB=$(usex icb)
 		-DICBEXMM=$(usex icbexmm)
-		-DINTERFACE64=$(usex lp64)
+		-DINTERFACE64=$(usex index64)
 		-DMPI=$(usex mpi)
 		-DPYTHON3=$(usex python)
 	)

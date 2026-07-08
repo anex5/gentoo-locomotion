@@ -11,7 +11,6 @@ inherit flag-o-matic toolchain-funcs multiprocessing
 if [[ ${PV} == *9999* ]]; then
 	inherit git-r3
 	EGIT_REPO_URI="https://git.sr.ht/~bptato/chawan"
-	KEYWORDS="-*"
 else
 	SRC_URI="https://git.sr.ht/~bptato/chawan/archive/v${PV}.tar.gz -> ${P}.srht.tar.gz"
 	KEYWORDS="amd64 arm64 arm x86"

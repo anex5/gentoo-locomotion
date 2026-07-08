@@ -1,4 +1,4 @@
-# Copyright 1999-2025 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -10,7 +10,7 @@ QA_PKGCONFIG_VERSION="$(ver_cut 1-3)"
 # stuff too like PROJ, GDAL. Previous release manager of TIFF was
 # GraphicsMagick maintainer Bob Friesenhahn. Please be careful when verifying
 # who made releases.
-VERIFY_SIG_OPENPGP_KEY_PATH="${BROOT}"/usr/share/openpgp-keys/rouault.asc
+VERIFY_SIG_OPENPGP_KEY_PATH=/usr/share/openpgp-keys/evenrouault.asc
 inherit libtool multilib-minimal verify-sig flag-o-matic
 
 MY_P="${P/_rc/rc}"
@@ -23,13 +23,15 @@ S="${WORKDIR}/${PN}-$(ver_cut 1-3)"
 LICENSE="libtiff"
 SLOT="0/6"
 if [[ ${PV} != *_rc* ]] ; then
-	KEYWORDS="~alpha ~amd64 ~arm ~arm64 ~hppa ~loong ~m68k ~mips ~ppc ~ppc64 ~riscv ~s390 ~sparc ~x86 ~amd64-linux ~x86-linux ~arm64-macos ~ppc-macos ~x64-macos ~x64-solaris"
+	KEYWORDS="~alpha amd64 arm arm64 ~hppa ~loong ~m68k ~mips ppc ppc64 ~riscv ~s390 ~sparc x86"
 fi
-IUSE="X +cxx doc contrib jbig jpeg lerc lzma opengl static-libs test tools webp zlib zstd"
+IUSE="+cxx doc contrib jbig jpeg lerc lzma libdeflate opengl static-libs test tools webp zlib zstd X"
 RESTRICT="!test? ( test )"
 
 # bug #483132
 REQUIRED_USE="
+	lerc? ( zlib )
+	libdeflate? ( zlib )
 	opengl? ( X )
 	test? ( jpeg )
 "
@@ -37,15 +39,17 @@ REQUIRED_USE="
 RDEPEND="
 	jbig? ( >=media-libs/jbigkit-2.1:=[${MULTILIB_USEDEP}] )
 	jpeg? ( media-libs/libjpeg-turbo:=[${MULTILIB_USEDEP}] )
+	lerc? ( media-libs/lerc:=[${MULTILIB_USEDEP}] )
+	libdeflate? ( app-arch/libdeflate[${MULTILIB_USEDEP}] )
 	lzma? ( >=app-arch/xz-utils-5.0.5-r1[${MULTILIB_USEDEP}] )
-	opengl? ( media-libs/freeglut )
+	opengl? ( media-libs/freeglut virtual/opengl )
 	webp? ( media-libs/libwebp:=[${MULTILIB_USEDEP}] )
-	zlib? ( >=sys-libs/zlib-1.2.8-r1[${MULTILIB_USEDEP}] )
+	zlib? ( >=virtual/zlib-1.2.8-r1:=[${MULTILIB_USEDEP}] )
 	zstd? ( >=app-arch/zstd-1.3.7-r1:=[${MULTILIB_USEDEP}] )
 "
 DEPEND="${RDEPEND}"
 BDEPEND="
-	verify-sig? ( sec-keys/openpgp-keys-evenrouault )
+	verify-sig? ( >=sec-keys/openpgp-keys-evenrouault-20250913 )
 	virtual/pkgconfig
 "
 
@@ -74,13 +78,14 @@ multilib_src_configure() {
 		$(use_enable jbig)
 		$(use_enable jpeg)
 		$(multilib_native_use_enable opengl)
+		$(use_enable lerc)
+		$(use_enable libdeflate)
 		$(use_enable lzma)
 		$(use_enable static-libs static)
 		$(use_enable test tests)
 		$(use_enable webp)
 		$(use_enable zlib)
 		$(use_enable zstd)
-		$(use_enable lerc)
 
 		$(multilib_native_use_enable doc docs)
 		$(multilib_native_use_enable contrib contrib)

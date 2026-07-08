@@ -1,10 +1,10 @@
-# Copyright 1999-2024 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-VERIFY_SIG_OPENPGP_KEY_PATH="${BROOT}"/usr/share/openpgp-keys/tar.asc
-inherit multiprocessing verify-sig
+VERIFY_SIG_OPENPGP_KEY_PATH=/usr/share/openpgp-keys/tar.asc
+inherit branding check-reqs multiprocessing verify-sig
 
 DESCRIPTION="Use this to make tarballs :)"
 HOMEPAGE="https://www.gnu.org/software/tar/"
@@ -20,7 +20,7 @@ SRC_URI="
 LICENSE="GPL-3+"
 SLOT="0"
 if [[ -z "$(ver_cut 3)" || "$(ver_cut 3)" -lt 90 ]] ; then
-	KEYWORDS="~alpha amd64 ~arm arm64 hppa ~ia64 ~loong ~m68k ~mips ~ppc ppc64 ~riscv ~s390 sparc ~x86 ~amd64-linux ~x86-linux ~arm64-macos ~ppc-macos ~x64-macos ~x64-solaris"
+	KEYWORDS="~alpha ~amd64 ~arm ~arm64 ~hppa ~loong ~m68k ~mips ~ppc ~ppc64 ~riscv ~s390 ~sparc ~x86 ~arm64-macos ~x64-macos ~x64-solaris"
 fi
 IUSE="acl +lbzip2 +pigz +pixz +plzip minimal nls selinux xattr"
 
@@ -42,6 +42,26 @@ BDEPEND="
 PDEPEND="
 	app-alternatives/tar
 "
+
+PATCHES=(
+	"${FILESDIR}"/${PN}-1.35-acl-2.4.0.patch
+)
+
+check_space() {
+	if use test; then
+		# https://bugs.gentoo.org/978323
+		local CHECKREQS_DISK_BUILD=11G
+		check-reqs_pkg_setup
+	fi
+}
+
+pkg_pretend() {
+	check_space
+}
+
+pkg_setup() {
+	check_space
+}
 
 src_configure() {
 	# -fanalyzer doesn't make sense for us in ebuilds, as it's for static analysis
@@ -68,6 +88,11 @@ src_configure() {
 	use pigz && myeconfargs+=(--with-gzip=pigz)
 	use pixz && myeconfargs+=(--with-xz=pixz)
 	use plzip && myeconfargs+=(--with-lzip=plzip)
+
+	# https://savannah.gnu.org/support/?111394
+	# This can be removed when we patch dev-build/autoconf, though
+	# packages w/o eautoreconf will still need it.
+	[[ ${enable_year2038} == "no" ]] && myeconfargs+=( --disable-year2038 )
 
 	# Drop CONFIG_SHELL hack after 1.35: https://git.savannah.gnu.org/cgit/tar.git/commit/?id=7687bf4acc4dc4554538389383d7fb4c3e6521cd
 	CONFIG_SHELL="${BROOT}"/bin/bash FORCE_UNSAFE_CONFIGURE=1 econf "${myeconfargs[@]}"

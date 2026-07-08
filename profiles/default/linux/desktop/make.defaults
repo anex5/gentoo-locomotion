@@ -1,1 +1,0 @@
-USE="-X -xwayland gles2 -introspection elogind lm-sensors idn nls -icu ntpl unicode truetype jpeg webp tiff png raw svg heif exif gif otf ttf wayland wayland-only lcms harfbuzz pipewire"

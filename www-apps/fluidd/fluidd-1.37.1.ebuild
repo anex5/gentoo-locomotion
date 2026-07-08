@@ -8,7 +8,7 @@ DESCRIPTION="A free and open-source Klipper web interface for managing your 3d p
 
 SRC_URI="https://github.com/fluidd-core/fluidd/releases/download/v${PV}/${PN}.zip -> ${P}.zip"
 
-KEYWORDS="amd64 arm64 arm x86 mips mipsel"
+KEYWORDS="amd64 arm64 arm x86 mips"
 
 LICENSE="GPL-3"
 SLOT="0"
