@@ -1,4 +1,4 @@
-# Copyright 1999-2023 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -7,11 +7,13 @@ inherit autotools toolchain-funcs
 
 DESCRIPTION="Simple implementation of msgpack in C"
 HOMEPAGE="https://github.com/libmpack/libmpack"
-SRC_URI="https://github.com/${PN}/${PN}/archive/${PV}.tar.gz -> ${P}.tar.gz"
+COMMIT="c1f28db8df877a036fefc848b8fdbe0923f72c11"
+SRC_URI="https://github.com/${PN}/${PN}/archive/${COMMIT}.tar.gz -> ${P}-${COMMIT:0:7}.gh.tar.gz"
+S="${WORKDIR}/${PN}-${COMMIT}"
 
 LICENSE="MIT"
 SLOT="0"
-KEYWORDS="~amd64 ~arm ~arm64 ~hppa ~ia64 ~ppc ~ppc64 ~riscv ~sparc ~x86 ~x64-macos"
+KEYWORDS="amd64 arm arm64 ppc ppc64 riscv sparc x86 x64-macos"
 
 BDEPEND="
 	dev-build/slibtool
@@ -19,7 +21,7 @@ BDEPEND="
 "
 
 PATCHES=(
-	"${FILESDIR}"/${P}-libtool.patch # 778899
+	"${FILESDIR}"/${PN}-1.0.5-libtool.patch # 778899
 )
 
 src_prepare() {
@@ -28,6 +30,7 @@ src_prepare() {
 	# Respect users CFLAGS
 	sed -e 's/-ggdb//g' -i Makefile.in || die
 	sed -e 's/-O[0-9]//g' -i .config/release.mk || die
+	sed -r 'a\#include <stdbool\.h>' -i src/conv.h || die
 
 	eautoreconf
 }

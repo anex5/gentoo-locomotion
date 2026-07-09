@@ -1,4 +1,4 @@
-# Copyright 1999-2025 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -7,34 +7,37 @@ inherit edos2unix toolchain-funcs
 
 MY_PN=acpica-unix
 #MY_PV=${PV:4:2}_${PV:6:2}_${PV:2:2}
-MY_PV="e374230f5fea5b2c92d9221ae3d5cad4d788569b"
+COMMIT="253ac7d705b2b404ca8c3c4db5f570e6e5bae7a8"
 MY_P="${MY_PN}-${PV}"
-MY_TESTS_P="${MY_PN/ca/tests}-${PV}"
-REL_TAG="R${PV:0:4}_${PV:4:2}_${PV:6:2}"
+TESTS_PV=20251212
+MY_TESTS_P="${MY_PN/ca/tests}-${TESTS_PV}"
 
 DESCRIPTION="Intel ACPI Source Language (ASL) compiler"
 HOMEPAGE="https://www.acpica.org"
 #SRC_URI="https://github.com/acpica/acpica/archive/refs/tags/R${MY_PV}.tar.gz -> ${MY_P}.tar.gz"
 SRC_URI="
-	https://github.com/acpica/acpica/archive/${MY_PV}.tar.gz -> ${MY_P}.tar.gz
-	test? ( https://github.com/acpica/acpica/releases/download/${REL_TAG}/${MY_TESTS_P}.tar.gz )
+	https://github.com/acpica/acpica/archive/${COMMIT}.tar.gz -> ${MY_P}-${COMMIT}.gh.tar.gz
+	test? ( https://github.com/acpica/acpica/releases/download/${TESTS_PV}/${MY_TESTS_P}.tar.gz )
 "
+S="${WORKDIR}/acpica-${COMMIT}"
 
 LICENSE="iASL"
 SLOT="0"
-KEYWORDS="~alpha ~amd64 ~arm ~arm64 ~loong ~mips ~ppc ~ppc64 ~x86"
+KEYWORDS="~alpha amd64 arm arm64 ~loong ~mips ppc ppc64 ~riscv x86"
 IUSE="examples test"
-RESTRICT="!test? ( test ) mirror"
+RESTRICT="
+	!test? ( test )
+	mirror
+"
 
 BDEPEND="
 	app-alternatives/yacc
 	app-alternatives/lex"
 
 #S="${WORKDIR}/acpica-R${MY_PV}"
-S="${WORKDIR}/acpica-${MY_PV}"
 
 PATCHES=(
-	"${FILESDIR}"/${PN}-20241212-Makefile-fixes.patch
+	"${FILESDIR}/${PN}"-20241212-Makefile-fixes.patch
 )
 
 pkg_setup() {

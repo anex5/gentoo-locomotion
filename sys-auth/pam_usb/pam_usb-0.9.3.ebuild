@@ -14,7 +14,7 @@ if [[ ${PV} == 9999 ]]; then
 	inherit git-r3
 else
 	SRC_URI="https://github.com/mcdope/pam_usb/archive/refs/tags/${PV}.tar.gz -> ${P}.tar.gz"
-	KEYWORDS="~alpha ~amd64 ~arm ~arm64 ~hppa ~loong ~mips ~ppc ~ppc64 ~riscv ~s390 ~sparc ~x86"
+	KEYWORDS="~alpha ~amd64 ~arm ~arm64 ~loong ~mips ~ppc ~ppc64 ~riscv ~s390 ~sparc ~x86"
 	RESTRICT="mirror"
 fi
 
@@ -32,10 +32,16 @@ RDEPEND="
 		dev-python/pygobject:3[${PYTHON_USEDEP}]
 	')
 	dev-libs/libxml2:=
-	sys-fs/udisks:2
+	sys-fs/udisks
 	sys-libs/pam
 "
 DEPEND="${RDEPEND}"
+
+src_prepare(){
+	default
+	sed -e '/#endif/,/typedef struct\tpusb_device/a\#ifndef _UTSNAME_NODENAME_LENGTH\n\#define _UTSNAME_NODENAME_LENGTH 255\n\#endif\n' -i src/conf.h
+	use elibc_musl && eapply "${FILESDIR}/pam_usb-musl-time_t.patch"
+}
 
 _emake() {
 	strip-unsupported-flags
@@ -89,6 +95,6 @@ src_install() {
 	use doc && dodoc doc/CONFIGURATION doc/QUICKSTART doc/SECURITY doc/TROUBLESHOOTING
 	insinto /etc/security
     doins doc/pam_usb.conf
-	use systemd && systemd_dounit ${FILESDIR}/pam_usb-agent.service
+	use systemd && systemd_dounit "${FILESDIR}"/pam_usb-agent.service
 }
 

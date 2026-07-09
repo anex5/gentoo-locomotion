@@ -20,7 +20,7 @@ PYTHON_COMPAT=( python3_{13..15} )
 RUST_MAX_VER=${PV%%_*}
 RUST_PV=${PV%%_p*}
 RUST_P=${PN}-${RUST_PV}
-[[ -z ${RUST_PATCH_VER} ]] && RUST_PATCH_VER=1.95.0
+[[ -z ${RUST_PATCH_VER} ]] && RUST_PATCH_VER=${PV}
 
 if [[ ${PV} == *9999* ]]; then
 	# Update this as new `beta` releases come out.
@@ -196,7 +196,7 @@ QA_PRESTRIPPED="
 QA_EXECSTACK="usr/lib/${PN}/${SLOT}/lib/rustlib/*/lib*.rlib:lib.rmeta"
 
 # causes double bootstrap
-RESTRICT="test mirror"
+RESTRICT="test"
 
 VERIFY_SIG_OPENPGP_KEY_PATH=/usr/share/openpgp-keys/rust.asc
 
@@ -262,7 +262,7 @@ pkg_setup() {
 	pre_build_checks
 	python-any-r1_pkg_setup
 
-	#export LIBGIT2_NO_PKG_CONFIG=1 #749381
+	export LIBGIT2_NO_PKG_CONFIG=1 #749381
 	if tc-is-cross-compiler; then
 		use system-llvm && die "USE=system-llvm not allowed when cross-compiling"
 		local cross_llvm_target="$(llvm_tuple_to_target "${CBUILD}")"
@@ -347,7 +347,6 @@ src_unpack() {
 	else
 		default
 	fi
-	rm -f "${WORKDIR}/rust-patches-${RUST_PATCH_VER}/1.94.0-compiler-musl-dynamic-linking.patch"
 }
 
 src_prepare() {
@@ -367,9 +366,61 @@ src_prepare() {
 src_configure() {
 	if tc-is-cross-compiler; then
 		export PKG_CONFIG_ALLOW_CROSS=1
-		export PKG_CONFIG_PATH="${ESYSROOT}/usr/$(get_libdir)/pkgconfig"
-		export OPENSSL_INCLUDE_DIR="${ESYSROOT}/usr/include"
-		export OPENSSL_LIB_DIR="${ESYSROOT}/usr/$(get_libdir)"
+
+		local rust_host_triple="$(rust_abi "${CHOST}")"
+
+		# https://docs.rs/pkg-config/latest/pkg_config/#cross-compilation
+		local pcvar
+		for pcvar in PKG_CONFIG_{PATH,LIBDIR} ; do
+			pcvar="${pcvar}_${rust_host_triple//-/_}"
+
+			[[ -n ${!pcvar} ]] && continue
+
+			case ${pcvar} in
+				*PKG_CONFIG_PATH*)
+					printf -v "${pcvar}" "${ESYSROOT}/usr/$(get_libdir)/pkgconfig"
+					;;
+				*PKG_CONFIG_LIBDIR*)
+					printf -v "${pcvar}" "${ESYSROOT}/usr/$(get_libdir)"
+					;;
+				*)
+					continue
+					;;
+			esac
+
+			export "${pcvar}"
+		done
+
+		# https://docs.rs/openssl/latest/openssl/#manual
+		local osslvar
+		for osslvar in OPENSSL_{INCLUDE_,LIB_,}DIR ; do
+			osslvar="${rust_host_triple}_${osslvar}"
+			osslvar="${osslvar^^}"
+			osslvar="${osslvar//-/_}"
+
+			[[ -n ${!osslvar} ]] && continue
+
+			case ${osslvar} in
+				*OPENSSL_DIR*)
+					printf -v "${osslvar}" "${ESYSROOT}/usr"
+					;;
+				*OPENSSL_INCLUDE_DIR*)
+					printf -v "${osslvar}" "${ESYSROOT}/usr/include"
+					;;
+				*OPENSSL_LIB_DIR*)
+					printf -v "${osslvar}" "${ESYSROOT}/usr/$(get_libdir)"
+					;;
+				*)
+					continue
+					;;
+			esac
+
+			export "${osslvar}"
+		done
+
+		# https://issues.chromium.org/issues/357917328
+		# https://github.com/rust-lang/libz-sys/blob/1.1.18/build.rs#L25
+		export LIBZ_SYS_STATIC=1
 	fi
 
 	# Avoid bundled copies of libraries

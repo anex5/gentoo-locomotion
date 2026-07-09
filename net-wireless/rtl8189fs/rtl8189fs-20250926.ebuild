@@ -1,14 +1,14 @@
-# Copyright 1999-2025 Gentoo Foundation
+# Copyright 1999-2026 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-inherit linux-mod-r1 flag-o-matic
+inherit linux-mod-r1
 
-MODULES_KERNEL_MAX=6.18
-MODULES_KERNEL_MIN=6.1
+MODULES_KERNEL_MAX=7.1
+MODULES_KERNEL_MIN=6.18
 
-COMMIT="0a5d04114fac3c9f48a343cb905fbb6a3f9f5df5"
+COMMIT="36d917d5069f25f4c36b8b4d8b17b5d02e9116e9"
 
 DESCRIPTION="Realtek 8189es wifi chip driver"
 HOMEPAGE="https://github.com/jwrdegoede/rtl8189ES_linux"

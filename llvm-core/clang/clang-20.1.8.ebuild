@@ -1,11 +1,11 @@
-# Copyright 1999-2025 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{11..14} )
+PYTHON_COMPAT=( python3_{12..14} )
 
-inherit cmake llvm.org llvm-utils multilib multilib-minimal
+inherit cmake llvm.org multilib multilib-minimal
 inherit prefix python-single-r1 toolchain-funcs
 inherit flag-o-matic ninja-utils
 
@@ -17,7 +17,7 @@ HOMEPAGE="https://llvm.org/"
 
 LICENSE="Apache-2.0-with-LLVM-exceptions UoI-NCSA MIT"
 SLOT="${LLVM_MAJOR}/${LLVM_SOABI}"
-KEYWORDS="~amd64 ~arm ~arm64 ~loong ~mips ~ppc ~ppc64 ~riscv ~sparc ~x86 ~amd64-linux ~arm64-macos ~x64-macos"
+KEYWORDS="amd64 arm arm64 ~loong ~mips ppc ppc64 ~riscv ~sparc x86 ~arm64-macos ~x64-macos"
 
 IUSE="debug doc +extra ieee-long-double +pie static-analyzer test xml \
 default-fortify-source-2 default-fortify-source-3 default-full-relro \
@@ -121,7 +121,7 @@ BDEPEND="
 	xml? ( virtual/pkgconfig )
 "
 PDEPEND="
-	~llvm-runtimes/clang-runtime-${PV}
+	llvm-runtimes/clang-runtime:${LLVM_MAJOR}
 	llvm-core/clang-toolchain-symlinks:${LLVM_MAJOR}
 "
 
@@ -132,10 +132,10 @@ LLVM_COMPONENTS=(
 )
 LLVM_MANPAGES=1
 #LLVM_PATCHSET=${PV}-r6
+LLVM_USE_TARGETS="llvm+eq"
 LLVM_TEST_COMPONENTS=(
 	"llvm/utils"
 )
-LLVM_USE_TARGETS="llvm"
 llvm.org_set_globals
 
 [[ -n ${LLVM_MANPAGE_DIST} ]] && BDEPEND+=" doc? ( "
@@ -326,9 +326,9 @@ ewarn
 		ewarn "The CET as default is in testing."
 		ewarn
 	fi
-	patches_hardened+=(
-		"${FILESDIR}/clang-18.0.0.9999-cross-dso-cfi-link-with-shared.patch"
-	)
+	#patches_hardened+=(
+	#	"${FILESDIR}/clang-18.0.0.9999-cross-dso-cfi-link-with-shared.patch"
+	#)
 	eapply ${patches_hardened[@]}
 
 	if use hardened || use hardened-compat ; then
@@ -348,10 +348,7 @@ src_prepare() {
 
 	eapply -p2 "${FILESDIR}/${PN}-17.0.0.9999-stdatomic-force.patch"
 
-	eapply "${FILESDIR}/clang-17.0.4-fix-glibc-limits.h-relative-path.patch"
-
-	#use pgo && \
-	eapply "${FILESDIR}/clang-16.0.0.9999-add-include-path.patch"
+	eapply "${FILESDIR}/clang-18.0.0-accept-fallow-argument-mismatch-warning-PR91611.patch"
 
 	eapply_hardened
 
@@ -362,8 +359,7 @@ src_prepare() {
 
 	if ! use prefix-guest && [[ -n ${EPREFIX} ]]; then
 		sed -i "/LibDir.*Loader/s@return \"\/\"@return \"${EPREFIX}/\"@" \
-			lib/Driver/ToolChains/Linux.cpp \
-			|| die
+			lib/Driver/ToolChains/Linux.cpp || die
 	fi
 }
 

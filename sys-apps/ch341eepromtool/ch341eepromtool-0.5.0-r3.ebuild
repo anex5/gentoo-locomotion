@@ -1,4 +1,4 @@
-# Copyright 1999-2023 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -7,12 +7,11 @@ inherit toolchain-funcs
 
 DESCRIPTION="An i2c serial EEPROM programming tool for the WCH CH341A"
 HOMEPAGE="https://github.com/stefanct/ch341eepromtool"
-SRC_URI="https://github.com/stefanct/${PN}/archive/refs/heads/master.tar.gz -> ${P}.tar.gz"
+SRC_URI="https://github.com/stefanct/${PN}/archive/refs/heads/master.tar.gz -> ${P}.gh.tar.gz"
 
 LICENSE="GPL-3"
 SLOT="0"
-KEYWORDS="amd64 x86"
-IUSE="doc"
+KEYWORDS="amd64 arm arm64 mips ppc ppc64 x86"
 RESTRICT="mirror"
 DEPEND=">=dev-libs/libusb-1.0.0"
 
@@ -32,6 +31,6 @@ src_compile() {
 src_install() {
 	insinto /usr/bin
 	dobin "${S}"/ch341eeprom
-	use doc && dodoc
+	dodoc
 }
 

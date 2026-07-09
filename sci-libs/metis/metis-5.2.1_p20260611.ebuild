@@ -1,4 +1,4 @@
-# Copyright 1999-2025 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -7,22 +7,21 @@ inherit cmake
 
 DESCRIPTION="A package for unstructured serial graph partitioning"
 HOMEPAGE="https://github.com/KarypisLab/METIS"
-COMMIT="dfded64f24664caa8809cacf416d378112e8867f"
-SRC_URI="https://github.com/KarypisLab/METIS/archive/${COMMIT}.tar.gz -> ${P}.tar.gz"
+COMMIT="272d4a91c5f66c92327493339a476c553ebf1f5d"
+SRC_URI="https://github.com/KarypisLab/METIS/archive/${COMMIT}.tar.gz -> ${P}-${COMMIT:0:7}.gh.tar.gz"
 S="${WORKDIR}/METIS-${COMMIT}"
 
 LICENSE="Apache-2.0"
 SLOT="0"
-KEYWORDS="~amd64 ~arm ~arm64 ~hppa ~ia64 ~x86 ~amd64-linux"
-IUSE="doc double-precision examples int64 openmp static-libs"
+KEYWORDS="~amd64 ~arm ~arm64 ~hppa ~ia64 ~x86"
+IUSE="doc double-precision examples index64 openmp static-libs"
 
 DEPEND="sci-libs/gklib"
 RDEPEND="${DEPEND}"
 RESTRICT="mirror"
 
 PATCHES=(
-	"${FILESDIR}"/${PN}-5.2.1-multilib.patch
-	"${FILESDIR}"/${P}-respect-user-flags.patch
+	"${FILESDIR}"/${PN}-5.2.1_p20260223-respect-user-flags.patch
 	# https://github.com/KarypisLab/METIS/pull/52 Bug 905822
 	"${FILESDIR}"/${PN}-5.2.1-add-gklib-as-required.patch
 )
@@ -30,7 +29,7 @@ PATCHES=(
 src_prepare() {
 	local idxwidth realwidth
 
-	if use int64; then
+	if use index64; then
 		idxwidth="#define IDXTYPEWIDTH 64"
 	else
 		idxwidth="#define IDXTYPEWIDTH 32"

@@ -1,0 +1,8 @@
+
+--- a/src/xpath.h
++++ b/src/xpath.h
+@@ -25,4 +25,5 @@
+ #define XPATH_H_
+
++#include <time.h>
+ #include <libxml/xpath.h>
