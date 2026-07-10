@@ -13,6 +13,7 @@ LICENSE="GPL-3+"
 SLOT="0"
 IUSE="graphicsmagick gui jpeg test tiff"
 KEYWORDS="~amd64 ~x86"
+S="${WORKDIR}/utsushi-0.$(ver_cut 2-3)"
 
 # Disable opencl as during reorient.utr test it produces inconsistent results
 BDEPEND="
@@ -36,7 +37,6 @@ RDEPEND="
 "
 DEPEND="${RDEPEND}"
 RESTRICT="!test? ( test )"
-S="${WORKDIR}/utsushi-0.$(ver_cut 2-3)"
 
 PATCHES=(
 	"${FILESDIR}"/${PN}-3.61.0-ijg-libjpeg.patch

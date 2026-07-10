@@ -1,4 +1,4 @@
-# Copyright 1999-2025 Gentoo Foundation
+# Copyright 1999-2026 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI="8"
@@ -11,7 +11,6 @@ SRC_URI="https://sourceforge.net/projects/anttweakbar/files/latest/download?sour
 KEYWORDS="~x86 ~amd64"
 LICENSE="ZLIB"
 SLOT="0"
-IUSE=""
 
 DEPEND="
 	x11-libs/libX11:=
@@ -19,6 +18,7 @@ DEPEND="
 	x11-libs/libXxf86vm:=
 	virtual/libc
 "
+BDEPEND="app-arch/unzip"
 RDEPEND="$DEPEND"
 RESTRICT="mirror test"
 

@@ -1,4 +1,4 @@
-# Copyright 1999-2025 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -55,7 +55,7 @@ RDEPEND="
 	sci-mathematics/cgal:=
 	sci-mathematics/z3:=
 	sys-apps/dbus
-	sys-libs/zlib:=
+	virtual/zlib:=
 	gui? (
 		x11-libs/gtk+:3
 		x11-libs/wxGTK:${WX_GTK_VER}=[X?,opengl,webkit]

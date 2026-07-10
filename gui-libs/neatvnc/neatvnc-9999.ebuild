@@ -1,4 +1,4 @@
-# Copyright 2019-2026 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -12,25 +12,22 @@ if [[ ${PV} == 9999 ]]; then
 	inherit git-r3
 	EGIT_REPO_URI="https://github.com/any1/neatvnc.git"
 else
-	COMMIT="a87b33ab090636713162cd61131ee2c757c97c21"
-	SRC_URI="https://github.com/any1/neatvnc/archive/${COMMIT}.tar.gz -> ${P}.tar.gz"
-	KEYWORDS="~amd64 ~arm ~arm64 ~loong ~ppc64 ~riscv ~x86"
-	S=${WORKDIR}/${PN}-${COMMIT}
+	#COMMIT="a87b33ab090636713162cd61131ee2c757c97c21"
+	SRC_URI="https://github.com/any1/neatvnc/archive/v${PV}.tar.gz -> ${P}.gh.tar.gz"
+	KEYWORDS="amd64 arm ~arm64 ~loong ~ppc64 ~riscv ~x86"
+	S=${WORKDIR}/${PN}-${PV}
 fi
 
 LICENSE="ISC"
 SLOT="0"
 IUSE="debug examples man gbm h264 jpeg ssl test tracing websockets"
 REQUIRED_USE="h264? ( gbm )"
-RESTRICT="!test? ( test )"
 
 RDEPEND="
 	>=dev-libs/aml-1.0.0:=
-	sys-libs/zlib
 	x11-libs/pixman
-	examples? (
-		media-libs/libpng:=
-	)
+	virtual/zlib
+	examples? ( media-libs/libpng:= )
 	gbm? ( media-libs/mesa )
 	h264? (
 		media-video/ffmpeg:=
@@ -61,9 +58,8 @@ src_prepare() {
 	default
 
 	# useful soname
-	sed -i -e "s/'0.10-dev'/'0.10.0'/" meson.build || die
+	#sed -i -e "s/'0.10-dev'/'0.10.0'/" meson.build || die
 	sed -i -e "s/'0.0.0'/meson.project_version()/" meson.build || die
-
 }
 
 src_configure() {
