@@ -18,11 +18,10 @@ otf? (
 "
 KEYWORDS="*"
 
+LICENSE="OFL-1.1"
 IUSE="+otf ttf"
 REQUIRED_USE="|| ( otf ttf )"
-LICENSE="OFL-1.1"
 SLOT="0"
-KEYWORDS="*"
 FONT_SUFFIX=""
 
 # No binaries, only fonts

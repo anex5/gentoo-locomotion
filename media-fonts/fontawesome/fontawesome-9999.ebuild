@@ -11,7 +11,6 @@ HOMEPAGE="https://fontawesome.com"
 if [[ ${PV} == 9999 ]]; then
 	inherit git-r3
 	EGIT_REPO_URI="https://github.com/FortAwesome/${MY_PN}.git"
-	KEYWORDS=""
 else
 	SRC_URI="https://github.com/FortAwesome/${MY_PN}/archive/${PV}.tar.gz -> ${P}.tar.gz"
 	KEYWORDS="*"

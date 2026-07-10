@@ -12,7 +12,6 @@ EGIT_REPO_URI="https://github.com/Moham3dRiahi/Th3inspector"
 
 LICENSE="MIT"
 SLOT="0"
-IUSE=""
 
 DEPEND="
 	dev-perl/JSON
@@ -33,10 +32,8 @@ src_prepare() {
 }
 
 src_install() {
-	dodir /usr/share/Th3inspector
 	insinto /usr/share/Th3inspector
 	doins Th3inspector.pl
 	fperms 0755 /usr/share/Th3inspector/Th3inspector.pl
 	dosym ../share/Th3inspector/Th3inspector.pl /usr/bin/Th3inspector
 }
-

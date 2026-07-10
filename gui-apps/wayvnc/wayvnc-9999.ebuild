@@ -13,10 +13,10 @@ if [[ ${PV} == 9999 ]]; then
 	EGIT_REPO_URI="https://github.com/any1/wayvnc.git"
 	KEYWORDS=""
 else
-	COMMIT="7ee86054c680b3429137069712e38fcba61ebae7"
-	SRC_URI="https://github.com/any1/wayvnc/archive/${COMMIT}.tar.gz -> ${P}.tar.gz"
+	#COMMIT="7ee86054c680b3429137069712e38fcba61ebae7"
+	SRC_URI="https://github.com/any1/wayvnc/archive/v${PV}.tar.gz -> ${P}.gh..tar.gz"
 	KEYWORDS="~amd64 ~arm ~arm64 ~loong ~ppc64 ~riscv ~x86"
-	S=${WORKDIR}/${PN}-${COMMIT}
+	#S=${WORKDIR}/${PN}-${COMMIT}
 fi
 
 LICENSE="ISC"
@@ -27,7 +27,7 @@ RDEPEND="
 	>=dev-libs/aml-1.0.0:=
 	dev-libs/jansson:=
 	dev-libs/wayland
-	>=gui-libs/neatvnc-0.10.0:=
+	>=gui-libs/neatvnc-1.0.0:=
 	media-libs/mesa[egl(+),gles2(+),gbm(+)?]
 	x11-libs/libdrm
 	x11-libs/libxkbcommon

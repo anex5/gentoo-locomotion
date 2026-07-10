@@ -3,16 +3,17 @@
 
 EAPI=8
 
-HOMEPAGE="https://docs.fluidd.xyz"
 DESCRIPTION="A free and open-source Klipper web interface for managing your 3d printer."
-inherit git-r3
+HOMEPAGE="https://docs.fluidd.xyz"
+
 EGIT_REPO_URI="https://github.com/fluidd-core/${PN}"
 EGIT_BRANCH="develop"
-KEYWORDS=""
+inherit git-r3
+
+S=${WORKDIR}/${P}
 
 LICENSE="GPL-3"
 SLOT="0"
-IUSE=""
 
 BDEPEND="
 	net-libs/nodejs[npm]
@@ -21,9 +22,8 @@ RDEPEND="
 	app-misc/moonraker
 	www-servers/nginx
 "
-RESTRICT="mirror"
 
-S=${WORKDIR}/${P}
+RESTRICT="mirror"
 
 NPM_FLAGS=(
 	--audit false

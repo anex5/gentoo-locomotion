@@ -1,4 +1,4 @@
-# Copyright 1999-2025 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -7,7 +7,7 @@ inherit font check-reqs
 
 DESCRIPTION="Nerd Fonts is a project that patches developer targeted fonts with glyphs"
 HOMEPAGE="https://github.com/ryanoasis/nerd-fonts"
-COMMON_URI="https://github.com/ryanoasis/${PN}/releases/download/v${PV/_rc/-RC}"
+COMMON_URI="https://github.com/ryanoasis/nerd-fonts/releases/download/v${PV/_rc/-RC}"
 
 FONTS=(
 	0xProto
@@ -92,7 +92,7 @@ SRC_URI="
 	$(gen_src_uri)
 	https://github.com/ryanoasis/nerd-fonts/raw/v${PV}/10-nerd-font-symbols.conf -> ${P}-10-nerd-font-symbols.conf
 "
-RESTRICT="mirror"
+KEYWORDS="*"
 LICENSE="MIT
 	OFL-1.1
 	Apache-2.0
@@ -103,7 +103,7 @@ LICENSE="MIT
 	Vic-Fieger-License
 	UbuntuFontLicense-1.0"
 SLOT="0"
-KEYWORDS="*"
+RESTRICT="mirror"
 
 RDEPEND="media-libs/fontconfig"
 
