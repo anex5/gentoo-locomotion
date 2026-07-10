@@ -3,7 +3,7 @@
 
 EAPI=8
 
-DESCRIPTION="A free and open-source Klipper web interface for managing your 3d printer."
+DESCRIPTION="A free and open-source Klipper web interface for managing your 3d printer"
 HOMEPAGE="https://docs.fluidd.xyz"
 
 EGIT_REPO_URI="https://github.com/fluidd-core/${PN}"

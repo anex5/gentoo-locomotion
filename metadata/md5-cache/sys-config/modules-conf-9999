@@ -1,9 +1,0 @@
-DEFINED_PHASES=compile configure install postinst preinst unpack
-DESCRIPTION=A configuration files for kernel modules
-EAPI=8
-HOMEPAGE=https://github.com/anex5/gentoo-locomotion
-IUSE=video_cards_i915 video_cards_nouveau video_cards_nvidia video_cards_amdgpu video_cards_radeon video_cards_virtualbox +alsa +vfio +kvm +zswap +drm bbswitch +blacklist it87 rtl xe
-KEYWORDS=*
-LICENSE=GPL-2+
-SLOT=0
-_md5_=3abd7eaa140837d15b787a4ebd60edec

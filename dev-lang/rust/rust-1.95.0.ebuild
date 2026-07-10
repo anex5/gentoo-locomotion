@@ -273,7 +273,7 @@ pkg_setup() {
 	rust_pkg_setup
 
 	if use system-llvm; then
-		llvm-r1_pkg_setup
+		llvm-r2_pkg_setup
 
 		local llvm_config="$(get_llvm_prefix)/bin/llvm-config"
 		export LLVM_LINK_SHARED=1

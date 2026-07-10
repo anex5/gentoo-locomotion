@@ -8,18 +8,19 @@ inherit font
 DESCRIPTION="Sans serif font by Vernon Adams"
 HOMEPAGE="https://github.com/googlefonts/mulish"
 COMMIT="5503f7a18ce79870148b9f9cb8e592ac44c044c3"
-SRC_URI="https://github.com/googlefonts/${PN}/archive/${COMMIT}.tar.gz -> ${PN}-${COMMIT}.gh.tar.gz"
+SRC_URI="https://github.com/googlefonts/${PN}/archive/${COMMIT}.tar.gz -> ${PN}-${COMMIT:0:7}.gh.tar.gz"
+S="${WORKDIR}/${PN}-${COMMIT}"
+KEYWORDS="*"
+
 IUSE="+otf ttf"
 REQUIRED_USE="|| ( otf ttf )"
 
 LICENSE="OFL-1.1"
 SLOT="0"
-KEYWORDS="*"
 
 # No binaries, only fonts
 RESTRICT="strip binchecks mirror"
 
-S="${WORKDIR}/${PN}-${COMMIT}"
 
 DOCS="README.md"
 
