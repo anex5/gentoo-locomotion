@@ -1,0 +1,13 @@
+DEFINED_PHASES=install prepare
+DESCRIPTION=A POSIX *nix fetch script using Nerdfonts
+EAPI=8
+HOMEPAGE=https://github.com/ThatOneCalculator/NerdFetch
+INHERIT=prefix
+KEYWORDS=~amd64 ~arm64 ~x86 ~arm
+LICENSE=MIT
+RDEPEND=app-portage/portage-utils media-fonts/nerd-fonts
+RESTRICT=mirror
+SLOT=0
+SRC_URI=https://github.com/ThatOneCalculator/NerdFetch/archive/v8.5.0.tar.gz -> nerdfetch-8.5.0.tar.gz
+_eclasses_=prefix	c3c4c93ebda319c0fa7ed6f942ba1010
+_md5_=72ca2c41b07e1f7df5243bfc177e5a23

@@ -1,0 +1,13 @@
+BDEPEND=virtual/pkgconfig >=dev-vcs/git-1.8.2.1[curl]
+DEFINED_PHASES=compile install postinst postrm prepare unpack
+DEPEND=dev-libs/libzip media-libs/imgui:0=[sdl3]
+DESCRIPTION=Very simple Sinclair ZX Spectrum emulator
+EAPI=8
+HOMEPAGE=https://github.com/kiltum/zxcpp
+INHERIT=toolchain-funcs xdg-utils desktop git-r3
+LICENSE=GPL-2+
+PROPERTIES=live
+RESTRICT=mirror
+SLOT=0
+_eclasses_=toolchain-funcs	58a918e3a42d0156f010dcfd43725be5	xdg-utils	42869b3c8d86a70ef3cf75165a395e09	desktop	e447b5f77146d69797e9f03ff177f3f1	git-r3	2f8cdb10b033f92c3136aa6488a31c98
+_md5_=375c0a36af2475188150783b6303b0b9

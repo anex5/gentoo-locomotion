@@ -1,0 +1,15 @@
+BDEPEND=app-arch/unzip dev-lang/nim llvm-runtimes/libatomic-stub virtual/pkgconfig virtual/pandoc
+DEFINED_PHASES=compile configure install prepare test
+DEPEND=sys-libs/ncurses:=[unicode(+),static-libs?] net-misc/curl:=[brotli,http2,openssl,ssl,ssh,adns,static-libs?] >=virtual/zlib-1.2.9:=[static-libs?]
+DESCRIPTION=TUI web browser; supports CSS, images, JavaScript, and multiple web protocols
+EAPI=9
+HOMEPAGE=https://chawan.net
+INHERIT=flag-o-matic toolchain-funcs multiprocessing
+IUSE=static-libs lto
+KEYWORDS=amd64 arm64 arm x86
+LICENSE=Unlicense
+RESTRICT=mirror
+SLOT=0
+SRC_URI=https://git.sr.ht/~bptato/chawan/archive/v0.4.3.tar.gz -> chawan-0.4.3.srht.tar.gz
+_eclasses_=toolchain-funcs	58a918e3a42d0156f010dcfd43725be5	flag-o-matic	fd3558f73f6503093adee69adf41020d	multiprocessing	45d0620f25c2f063ad6276ecd9ed9399
+_md5_=e6dbf6bd9aaaf894df0afa9762f967c5

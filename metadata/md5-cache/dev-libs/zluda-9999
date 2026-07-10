@@ -1,0 +1,15 @@
+BDEPEND=|| ( >=dev-lang/rust-1.85 >=dev-lang/rust-bin-1.85 ) || ( dev-lang/python:3.15 dev-lang/python:3.14 dev-lang/python:3.13 dev-lang/python:3.12 ) >=dev-build/cmake-3.22 >=dev-build/rocm-cmake-5.0.2-r1 test? ( dev-cpp/gtest ) virtual/pkgconfig || ( >=dev-lang/rust-bin-1.74.1:* >=dev-lang/rust-1.74.1:* ) >=dev-vcs/git-1.8.2.1[curl]
+DEFINED_PHASES=compile configure install postinst setup test unpack
+DEPEND=dev-util/hip dev-util/hipify-clang dev-util/rocm-smi:0
+DESCRIPTION=Open nVidia CUDA replacement
+EAPI=8
+HOMEPAGE=https://github.com/vosen/ZLUDA
+INHERIT=cargo edo git-r3 rocm python-any-r1
+IUSE=blas blaslt bindgen zoc dark-api detours dnn fft ld ml ptx ptxas rocm sparse test trace debug +amdgpu_targets_gfx906 +amdgpu_targets_gfx908 +amdgpu_targets_gfx90a +amdgpu_targets_gfx942 +amdgpu_targets_gfx1030 +amdgpu_targets_gfx1100 amdgpu_targets_gfx803 amdgpu_targets_gfx900 amdgpu_targets_gfx940 amdgpu_targets_gfx941 amdgpu_targets_gfx1010 amdgpu_targets_gfx1011 amdgpu_targets_gfx1012 amdgpu_targets_gfx1031 amdgpu_targets_gfx1101 amdgpu_targets_gfx1102
+LICENSE=BSD Apache-2.0 BSD-2 BSD Boost-1.0 ISC MIT MPL-2.0 Unicode-3.0 Unicode-DFS-2016 ZLIB
+PROPERTIES=live live
+RDEPEND=dev-util/hip dev-util/hipify-clang dev-util/rocm-smi:0
+RESTRICT=!test? ( test ) mirror
+SLOT=0
+_eclasses_=toolchain-funcs	58a918e3a42d0156f010dcfd43725be5	flag-o-matic	fd3558f73f6503093adee69adf41020d	multiprocessing	45d0620f25c2f063ad6276ecd9ed9399	rust	9b80a1e55a18c949bd8ff7dfea63dbfc	rust-toolchain	76468983281b0a7fc167ca224f84ecfd	cargo	e8d502f9388bb6e5d374cbaf1f29a56f	edo	a5e294016aa84979fcb2459749eb80b2	git-r3	2f8cdb10b033f92c3136aa6488a31c98	rocm	b406b041c5b107f8d8600865210e24e2	eapi9-pipestatus	d2c134036ac31c3085aebc9147f572bd	python-utils-r1	18a01bee4e486884d7457cfacde74099	python-any-r1	891415dfe39ad9b41b461f2b86354af0
+_md5_=bb0cb884893d28641467b52f565a838a

@@ -1,0 +1,16 @@
+BDEPEND=man? ( >=app-doc/doxygen-1.7.0 ) lua? ( dev-lang/lua ) >=dev-build/cmake-3.16 virtual/pkgconfig app-alternatives/ninja >=dev-build/cmake-3.28.5
+DEFINED_PHASES=compile configure install prepare test unpack
+DEPEND=media-libs/glu:= media-libs/glfw:=
+DESCRIPTION=Geometric algorithms, includes a simple yet efficient Mesh data structure.
+EAPI=8
+HOMEPAGE=https://gforge.inria.fr/projects/geogram/
+INHERIT=cmake toolchain-funcs
+IUSE=apps debug exploragram +fpg gargantua +hlbfgs lua man +tetgen test +triangle +vorpaline
+KEYWORDS=~amd64 ~arm64
+LICENSE=BSD
+RDEPEND=media-libs/glu:= media-libs/glfw:=
+RESTRICT=mirror
+SLOT=0
+SRC_URI=https://github.com/BrunoLevy/geogram/archive/v1.9.5.tar.gz -> geogram_1.9.5.tar.gz https://github.com/LoicMarechal/libMeshb/archive/c3e8d187ced5aa231d50b5bef55158af0870ec63.tar.gz -> geogram-libMeshb-c3e8d18.tar.gz https://github.com/ddemidov/amgcl/archive/ab57038d68ee372ed5df280631051b91f17ed2d1.tar.gz -> geogram-amgcl-ab57038.tar.gz https://github.com/diegonehab/rply/archive/4296cc91b5c8c26d4e7d7aac0cee2b194ffc5800.tar.gz -> geogram-rply-4296cc9.tar.gz
+_eclasses_=toolchain-funcs	58a918e3a42d0156f010dcfd43725be5	flag-o-matic	fd3558f73f6503093adee69adf41020d	multiprocessing	45d0620f25c2f063ad6276ecd9ed9399	ninja-utils	d063ea1900a793f93eb095010d6d9156	xdg-utils	42869b3c8d86a70ef3cf75165a395e09	cmake	c54f532543a549f7318d6c49aaf8e953
+_md5_=77c54d1c3f727311191b31b413b6258a

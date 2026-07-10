@@ -1,0 +1,14 @@
+BDEPEND=octave? ( dev-lang/swig ) >=dev-vcs/git-1.8.2.1[curl]
+DEFINED_PHASES=compile configure install setup unpack
+DEPEND=octave? ( >=sci-mathematics/octave-3.4.0 )
+DESCRIPTION=VisionLab Features Library for SFM applications
+EAPI=8
+HOMEPAGE=https://www.vlfeat.org
+INHERIT=toolchain-funcs flag-o-matic git-r3
+IUSE=debug man mpi octave utils
+LICENSE=BSD-2
+PROPERTIES=live
+RESTRICT=!test (test) mirror
+SLOT=0/0.9
+_eclasses_=toolchain-funcs	58a918e3a42d0156f010dcfd43725be5	flag-o-matic	fd3558f73f6503093adee69adf41020d	git-r3	2f8cdb10b033f92c3136aa6488a31c98
+_md5_=7261f6b84569b555b03a94d4c5ddf630

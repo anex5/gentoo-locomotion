@@ -11,13 +11,12 @@ EGIT_REPO_URI="https://github.com/rampageX/firmware-mod-kit"
 
 LICENSE="MIT"
 SLOT="0"
-KEYWORDS="~amd64 ~x86"
 
 IUSE="doc"
 
 DEPEND="
-	app-arch/xz
-	sys-libs/zlib
+	app-arch/xz-utils
+	virtual/zlib
 "
 RDEPEND="${DEPEND}"
 #BDEPEND="app-text/dos2unix"

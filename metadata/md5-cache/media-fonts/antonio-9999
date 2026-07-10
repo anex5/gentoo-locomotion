@@ -1,0 +1,15 @@
+BDEPEND=X? ( >=x11-apps/mkfontscale-1.2.0 media-fonts/encodings )
+DEFINED_PHASES=install postinst postrm setup unpack
+DESCRIPTION=A 'refined' version of the Anton font, a large typeface designed for banners and headlines
+EAPI=8
+HOMEPAGE=https://github.com/vernnobile/antonioFont
+INHERIT=font
+IUSE=+otf ttf X
+KEYWORDS=*
+LICENSE=OFL-1.1
+REQUIRED_USE=|| ( otf ttf )
+RESTRICT=strip binchecks mirror
+SLOT=0
+SRC_URI=otf? ( https://github.com/vernnobile/antonioFont/raw/refs/heads/master/Bold/src/Antonio-Bold.otf https://github.com/vernnobile/antonioFont/raw/refs/heads/master/Light/src/Antonio-Light.otf https://github.com/vernnobile/antonioFont/raw/refs/heads/master/Regular/src/Antonio-Regular.otf ) ttf? ( https://github.com/vernnobile/antonioFont/raw/refs/heads/master/Bold/Antonio-Bold.ttf https://github.com/vernnobile/antonioFont/raw/refs/heads/master/Light/Antonio-Light.ttf https://github.com/vernnobile/antonioFont/raw/refs/heads/master/Regular/Antonio-Regular.ttf )
+_eclasses_=font	6d0c60c855c05ae2ba808d300440ded2
+_md5_=14671db75e70b78947aa3bfba5d4155b

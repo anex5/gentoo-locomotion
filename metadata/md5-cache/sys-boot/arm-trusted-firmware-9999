@@ -1,0 +1,12 @@
+BDEPEND=>=dev-vcs/git-1.8.2.1[curl]
+DEFINED_PHASES=compile install unpack
+DESCRIPTION=Reference secure world boot and runtime firmware complying with the relevant Arm specifications
+EAPI=8
+HOMEPAGE=https://www.trustedfirmware.org
+INHERIT=git-r3
+LICENSE=BSD
+PROPERTIES=live
+RESTRICT=mirror
+SLOT=0
+_eclasses_=git-r3	2f8cdb10b033f92c3136aa6488a31c98
+_md5_=85a5a653fad9c615af1a3d99441396b1

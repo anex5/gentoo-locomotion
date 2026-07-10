@@ -1,0 +1,13 @@
+BDEPEND=|| ( >=dev-lang/rust-bin-1.74.1:* >=dev-lang/rust-1.74.1:* ) >=dev-vcs/git-1.8.2.1[curl]
+DEFINED_PHASES=compile configure install setup test unpack
+DESCRIPTION=Basic interface to PipeWire volume controls
+EAPI=8
+HOMEPAGE=https://github.com/smasher164/pw-volume
+INHERIT=cargo git-r3
+IUSE=debug
+LICENSE=MIT
+PROPERTIES=live
+RESTRICT=mirror
+SLOT=0
+_eclasses_=toolchain-funcs	58a918e3a42d0156f010dcfd43725be5	flag-o-matic	fd3558f73f6503093adee69adf41020d	multiprocessing	45d0620f25c2f063ad6276ecd9ed9399	rust	9b80a1e55a18c949bd8ff7dfea63dbfc	rust-toolchain	76468983281b0a7fc167ca224f84ecfd	cargo	e8d502f9388bb6e5d374cbaf1f29a56f	git-r3	2f8cdb10b033f92c3136aa6488a31c98
+_md5_=c1809844566e05845c64190c5b525939

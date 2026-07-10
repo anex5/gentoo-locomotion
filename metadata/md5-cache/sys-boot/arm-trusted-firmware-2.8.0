@@ -1,0 +1,10 @@
+DEFINED_PHASES=compile install
+DESCRIPTION=Reference secure world boot and runtime firmware complying with the relevant Arm specifications
+EAPI=8
+HOMEPAGE=https://www.trustedfirmware.org
+KEYWORDS=~amd64 ~arm ~arm64 ~mips ~ppc64 ~riscv ~sparc ~x86
+LICENSE=BSD
+RESTRICT=mirror
+SLOT=0
+SRC_URI=https://github.com/ARM-software/arm-trusted-firmware/archive/refs/tags/v2.8.0.tar.gz -> arm-trusted-firmware-2.8.0.tar.gz
+_md5_=85a5a653fad9c615af1a3d99441396b1

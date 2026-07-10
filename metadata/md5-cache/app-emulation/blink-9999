@@ -1,0 +1,14 @@
+BDEPEND=test? ( app-emulation/qemu ) >=sys-libs/zlib-1.2.13 >=dev-vcs/git-1.8.2.1[curl]
+DEFINED_PHASES=configure install prepare test unpack
+DESCRIPTION=Tiniest x86-64-linux emulator
+EAPI=8
+HOMEPAGE=https://github.com/jart/blink
+INHERIT=toolchain-funcs flag-o-matic prefix git-r3
+IUSE=cpu_flags_x86_mmxext +ancillary backtrace +bcd +bmi2 debug +disassembler +fork jit man +metal overlays +rom +sockets static strace test +threads +vfs +x87 tiny opt rel dbg cosmo prof cov asan ubsan tsan msan llvm llvm++ rel-llvm tiny-llvm
+LICENSE=ISC
+PROPERTIES=live
+REQUIRED_USE=^^ ( tiny opt rel dbg cosmo prof cov asan ubsan tsan msan llvm llvm++ rel-llvm tiny-llvm ) ^^ ( overlays vfs ) jit? ( ^^ ( amd64 arm64 ) ) debug? ( ^^ ( dbg asan msan ubsan tsan llvm llvm++ ) )
+RESTRICT=!test? ( test ) mirror
+SLOT=0
+_eclasses_=toolchain-funcs	58a918e3a42d0156f010dcfd43725be5	flag-o-matic	fd3558f73f6503093adee69adf41020d	prefix	c3c4c93ebda319c0fa7ed6f942ba1010	git-r3	2f8cdb10b033f92c3136aa6488a31c98
+_md5_=c9f95ad3ce0756fd8ba4fa28a1043a86

@@ -1,4 +1,4 @@
-# Copyright 1999-2024 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -10,7 +10,6 @@ HOMEPAGE="https://github.com/jart/blink"
 if [[ ${PV} == 9999 ]] ; then
 	inherit git-r3
 	EGIT_REPO_URI="https://github.com/jart/blink"
-	KEYWORDS=""
 else
 	SRC_URI="https://github.com/jart/blink/archive/refs/tags/${PV}.tar.gz -> ${P}.tar.gz"
 	KEYWORDS="~amd64 ~arm64 ~arm ~x86 ~mips ~ppc ~ppc64 ~s390"
@@ -25,7 +24,7 @@ IUSE="cpu_flags_x86_mmxext +ancillary backtrace +bcd +bmi2 debug +disassembler +
 
 BDEPEND="
 	test? ( app-emulation/qemu )
-	>=sys-libs/zlib-1.2.13
+	virtual/zlib
 "
 
 REQUIRED_USE="

@@ -1,0 +1,17 @@
+BDEPEND=doc? ( app-text/doxygen[dot] ) inspector? ( dev-qt/linguist-tools:6 ) test? ( dev-tcltk/thread ) app-alternatives/ninja >=dev-build/cmake-3.28.5 test? ( x11-base/xorg-server[xvfb] x11-apps/xhost )
+DEFINED_PHASES=compile configure install prepare test unpack
+DEPEND=dev-lang/tcl:= tk? ( dev-lang/tk:= ) dev-libs/double-conversion draco? ( media-libs/draco ) freetype? ( media-libs/fontconfig media-libs/freetype:2 ) gles2? ( media-libs/libglvnd ) opengl? ( media-libs/libglvnd[X] ) X? ( x11-libs/libX11 ) examples? ( dev-qt/qtcore:6 dev-qt/qtgui:6 dev-qt/qtquickcontrols2:6 dev-qt/qtwidgets:6 dev-qt/qtxml:6 ) ffmpeg? ( <media-video/ffmpeg-9:= ) freeimage? ( media-libs/freeimage ) inspector? ( dev-qt/qtcore:6 dev-qt/qtgui:6 dev-qt/qtquickcontrols2:6 dev-qt/qtwidgets:6 dev-qt/qtxml:6 ) jemalloc? ( dev-libs/jemalloc ) tbb? ( dev-cpp/tbb:= ) vtk? ( sci-libs/vtk:=[rendering,truetype?] tbb? ( sci-libs/vtk:=[tbb,-cuda] ) ) X? ( x11-base/xorg-proto ) json? ( dev-libs/rapidjson )
+DESCRIPTION=Development platform for CAD/CAE, 3D surface/solid modeling and data exchange
+EAPI=8
+HOMEPAGE=https://www.opencascade.com
+INHERIT=cmake cuda flag-o-matic multiprocessing virtualx xdg-utils
+IUSE=X debug doc draco examples ffmpeg freeimage freetype gles2 inspector jemalloc json opengl optimize tbb test testprograms tk truetype vtk test
+KEYWORDS=~amd64 ~arm ~arm64 ~riscv ~x86
+LICENSE=|| ( Open-CASCADE-LGPL-2.1-Exception-1.0 LGPL-2.1 )
+RDEPEND=dev-lang/tcl:= tk? ( dev-lang/tk:= ) dev-libs/double-conversion draco? ( media-libs/draco ) freetype? ( media-libs/fontconfig media-libs/freetype:2 ) gles2? ( media-libs/libglvnd ) opengl? ( media-libs/libglvnd[X] ) X? ( x11-libs/libX11 ) examples? ( dev-qt/qtcore:6 dev-qt/qtgui:6 dev-qt/qtquickcontrols2:6 dev-qt/qtwidgets:6 dev-qt/qtxml:6 ) ffmpeg? ( <media-video/ffmpeg-9:= ) freeimage? ( media-libs/freeimage ) inspector? ( dev-qt/qtcore:6 dev-qt/qtgui:6 dev-qt/qtquickcontrols2:6 dev-qt/qtwidgets:6 dev-qt/qtxml:6 ) jemalloc? ( dev-libs/jemalloc ) tbb? ( dev-cpp/tbb:= ) vtk? ( sci-libs/vtk:=[rendering,truetype?] tbb? ( sci-libs/vtk:=[tbb,-cuda] ) )
+REQUIRED_USE=?? ( optimize tbb ) || ( opengl gles2 ) test? ( freeimage json opengl )
+RESTRICT=!test? ( test ) !test? ( test )
+SLOT=0/7.8
+SRC_URI=test? ( https://github.com/Open-Cascade-SAS/OCCT/releases/download/V7_8_0/opencascade-dataset-7.8.0.tar.xz ) https://github.com/Open-Cascade-SAS/OCCT/archive/refs/tags/V7_8_1.tar.gz -> opencascade-7.8.1.tar.gz
+_eclasses_=toolchain-funcs	58a918e3a42d0156f010dcfd43725be5	flag-o-matic	fd3558f73f6503093adee69adf41020d	multiprocessing	45d0620f25c2f063ad6276ecd9ed9399	ninja-utils	d063ea1900a793f93eb095010d6d9156	xdg-utils	42869b3c8d86a70ef3cf75165a395e09	cmake	c54f532543a549f7318d6c49aaf8e953	cuda	8b660e223a1695e3884ee4c7dc2c5059	virtualx	9741d451eb64ea8bb9faee90d68a9b68
+_md5_=53841d7b3a3cc8f908f2ff33360ac71c

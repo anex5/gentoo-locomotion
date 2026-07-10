@@ -1,0 +1,15 @@
+BDEPEND=>=dev-vcs/git-1.8.2.1[curl]
+DEFINED_PHASES=compile configure install postinst unpack
+DEPEND=net-wireless/bluez sys-libs/pam
+DESCRIPTION=PAM module to authenticate users via bluetooth device
+EAPI=8
+HOMEPAGE=https://github.com/Taumille/pam-bluetooth
+INHERIT=pam git-r3 toolchain-funcs flag-o-matic
+IUSE=doc
+KEYWORDS=~amd64 ~x86 ~arm ~arm64 ~mips
+LICENSE=GPL-3
+PROPERTIES=live
+RDEPEND=net-wireless/bluez sys-libs/pam
+SLOT=0
+_eclasses_=toolchain-funcs	58a918e3a42d0156f010dcfd43725be5	flag-o-matic	fd3558f73f6503093adee69adf41020d	pam	b56d0c9c20fc5b553f13c8ae165a10a5	git-r3	2f8cdb10b033f92c3136aa6488a31c98
+_md5_=b62e93b497e7a65dd9c8b8c62da69ea2

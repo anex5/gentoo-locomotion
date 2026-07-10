@@ -1,0 +1,16 @@
+BDEPEND=virtual/pkgconfig
+DEFINED_PHASES=compile install postinst prepare pretend setup
+DEPEND=acct-group/klipper acct-user/klipper
+DESCRIPTION=Klipper is a 3d-Printer firmware
+EAPI=8
+HOMEPAGE=https://www.klipper3d.org/
+INHERIT=python-single-r1 systemd toolchain-funcs
+IUSE=dict doc +examples firmware systemd python_single_target_python3_12 python_single_target_python3_13 python_single_target_python3_14
+KEYWORDS=~amd64 ~x86 ~arm ~arm64
+LICENSE=GPL-3
+RDEPEND=acct-group/klipper acct-user/klipper python_single_target_python3_12? ( dev-lang/python:3.12 ) python_single_target_python3_13? ( dev-lang/python:3.13 ) python_single_target_python3_14? ( dev-lang/python:3.14 ) virtual/libusb:1 firmware? ( sys-libs/ncurses:0= cross-arm-none-eabi/binutils cross-arm-none-eabi/gcc cross-arm-none-eabi/newlib ) python_single_target_python3_12? ( dev-python/numpy >=dev-python/jinja2-2.10.1[python_targets_python3_12(-)] >=dev-python/pyserial-3.4[python_targets_python3_12(-)] >=dev-python/markupsafe-1.1.1[python_targets_python3_12(-)] dev-python/virtualenv[python_targets_python3_12(-)] ) python_single_target_python3_13? ( dev-python/numpy >=dev-python/jinja2-2.10.1[python_targets_python3_13(-)] >=dev-python/pyserial-3.4[python_targets_python3_13(-)] >=dev-python/markupsafe-1.1.1[python_targets_python3_13(-)] dev-python/virtualenv[python_targets_python3_13(-)] ) python_single_target_python3_14? ( dev-python/numpy >=dev-python/jinja2-2.10.1[python_targets_python3_14(-)] >=dev-python/pyserial-3.4[python_targets_python3_14(-)] >=dev-python/markupsafe-1.1.1[python_targets_python3_14(-)] dev-python/virtualenv[python_targets_python3_14(-)] )
+RESTRICT=mirror
+SLOT=0
+SRC_URI=https://github.com/Klipper3d/klipper/archive/c707dd19214709dc23684b254a68e3bf69e4cfb3.tar.gz -> klipper-0.13.0_p20260614-c707dd1.gh.tar.gz dict? ( https://github.com/Klipper3d/klipper/files/7491378/klipper-dict-20211106.tar.gz )
+_eclasses_=eapi9-pipestatus	d2c134036ac31c3085aebc9147f572bd	multiprocessing	45d0620f25c2f063ad6276ecd9ed9399	toolchain-funcs	58a918e3a42d0156f010dcfd43725be5	python-utils-r1	18a01bee4e486884d7457cfacde74099	python-single-r1	47d8ac9be330c9366112b78fd4f8ce57	systemd	a964c0cbe818b5729da1dbfcee5be861
+_md5_=3c8b8a31c67226abb63a365b57bba499

@@ -1,0 +1,14 @@
+BDEPEND=X? ( >=x11-apps/mkfontscale-1.2.0 media-fonts/encodings )
+DEFINED_PHASES=install postinst postrm setup
+DESCRIPTION=Fonts from the Linux Libertine Open Fonts Project
+EAPI=8
+HOMEPAGE=https://libertine-fonts.org/
+INHERIT=font
+IUSE=ttf +otf X
+KEYWORDS=~alpha amd64 arm ~arm64 ~loong ppc ppc64 ~riscv ~sparc x86
+LICENSE=|| ( GPL-2-with-font-exception OFL-1.1 )
+RDEPEND=!<x11-libs/pango-1.20.4
+SLOT=0
+SRC_URI=https://downloads.sourceforge.net/linuxlibertine/LinLibertineOTF_5.3.0_2012_07_02.tgz https://downloads.sourceforge.net/linuxlibertine/LinLibertineTTF_5.3.0_2012_07_02.tgz
+_eclasses_=font	6d0c60c855c05ae2ba808d300440ded2
+_md5_=e35da1fdf4dfd8a6a992384f8db42c46

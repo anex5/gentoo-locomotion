@@ -11,6 +11,7 @@ else
 	SRC_URI="https://github.com/eosrei/${PN}/archive/${COMMIT}.tar.gz -> ${P}.tar.gz"
 	RESTRICT="mirror"
 	KEYWORDS="~amd64 ~arm64 ~x86 ~arm"
+	S="${WORKDIR}/${PN}-${COMMIT}"
 fi
 
 inherit font
@@ -30,7 +31,6 @@ BDEPEND="
 
 pkg_setup() {
 	local _fc="fontconfig/46-${PN%-*}.conf"
-	S="${WORKDIR}/${PN}-${COMMIT}"
 
 	FONT_CONF="${S}/linux/${_fc}"
 	use otf && { FONT_SUFFIX="otf "; }

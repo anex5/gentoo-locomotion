@@ -1,0 +1,12 @@
+BDEPEND=>=dev-vcs/git-1.8.2.1[curl]
+DEFINED_PHASES=install prepare unpack
+DEPEND=dev-perl/JSON dev-lang/perl dev-vcs/git
+DESCRIPTION=All in one tool for Information Gathering
+EAPI=8
+HOMEPAGE=https://fb.me/mohamed.riahi.official.account
+INHERIT=git-r3 edos2unix
+LICENSE=MIT
+PROPERTIES=live
+SLOT=0
+_eclasses_=git-r3	2f8cdb10b033f92c3136aa6488a31c98	edos2unix	33e347e171066657f91f8b0c72ec8773
+_md5_=eccdf18001207c49b3802e0b3f0d6faa

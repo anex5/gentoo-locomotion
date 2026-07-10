@@ -1,0 +1,15 @@
+BDEPEND=octave? ( dev-lang/swig )
+DEFINED_PHASES=compile configure install setup
+DEPEND=octave? ( >=sci-mathematics/octave-3.4.0 )
+DESCRIPTION=VisionLab Features Library for SFM applications
+EAPI=8
+HOMEPAGE=https://www.vlfeat.org
+INHERIT=toolchain-funcs flag-o-matic
+IUSE=debug man mpi octave utils
+KEYWORDS=~amd64 ~x86 ~arm ~arm64
+LICENSE=BSD-2
+RESTRICT=!test (test) mirror
+SLOT=0/0.9
+SRC_URI=https://www.vlfeat.org/download/vlfeat-0.9.21.tar.gz https://github.com/vlfeat/vlfeat/archive/v0.9.21.tar.gz -> vlfeat-0.9.21.tar.gz
+_eclasses_=toolchain-funcs	58a918e3a42d0156f010dcfd43725be5	flag-o-matic	fd3558f73f6503093adee69adf41020d
+_md5_=7261f6b84569b555b03a94d4c5ddf630
