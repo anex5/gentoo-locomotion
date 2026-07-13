@@ -14,12 +14,12 @@ if [[ ${PV} == 9999 ]]; then
 	SCENEFX_PV=9999
 else
 	MY_PV=${PV/_*/}
-	COMMIT="a131cfb71665de7bad26030c2c02ef6279300551"
+	COMMIT="096dc160d63373112a2505ac15bb85485273b0b0"
 	SRC_URI="https://github.com/WillPower3309/swayfx/archive/${COMMIT}.tar.gz -> ${P}.gh.tar.gz"
 	#	https://github.com/WillPower3309/swayfx/archive/${MY_PV}.tar.gz.sig -> ${P}.gh.tar.gz.sig"
 	KEYWORDS="amd64 arm64 ~arm ~loong ~ppc64 ~riscv ~x86"
 	S="${WORKDIR}/${PN}-${COMMIT}"
-	SCENEFX_PV=0.4.1
+	SCENEFX_PV=0.5.0
 fi
 
 LICENSE="MIT"

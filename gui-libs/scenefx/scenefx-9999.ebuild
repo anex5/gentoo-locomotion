@@ -10,7 +10,7 @@ if [[ ${PV} == 9999 ]]; then
 	EGIT_REPO_URI="https://github.com/wlrfx/scenefx"
 else
 	#MY_PV=${PV/_rc/-rc}
-	COMMIT="ad987a32b9fe0e640fe1abf4092737699dec5a0f"
+	COMMIT="45c69780fc4fe5b9db0c3a1bac2521360b4538fb"
 	SRC_URI="https://github.com/wlrfx/scenefx/archive/${COMMIT}.tar.gz -> ${P}-${COMMIT:0:7}.gh.tar.gz"
 	S="${WORKDIR}/${PN}-${COMMIT}"
 	KEYWORDS="~amd64 ~arm64 ~arm ~loong ~ppc64 ~riscv ~x86"
