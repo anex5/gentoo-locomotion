@@ -957,6 +957,7 @@ src_prepare() {
 	use dbus || eapply "${FILESDIR}/zen-browser-no-dbus.patch"
 	eapply "${FILESDIR}/zen-browser-no-fribidi.patch"
 	eapply "${FILESDIR}/zen-browser-fix-python-utcfromtimestamp.patch"
+	eapply "${FILESDIR}/zen-browser-fix-wrong-context-PR14384.patch"
 
 	# Use system gtest package
 	sed -e "/TEST_DIRS += [\"test\/gtest\"]/d" -i "image/moz.build" || die

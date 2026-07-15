@@ -1052,7 +1052,7 @@ LICENSE+="
 	Unicode-DFS-2016 Unlicense WTFPL-2 ZLIB
 "
 SLOT="0"
-#KEYWORDS="~amd64 ~x86"
+KEYWORDS="~amd64"
 
 IUSE="cli flutter hwaccel packui plugin screencapture +dasp rubato samplerate systemd vram wayland"
 

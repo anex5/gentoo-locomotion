@@ -59,12 +59,12 @@ DEPEND="${LUA_DEPS}
 	=dev-libs/tree-sitter-vim-0.8*
 	=dev-libs/tree-sitter-vimdoc-4*
 	=dev-libs/unibilium-2.1.2:0=
-	=dev-util/uncrustify-0.81*
 	lint? (
 		dev-util/shellcheck
 		dev-util/stylua
 	)
 "
+#=dev-util/uncrustify-0.81*
 RDEPEND="
 	${DEPEND}
 	app-eselect/eselect-vi
