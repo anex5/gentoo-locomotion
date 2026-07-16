@@ -6,8 +6,8 @@ EAPI=8
 inherit meson flag-o-matic
 
 if [[ ${PV} == 9999 ]]; then
-	inherit git-r3
 	EGIT_REPO_URI="https://github.com/wlrfx/scenefx"
+	inherit git-r3
 else
 	#MY_PV=${PV/_rc/-rc}
 	COMMIT="45c69780fc4fe5b9db0c3a1bac2521360b4538fb"
