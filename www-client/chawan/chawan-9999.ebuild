@@ -30,7 +30,10 @@ DEPEND="
 BDEPEND="
 	app-arch/unzip
 	dev-lang/nim
-	llvm-runtimes/libatomic-stub
+	|| (
+		llvm-runtimes/libatomic-stub
+		sys-devel/gcc
+	)
 	virtual/pkgconfig
 	virtual/pandoc
 "
