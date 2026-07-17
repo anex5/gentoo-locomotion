@@ -1,0 +1,35 @@
+From 19f60204596a6463b162fc7ca11f4946f5c20cea Mon Sep 17 00:00:00 2001
+From: Reiner Zimmermann <rz@rz-edv.de>
+Date: Sun, 29 May 2022 20:00:29 +0200
+Subject: [PATCH] ACPI: bus: Eliminate acpi_bus_get_device()
+
+---
+ bbswitch.c | 8 +++-----
+ 1 file changed, 3 insertions(+), 5 deletions(-)
+
+diff --git a/bbswitch.c b/bbswitch.c
+index b87b7f3..2e715c5 100644
+--- a/bbswitch.c
++++ b/bbswitch.c
+@@ -265,10 +265,8 @@ static void bbswitch_off(void) {
+ #ifdef CONFIG_ACPI
+     do {
+         struct acpi_device *ad = NULL;
+-        int r;
+-
+-        r = acpi_bus_get_device(dis_handle, &ad);
+-        if (r || !ad) {
++        ad = acpi_fetch_acpi_dev(dis_handle);
++        if (!ad) {
+             pr_warn("Cannot get ACPI device for PCI device\n");
+             break;
+         }
+@@ -432,7 +430,7 @@ static int __init bbswitch_init(void) {
+ 
+         acpi_get_name(handle, ACPI_FULL_PATHNAME, &buf);
+ 
+-        if (pdev->vendor == PCI_VENDOR_ID_INTEL) {
++        if (pdev->vendor == PCI_VENDOR_ID_INTEL || pdev->vendor == PCI_VENDOR_ID_ATI) {
+             igd_handle = handle;
+             pr_info("Found integrated VGA device %s: %s\n",
+                 dev_name(&pdev->dev), (char *)buf.pointer);

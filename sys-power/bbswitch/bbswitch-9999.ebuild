@@ -1,61 +1,55 @@
-# Copyright 1999-2023 Gentoo Foundation
+# Copyright 1999-2026 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-inherit linux-mod
+inherit linux-mod-r1
 
-if [[ ${PV} == 9999 ]]; then
-	inherit git-r3
-	EGIT_REPO_URI="https://github.com/Bumblebee-Project/${PN}.git"
-	EGIT_BRANCH="develop"
-else
-	PATCHES=( "${FILESDIR}/${PN}-0.8-kernel-4.12.patch" )
-	SRC_URI="https://github.com/Bumblebee-Project/${PN}/archive/v${PV}.tar.gz -> ${P}.tar.gz"
-	KEYWORDS="~amd64 ~x86"
-fi
+MODULES_KERNEL_MAX=5.6.0
+MODULES_KERNEL_MIN=2.6.33
 
 DESCRIPTION="Toggle discrete NVIDIA Optimus graphics card"
 HOMEPAGE="https://github.com/Bumblebee-Project/bbswitch"
 
+if [[ ${PV} == 9999 ]]; then
+	EGIT_REPO_URI="https://github.com/Bumblebee-Project/bbswitch.git"
+	EGIT_BRANCH="develop"
+	inherit git-r3
+else
+	COMMIT="23891174a80ea79c7720bcc7048a5c2bfcde5cd9"
+	SRC_URI="https://github.com/Bumblebee-Project/bbswitch/archive/${COMMIT}.tar.gz -> ${P}-${COMMIT:0:7}.gh.tar.gz"
+	KEYWORDS="amd64 x86"
+	S="${WORKDIR}/${PN}-${COMMIT}"
+fi
+
 SLOT="0"
 LICENSE="GPL-3+"
-IUSE=""
 
 DEPEND="
 	virtual/linux-sources
 	sys-kernel/linux-headers
 "
-RDEPEND=""
 
-MODULE_NAMES="bbswitch(acpi)"
+RESTRICT="mirror bindist"
+
+PATCHES=(
+	"${FILESDIR}/bbswitch-0.8-fix-acpi_bus_get_device-PR219.patch"
+)
 
 pkg_setup() {
-	if ! linux_config_exists; then
-		ewarn "Cannot check the linux kernel configuration."
-	fi
-	BUILD_TARGETS="default"
-	BUILD_PARAMS="KVERSION=${KV_FULL}"
+	linux-mod-r1_pkg_setup
 
-	if linux_chkconfig_present CC_IS_CLANG; then
-  		BUILD_PARAMS+=" CC=${CHOST}-clang"
-  		if linux_chkconfig_present LD_IS_LLD; then
-    		BUILD_PARAMS+=' LD=ld.lld'
-    		if linux_chkconfig_present LTO_CLANG_THIN; then
-      			# kernel enables cache by default leading to sandbox violations
-      			BUILD_PARAMS+=' ldflags-y=--thinlto-cache-dir= LDFLAGS_MODULE=--thinlto-cache-dir='
-    		fi
-  		fi
-	fi
-
-	linux-mod_pkg_setup
+	CONFIG_CHECK="~ACPI ~VGA_SWITCHEROO"
 }
 
-src_prepare() {
-	# Fix build failure, bug #513542
-	sed -i 's/^KDIR.*$/KDIR\ \:= \/usr\/src\/linux/g' Makefile || die
+src_compile() {
+	local modlist=( bbswitch=kernel/drivers/misc/bbswitch:. )
+	local modargs=(
+		KVERSION="${KV_FULL}"
+		KDIR=${KERNEL_DIR}
+	)
 
-	default
+	linux-mod-r1_src_compile
 }
 
 src_install() {
@@ -63,5 +57,5 @@ src_install() {
 	newins "${FILESDIR}"/bbswitch.modprobe bbswitch.conf
 	dodoc NEWS README.md
 
-	linux-mod_src_install
+	linux-mod-r1_src_install
 }

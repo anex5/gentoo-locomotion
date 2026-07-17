@@ -22,14 +22,14 @@ SLOT="0"
 IUSE="static-libs lto"
 
 DEPEND="
-    sys-libs/ncurses:=[unicode(+),static-libs?]
-    net-misc/curl:=[brotli,http2,openssl,ssl,ssh,adns,static-libs?]
+	sys-libs/ncurses:=[unicode(+),static-libs?]
+	net-misc/curl:=[brotli,http2,openssl,ssl,ssh,adns,static-libs?]
 	>=virtual/zlib-1.2.9:=[static-libs?]
 "
 
 BDEPEND="
 	app-arch/unzip
-	dev-lang/nim
+	>=dev-lang/nim-2.2.10
 	|| (
 		llvm-runtimes/libatomic-stub
 		sys-devel/gcc

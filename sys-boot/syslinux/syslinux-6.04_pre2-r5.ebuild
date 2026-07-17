@@ -60,7 +60,7 @@ PATCHES=(
 	#"${FILESDIR}"/0003-memdisk-Force-ld-output-format-to-32-bits.patch
 	#"${FILESDIR}"/0004-gnu-efi-from-arch.patch
 	#"${FILESDIR}"/0005-gnu-efi-version-compatibility.patch
-    "${FILESDIR}"/0005-Workaround-multiple-definition-of-symbol-errors.patch
+	"${FILESDIR}"/0005-Workaround-multiple-definition-of-symbol-errors.patch
 	"${FILESDIR}"/0006-Replace-builtin-strlen-that-appears-to-get-optimized.patch
 	#"${FILESDIR}"/0009-bios-Don-t-try-to-guess-the-sections-alignment.patch
 	#"${FILESDIR}"/0010-core-Clean-up-the-i386-bios-build.patch
@@ -76,17 +76,17 @@ PATCHES=(
 	#"${FILESDIR}"/0007-Update-the-longjump-calls-to-fit-the-new-declaration.patch
 	"${FILESDIR}"/syslinux-6.04_pre3-debug.c-fix-printf-include.patch
 	"${FILESDIR}"/syslinux-6.04_pre2-fix-loadflie-pointer-type.patch
-    #"${FILESDIR}"/0001-linux-syslinux-support-ext2-3-4-device.patch
-    #"${FILESDIR}"/0002-linux-syslinux-implement-open_ext2_fs.patch
-    #"${FILESDIR}"/0003-linux-syslinux-implement-install_to_ext2.patch
-    #"${FILESDIR}"/0004-linux-syslinux-add-ext_file_read-and-ext_file_write.patch
-    #"${FILESDIR}"/0005-linux-syslinux-implement-handle_adv_on_ext.patch
-    #"${FILESDIR}"/0006-linux-syslinux-implement-write_to_ext-and-add-syslin.patch
-    #"${FILESDIR}"/0007-linux-syslinux-implement-ext_construct_sectmap_fs.patch
-    #"${FILESDIR}"/0008-libinstaller-syslinuxext-implement-syslinux_patch_bo.patch
-    #"${FILESDIR}"/0009-linux-syslinux-implement-install_bootblock.patch
-    "${FILESDIR}"/0001-install-don-t-install-obsolete-file-com32.ld.patch
-    "${FILESDIR}"/determinism.patch
+	#"${FILESDIR}"/0001-linux-syslinux-support-ext2-3-4-device.patch
+	#"${FILESDIR}"/0002-linux-syslinux-implement-open_ext2_fs.patch
+	#"${FILESDIR}"/0003-linux-syslinux-implement-install_to_ext2.patch
+	#"${FILESDIR}"/0004-linux-syslinux-add-ext_file_read-and-ext_file_write.patch
+	#"${FILESDIR}"/0005-linux-syslinux-implement-handle_adv_on_ext.patch
+	#"${FILESDIR}"/0006-linux-syslinux-implement-write_to_ext-and-add-syslin.patch
+	#"${FILESDIR}"/0007-linux-syslinux-implement-ext_construct_sectmap_fs.patch
+	#"${FILESDIR}"/0008-libinstaller-syslinuxext-implement-syslinux_patch_bo.patch
+	#"${FILESDIR}"/0009-linux-syslinux-implement-install_bootblock.patch
+	"${FILESDIR}"/0001-install-don-t-install-obsolete-file-com32.ld.patch
+	"${FILESDIR}"/determinism.patch
 	#"${FILESDIR}/syslinux-6.03-sysmacros.patch"
 	"${FILESDIR}/syslinux-6.04-binutils-2.41.patch"
 )

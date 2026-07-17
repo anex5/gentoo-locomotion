@@ -1,14 +1,14 @@
-# Copyright 1999-2025 Gentoo Foundation
+# Copyright 1999-2026 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
 inherit linux-mod-r1
 
-MODULES_KERNEL_MAX=6.10
+MODULES_KERNEL_MAX=6.14.9
 MODULES_KERNEL_MIN=3.17
 
-COMMIT="2564f4c9d1db4089dd08d453465c033fc10852df"
+COMMIT="6fe0d80b2de4fc15bb02b7d4da22b9b9be784c9a"
 
 DESCRIPTION="Driver for Realtek rts5139 USB cardreader"
 HOMEPAGE="https://realtek.com"
@@ -19,8 +19,6 @@ LICENSE="GPL-2"
 KEYWORDS="amd64 x86"
 
 DEPEND="virtual/linux-sources"
-
-RDEPEND="!<sys-kernel/${P}"
 
 S="${WORKDIR}/${PN}-${COMMIT}"
 
