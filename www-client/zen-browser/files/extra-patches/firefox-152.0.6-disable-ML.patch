@@ -159,7 +159,7 @@ diff --git a/browser/components/DesktopActorRegistry.sys.mjs b/browser/component
 index 059edd72c3b2..b745b8375ea9 100644
 --- a/browser/components/DesktopActorRegistry.sys.mjs
 +++ b/browser/components/DesktopActorRegistry.sys.mjs
-@@ -499,42 +499,7 @@ let JSWINDOWACTORS = {
+@@ -499,49 +499,7 @@ let JSWINDOWACTORS = {
      allFrames: true,
    },
  
@@ -178,11 +178,13 @@ index 059edd72c3b2..b745b8375ea9 100644
 -    onAddActor(register, unregister) {
 -      let isRegistered = false;
 -
--      // Register the actor if we have a provider or support provider-less
+-      // Register the actor if an external chat provider is set, page summarization is enabled, or shortcuts are enabled
 -      const maybeRegister = () => {
 -        if (
 -          Services.prefs.getCharPref("browser.ml.chat.provider", "") ||
--          Services.prefs.getBoolPref("browser.ml.chat.page")
+-          Services.prefs.getBoolPref("browser.ml.chat.page") ||
+-          Services.prefs.getBoolPref("browser.ml.chat.shortcuts") ||
+-          Services.prefs.getBoolPref("browser.ml.chat.shortcuts.smartwindow")
 -        ) {
 -          if (!isRegistered) {
 -            register();
@@ -196,6 +198,11 @@ index 059edd72c3b2..b745b8375ea9 100644
 -
 -      Services.prefs.addObserver("browser.ml.chat.page", maybeRegister);
 -      Services.prefs.addObserver("browser.ml.chat.provider", maybeRegister);
+-      Services.prefs.addObserver("browser.ml.chat.shortcuts", maybeRegister);
+-      Services.prefs.addObserver(
+-        "browser.ml.chat.shortcuts.smartwindow",
+-        maybeRegister
+-      );
 -      maybeRegister();
 -    },
 -  },
