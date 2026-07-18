@@ -2124,15 +2124,15 @@ _src_install() {
 	if use gnome-shell ; then
 		# Install search provider for Gnome
 		insinto /usr/share/gnome-shell/search-providers/
-		doins browser/components/shell/search-provider-files/org.mozilla.${PN}.search-provider.ini
+		doins browser/components/shell/search-provider-files/org.mozilla.firefox.search-provider.ini
 
 		insinto /usr/share/dbus-1/services/
-		doins browser/components/shell/search-provider-files/org.mozilla.${PN}.SearchProvider.service
+		doins browser/components/shell/search-provider-files/org.mozilla.firefox.SearchProvider.service
 
 		# Make the dbus service aware of a previous session, bgo#939196
 		sed -e \
 			"s/Exec=\/usr\/bin\/${PN}/Exec=\/usr\/$(get_libdir)\/${PN}\/${PN} --dbus-service \/usr\/bin\/${PN}/g" \
-			-i "${ED}/usr/share/dbus-1/services/org.mozilla.${PN}.SearchProvider.service" ||
+			-i "${ED}/usr/share/dbus-1/services/org.mozilla.firefox.SearchProvider.service" ||
 				die "Failed to sed org.mozilla.${PN}.SearchProvider.service dbus file"
 
 		# Update prefs to enable Gnome search provider
