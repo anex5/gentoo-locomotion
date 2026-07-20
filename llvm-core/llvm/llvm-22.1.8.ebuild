@@ -6,7 +6,7 @@ EAPI=8
 PYTHON_COMPAT=( python3_{12..14} )
 
 inherit cmake flag-o-matic llvm.org multilib-minimal pax-utils python-any-r1
-inherit toolchain-funcs git-r3 ninja-utils
+inherit toolchain-funcs
 
 DESCRIPTION="Low Level Virtual Machine"
 HOMEPAGE="https://llvm.org/"
@@ -22,7 +22,7 @@ SLOT="${LLVM_MAJOR}/${LLVM_SOABI}"
 KEYWORDS="amd64 arm arm64 ~loong ~mips ppc ppc64 ~riscv ~sparc x86 ~arm64-macos ~x64-macos"
 IUSE="
 	+binutils-plugin debug debuginfod doc exegesis libedit +libffi
-	test xml z3 zstd -dump man
+	test xml z3 zstd dump man
 "
 RESTRICT="!test? ( test )"
 

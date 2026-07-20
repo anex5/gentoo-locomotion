@@ -10,19 +10,18 @@ MODULES_KERNEL_MIN=2.6.33
 
 COMMIT="20f2f2f4c92c14fcdd26f60d050e693ad2c30bf8"
 
-DESCRIPTION="Driver for it87/it86 series hardware monitoring chips."
+DESCRIPTION="Driver for it87/it86 series hardware monitoring chips"
 HOMEPAGE="https://github.com/frankcrawford/it87"
-SRC_URI="https://github.com/frankcrawford/it87/archive/${COMMIT}.tar.gz -> it87-${PV}.tar.gz"
-
-SLOT="0"
+SRC_URI="https://github.com/frankcrawford/it87/archive/${COMMIT}.tar.gz -> ${P}-${COMMIT:0:7}.gh.tar.gz"
 LICENSE="GPL-2"
 KEYWORDS="amd64"
+SLOT="0"
 
 DEPEND="virtual/linux-sources"
 
-RESTRICT="mirror bindist"
-
 S="${WORKDIR}/it87-${COMMIT}"
+
+RESTRICT="mirror bindist"
 
 pkg_setup() {
 	linux-mod-r1_pkg_setup

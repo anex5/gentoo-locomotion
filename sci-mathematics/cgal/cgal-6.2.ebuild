@@ -1,4 +1,4 @@
-# Copyright 1999-2025 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -12,22 +12,25 @@ MY_P="CGAL-${PV/_/-}"
 DESCRIPTION="C++ library for geometric algorithms and data structures"
 HOMEPAGE="https://www.cgal.org/"
 SRC_URI="
-	https://github.com/CGAL/cgal/releases/download/v${MY_PV}/${MY_P}.tar.xz
+	https://github.com/CGAL/cgal/releases/download/v${MY_PV}/${MY_P}.tar.xz -> ${P}.gh.tar.xz
 	doc? ( https://github.com/CGAL/cgal/releases/download/v${MY_PV}/${MY_P}-doc_html.tar.xz )"
 S="${WORKDIR}/${MY_P}"
 
 LICENSE="LGPL-3 GPL-3 Boost-1.0"
 SLOT="0/14"
-KEYWORDS="amd64 ~arm64 ~ppc64 ~x86 ~amd64-linux ~x86-linux"
+KEYWORDS="amd64 ~arm64 ~ppc64"
 IUSE="doc examples test"
-RESTRICT="!test? ( test )"
+RESTRICT="
+	!test? ( test )
+	mirror
+"
 
 RDEPEND="
 	dev-cpp/eigen
 	dev-libs/boost:=
 	dev-libs/gmp:=[cxx]
 	dev-libs/mpfr:=
-	sys-libs/zlib
+	virtual/zlib
 "
 DEPEND="${RDEPEND}"
 BDEPEND="

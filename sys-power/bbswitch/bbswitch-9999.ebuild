@@ -22,8 +22,8 @@ else
 	S="${WORKDIR}/${PN}-${COMMIT}"
 fi
 
-SLOT="0"
 LICENSE="GPL-3+"
+SLOT="0"
 
 DEPEND="
 	virtual/linux-sources

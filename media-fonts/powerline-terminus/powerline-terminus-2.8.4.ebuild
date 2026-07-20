@@ -18,12 +18,11 @@ gen_src_uri() {
 }
 
 SRC_URI="$(gen_src_uri)"
-KEYWORDS="alpha amd64 arm arm64 loong mips ppc ppc64 riscv sparc x86 ppc-macos"
+KEYWORDS="alpha amd64 arm arm64 loong mips ppc ppc64 riscv sparc x86"
 LICENSE="OFL-1.1 GPL-2 MIT"
 SLOT="0"
 IUSE="+pcf +psf"
 FONTDIR="${EPREFIX}/usr/share/consolefonts"
-REQUIRED_USE="!X"
 RESTRICT="mirror strip binchecks"
 
 src_unpack(){

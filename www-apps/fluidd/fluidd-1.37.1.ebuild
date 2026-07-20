@@ -3,16 +3,17 @@
 
 EAPI=8
 
-DESCRIPTION="A free and open-source Klipper web interface for managing your 3d printer."
+DESCRIPTION="A free and open-source Klipper web interface for managing your 3d printer"
 HOMEPAGE="https://docs.fluidd.xyz"
 
 SRC_URI="https://github.com/fluidd-core/fluidd/releases/download/v${PV}/${PN}.zip -> ${P}.zip"
-S=${WORKDIR}
-
-KEYWORDS="amd64 arm64 arm x86 mips"
+S="${WORKDIR}"
 
 LICENSE="GPL-3"
+
 SLOT="0"
+
+KEYWORDS="amd64 arm64 arm mips x86"
 
 BDEPEND="
 	app-arch/unzip

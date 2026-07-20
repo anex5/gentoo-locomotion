@@ -5,10 +5,10 @@ EAPI=8
 
 if [[ -z ${PV%%*9999} ]]; then
 	inherit git-r3
-	EGIT_REPO_URI="https://github.com/eosrei/${PN}"
+	EGIT_REPO_URI="https://github.com/13rac1/${PN}"
 else
-	COMMIT="b85cc979dfcb4b70e90d56c684ab3eba00e5dce6"
-	SRC_URI="https://github.com/eosrei/${PN}/archive/${COMMIT}.tar.gz -> ${P}.tar.gz"
+	COMMIT="d827b05c4e2a254c7b8f11024db409517f7302fa"
+	SRC_URI="https://github.com/13rac1/${PN}/archive/${COMMIT}.tar.gz -> ${P}.tar.gz"
 	RESTRICT="mirror"
 	KEYWORDS="~amd64 ~arm64 ~x86 ~arm"
 	S="${WORKDIR}/${PN}-${COMMIT}"
@@ -17,7 +17,7 @@ fi
 inherit font
 
 DESCRIPTION="A color emoji SVGinOT font using Twitter emoji"
-HOMEPAGE="https://github.com/eosrei/${PN}"
+HOMEPAGE="https://github.com/13rac1/twemoji-color-font"
 
 LICENSE="CC-BY-4.0 MIT"
 SLOT="0"
@@ -28,16 +28,6 @@ BDEPEND="
 	dev-util/svgo
 	dev-python/scfbuild
 "
-
-pkg_setup() {
-	local _fc="fontconfig/46-${PN%-*}.conf"
-
-	FONT_CONF="${S}/linux/${_fc}"
-	use otf && { FONT_SUFFIX="otf "; }
-	use ttf && { FONT_SUFFIX+="ttf"; }
-
-	font_pkg_setup
-}
 
 src_prepare() {
 	default
@@ -68,4 +58,14 @@ src_compile() {
 		SCFBUILD=/usr/bin/scfbuild
 	)
 	emake "${myemakeargs[@]}"
+}
+
+src_install() {
+	local _fc="fontconfig/46-${PN%-*}.conf"
+
+	FONT_CONF="${S}/linux/${_fc}"
+	use otf && { FONT_SUFFIX="otf "; }
+	use ttf && { FONT_SUFFIX+="ttf"; }
+
+	font_src_install
 }

@@ -13,14 +13,12 @@ COMMIT="6fe0d80b2de4fc15bb02b7d4da22b9b9be784c9a"
 DESCRIPTION="Driver for Realtek rts5139 USB cardreader"
 HOMEPAGE="https://realtek.com"
 SRC_URI="https://github.com/asymingt/rts5139/archive/${COMMIT}.tar.gz"
-
-SLOT="0"
+S="${WORKDIR}/${PN}-${COMMIT}"
 LICENSE="GPL-2"
+SLOT="0"
 KEYWORDS="amd64 x86"
 
 DEPEND="virtual/linux-sources"
-
-S="${WORKDIR}/${PN}-${COMMIT}"
 
 RESTRICT="mirror bindist"
 
@@ -46,4 +44,3 @@ src_install() {
 	#cp "${FILESDIR}/blacklist_rtsx.conf" "${D}/etc/dracut.conf.d/" || die "Install failed!"
 	linux-mod-r1_src_install
 }
-

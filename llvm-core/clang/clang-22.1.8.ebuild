@@ -102,7 +102,7 @@ RDEPEND="
 	${PYTHON_DEPS}
 	${DEPEND}
 	>=llvm-core/clang-common-${PV}
-	rocm? ( dev-libs/rocm-device-libs:0/5.7 )
+	rocm? ( dev-libs/rocm-device-libs )
 	static-analyzer? ( dev-lang/perl:* )
 	xml? ( dev-libs/libxml2:2=[${MULTILIB_USEDEP}] )
 	~llvm-core/llvm-${PV}:${LLVM_MAJOR}=[${MULTILIB_USEDEP},debug=]
