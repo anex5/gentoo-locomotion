@@ -70,7 +70,7 @@ src_prepare() {
 	sed -i -e 's|^DEFAULT_KLIPPY_LOG_PATH.*|DEFAULT_KLIPPY_LOG_PATH = "/var/log/klipper/klipper.log"|g' moonraker/components/application.py || die
 
 	# Relax the deps
-	sed -e '/^dependencies = \[$/,/^\]$/ {//! s:==:\>=:g;s:\, <=[0-9.]\+::g}' -i pyproject.toml || die
+	sed -e '/^dependencies = \[$/,/^\]$/ {//! s:==:\>=:;s:, *<=[0-9.]\+::;s:\.[0-9]\+":":}' -i pyproject.toml || die
 
 	#use systemd || ( eapply "${FILESDIR}/moonraker-openrc.patch" || die )
 
