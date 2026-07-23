@@ -26,8 +26,10 @@ IUSE="doc lint +lto +nvimpager test"
 # Upstream say the test library needs LuaJIT
 # https://github.com/neovim/neovim/blob/91109ffda23d0ce61cec245b1f4ffb99e7591b62/CMakeLists.txt#L377
 REQUIRED_USE="${LUA_REQUIRED_USE} test? ( lua_single_target_luajit )"
-# TODO: Get tests running
-RESTRICT="!test? ( test ) mirror"
+RESTRICT="
+	!test? ( test )
+	mirror
+"
 
 # Upstream build scripts invoke the Lua interpreter
 BDEPEND="${LUA_DEPS}
@@ -52,13 +54,13 @@ DEPEND="${LUA_DEPS}
 	>=dev-libs/libutf8proc-2.11.3:=[-cjk]
 	>=dev-libs/libuv-1.52.1:=
 	=dev-libs/tree-sitter-0.26*:=
-	=dev-libs/tree-sitter-c-0.24.2
+	=dev-libs/tree-sitter-c-0.24.2*
 	=dev-libs/tree-sitter-lua-0.5*
 	=dev-libs/tree-sitter-markdown-0.5*
 	=dev-libs/tree-sitter-query-0.8*
 	=dev-libs/tree-sitter-vim-0.8*
 	=dev-libs/tree-sitter-vimdoc-4*
-	=dev-libs/unibilium-2.1.2:0=
+	>=dev-libs/unibilium-2.1.2:0=
 	lint? (
 		dev-util/shellcheck
 		dev-util/stylua
