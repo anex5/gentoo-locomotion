@@ -1,0 +1,257 @@
+From 11734ea157b88c09de39cc3d225967f3893b3161 Mon Sep 17 00:00:00 2001
+From: "Azamat H. Hackimov" <azamat.hackimov@gmail.com>
+Date: Sun, 26 Jan 2025 22:53:30 +0300
+Subject: [PATCH 1/4] Allow to install headers to different location
+
+Use standard `CMAKE_INSTALL_INCLUDEDIR` and `CMAKE_INSTALL_LIBDIR`
+location to define headers and library installation. This variable can be
+redefined on configuration phase to allow to install headers and libraries to
+different location (like `include/mbedtls4`, #8723).
+
+Additionally, removing explicit permission rules as they may break proper
+permissions for system installation (like remove executable bit from
+libraries). By default, CMake sets permissions correctly on all files and
+directories.
+
+See #8723 for rationale.
+
+Signed-off-by: Azamat H. Hackimov <azamat.hackimov@gmail.com>
+---
+ include/CMakeLists.txt | 2 +-
+ library/CMakeLists.txt | 3 ++-
+ 2 files changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/include/CMakeLists.txt b/include/CMakeLists.txt
+index 755efedd1c2..322e70e3a04 100644
+--- a/include/CMakeLists.txt
++++ b/include/CMakeLists.txt
+@@ -5,7 +5,7 @@ if(INSTALL_MBEDTLS_HEADERS)
+     file(GLOB headers "mbedtls/*.h")
+ 
+     install(FILES ${headers}
+-        DESTINATION include/mbedtls
++        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/mbedtls
+         PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
+ endif(INSTALL_MBEDTLS_HEADERS)
+ 
+diff --git a/library/CMakeLists.txt b/library/CMakeLists.txt
+index a32b4bc2644..1d55a6f19c2 100644
+--- a/library/CMakeLists.txt
++++ b/library/CMakeLists.txt
+@@ -200,7 +200,8 @@ foreach(target IN LISTS target_libraries)
+         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+-        PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
++        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
++    )
+ endforeach(target)
+ 
+ set(lib_target "${MBEDTLS_TARGET_PREFIX}lib")
+
+From 07a9be4ad01220d1a1c4f8cad81c4f03cc75bcb4 Mon Sep 17 00:00:00 2001
+From: "Azamat H. Hackimov" <azamat.hackimov@gmail.com>
+Date: Sun, 26 Jan 2025 23:22:33 +0300
+Subject: [PATCH 2/4] Add optional ENABLE_SLOTTED_VERSION to cmake project
+
+Add version suffix for all installable targets. Convert main library targets to slottable versions. This allows to install major versions of MbedTLS simultaneously.
+
+Dependent packages should use `find_package(MbedTLS 4 [REQUIRED])` and
+`MbedTLS::<component>` in order to use requested libraries.
+
+Signed-off-by: Azamat H. Hackimov <azamat.hackimov@gmail.com>
+---
+ CMakeLists.txt         | 10 ++++++++--
+ library/CMakeLists.txt |  6 ++++--
+ 2 files changed, 12 insertions(+), 4 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 9f23c3b2f7b..4c207c1f772 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -76,6 +76,12 @@ else()
+ endif()
+ 
+ option(DISABLE_PACKAGE_CONFIG_AND_INSTALL "Disable package configuration, target export and installation" ${MBEDTLS_AS_SUBPROJECT})
++option(ENABLE_SLOTTED_VERSION "Enable slotted installation in order to install multiple versions of Mbed TLS" OFF)
++
++set(VERSION_SUFFIX "")
++if(ENABLE_SLOTTED_VERSION)
++    set(VERSION_SUFFIX "-${PROJECT_VERSION_MAJOR}")
++endif()
+ 
+ if (CMAKE_C_SIMULATE_ID)
+     set(COMPILER_ID ${CMAKE_C_SIMULATE_ID})
+@@ -543,7 +549,7 @@ if(NOT DISABLE_PACKAGE_CONFIG_AND_INSTALL)
+     install(
+         FILES "${CMAKE_CURRENT_BINARY_DIR}/cmake/MbedTLSConfig.cmake"
+               "${CMAKE_CURRENT_BINARY_DIR}/cmake/MbedTLSConfigVersion.cmake"
+-        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/MbedTLS")
++        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/MbedTLS-${PROJECT_VERSION_MAJOR}")
+ 
+     export(
+         EXPORT MbedTLSTargets
+@@ -553,7 +559,7 @@ if(NOT DISABLE_PACKAGE_CONFIG_AND_INSTALL)
+     install(
+         EXPORT MbedTLSTargets
+         NAMESPACE MbedTLS::
+-        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/MbedTLS"
++        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/MbedTLS-${PROJECT_VERSION_MAJOR}"
+         FILE "MbedTLSTargets.cmake")
+ 
+     if(CMAKE_VERSION VERSION_GREATER 3.15 OR CMAKE_VERSION VERSION_EQUAL 3.15)
+diff --git a/library/CMakeLists.txt b/library/CMakeLists.txt
+index 1d55a6f19c2..16837a35cbd 100644
+--- a/library/CMakeLists.txt
++++ b/library/CMakeLists.txt
+@@ -156,13 +156,13 @@ if(USE_STATIC_MBEDTLS_LIBRARY)
+     add_library(${mbedx509_static_target} STATIC ${src_x509})
+     set_base_compile_options(${mbedx509_static_target})
+     target_compile_options(${mbedx509_static_target} PRIVATE ${LIBS_C_FLAGS})
+-    set_target_properties(${mbedx509_static_target} PROPERTIES OUTPUT_NAME mbedx509)
++    set_target_properties(${mbedx509_static_target} PROPERTIES OUTPUT_NAME mbedx509${VERSION_SUFFIX})
+     target_link_libraries(${mbedx509_static_target} PUBLIC ${libs} ${tfpsacrypto_static_target})
+ 
+     add_library(${mbedtls_static_target} STATIC ${src_tls})
+     set_base_compile_options(${mbedtls_static_target})
+     target_compile_options(${mbedtls_static_target} PRIVATE ${LIBS_C_FLAGS})
+-    set_target_properties(${mbedtls_static_target} PROPERTIES OUTPUT_NAME mbedtls)
++    set_target_properties(${mbedtls_static_target} PROPERTIES OUTPUT_NAME mbedtls${VERSION_SUFFIX})
+     target_link_libraries(${mbedtls_static_target} PUBLIC ${libs} ${mbedx509_static_target})
+ endif(USE_STATIC_MBEDTLS_LIBRARY)
+ 
+@@ -171,12 +171,14 @@ if(USE_SHARED_MBEDTLS_LIBRARY)
+     set_base_compile_options(${mbedx509_target})
+     target_compile_options(${mbedx509_target} PRIVATE ${LIBS_C_FLAGS})
+     set_target_properties(${mbedx509_target} PROPERTIES VERSION ${MBEDTLS_VERSION} SOVERSION ${MBEDTLS_X509_SOVERSION})
++    set_target_properties(${mbedx509_target} PROPERTIES OUTPUT_NAME mbedx509${VERSION_SUFFIX})
+     target_link_libraries(${mbedx509_target} PUBLIC ${libs} ${tfpsacrypto_target})
+ 
+     add_library(${mbedtls_target} SHARED ${src_tls})
+     set_base_compile_options(${mbedtls_target})
+     target_compile_options(${mbedtls_target} PRIVATE ${LIBS_C_FLAGS})
+     set_target_properties(${mbedtls_target} PROPERTIES VERSION ${MBEDTLS_VERSION} SOVERSION ${MBEDTLS_TLS_SOVERSION})
++    set_target_properties(${mbedtls_target} PROPERTIES OUTPUT_NAME mbedtls${VERSION_SUFFIX})
+     target_link_libraries(${mbedtls_target} PUBLIC ${libs} ${mbedx509_target})
+ endif(USE_SHARED_MBEDTLS_LIBRARY)
+ 
+
+From fbe1e9ba34efe569504e80170bdf47c2ac1450fc Mon Sep 17 00:00:00 2001
+From: "Azamat H. Hackimov" <azamat.hackimov@gmail.com>
+Date: Sun, 26 Jan 2025 23:33:46 +0300
+Subject: [PATCH 3/4] Add version suffix for pkg-config files
+
+Convert main library targets to slottable versions. This allows to
+install major versions of MbedTLS simultaneously.
+Dependent packages should use
+`pkg-config --libs --cflags (mbedtls-4|mbedx509-4)` in order to use
+requested libraries.
+Remove mbedcrypto.pc file as this effectively replaced by tfpsacrypto and has no use.
+
+Signed-off-by: Azamat H. Hackimov <azamat.hackimov@gmail.com>
+---
+ pkgconfig/CMakeLists.txt   | 17 ++++++-----------
+ pkgconfig/mbedcrypto.pc.in | 10 ----------
+ pkgconfig/mbedtls.pc.in    |  4 ++--
+ pkgconfig/mbedx509.pc.in   |  4 ++--
+ 4 files changed, 10 insertions(+), 25 deletions(-)
+ delete mode 100644 pkgconfig/mbedcrypto.pc.in
+
+diff --git a/pkgconfig/CMakeLists.txt b/pkgconfig/CMakeLists.txt
+index 7dfc043ce10..e38a9f41390 100644
+--- a/pkgconfig/CMakeLists.txt
++++ b/pkgconfig/CMakeLists.txt
+@@ -8,18 +8,13 @@ if(NOT DISABLE_PACKAGE_CONFIG_AND_INSTALL)
+   set(PKGCONFIG_PROJECT_DESCRIPTION "Mbed TLS is a C library that implements cryptographic primitives, X.509 certificate manipulation and the SSL/TLS and DTLS protocols. Its small code footprint makes it suitable for embedded systems.")
+   set(PKGCONFIG_PROJECT_HOMEPAGE_URL "https://www.trustedfirmware.org/projects/mbed-tls/")
+ 
+-  configure_file(mbedcrypto.pc.in mbedcrypto.pc @ONLY)
+-    install(FILES
+-    ${CMAKE_CURRENT_BINARY_DIR}/mbedcrypto.pc
++  configure_file(mbedtls.pc.in mbedtls${VERSION_SUFFIX}.pc @ONLY)
++  install(FILES
++    ${CMAKE_CURRENT_BINARY_DIR}/mbedtls${VERSION_SUFFIX}.pc
+     DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+ 
+-  configure_file(mbedtls.pc.in mbedtls.pc @ONLY)
+-    install(FILES
+-    ${CMAKE_CURRENT_BINARY_DIR}/mbedtls.pc
+-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+-
+-  configure_file(mbedx509.pc.in mbedx509.pc @ONLY)
+-    install(FILES
+-    ${CMAKE_CURRENT_BINARY_DIR}/mbedx509.pc
++  configure_file(mbedx509.pc.in mbedx509${VERSION_SUFFIX}.pc @ONLY)
++  install(FILES
++    ${CMAKE_CURRENT_BINARY_DIR}/mbedx509${VERSION_SUFFIX}.pc
+     DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+ endif()
+diff --git a/pkgconfig/mbedcrypto.pc.in b/pkgconfig/mbedcrypto.pc.in
+deleted file mode 100644
+index 28b9716b649..00000000000
+--- a/pkgconfig/mbedcrypto.pc.in
++++ /dev/null
+@@ -1,10 +0,0 @@
+-prefix=@CMAKE_INSTALL_PREFIX@
+-includedir=@PKGCONFIG_INCLUDEDIR@
+-libdir=@PKGCONFIG_LIBDIR@
+-
+-Name: @PROJECT_NAME@
+-Description: @PKGCONFIG_PROJECT_DESCRIPTION@
+-URL: @PKGCONFIG_PROJECT_HOMEPAGE_URL@
+-Version: @PROJECT_VERSION@
+-Cflags: -I"${includedir}"
+-Libs: -L"${libdir}" -ltfpsacrypto
+diff --git a/pkgconfig/mbedtls.pc.in b/pkgconfig/mbedtls.pc.in
+index 2bfce80b69a..2ff59d82aec 100644
+--- a/pkgconfig/mbedtls.pc.in
++++ b/pkgconfig/mbedtls.pc.in
+@@ -6,6 +6,6 @@ Name: @PROJECT_NAME@
+ Description: @PKGCONFIG_PROJECT_DESCRIPTION@
+ URL: @PKGCONFIG_PROJECT_HOMEPAGE_URL@
+ Version: @PROJECT_VERSION@
+-Requires.private: mbedcrypto mbedx509
++Requires.private: mbedcrypto@VERSION_SUFFIX@ mbedx509@VERSION_SUFFIX@
+ Cflags: -I"${includedir}"
+-Libs: -L"${libdir}" -lmbedtls
++Libs: -L"${libdir}" -lmbedtls@VERSION_SUFFIX@
+diff --git a/pkgconfig/mbedx509.pc.in b/pkgconfig/mbedx509.pc.in
+index 0ab2e31ea19..5d2083e5df3 100644
+--- a/pkgconfig/mbedx509.pc.in
++++ b/pkgconfig/mbedx509.pc.in
+@@ -6,6 +6,6 @@ Name: @PROJECT_NAME@
+ Description: @PKGCONFIG_PROJECT_DESCRIPTION@
+ URL: @PKGCONFIG_PROJECT_HOMEPAGE_URL@
+ Version: @PROJECT_VERSION@
+-Requires.private: mbedcrypto
++Requires.private: tfpsacrypto
+ Cflags: -I"${includedir}"
+-Libs: -L"${libdir}" -lmbedx509
++Libs: -L"${libdir}" -lmbedx509@VERSION_SUFFIX@
+
+From bf46abb2727b253b1a94a6b5ce5c5bdb25120a24 Mon Sep 17 00:00:00 2001
+From: "Azamat H. Hackimov" <azamat.hackimov@gmail.com>
+Date: Sun, 26 Jan 2025 23:35:40 +0300
+Subject: [PATCH 4/4] Add changes description to ChangeLog.d
+
+Signed-off-by: Azamat H. Hackimov <azamat.hackimov@gmail.com>
+---
+ ChangeLog.d/mbedtls-subslotting.md | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+ create mode 100644 ChangeLog.d/mbedtls-subslotting.md
+
+diff --git a/ChangeLog.d/mbedtls-subslotting.md b/ChangeLog.d/mbedtls-subslotting.md
+new file mode 100644
+index 00000000000..ebf68efe59f
+--- /dev/null
++++ b/ChangeLog.d/mbedtls-subslotting.md
+@@ -0,0 +1,9 @@
++Changes
++* Add option `ENABLE_SLOTTED_VERSION` to CMake project that adds version
++  suffix for cmake and pkg-config files (#8723, disabled by default). This
++  allows to install major versions of MbedTLS simultaneously.
++  Dependent packages should use `find_package(MbedTLS 4 [REQUIRED])` and
++  `MbedTLS::<component>` in order to use requested libraries.
++  Packages that relies on pkg-config output, should use
++  `pkg-config --libs --cflags (mbedtls-4|mbedx509-4)` output in
++  order to discover actual library names and include paths.

@@ -1,0 +1,19 @@
+--- a/library/CMakeLists.txt
++++ b/library/CMakeLists.txt
+@@ -364,16 +364,6 @@ foreach(target IN LISTS tf_psa_crypto_li
+                     DESTINATION ${CMAKE_INSTALL_LIBDIR}
+                     RENAME "libmbedcrypto.so.${MBEDTLS_VERSION}"
+             )
+-            install(CODE "
+-                set(_libdir \"\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}\")
+-
+-                execute_process(COMMAND \"\${CMAKE_COMMAND}\" -E create_symlink
+-                                \"libmbedcrypto.so.${MBEDTLS_VERSION}\"
+-                                \${_libdir}/libmbedcrypto.so.${MBEDTLS_CRYPTO_SOVERSION})
+-                execute_process(COMMAND \"\${CMAKE_COMMAND}\" -E create_symlink
+-                                \"libmbedcrypto.so.${MBEDTLS_CRYPTO_SOVERSION}\"
+-                                \${_libdir}/libmbedcrypto.so)
+-            ")
+         endif()
+     endif()
+ endforeach(target)
