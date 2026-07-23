@@ -3,7 +3,7 @@
 
 EAPI=8
 
-LLVM_COMPAT=( {19..22} )
+LLVM_COMPAT=( {20..22} )
 LLVM_OPTIONAL=1
 CARGO_OPTIONAL=1
 PYTHON_COMPAT=( python3_{12..14} )
@@ -21,7 +21,7 @@ CRATES="
 	unicode-ident@1.0.12
 "
 
-RUST_MIN_VER="1.82.0"
+RUST_MIN_VER="1.91.0"
 RUST_MULTILIB=1
 RUST_OPTIONAL=1
 
@@ -418,6 +418,7 @@ multilib_src_configure() {
 		-Db_ndebug=$(usex debug false true)
 		-Dallow-broken-lto=true
 	)
+
 	meson_src_configure
 }
 
