@@ -4,7 +4,7 @@
 EAPI=8
 
 CONFIG_CHECK="~ADVISE_SYSCALLS"
-PYTHON_COMPAT=( python3_{13..15} )
+PYTHON_COMPAT=( python3_{12..14} )
 PYTHON_REQ_USE="threads(+)"
 
 inherit bash-completion-r1 check-reqs flag-o-matic linux-info
@@ -19,7 +19,10 @@ if [[ ${PV} == *9999 ]]; then
 	EGIT_REPO_URI="https://github.com/nodejs/node"
 	SLOT="0"
 else
-	SRC_URI="https://nodejs.org/dist/v${PV}/node-v${PV}.tar.xz"
+	SRC_URI="
+		https://nodejs.org/dist/v${PV}/node-v${PV}.tar.xz
+		https://deps.gentoo.zip/net-libs/nodejs/nodejs-24.16.0-nghttp2-1.69.0.patch
+	"
 	SLOT="0/$(ver_cut 1)"
 	KEYWORDS="~amd64 ~arm ~arm64 ~loong ~ppc64 ~riscv ~x86 ~x64-macos"
 	S="${WORKDIR}/node-v${PV}"
@@ -49,24 +52,23 @@ CDEPEND="
 	dev-db/sqlite:3
 	>=dev-cpp/ada-3.3.0:=
 	>=dev-cpp/simdutf-7.3.4:=
-	>=dev-libs/libuv-1.51.0:=
-	>=dev-libs/simdjson-4.0.7:=
-	>=net-dns/c-ares-1.34.6:=
-	>=net-libs/nghttp2-1.67.1:=
-	>=net-libs/nghttp3-1.7.0:=
+	>=dev-libs/libuv-1.52.1:=
+	>=dev-libs/simdjson-4.6.1:=
+	>=net-dns/c-ares-1.34.5:=
+	>=net-libs/nghttp2-1.69.0:=
+	>=net-libs/nghttp3-1.14.0:=
 	virtual/zlib:=
 	corepack? ( !sys-apps/yarn )
-	system-icu? (
-		>=dev-libs/icu-78.2:=
-	)
+	system-icu? ( >=dev-libs/icu-78.2:=	)
 	system-lief? (
 		>=dev-util/lief-0.17.2:=
+		<dev-util/lief-1.0.0
 	)
 	system-ssl? (
-		>=net-libs/ngtcp2-1.11.0:=
+		>=net-libs/ngtcp2-1.14.0:=
 		>=dev-libs/openssl-3.5.5:0[asm?,fips?]
 	)
-	!system-ssl? ( >=net-libs/ngtcp2-1.11.0:=[-gnutls] )
+	!system-ssl? ( >=net-libs/ngtcp2-1.14.0:=[-gnutls] )
 	|| (
 		sys-devel/gcc:*
 		llvm-runtimes/libatomic-stub
@@ -143,7 +145,8 @@ src_prepare() {
 
 	# Fix compilation on Darwin
 	# https://code.google.com/p/gyp/issues/detail?id=260
-	sed -i -e "/append('-arch/d" tools/gyp/pylib/gyp/xcode_emulation.py || die
+	sed -i -e '/append("-arch")/{N;d;}' tools/gyp/pylib/gyp/xcode_emulation.py || die
+
 
 	# Proper libdir, hat tip @ryanpcmcquen https://github.com/iojs/io.js/issues/504
 	local LIBDIR=$(get_libdir)
@@ -420,13 +423,10 @@ src_install() {
 		# useless docs of dependend packages.
 		find "${LIBDIR}"/node_modules \
 			\( -type d -name examples \) -or \( -type f \( \
-				-iname "LICEN?E*" \
+				\( -iname "LICEN?E*" -not -name "*.js" -not -name "*.json" \) \
 				"${find_name[@]}" \
 			\) \) -exec rm -rf "{}" \;
 	fi
-
-	use corepack &&
-		"${D}"/usr/bin/corepack enable --install-directory "${D}"/usr/bin
 
 	mv "${ED}"/usr/share/doc/node "${ED}"/usr/share/doc/${PF} || die
 }

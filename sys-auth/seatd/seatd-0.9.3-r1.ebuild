@@ -28,6 +28,19 @@ RDEPEND="${DEPEND}
 "
 BDEPEND="man? ( >=app-text/scdoc-1.9.7 )"
 
+PATCHES=(
+	"${FILESDIR}/seatd-0.9.3-PR5-sd_bus-int-vs-bool.patch"
+)
+
+src_prepare() {
+	# -fhardened conflicts with user setting -mindirect-branch=thunk
+	# https://codeberg.org/gentoo/gentoo/pulls/208#issuecomment-11187149
+	# Also means no longer redefining Gentoo's _FORTIFY_SOURCE
+	sed -i '/-fhardened/d' meson.build || die
+
+	default
+}
+
 src_configure() {
 	local emesonargs=(
 		-Dwerror=false
