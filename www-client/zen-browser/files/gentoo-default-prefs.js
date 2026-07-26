@@ -413,6 +413,7 @@ user_pref("extensions.webcompat.enable_shims", true);
 user_pref("extensions.webcompat.perform_injections", true);
 user_pref("extensions.webcompat.perform_ua_overrides", true);
 user_pref("fission.autostart", false);
+user_pref("fission.autostart.session", false);
 user_pref("fission.experiment.max-origins.qualified", true);
 user_pref("findbar.highlightAll", true);
 user_pref("font.internaluseonly.changed", false);
