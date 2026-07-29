@@ -28,7 +28,7 @@ IUSE="debug -gui -step test"
 RESTRICT="!test? ( test ) mirror"
 
 RDEPEND="
-	dev-cpp/eigen:3
+	dev-cpp/eigen:=
 	dev-cpp/tbb:=
 	dev-cpp/nlohmann_json:=
 	dev-libs/boost:=[nls]
@@ -77,6 +77,7 @@ PATCHES=(
 	"${FILESDIR}/${PN}-2.9.5-libigl-2.6.0-Hit-template.patch"
 	"${FILESDIR}/${PN}-2.9.5-fix-build-with-eigen-5.patch"
 	"${FILESDIR}/${PN}-2.9.5-thumbnails-offscreen-OpenGL-PR15355.patch"
+	"${FILESDIR}/${PN}-2.9.6-catch2-3.8-resultcapture.patch"
 )
 
 src_prepare() {

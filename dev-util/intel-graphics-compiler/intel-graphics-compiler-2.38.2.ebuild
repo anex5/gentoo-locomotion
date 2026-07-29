@@ -1,13 +1,12 @@
-# Copyright 1999-2025 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-CMAKE_BUILD_TYPE="Release"
-LLVM_COMPAT=( 19 )
-PYTHON_COMPAT=( python3_{10..13} )
+LLVM_COMPAT=( 22 )
+PYTHON_COMPAT=( python3_{12..14} )
 
-inherit cmake flag-o-matic llvm-r1 python-any-r1
+inherit cmake flag-o-matic llvm-r2 python-any-r1
 
 DESCRIPTION="LLVM-based OpenCL compiler for OpenCL targetting Intel Gen graphics hardware"
 HOMEPAGE="https://github.com/intel/intel-graphics-compiler"
@@ -23,7 +22,7 @@ DEPEND="
 	$(llvm_gen_dep '
 		dev-libs/opencl-clang:${LLVM_SLOT}=
 		llvm-core/lld:${LLVM_SLOT}
-		llvm-core/llvm:${LLVM_SLOT}
+		llvm-core/llvm:${LLVM_SLOT}[dump]
 		vc? (
 			>=dev-libs/intel-vc-intrinsics-0.22.0
 			dev-util/spirv-llvm-translator:${LLVM_SLOT}=
@@ -47,12 +46,12 @@ python_check_deps() {
 }
 
 PATCHES=(
-	"${FILESDIR}/${PN}-1.0.9-no_Werror.patch"
+	#"${FILESDIR}/${PN}-1.0.9-no_Werror.patch"
 	"${FILESDIR}/${PN}-1.0.8365-disable-git.patch"
 )
 
 pkg_setup() {
-	llvm-r1_pkg_setup
+	llvm-r2_pkg_setup
 	python-any-r1_pkg_setup
 }
 
@@ -76,6 +75,8 @@ src_configure() {
 
 	# See https://bugs.gentoo.org/718824
 	! use debug && append-cppflags -DNDEBUG
+
+	CMAKE_BUILD_TYPE=$(usex debug 'RlWithDebInfo' 'Release')
 
 	local mycmakeargs=(
 		-DBUILD_SHARED_LIBS="OFF"
