@@ -11,7 +11,7 @@ case ${PV} in
 	EGIT_REPO_URI="https://github.com/v4l2loopback/v4l2loopback"
 	;;
 *)
-	KEYWORDS="~amd64 ~x86 ~arm64 ~arm ~x86"
+	KEYWORDS="~amd64 ~arm64 ~arm ~x86"
 	#COMMIT="94d18a57aea281559ccfb31f99325f822fa8ab4a"
 	SRC_URI="https://github.com/v4l2loopback/${PN}/archive/v${PV}.tar.gz -> ${P}.gh.tar.gz"
 	RESTRICT="mirror"
