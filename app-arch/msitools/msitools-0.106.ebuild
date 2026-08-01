@@ -1,7 +1,7 @@
 # Copyright 1999-2026 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=8
+EAPI=7
 
 inherit meson vala
 
@@ -12,14 +12,15 @@ S="${WORKDIR}/${PN}-v${PV}"
 
 LICENSE="LGPL-2+"
 SLOT="0"
-KEYWORDS="~x86 ~amd64"
+KEYWORDS="amd64 x86"
 IUSE="+introspection"
 REQUIRED_USE="
 	introspection
 "
 
 BDEPEND="
-    dev-lang/perl
+	introspection? ( $(vala_depend) )
+	dev-lang/perl
 	sys-devel/bison
 	dev-util/bats
 "
@@ -42,13 +43,13 @@ PATCHES=(
 )
 
 src_prepare() {
-	vala_src_prepare
 	default
+	use introspection && vala_src_prepare
 }
 
 src_configure() {
-        local emesonargs=(
-                $(meson_use introspection)
-        )
-        meson_src_configure
+	local emesonargs=(
+		$(meson_use introspection)
+	)
+	meson_src_configure
 }
