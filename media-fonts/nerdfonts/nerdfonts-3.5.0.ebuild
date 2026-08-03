@@ -14,6 +14,7 @@ FONTS=(
 	3270
 	AdwaitaMono
 	Agave
+	AnnotationMono
 	AnonymousPro
 	Arimo
 	AtkinsonHyperlegibleMono
@@ -38,6 +39,7 @@ FONTS=(
 	GeistMono
 	Go-Mono
 	Gohu
+	GoogleSansCode
 	Hack
 	Hasklig
 	HeavyData
@@ -83,8 +85,10 @@ FONTS=(
 )
 
 gen_src_uri() {
+	local f flag
 	for f in ${FONTS[*]}; do
-		echo "${f,,}? ( ${COMMON_URI}/${f}.tar.xz -> ${f}-nf-${PV}.tar.xz )"
+		flag="${f,,}"
+		echo "${flag//-}? ( ${COMMON_URI}/${f}.tar.xz -> ${f}-nf-${PV}.gh.tar.xz )"
 	done
 }
 
@@ -92,7 +96,7 @@ SRC_URI="
 	$(gen_src_uri)
 	https://github.com/ryanoasis/nerd-fonts/raw/v${PV}/10-nerd-font-symbols.conf -> ${P}-10-nerd-font-symbols.conf
 "
-KEYWORDS="*"
+S="${WORKDIR}"
 LICENSE="MIT
 	OFL-1.1
 	Apache-2.0
@@ -103,18 +107,19 @@ LICENSE="MIT
 	Vic-Fieger-License
 	UbuntuFontLicense-1.0"
 SLOT="0"
-RESTRICT="mirror"
+KEYWORDS="*"
 
 RDEPEND="media-libs/fontconfig"
 
 CHECKREQS_DISK_BUILD="3G"
 CHECKREQS_DISK_USR="4G"
 
-IUSE_FLAGS=(${FONTS[*],,})
-IUSE="+nerdfontssymbolsonly ${IUSE_FLAGS[*]//nerdfontssymbolsonly} +otf +ttf"
+declare -l IUSE_FLAGS
+IUSE_FLAGS=(${FONTS[*]//-})
+IUSE="${IUSE_FLAGS[*]} +otf +ttf"
 REQUIRED_USE="|| ( ${IUSE_FLAGS[*]} )"
 
-S="${WORKDIR}"
+RESTRICT="mirror"
 
 FONT_CONF=(
 	"${S}/10-nerd-font-symbols.conf"

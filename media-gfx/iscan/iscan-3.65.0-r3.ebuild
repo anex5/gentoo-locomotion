@@ -19,7 +19,7 @@ S="${WORKDIR}/utsushi-0.$(ver_cut 2-3)"
 BDEPEND="
 	virtual/pkgconfig
 	test? (
-		app-text/tesseract[png,tiff,training,-opencl]
+		app-text/tesseract[png,tiff,training]
 		dev-util/uncrustify
 		media-fonts/dejavu
 		virtual/imagemagick-tools[png,tiff]
@@ -33,7 +33,7 @@ RDEPEND="
 	virtual/libusb:1
 	graphicsmagick? ( media-gfx/graphicsmagick:=[cxx] )
 	!graphicsmagick? ( media-gfx/imagemagick:=[cxx] )
-	gui? ( dev-cpp/gtkmm:2.4 )
+	gui? ( dev-cpp/gtkmm )
 "
 DEPEND="${RDEPEND}"
 RESTRICT="!test? ( test )"
