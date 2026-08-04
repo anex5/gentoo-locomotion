@@ -4,9 +4,9 @@
 EAPI=8
 
 PYTHON_COMPAT=( python3_{12..14} )
-inherit flag-o-matic pam python-single-r1 toolchain-funcs
+inherit flag-o-matic pam python-single-r1 toolchain-funcs systemd
 
-DESCRIPTION="Hardware authentication for Linux using ordinary flash media (USB & Card based)."
+DESCRIPTION="Hardware authentication for Linux using ordinary flash media (USB & Card based)"
 HOMEPAGE="https://github.com/mcdope/pam_usb"
 
 if [[ ${PV} == 9999 ]]; then
@@ -14,7 +14,7 @@ if [[ ${PV} == 9999 ]]; then
 	inherit git-r3
 else
 	SRC_URI="https://github.com/mcdope/pam_usb/archive/refs/tags/${PV}.tar.gz -> ${P}.tar.gz"
-	KEYWORDS="~alpha ~amd64 ~arm ~arm64 ~loong ~mips ~ppc ~ppc64 ~riscv ~s390 ~sparc ~x86"
+	KEYWORDS="~alpha ~amd64 ~arm ~arm64 ~loong ~mips ~ppc ~ppc64 ~riscv ~sparc ~x86"
 	RESTRICT="mirror"
 fi
 
@@ -94,7 +94,6 @@ src_install() {
 	use man && doman doc/*.1
 	use doc && dodoc doc/CONFIGURATION doc/QUICKSTART doc/SECURITY doc/TROUBLESHOOTING
 	insinto /etc/security
-    doins doc/pam_usb.conf
+	doins doc/pam_usb.conf
 	use systemd && systemd_dounit "${FILESDIR}"/pam_usb-agent.service
 }
-

@@ -12,7 +12,7 @@ COMMIT="6fe0d80b2de4fc15bb02b7d4da22b9b9be784c9a"
 
 DESCRIPTION="Driver for Realtek rts5139 USB cardreader"
 HOMEPAGE="https://realtek.com"
-SRC_URI="https://github.com/asymingt/rts5139/archive/${COMMIT}.tar.gz"
+SRC_URI="https://github.com/asymingt/rts5139/archive/${COMMIT}.tar.gz -> ${P}-${COMMIT:0:7}.tar.gz"
 S="${WORKDIR}/${PN}-${COMMIT}"
 LICENSE="GPL-2"
 SLOT="0"

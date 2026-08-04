@@ -9,10 +9,10 @@ DESCRIPTION="An i2c serial EEPROM programming tool for the WCH CH341A"
 HOMEPAGE="https://github.com/stefanct/ch341eepromtool"
 SRC_URI="https://github.com/stefanct/${PN}/archive/refs/heads/master.tar.gz -> ${P}.gh.tar.gz"
 
+S="${WORKDIR}/${PN}-master"
 LICENSE="GPL-3"
 SLOT="0"
-KEYWORDS="amd64 arm arm64 mips ppc ppc64 x86"
-RESTRICT="mirror"
+KEYWORDS="amd64 arm arm64 ppc ppc64 x86"
 DEPEND=">=dev-libs/libusb-1.0.0"
 
 PATCHES=(
@@ -22,7 +22,7 @@ PATCHES=(
 
 DOCS=( README )
 
-S="${WORKDIR}/${PN}-master"
+RESTRICT="mirror"
 
 src_compile() {
 	$(tc-getCC) ${CFLAGS} -o ch341eeprom ch341eeprom.c ch341funcs.c -lusb-1.0 || die

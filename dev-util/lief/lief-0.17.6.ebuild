@@ -23,7 +23,7 @@ SLOT="0"
 
 KEYWORDS="amd64 x86"
 
-IUSE="examples +python -static-libs"
+IUSE="examples +python static-libs"
 
 # lief requires a forked version of nanobind, see LIEF-0.15.1/api/python/CMakeLists.txt
 # So don't try to use a standard one

@@ -8,18 +8,17 @@ inherit linux-mod-r1
 MODULES_KERNEL_MAX=7.1
 MODULES_KERNEL_MIN=2.6.33
 
-COMMIT="20f2f2f4c92c14fcdd26f60d050e693ad2c30bf8"
+COMMIT="490f76f61900c163fac5328506c49969bd716dc6"
 
 DESCRIPTION="Driver for it87/it86 series hardware monitoring chips"
 HOMEPAGE="https://github.com/frankcrawford/it87"
 SRC_URI="https://github.com/frankcrawford/it87/archive/${COMMIT}.tar.gz -> ${P}-${COMMIT:0:7}.gh.tar.gz"
 LICENSE="GPL-2"
+S="${WORKDIR}/it87-${COMMIT}"
 KEYWORDS="amd64"
 SLOT="0"
 
 DEPEND="virtual/linux-sources"
-
-S="${WORKDIR}/it87-${COMMIT}"
 
 RESTRICT="mirror bindist"
 

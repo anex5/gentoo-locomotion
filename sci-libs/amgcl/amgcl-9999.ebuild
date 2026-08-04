@@ -15,13 +15,12 @@ if [[ ${PV} == *9999 ]]; then
 	EGIT_BRANCH="master"
 else
 	SRC_URI="https://github.com/ddemidov/amgcl/archive/${PV}.tar.gz -> ${P}.tar.gz"
-	KEYWORDS="~amd64 ~arm ~arm64 ~hppa ~ia64 ~loong ~ppc ~ppc64 ~riscv ~s390 ~sparc ~x86 ~amd64-linux ~x86-linux ~ppc-macos"
+	KEYWORDS="~amd64 ~arm ~arm64 ~loong ~ppc ~ppc64 ~riscv ~sparc ~x86"
 	S="${WORKDIR}/${PN}-${PV}"
 fi
 
 LICENSE="MIT"
 SLOT="0"
-KEYWORDS="~x86 ~amd64"
 IUSE="doc examples icb icbexmm index64 mpi python"
 
 RDEPEND="
@@ -95,4 +94,3 @@ src_install() {
 		rm -r "${ED}/usr/$(get_libdir)/pyarpack" || die
 	fi
 }
-

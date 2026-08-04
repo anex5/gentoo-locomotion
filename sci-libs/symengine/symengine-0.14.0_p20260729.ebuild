@@ -9,10 +9,10 @@ LLVM_OPTIONAL=1
 inherit cmake llvm-r2 toolchain-funcs
 
 DESCRIPTION="Fast symbolic manipulation library, written in C++"
-COMMIT="656bcef8b0df6035e363be020fadf7219678cd9e"
-HOMEPAGE="https://github.com/symengine/symengine/"
+COMMIT="ab67607b8dfb505dc151f7ed26fce9a030bdff8e"
+HOMEPAGE="https://github.com/symengine/symengine"
 SRC_URI="
-	https://github.com/symengine/${PN}/archive/${COMMIT}.tar.gz
+	https://github.com/${PN}/${PN}/archive/${COMMIT}.tar.gz
 		-> ${P}-${COMMIT:0:7}.gh.tar.gz
 "
 S="${WORKDIR}/${PN}-${COMMIT}"
@@ -28,7 +28,10 @@ REQUIRED_USE="
 	llvm? ( ${LLVM_REQUIRED_USE} )
 	mpc? ( mpfr )
 "
-RESTRICT="!test? ( test )"
+RESTRICT="
+	!test? ( test )
+	mirror
+"
 
 RDEPEND="
 	boost? ( dev-libs/boost:= )
@@ -47,13 +50,11 @@ DEPEND="
 	dev-libs/cereal
 "
 
-RESTRICT="mirror"
-
-PATCHES=(
+#PATCHES=(
 	# https://github.com/symengine/symengine/pull/2103
 	# https://github.com/symengine/symengine/pull/2119
 	#"${FILESDIR}/${PN}-0.14.0-llvm.patch"
-)
+#)
 
 pkg_pretend() {
 	[[ ${MERGE_TYPE} != binary ]] && use openmp && tc-check-openmp
