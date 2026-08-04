@@ -93,8 +93,8 @@ gen_src_uri() {
 }
 
 SRC_URI="
-	$(gen_src_uri)
 	https://github.com/ryanoasis/nerd-fonts/raw/v${PV}/10-nerd-font-symbols.conf -> ${P}-10-nerd-font-symbols.conf
+	$(gen_src_uri)
 "
 S="${WORKDIR}"
 LICENSE="MIT
@@ -128,6 +128,11 @@ FONT_S=${S}
 
 pkg_pretend() {
 	check-reqs_pkg_setup
+}
+
+src_unpack() {
+	default
+	cp "${DISTDIR}/${P}-10-nerd-font-symbols.conf" "${S}/10-nerd-font-symbols.conf" || die
 }
 
 src_install() {
