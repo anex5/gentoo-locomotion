@@ -3,14 +3,17 @@
 
 EAPI="8"
 
+inherit toolchain-funcs
+
 DESCRIPTION="A library that adds an easy GUI into OpenGL applications"
 HOMEPAGE="http://www.antisphere.com/Wiki/tools:anttweakbar?sb=tools"
 
 SRC_URI="https://sourceforge.net/projects/anttweakbar/files/latest/download?source=dlp -> ${P}.zip"
 
-KEYWORDS="~x86 ~amd64"
+S="${WORKDIR}/AntTweakBar"
 LICENSE="ZLIB"
 SLOT="0"
+KEYWORDS="amd64 x86"
 
 DEPEND="
 	x11-libs/libX11:=
@@ -21,8 +24,6 @@ DEPEND="
 BDEPEND="app-arch/unzip"
 RDEPEND="$DEPEND"
 RESTRICT="mirror test"
-
-S="${WORKDIR}/AntTweakBar"
 
 src_configure() {
 	sed -i -e "s|^LIBS.*$|LIBS\t\t= -L/usr/lib64 -lGL -lX11 -lXxf86vm -lXext -lpthread -lm|g" \

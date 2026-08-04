@@ -28,7 +28,7 @@ src_prepare() {
 	# Allow user patches to be applied without modifying the ebuild
 	eapply_user
 
-	edos2unix $(find ${S} -type 'f')
+	edos2unix $(find "${S}" -type 'f')
 }
 
 src_install() {
