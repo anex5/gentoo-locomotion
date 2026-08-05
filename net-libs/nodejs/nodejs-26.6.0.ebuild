@@ -146,7 +146,6 @@ src_prepare() {
 	# https://code.google.com/p/gyp/issues/detail?id=260
 	sed -i -e '/append("-arch")/{N;d;}' tools/gyp/pylib/gyp/xcode_emulation.py || die
 
-
 	# Proper libdir, hat tip @ryanpcmcquen https://github.com/iojs/io.js/issues/504
 	local LIBDIR=$(get_libdir)
 	sed -i -e "s|lib/|${LIBDIR}/|g" tools/install.py || die
@@ -180,31 +179,30 @@ src_prepare() {
 	local r1="-O2"
 	local a2="-O2"
 	local r2="-O3"
-   	local oflag="-O3"
-   	if is_flagq_last '-O0'; then
-   		oflag="-O0"
-   	elif is_flagq_last '-Og'; then
-   		oflag="-Og"
-   	elif is_flagq_last '-O1'; then
-   		oflag="-O1"
-   	elif is_flagq_last '-O2'; then
-   		oflag="-O2"
-   	elif is_flagq_last '-O3'; then
-   		oflag="-O3 "
-   	elif is_flagq_last '-O4'; then
-   		oflag="-O4 "
-   	elif is_flagq_last '-Ofast'; then
-   		oflag="-Ofast"
-   	elif is_flagq_last '-Os'; then
-   		oflag="-Os"
-   	elif is_flagq_last '-Oz'; then
-   		oflag="-Oz"
-   	fi
+	local oflag="-O3"
+	if is_flagq_last '-O0'; then
+		oflag="-O0"
+	elif is_flagq_last '-Og'; then
+		oflag="-Og"
+	elif is_flagq_last '-O1'; then
+		oflag="-O1"
+	elif is_flagq_last '-O2'; then
+		oflag="-O2"
+	elif is_flagq_last '-O3'; then
+		oflag="-O3 "
+	elif is_flagq_last '-O4'; then
+		oflag="-O4 "
+	elif is_flagq_last '-Ofast'; then
+		oflag="-Ofast"
+	elif is_flagq_last '-Os'; then
+		oflag="-Os"
+	elif is_flagq_last '-Oz'; then
+		oflag="-Oz"
+	fi
 
-
-   	sed -i -e "s|- O3|${oflag}|g" ${FP[@]} || die
-   	a1="${oflag}"
-   	a2="${oflag}"
+	sed -i -e "s|- O3|${oflag}|g" ${FP[@]} || die
+	a1="${oflag}"
+	a2="${oflag}"
 
 	sed -i \
 		-e "s|__OFLAGS_A1__|${a1}|g" \

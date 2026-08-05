@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer type="person">
+		<email>williamh@gentoo.org</email>
+		<name>William Hubbs</name>
+	</maintainer>
+	<maintainer type="person">
+		<email>anex5.2008@gmail.com</email>
+	</maintainer>
+	<use>
+		<flag name="corepack">Enable the experimental corepack package management tool</flag>
+		<flag name="inspector">Enable V8 inspector</flag>
+		<flag name="fips">Enable building with fips cryptography library</flag>
+		<flag name="lief">Enable building with Library to Instrument Executable Formats (LIEF)</flag>
+		<flag name="lld">Enable linking with lld linker</flag>
+		<flag name="mold">Enable linking with mold linker</flag>
+		<flag name="npm">Enable NPM package manager</flag>
+		<flag name="pointer-compression">Enable building pointer compression feature to save memory</flag>
+		<flag name="pax-kernel">Enable building under a PaX enabled kernel</flag>
+		<flag name="snapshot">Enable snapshot creation for faster startup</flag>
+		<flag name="system-lief">Use system <pkg>dev-util/lief</pkg> instead of the bundled version</flag>
+		<flag name="system-icu">Use system <pkg>dev-libs/icu</pkg> instead of the bundled version</flag>
+		<flag name="system-ssl">Use system OpenSSL instead of the bundled one</flag>
+		<flag name="v8-sandbox">Build with V8 sandbox feature</flag>
+	</use>
+	<upstream>
+		<remote-id type="github">nodejs/node</remote-id>
+		<remote-id type="cpe">cpe:/a:nodejs:nodejs</remote-id>
+	</upstream>
+</pkgmetadata>

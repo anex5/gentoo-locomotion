@@ -62,7 +62,7 @@ REQUIRED_USE="
 	)
 "
 RDEPEND="
-	virtual/zlib:=[${MULTILIB_USEDEP}]
+	virtual/zlib:=
 	binutils-plugin? (
 		>=sys-devel/binutils-2.31.1-r4:*[plugins]
 	)
@@ -178,9 +178,9 @@ python_check_deps() {
 	use doc || return 0
 
 	python_has_version -b "dev-python/myst-parser[${PYTHON_USEDEP}]" &&
-	python_has_version -b "dev-python/sphinx[${PYTHON_USEDEP}]"
+	python_has_version -b "dev-python/sphinx[${PYTHON_USEDEP}]" &&
+	python_has_version -b "dev-python/recommonmark[${PYTHON_USEDEP}]"
 }
-
 
 check_distribution_components() {
 	if [[ ${CMAKE_MAKEFILE_GENERATOR} == ninja ]]; then
@@ -269,7 +269,6 @@ src_prepare() {
 
 	# Update config.guess to support more systems
 	cp "${BROOT}/usr/share/gnuconfig/config.guess" cmake/ || die
-
 
 	llvm.org_src_prepare
 }
