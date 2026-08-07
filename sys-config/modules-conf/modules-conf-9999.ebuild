@@ -5,11 +5,11 @@ EAPI=8
 
 DESCRIPTION="Default configuration files for kernel modules"
 HOMEPAGE="https://github.com/anex5/gentoo-locomotion"
-LICENSE="GPL-2+"
-IUSE="video_cards_i915 video_cards_nouveau video_cards_nvidia video_cards_amdgpu video_cards_radeon video_cards_virtualbox +alsa +vfio +kvm +zswap +drm bbswitch +blacklist it87 rtl xe"
 S=${WORKDIR}
-KEYWORDS="*"
+LICENSE="GPL-2+"
 SLOT="0"
+KEYWORDS="*"
+IUSE="video_cards_i915 video_cards_nouveau video_cards_nvidia video_cards_amdgpu video_cards_radeon video_cards_virtualbox +alsa +vfio +kvm +zswap +drm bbswitch +blacklist it87 rtl xe"
 
 src_unpack() {
 	:

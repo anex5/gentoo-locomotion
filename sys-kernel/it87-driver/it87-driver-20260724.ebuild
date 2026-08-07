@@ -13,10 +13,10 @@ COMMIT="490f76f61900c163fac5328506c49969bd716dc6"
 DESCRIPTION="Driver for it87/it86 series hardware monitoring chips"
 HOMEPAGE="https://github.com/frankcrawford/it87"
 SRC_URI="https://github.com/frankcrawford/it87/archive/${COMMIT}.tar.gz -> ${P}-${COMMIT:0:7}.gh.tar.gz"
-LICENSE="GPL-2"
 S="${WORKDIR}/it87-${COMMIT}"
-KEYWORDS="amd64"
+LICENSE="GPL-2"
 SLOT="0"
+KEYWORDS="amd64"
 
 DEPEND="virtual/linux-sources"
 

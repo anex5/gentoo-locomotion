@@ -9,11 +9,11 @@ DESCRIPTION="EPSON Image Scan v3 for Linux"
 HOMEPAGE="https://support.epson.net/linux/en/imagescanv3.php https://gitlab.com/utsushi/utsushi"
 SRC_URI="https://support.epson.net/linux/src/scanner/imagescanv3/common/imagescan_${PV}.orig.tar.gz"
 
+S="${WORKDIR}/utsushi-0.$(ver_cut 2-3)"
 LICENSE="GPL-3+"
 SLOT="0"
-IUSE="graphicsmagick gui jpeg test tiff"
 KEYWORDS="~amd64 ~x86"
-S="${WORKDIR}/utsushi-0.$(ver_cut 2-3)"
+IUSE="graphicsmagick gui jpeg test tiff"
 
 # Disable opencl as during reorient.utr test it produces inconsistent results
 BDEPEND="
@@ -51,13 +51,12 @@ PATCHES=(
 	"${FILESDIR}"/${PN}-3.65.0-sane-backends-1.1.patch
 	"${FILESDIR}"/${PN}-3.65.0-boost-1.84-headers.patch
 	"${FILESDIR}"/${PN}-3.65.0-boost-1.89.patch # bug 963413
- 	"${FILESDIR}"/${PN}-3.65.0-fix-cxx17-bind2nd.patch
+	"${FILESDIR}"/${PN}-3.65.0-fix-cxx17-bind2nd.patch
 	"${FILESDIR}"/${PN}-3.65.0-fix-gcc-16-ambiguous-operator.patch
 )
 
 src_prepare() {
 	default
-
 	# Remove vendored libraries
 	rm -r upstream/boost || die
 	# Workaround for deprecation warnings:
