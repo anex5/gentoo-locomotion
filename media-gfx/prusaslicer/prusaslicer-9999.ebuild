@@ -112,6 +112,7 @@ src_configure() {
 	CMAKE_BUILD_TYPE=$(usex debug "RelWithDebInfo" "Release")
 
 	append-flags -fno-strict-aliasing
+	append-cxxflags -DCGAL_NO_GDB_AUTOLOAD="$(usex !debug)"
 
 	use gui && setup-wxwidgets
 

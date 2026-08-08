@@ -19,7 +19,7 @@ S="${WORKDIR}/${MY_P}"
 LICENSE="LGPL-3 GPL-3 Boost-1.0"
 SLOT="0/14"
 KEYWORDS="amd64 ~arm64 ~ppc64"
-IUSE="doc examples test"
+IUSE="debug doc examples test"
 RESTRICT="
 	!test? ( test )
 	mirror
@@ -43,10 +43,10 @@ PATCHES=(
 )
 
 src_configure() {
+	CMAKE_BUILD_TYPE=$(usex debug "RelWithDebInfo" "Release")
 	local mycmakeargs=(
 		-DCGAL_INSTALL_LIB_DIR="$(get_libdir)"
 		-DCGAL_INSTALL_CMAKE_DIR="$(get_libdir)/cmake/CGAL"
-
 		# https://github.com/CGAL/cgal/wiki/Testing#using-ctest
 		-DCGAL_ENABLE_TESTING="$(usex test)"
 		-DCGAL_TEST_SUITE="$(usex test)"
