@@ -25,7 +25,7 @@ WASI_SDK_VER=( [22]="32.0" [21]="30.0" )
 
 MOZ_ESR=
 
-MOZ_PV=153.0.1
+MOZ_PV=153.0.4
 MOZ_PV_SUFFIX=
 if [[ ${PV} =~ (_(alpha|beta|rc).*)$ ]] ; then
 	MOZ_PV_SUFFIX=${BASH_REMATCH[1]}
@@ -479,7 +479,6 @@ PDEPEND+="
 "
 
 RESTRICT="mirror"
-
 
 llvm_check_deps() {
 	if ! has_version -b "llvm-core/clang:${LLVM_SLOT}" ; then
@@ -1442,6 +1441,8 @@ _src_configure() {
 	# Set Gentoo defaults
 	export MOZILLA_OFFICIAL=1
 
+	export MOZ_APP_REMOTINGNAME="${PN}"
+	export MOZ_APP_DISPLAYNAME="Zen"
 	# Initialize MOZCONFIG
 	mozconfig_add_options_ac '' --enable-application="browser"
 	mozconfig_add_options_ac '' --enable-project="browser"
@@ -1484,6 +1485,8 @@ _src_configure() {
 		--with-toolchain-prefix="${CHOST}-" \
 		--with-ffvpx=no \
 		--with-app-name="${PN}" \
+		--with-app-basename="Zen" \
+		--with-distribution-id="app.${PN}" \
 		--with-l10n-base="${s}/browser/locales" \
 		--with-unsigned-addon-scopes="app,system"
 
