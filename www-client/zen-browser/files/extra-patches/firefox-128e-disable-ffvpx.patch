@@ -262,3 +262,37 @@
      case 62:
        module = FFmpegDecoderModule<62>::Create(&sLibAV);
        break;
+--- a/dom/media/platforms/ffmpeg/FFmpegRuntimeLinker.cpp
++++ b/dom/media/platforms/ffmpeg/FFmpegRuntimeLinker.cpp
+@@ -180,31 +180,6 @@ already_AddRefed<PlatformEncoderModule>
+   }
+   RefPtr<PlatformEncoderModule> module;
+   switch (sLibAV.mVersion) {
+-    case 53:
+-      module = FFmpegEncoderModule<53>::Create(&sLibAV);
+-      break;
+-    case 54:
+-      module = FFmpegEncoderModule<54>::Create(&sLibAV);
+-      break;
+-    case 55:
+-    case 56:
+-      module = FFmpegEncoderModule<55>::Create(&sLibAV);
+-      break;
+-    case 57:
+-      module = FFmpegEncoderModule<57>::Create(&sLibAV);
+-      break;
+-    case 58:
+-      module = FFmpegEncoderModule<58>::Create(&sLibAV);
+-      break;
+-    case 59:
+-      module = FFmpegEncoderModule<59>::Create(&sLibAV);
+-      break;
+-    case 60:
+-      module = FFmpegEncoderModule<60>::Create(&sLibAV);
+-      break;
+-    case 61:
+-      module = FFmpegEncoderModule<61>::Create(&sLibAV);
+-      break;
+     case 62:
+       module = FFmpegEncoderModule<62>::Create(&sLibAV);
+       break;
