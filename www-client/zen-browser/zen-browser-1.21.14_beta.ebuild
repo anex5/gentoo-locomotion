@@ -383,19 +383,11 @@ RDEPEND+="
 	speech? (
 		!pulseaudio? (
 			alsa? (
-				|| (
-					>=app-accessibility/speech-dispatcher-${SPEECH_DISPATCHER_PV}[alsa,espeak]
-					>=app-accessibility/speech-dispatcher-${SPEECH_DISPATCHER_PV}[alsa,espeak]
-					>=app-accessibility/speech-dispatcher-${SPEECH_DISPATCHER_PV}[alsa,flite]
-				)
+				>=app-accessibility/speech-dispatcher-${SPEECH_DISPATCHER_PV}[alsa,espeak]
 			)
 		)
 		pulseaudio? (
-			|| (
-				>=app-accessibility/speech-dispatcher-${SPEECH_DISPATCHER_PV}[espeak,pulseaudio]
-				>=app-accessibility/speech-dispatcher-${SPEECH_DISPATCHER_PV}[espeak,pulseaudio]
-				>=app-accessibility/speech-dispatcher-${SPEECH_DISPATCHER_PV}[flite,pulseaudio]
-			)
+			>=app-accessibility/speech-dispatcher-${SPEECH_DISPATCHER_PV}[espeak]
 		)
 	)
 	hwaccel? (
@@ -1441,8 +1433,6 @@ _src_configure() {
 	# Set Gentoo defaults
 	export MOZILLA_OFFICIAL=1
 
-	export MOZ_APP_REMOTINGNAME="${PN}"
-	export MOZ_APP_DISPLAYNAME="Zen"
 	# Initialize MOZCONFIG
 	mozconfig_add_options_ac '' --enable-application="browser"
 	mozconfig_add_options_ac '' --enable-project="browser"
@@ -1483,17 +1473,15 @@ _src_configure() {
 		--with-system-pixman \
 		--with-system-zlib \
 		--with-toolchain-prefix="${CHOST}-" \
-		--with-ffvpx=no \
 		--with-app-name="${PN}" \
-		--with-app-basename="Zen" \
-		--with-distribution-id="app.${PN}" \
 		--with-l10n-base="${s}/browser/locales" \
 		--with-unsigned-addon-scopes="app,system"
 
 	if use system-ffmpeg ; then
 		mozconfig_add_options_ac \
 			'+system-ffmpeg' \
-			--enable-ffmpeg
+			--enable-ffmpeg \
+			--with-ffvpx=no
 	else
 		mozconfig_add_options_ac \
 			'-system-ffmpeg' \
