@@ -1431,7 +1431,8 @@ _src_configure() {
 	# MOZCONFIG is dynamically generated per ABI in _fix_paths().
 	#export MOZCONFIG="${s}/.mozconfig"
 	# Set Gentoo defaults
-	export MOZILLA_OFFICIAL=0
+	export MOZILLA_OFFICIAL=1
+	export MOZ_BRANDING_IS_UNOFFICIAL=1
 	export MOZ_APP_DISPLAYNAME="Zen Browser"
 	export MOZ_APP_VERSION_DISPLAY="${PV/_beta/b}"
 	export MOZ_INCLUDE_SOURCE_INFO=1
@@ -1831,6 +1832,10 @@ _src_configure() {
 	# Make revdep-rebuild.sh happy; Also required for musl
 	append-ldflags -Wl,-rpath="${MOZILLA_FIVE_HOME}",--enable-new-dtags
 
+	if tc-is-clang; then
+		append-cflags "-fconstexpr-steps=80000000 -fconstexpr-depth=10000"
+	fi
+
 	# Pass $MAKEOPTS to build system
 	export MOZ_MAKE_FLAGS="${MAKEOPTS}"
 
@@ -1882,6 +1887,60 @@ _src_configure() {
 			mozconfig_add_options_ac "EXTRA_ECONF" --${opt#--}
 		done
 	fi
+
+	#######
+	### Disable features
+	mozconfig_add_options_ac '' --disable-accessibility
+	mozconfig_add_options_ac '' --disable-address-sanitizer
+	mozconfig_add_options_ac '' --disable-address-sanitizer-reporter
+
+	mozconfig_add_options_ac '' --disable-callgrind
+	mozconfig_add_options_ac '' --disable-crashreporter
+
+	mozconfig_add_options_ac '' --disable-debug
+	mozconfig_add_options_ac '' --disable-debug-js-modules
+	mozconfig_add_options_ac '' --disable-debug-symbols
+	mozconfig_add_options_ac '' --disable-dmd
+	mozconfig_add_options_ac '' --disable-dump-painting
+
+	mozconfig_add_options_ac '' --disable-frame-pointers
+
+	mozconfig_add_options_ac '' --disable-gtest-in-build
+
+	mozconfig_add_options_ac '' --disable-instruments
+
+	mozconfig_add_options_ac '' --disable-libproxy
+	mozconfig_add_options_ac '' --disable-logrefcnt
+
+	mozconfig_add_options_ac '' --disable-memory-sanitizer
+	mozconfig_add_options_ac '' --disable-mobile-optimize
+
+	mozconfig_add_options_ac '' --disable-necko-wifi
+
+	mozconfig_add_options_ac '' --disable-parental-controls
+
+	mozconfig_add_options_ac '' --disable-reflow-perf
+	mozconfig_add_options_ac '' --disable-rust-debug
+	mozconfig_add_options_ac '' --disable-rust-tests
+
+	mozconfig_add_options_ac '' --disable-signed-overflow-sanitizer
+	mozconfig_add_options_ac '' --disable-spidermonkey-telemetry
+	mozconfig_add_options_ac '' --disable-system-extension-dirs
+
+	mozconfig_add_options_ac '' --disable-thread-sanitizer
+
+	mozconfig_add_options_ac '' --disable-undefined-sanitizer
+	mozconfig_add_options_ac '' --disable-unsigned-overflow-sanitizer
+	mozconfig_add_options_ac '' --disable-updater
+
+	mozconfig_add_options_ac '' --disable-valgrind
+	mozconfig_add_options_ac '' --disable-vtune
+
+	mozconfig_add_options_ac '' --disable-warnings-as-errors
+	mozconfig_add_options_ac '' --disable-wasm-codegen-debug
+	mozconfig_add_options_ac '' --disable-webrender-debugger
+
+	mozconfig_add_options_ac '' --without-debug-label
 
 	echo
 	echo "=========================================================="
