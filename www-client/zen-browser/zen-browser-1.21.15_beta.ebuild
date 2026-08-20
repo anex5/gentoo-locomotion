@@ -4,7 +4,7 @@
 EAPI=8
 
 # Using Gentoos firefox patches as system libraries and lto are quite nice
-FIREFOX_PATCHSET="firefox-153-patches-01.tar.xz"
+FIREFOX_PATCHSET="firefox-154-patches-01.tar.xz"
 
 LLVM_COMPAT=( {21..22} )
 
@@ -25,7 +25,7 @@ WASI_SDK_VER=( [22]="32.0" [21]="30.0" )
 
 MOZ_ESR=
 
-MOZ_PV=153.0.4
+MOZ_PV=154.0.0
 MOZ_PV_SUFFIX=
 if [[ ${PV} =~ (_(alpha|beta|rc).*)$ ]] ; then
 	MOZ_PV_SUFFIX=${BASH_REMATCH[1]}
@@ -245,7 +245,7 @@ CDEPEND="
 	>=app-accessibility/at-spi2-core-2.46.0:2[${MULTILIB_USEDEP}]
 	>=dev-libs/glib-2.42:2[${MULTILIB_USEDEP}]
 	>=dev-libs/nspr-4.38[${MULTILIB_USEDEP}]
-	>=dev-libs/nss-3.125[${MULTILIB_USEDEP}]
+	>=dev-libs/nss-3.126[${MULTILIB_USEDEP}]
 	>=media-libs/fontconfig-2.7.0[${MULTILIB_USEDEP}]
 	>=media-libs/freetype-2.14.1[${MULTILIB_USEDEP}]
 	>=sys-libs/zlib-1.3.1[${MULTILIB_USEDEP}]
@@ -978,7 +978,7 @@ src_prepare() {
 
 	# Machine learning
 	if ! use ml ; then
-		eapply "${FILESDIR}/extra-patches/firefox-153.0.0-disable-ML.patch"
+		eapply "${FILESDIR}/extra-patches/firefox-154.0.0-disable-ML.patch"
 		sed -e '/\@BINPATH\@\/\@DLL_PREFIX\@mozinference\@DLL_SUFFIX\@/d' -i browser/installer/package-manifest.in || die
 	fi
 
@@ -1435,7 +1435,6 @@ _src_configure() {
 	export MOZ_APP_DISPLAYNAME="Zen Browser"
 	export MOZ_APP_VERSION_DISPLAY="${PV/_beta/b}"
 	export MOZ_INCLUDE_SOURCE_INFO=1
-
 
 	# Initialize MOZCONFIG
 	mozconfig_add_options_ac '' --enable-application="browser"
@@ -2025,7 +2024,7 @@ _src_install() {
 
 	# Force hwaccel prefs if USE=hwaccel is enabled
 	if use hwaccel ; then
-		cat "${FILESDIR}/gentoo-hwaccel-prefs.js" \
+		cat "${FILESDIR}"/gentoo-hwaccel-prefs.js \
 		>>"${GENTOO_PREFS}" \
 		|| die "failed to add prefs to force hardware-accelerated rendering to all-gentoo.js"
 
@@ -2042,6 +2041,7 @@ _src_install() {
 		# Install the vaapitest binary on supported arches (122.0 supports all platforms, bmo#1865969)
 		exeinto "${MOZILLA_FIVE_HOME}"
 		doexe "${BUILD_DIR}"/dist/bin/vaapitest
+		doexe "${BUILD_DIR}"/dist/bin/vulkantest
 
 		# Install the v4l2test on supported arches (+ arm, + riscv64 when keyworded)
 		if use arm64 ; then
@@ -2124,7 +2124,7 @@ _src_install() {
 		sed -e \
 			"s/Exec=\/usr\/bin\/${PN}/Exec=\/usr\/$(get_libdir)\/${PN}\/${PN} --dbus-service \/usr\/bin\/${PN}/g" \
 			-i "${ED}/usr/share/dbus-1/services/org.mozilla.firefox.SearchProvider.service" ||
-				die "Failed to sed org.mozilla.${PN}.SearchProvider.service dbus file"
+				die "Failed to sed org.mozilla.firefox.SearchProvider.service dbus file"
 
 		# Update prefs to enable Gnome search provider
 		cat >>"${GENTOO_PREFS}" <<-EOF || die "failed to enable gnome-search-provider via prefs"
