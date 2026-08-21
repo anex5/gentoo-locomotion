@@ -1833,7 +1833,7 @@ _src_configure() {
 	append-ldflags -Wl,-rpath="${MOZILLA_FIVE_HOME}",--enable-new-dtags
 
 	if tc-is-clang; then
-		append-cflags "-fconstexpr-steps=80000000 -fconstexpr-depth=10000"
+		append-cppflags "-fconstexpr-steps=80000000 -fconstexpr-depth=10000"
 	fi
 
 	# Pass $MAKEOPTS to build system

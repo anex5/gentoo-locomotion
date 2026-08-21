@@ -1431,11 +1431,11 @@ _src_configure() {
 	# MOZCONFIG is dynamically generated per ABI in _fix_paths().
 	#export MOZCONFIG="${s}/.mozconfig"
 	# Set Gentoo defaults
-	export MOZILLA_OFFICIAL=0
+	export MOZILLA_OFFICIAL=1
+	export MOZ_BRANDING_IS_UNOFFICIAL=1
 	export MOZ_APP_DISPLAYNAME="Zen Browser"
 	export MOZ_APP_VERSION_DISPLAY="${PV/_beta/b}"
 	export MOZ_INCLUDE_SOURCE_INFO=1
-
 
 	# Initialize MOZCONFIG
 	mozconfig_add_options_ac '' --enable-application="browser"
@@ -1884,6 +1884,60 @@ _src_configure() {
 		done
 	fi
 
+	#######
+	### Disable features
+	mozconfig_add_options_ac '' --disable-accessibility
+	mozconfig_add_options_ac '' --disable-address-sanitizer
+	mozconfig_add_options_ac '' --disable-address-sanitizer-reporter
+
+	mozconfig_add_options_ac '' --disable-callgrind
+	mozconfig_add_options_ac '' --disable-crashreporter
+
+	mozconfig_add_options_ac '' --disable-debug
+	mozconfig_add_options_ac '' --disable-debug-js-modules
+	mozconfig_add_options_ac '' --disable-debug-symbols
+	mozconfig_add_options_ac '' --disable-dmd
+	mozconfig_add_options_ac '' --disable-dump-painting
+
+	mozconfig_add_options_ac '' --disable-frame-pointers
+
+	mozconfig_add_options_ac '' --disable-gtest-in-build
+
+	mozconfig_add_options_ac '' --disable-instruments
+
+	mozconfig_add_options_ac '' --disable-libproxy
+	mozconfig_add_options_ac '' --disable-logrefcnt
+
+	mozconfig_add_options_ac '' --disable-memory-sanitizer
+	mozconfig_add_options_ac '' --disable-mobile-optimize
+
+	mozconfig_add_options_ac '' --disable-necko-wifi
+
+	mozconfig_add_options_ac '' --disable-parental-controls
+
+	mozconfig_add_options_ac '' --disable-reflow-perf
+	mozconfig_add_options_ac '' --disable-rust-debug
+	mozconfig_add_options_ac '' --disable-rust-tests
+
+	mozconfig_add_options_ac '' --disable-signed-overflow-sanitizer
+	mozconfig_add_options_ac '' --disable-spidermonkey-telemetry
+	mozconfig_add_options_ac '' --disable-system-extension-dirs
+
+	mozconfig_add_options_ac '' --disable-thread-sanitizer
+
+	mozconfig_add_options_ac '' --disable-undefined-sanitizer
+	mozconfig_add_options_ac '' --disable-unsigned-overflow-sanitizer
+	mozconfig_add_options_ac '' --disable-updater
+
+	mozconfig_add_options_ac '' --disable-valgrind
+	mozconfig_add_options_ac '' --disable-vtune
+
+	mozconfig_add_options_ac '' --disable-warnings-as-errors
+	mozconfig_add_options_ac '' --disable-wasm-codegen-debug
+	mozconfig_add_options_ac '' --disable-webrender-debugger
+
+	mozconfig_add_options_ac '' --without-debug-label
+
 	echo
 	echo "=========================================================="
 	echo "Building ${PF} with the following configuration"
@@ -2025,7 +2079,7 @@ _src_install() {
 
 	# Force hwaccel prefs if USE=hwaccel is enabled
 	if use hwaccel ; then
-		cat "${FILESDIR}/gentoo-hwaccel-prefs.js" \
+		cat "${FILESDIR}"/gentoo-hwaccel-prefs.js \
 		>>"${GENTOO_PREFS}" \
 		|| die "failed to add prefs to force hardware-accelerated rendering to all-gentoo.js"
 
@@ -2042,6 +2096,7 @@ _src_install() {
 		# Install the vaapitest binary on supported arches (122.0 supports all platforms, bmo#1865969)
 		exeinto "${MOZILLA_FIVE_HOME}"
 		doexe "${BUILD_DIR}"/dist/bin/vaapitest
+		doexe "${BUILD_DIR}"/dist/bin/vulkantest
 
 		# Install the v4l2test on supported arches (+ arm, + riscv64 when keyworded)
 		if use arm64 ; then
@@ -2124,7 +2179,7 @@ _src_install() {
 		sed -e \
 			"s/Exec=\/usr\/bin\/${PN}/Exec=\/usr\/$(get_libdir)\/${PN}\/${PN} --dbus-service \/usr\/bin\/${PN}/g" \
 			-i "${ED}/usr/share/dbus-1/services/org.mozilla.firefox.SearchProvider.service" ||
-				die "Failed to sed org.mozilla.${PN}.SearchProvider.service dbus file"
+				die "Failed to sed org.mozilla.firefox.SearchProvider.service dbus file"
 
 		# Update prefs to enable Gnome search provider
 		cat >>"${GENTOO_PREFS}" <<-EOF || die "failed to enable gnome-search-provider via prefs"
