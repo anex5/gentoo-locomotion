@@ -259,7 +259,7 @@ COMMON_DEPEND="
 		dev-libs/imath:=
 		media-libs/openexr:=
 	)
- 	onnx? ( >=sci-libs/onnxruntime-1.12.0 )
+	onnx? ( >=sci-libs/onnxruntime-1.12.0 )
 	opencl? ( virtual/opencl[${MULTILIB_USEDEP}] )
 	opengl? (
 		virtual/opengl[${MULTILIB_USEDEP}]
@@ -798,7 +798,6 @@ multilib_src_configure() {
 		-DWITH_GPHOTO2="$(usex gphoto2)"
 		-DWITH_LAPACK="$(multilib_native_usex lapack)"
 		-DWITH_ITT="no" # 3dparty libs itt_notify
-
 		-DWITH_AVIF="$(usex avif)"
 		-DWITH_VULKAN="$(usex vulkan)"
 		-DWITH_WAYLAND="$(usex wayland)"

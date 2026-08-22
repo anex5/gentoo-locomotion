@@ -8,7 +8,7 @@ LLVM_OPTIONAL=1
 CARGO_OPTIONAL=1
 PYTHON_COMPAT=( python3_{12..14} )
 
-inherit flag-o-matic llvm-r2 meson-multilib python-any-r1 linux-info
+inherit flag-o-matic linux-info llvm-r2 meson-multilib python-any-r1 toolchain-funcs
 
 MY_P="${P/_/-}"
 
@@ -81,7 +81,7 @@ REQUIRED_USE="
 	gbm? ( opengl )
 "
 
-LIBDRM_DEPSTRING=">=x11-libs/libdrm-2.4.121"
+LIBDRM_DEPSTRING=">=x11-libs/libdrm-2.4.133"
 RDEPEND="
 	${LIBDRM_DEPSTRING}[${MULTILIB_USEDEP}]
 	>=dev-libs/expat-2.1.0-r3[${MULTILIB_USEDEP}]
@@ -116,6 +116,9 @@ RDEPEND="
 	)
 	video_cards_i915? (
 		${LIBDRM_DEPSTRING}[video_cards_intel]
+	)
+	video_cards_nvk? (
+		virtual/libelf:0=[${MULTILIB_USEDEP}]
 	)
 	video_cards_amdgpu? (
 		${LIBDRM_DEPSTRING}[video_cards_amdgpu]
@@ -175,6 +178,7 @@ BDEPEND="
 	video_cards_lima? ( ${CLC_DEPSTRING} )
 	vulkan? (
 		dev-util/glslang
+		video_cards_imagination? ( ${CLC_DEPSTRING} )
 		video_cards_nvk? (
 			>=dev-util/bindgen-0.71.1
 			>=dev-util/cbindgen-0.26.0
@@ -256,6 +260,10 @@ python_check_deps() {
 }
 
 pkg_setup() {
+	if [[ ${MERGE_TYPE} != binary ]] && use test; then
+		tc-check-openmp
+	fi
+
 	# warning message for bug 459306
 	if use llvm && has_version llvm-core/llvm[!debug=]; then
 		ewarn "Mismatch between debug USE flags in media-libs/mesa and llvm-core/llvm"
@@ -383,7 +391,8 @@ multilib_src_configure() {
 	   use video_cards_intel ||
 	   use video_cards_nvk ||
 	   use video_cards_lima ||
-	   use video_cards_panfrost; then
+	   use video_cards_panfrost ||
+	   { use vulkan && use video_cards_imagination; }; then
 	   emesonargs+=(-Dmesa-clc=system)
 	fi
 

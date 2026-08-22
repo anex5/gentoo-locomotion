@@ -82,7 +82,7 @@ alsa atk clang cpu_flags_arm_neon cups +dbus debug firejail hardened hwaccel \
 jack jemalloc +jit libcanberra libnotify libproxy libsecret lld lto ml mold pgo \
 pulseaudio sndio selinux speech systemd +system-av1 +system-ffmpeg +system-graphite2 \
 +system-harfbuzz +system-icu +system-jpeg +system-libevent +system-libvpx +system-png \
-+system-pipewire system-python-libs +system-webp test vaapi wayland +webrtc wifi webspeech X
++system-pipewire system-python-libs +system-webp telemetry test vaapi wayland +webrtc wifi webspeech X
 "
 
 # Firefox-only IUSE
@@ -1431,11 +1431,9 @@ _src_configure() {
 	# MOZCONFIG is dynamically generated per ABI in _fix_paths().
 	#export MOZCONFIG="${s}/.mozconfig"
 	# Set Gentoo defaults
-	export MOZILLA_OFFICIAL=1
-	export MOZ_BRANDING_IS_UNOFFICIAL=1
 	export MOZ_APP_DISPLAYNAME="Zen Browser"
-	export MOZ_APP_VERSION_DISPLAY="${PV/_beta/b}"
-	export MOZ_INCLUDE_SOURCE_INFO=1
+	export ZEN_FIREFOX_VERSION="${MOZ_PV}"
+	export MOZ_APP_VERSION="${PV/_beta/b}"
 
 	# Initialize MOZCONFIG
 	mozconfig_add_options_ac '' --enable-application="browser"
@@ -1457,7 +1455,6 @@ _src_configure() {
 		--disable-wmf \
 		--enable-negotiateauth \
 		--enable-new-pass-manager \
-		--enable-official-branding \
 		--enable-packed-relative-relocs \
 		--enable-release \
 		--enable-system-ffi \
@@ -1479,6 +1476,9 @@ _src_configure() {
 		--with-toolchain-prefix="${CHOST}-" \
 		--with-app-name="${PN}" \
 		--with-app-basename="Zen" \
+		--disable-official-branding \
+		--with-update-channel="release" \
+		--with-branding="browser/branding/release" \
 		--with-l10n-base="${s}/browser/locales" \
 		--with-unsigned-addon-scopes="app,system"
 
@@ -1850,6 +1850,14 @@ _src_configure() {
 		export MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE="none"
 	fi
 
+	if ! use telemetry; then
+		mozconfig_add_options_mk '-telemetry setting' "MOZ_CRASHREPORTER=0"
+		mozconfig_add_options_mk '-telemetry setting' "MOZ_DATA_REPORTING=0"
+		mozconfig_add_options_mk '-telemetry setting' "MOZ_SERVICES_HEALTHREPORT=0"
+		mozconfig_add_options_mk '-telemetry setting' "MOZ_TELEMETRY_REPORTING=0"
+		mozconfig_add_options_mk '-telemetry setting' "MOZ_NORMANDY=0"
+	fi
+
 	mozconfig_use_enable test tests
 
 	# Disable notification when build system has finished
@@ -2141,7 +2149,7 @@ _src_install() {
 	fi
 
 	# Install icons
-	local icon_srcdir="${s}/browser/branding/official"
+	local icon_srcdir="${s}/browser/branding/release"
 	local icon_symbolic_file="${FILESDIR}/icon/zen-symbolic.svg"
 
 	insinto /usr/share/icons/hicolor/symbolic/apps
