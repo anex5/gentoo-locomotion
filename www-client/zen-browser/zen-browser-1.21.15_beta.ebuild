@@ -1124,6 +1124,13 @@ src_prepare() {
 	echo -n "${MOZ_API_KEY_LOCATION//gGaPi/}" > "${S}"/api-location.key || die
 	echo -n "${MOZ_API_KEY_MOZILLA//m0ap1/}" > "${S}"/api-mozilla.key || die
 
+	# Change base version
+	echo "${PV/_beta/b}" > "${S}"/browser/config/version.txt || die
+	# Change display version version_display.txt
+	echo "${PV/_beta/b}" > "${S}"/browser/config/version_display.txt || die
+	# Change milestone
+	echo "${PV/_beta/b}" > "${S}"/config/milestone.txt || die
+
 	xdg_environment_reset
 
 	(( ${NABIS} > 1 )) && multilib_copy_sources
@@ -1431,13 +1438,12 @@ _src_configure() {
 	# MOZCONFIG is dynamically generated per ABI in _fix_paths().
 	#export MOZCONFIG="${s}/.mozconfig"
 	# Set Gentoo defaults
-	export MOZ_APP_DISPLAYNAME="Zen Browser"
 	export ZEN_FIREFOX_VERSION="${MOZ_PV}"
-	export MOZ_APP_VERSION="${PV/_beta/b}"
 
 	# Initialize MOZCONFIG
 	mozconfig_add_options_ac '' --enable-application="browser"
 	mozconfig_add_options_ac '' --enable-project="browser"
+
 
 	mozconfig_add_options_ac 'Gentoo default' \
 		--allow-addon-sideload \
