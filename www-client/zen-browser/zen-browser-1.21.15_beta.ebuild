@@ -1128,8 +1128,8 @@ src_prepare() {
 	echo "${PV/_beta/b}" > "${S}"/browser/config/version.txt || die
 	# Change display version version_display.txt
 	echo "${PV/_beta/b}" > "${S}"/browser/config/version_display.txt || die
-	# Change milestone
-	echo "${PV/_beta/b}" > "${S}"/config/milestone.txt || die
+	# Change milestone (extensions become incompartible)
+	# echo "${PV/_beta/b}" > "${S}"/config/milestone.txt || die
 
 	xdg_environment_reset
 
