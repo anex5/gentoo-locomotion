@@ -21,7 +21,7 @@ fi
 
 LICENSE="Apache-2.0 vim"
 SLOT="0"
-IUSE="doc lint +lto +nvimpager test"
+IUSE="doc +lto +nvimpager test"
 
 # Upstream say the test library needs LuaJIT
 # https://github.com/neovim/neovim/blob/91109ffda23d0ce61cec245b1f4ffb99e7591b62/CMakeLists.txt#L377
@@ -61,10 +61,6 @@ DEPEND="${LUA_DEPS}
 	=dev-libs/tree-sitter-vim-0.8*
 	=dev-libs/tree-sitter-vimdoc-4*
 	>=dev-libs/unibilium-2.1.2:0=
-	lint? (
-		dev-util/shellcheck
-		dev-util/stylua
-	)
 "
 #=dev-util/uncrustify-0.81*
 RDEPEND="
@@ -105,7 +101,7 @@ src_configure() {
 		-DCOMPILE_LUA=0
 		# bug 906019: fix hardcoded usage of ccache
 		-DCACHE_PRG=OFF
-		-DCI_LINT=$(usex lint)
+		-DCI_LINT=OFF
 	)
 	cmake_src_configure
 }
