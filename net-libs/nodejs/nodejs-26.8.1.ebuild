@@ -12,7 +12,7 @@ inherit ninja-utils pax-utils python-any-r1 toolchain-funcs xdg-utils
 
 DESCRIPTION="A JavaScript runtime built on Chrome's V8 JavaScript engine"
 HOMEPAGE="https://nodejs.org/"
-LICENSE="Apache-1.1 Apache-2.0 BSD BSD-2 MIT npm? ( Artistic-2 )"
+LICENSE="Apache-1.1 Apache-2.0 BlueOak-1.0.0 BSD BSD-2 MIT npm? ( Artistic-2 )"
 
 if [[ ${PV} == *9999 ]]; then
 	inherit git-r3
@@ -27,7 +27,7 @@ else
 	S="${WORKDIR}/node-v${PV}"
 fi
 
-IUSE="+asm +corepack cpu_flags_x86_sse2 debug doc fips +icu inspector +lief +jit \
+IUSE="+asm cpu_flags_x86_sse2 debug doc fips +icu inspector +lief +jit \
 lto lld man mold +npm pax-kernel pointer-compression +snapshot +ssl \
 system-icu +system-ssl +system-lief test v8-sandbox"
 REQUIRED_USE="
@@ -57,15 +57,14 @@ CDEPEND="
 	>=net-libs/nghttp2-1.69.0:=
 	>=net-libs/nghttp3-1.14.0:=
 	virtual/zlib:=
-	corepack? ( !sys-apps/yarn )
 	system-icu? ( >=dev-libs/icu-78.2:=	)
 	system-lief? (
 		>=dev-util/lief-0.17.2:=
 		<dev-util/lief-1.0.0
 	)
 	system-ssl? (
-		>=net-libs/ngtcp2-1.14.0:=
-		>=dev-libs/openssl-3.5.5:0[asm?,fips?]
+		>=net-libs/ngtcp2-1.22.1:=
+		>=dev-libs/openssl-3.5.6:0=[asm?,fips?]
 	)
 	!system-ssl? ( >=net-libs/ngtcp2-1.14.0:=[-gnutls] )
 	|| (
@@ -157,6 +156,8 @@ src_prepare() {
 	# We need to disable mprotect on two files when it builds Bug 694100.
 	use pax-kernel && PATCHES+=( "${FILESDIR}"/${PN}-24.1.0-paxmarking.patch )
 
+	use ppc64 &&
+		PATCHES+=(	"${FILESDIR}/${PN}-24.11.1-restore-ppc64be.patch" )
 	# https://github.com/nodejs/node/issues/51339
 	#use pointer-compression && PATCHES+=(
 #		"${FILESDIR}/${PN}-24.4.0-fix-v8-external-code-space.patch"
@@ -302,15 +303,17 @@ src_configure() {
 		)
 	fi
 	if use system-icu; then
+		# No Temporal support: https://github.com/nodejs/node/issues/62676
 		myconf+=( --with-intl=system-icu )
 	elif use icu; then
+		# Full embedded ICU (Temporal works)
 		myconf+=( --with-intl=full-icu )
 	else
-		myconf+=( --with-intl=none )
+		# Default embedded subset (Temporal works, saves space over full-icu)
+		myconf+=( --with-intl=small-icu )
 	fi
 	#use system-llhttp || myconf+=( --without-system-llhttp )
 	use lief || myconf+=( --without-lief )
-	use corepack && myconf+=( --with-corepack )
 	use inspector || myconf+=( --without-inspector )
 	use npm || myconf+=( --without-npm )
 	use snapshot || myconf+=( --without-node-snapshot )
@@ -371,6 +374,8 @@ src_configure() {
 src_compile() {
 	export NINJA_ARGS=" $(get_NINJAOPTS)"
 	eninja -C out/Release
+	# There's just a plain make target for the FFI tests, and it doesn't support ninja.
+	use test && emake build-ffi-tests
 }
 
 src_install() {
@@ -418,6 +423,8 @@ src_install() {
 
 		# Remove various development and/or inappropriate files and
 		# useless docs of dependend packages.
+		# Strict match for LICENSE files to avoid purging actual logic (e.g. license.js)
+		# which breaks npm.
 		find "${LIBDIR}"/node_modules \
 			\( -type d -name examples \) -or \( -type f \( \
 				\( -iname "LICEN?E*" -not -name "*.js" -not -name "*.json" \) \
@@ -446,27 +453,16 @@ src_test() {
 		test/parallel/test-process-setgroups.js
 		test/parallel/test-process-uid-gid.js
 		test/parallel/test-release-npm.js
+		# Unreliable when using system libraries and ASLR.
+		# The variations between snapshot generation passes appear limited to memory
+		# allocation pointers leaking into the serialised V8 blob array; the actual
+		# bytecode and engine structures remain consistently... consistent.
+		test/parallel/test-snapshot-reproducible.js
 		test/parallel/test-socket-write-after-fin-error.js
 		test/parallel/test-strace-openat-openssl.js
 		test/sequential/test-tls-session-timeout.js
 		test/sequential/test-util-debug.js
-		# Breaking change in nghttp2 1.67.1, see
-		# https://github.com/nodejs/node/issues/60661
-		# https://github.com/nodejs/node/commit/b426a47c05e6b039ed65798d0ad3b3698b35fd97
-		# https://github.com/nghttp2/nghttp2/issues/2604
-		test/parallel/test-http2-client-unescaped-path.js
-		test/parallel/test-http2-multi-content-length.js
-		test/parallel/test-http2-reset-flood.js
-		test/parallel/test-http2-max-invalid-frames.js
-		test/parallel/test-http2-misbehaving-flow-control.js
-		test/parallel/test-http2-misbehaving-flow-control-paused.js
 	)
-	[[ "$(nice)" -gt 10 ]] && drop_tests+=( "test/parallel/test-os.js" )
-	# https://bugs.gentoo.org/963649
-	has_version '>=dev-libs/openssl-3.6' &&
-		drop_tests+=(
-			test/parallel/test-tls-ocsp-callback
-		)
 	use inspector ||
 		drop_tests+=(
 			test/parallel/test-inspector-emit-protocol-event.js
