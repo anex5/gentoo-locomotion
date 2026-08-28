@@ -1,23 +1,20 @@
-# Copyright 1999-2020 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
 inherit linux-info toolchain-funcs
 
-DESCRIPTION="Control AMD Overdrive settings with or without X."
+DESCRIPTION="Control AMD Overdrive settings with or without X"
 HOMEPAGE="https://github.com/matszpk/amdcovc"
-
-if [ ${PR} == "r0" ]; then
-	PR=""
-fi
 
 if [ ${PV} == "9999" ] ; then
 	inherit git-r3
-	EGIT_REPO_URI="https://github.com/matszpk/${PN}"
+	EGIT_REPO_URI="https://github.com/matszpk/amdcovc"
 else
-	SRC_URI="https://github.com/matszpk/${PN}/archive/${PV}${PR/r/.}.tar.gz -> ${P}.tar.gz"
+	SRC_URI="https://github.com/matszpk/amdcovc/archive/${PV}.tar.gz -> ${P}.gh.tar.gz"
 	KEYWORDS="-* ~amd64"
+	#S="${WORKDIR}/${P}"
 fi
 
 LICENSE="GPL-3"
@@ -26,7 +23,7 @@ IUSE="catalyst"
 RESTRICT="mirror"
 
 DEPEND="
-	catalyst? ( x11-libs/amd-adl-sdk )
+	catalyst? ( dev-libs/amdgpu-pro-opencl )
 	sys-libs/ncurses
 	sys-apps/pciutils
 "
@@ -35,16 +32,22 @@ RDEPEND="${DEPEND}"
 
 BDEPEND="virtual/pkgconfig"
 
-S=${WORKDIR}/${P}${PR/r/.}
+src_prepare() {
+	default
+	# Delete hardcoded CXX
+	sed -e "/^CXX = g++$/d" -i Makefile || die
+	if tc-is-clang; then
+		eapply "${FILESDIR}"/amdcovc-9999-fix-noreturn-pciAccessError.patch
+	fi
+}
 
 src_compile() {
 	local myemakeargs=(
-		# it's a non-standard build system
-		$(usex catalyst -DHAVE_ADLSDK=1 -DHAVE_ADLSDK=0)
+		-DHAVE_ADLSDK="$(usex catalyst 1 0)"
 		-DHAVE_TERMINFO=1
 	)
 
-	CC=$(tc-getCC) CFLAGS=\"${myemakeargs[@]}\" emake
+	CXX=$(tc-getCXX) CFLAGS="${CXXFLAGS} ${myemakeargs[@]}" emake
 }
 
 src_install() {

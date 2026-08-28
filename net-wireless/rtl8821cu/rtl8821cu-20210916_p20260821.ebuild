@@ -8,21 +8,21 @@ inherit linux-mod-r1 flag-o-matic
 MODULES_KERNEL_MAX=6.18
 MODULES_KERNEL_MIN=6.1
 
-COMMIT="3d1fcf4bc838542ceb03b0b4e9e40600720cf6ae"
+COMMIT="bda65aac150d2cde0df9603206eec23a6f3b77c4"
 
 DESCRIPTION="Realtek RTL8811CU/RTL8821CU USB wifi adapter driver"
 HOMEPAGE="https://github.com/morrownr/8821cu-20210916"
-SRC_URI="https://github.com/morrownr/8821cu-${PV}/archive/${COMMIT}.tar.gz -> rtl8821cu-${PV}-${COMMIT}.tar.gz"
+MY_PV=${PV/_*/}
+SRC_URI="https://github.com/morrownr/8821cu-${MY_PV}/archive/${COMMIT}.tar.gz -> rtl8821cu-${PV}-${COMMIT:0:7}.gh.tar.gz"
+S="${WORKDIR}/8821cu-${MY_PV}-${COMMIT}"
 
-SLOT="0"
 LICENSE="GPL-2"
-KEYWORDS="~x86 ~amd64 ~arm ~arm64"
+SLOT="0"
+KEYWORDS="~amd64 ~arm ~arm64 ~x86"
 
 DEPEND="virtual/linux-sources"
 
 RDEPEND="!<net-wireless/rtl8821cu-${PV}"
-
-S="${WORKDIR}/8821cu-${PV}-${COMMIT}"
 
 RESTRICT="mirror bindist"
 
@@ -40,9 +40,9 @@ pkg_setup() {
 
 src_prepare() {
 	sed -e '/^\# gcc-13/,/^$/ s:^:\#:' -i Makefile || die "Failed to patch Makefile."
-	if [[ -n ${KV_FULL} ]] && kernel_is -gt 6 17; then
-		eapply "${FILESDIR}/rtl8821cu-fix-build-with-kernel-6.18.patch"
-	fi
+	#if [[ -n ${KV_FULL} ]] && kernel_is -gt 6 17; then
+	#	eapply "${FILESDIR}/rtl8821cu-fix-build-with-kernel-6.18.patch"
+	#fi
 	default
 }
 
@@ -53,4 +53,3 @@ src_compile() {
 
 	linux-mod-r1_src_compile
 }
-

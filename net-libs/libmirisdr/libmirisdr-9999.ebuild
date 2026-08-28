@@ -3,17 +3,23 @@
 
 EAPI=8
 
-inherit cmake git-r3 udev
-
-EGIT_REPO_URI="https://github.com/f4exb/libmirisdr-4/"
+inherit cmake udev
 
 DESCRIPTION="Software for the Mirics MSi2500 + MSi001 SDR platform"
-HOMEPAGE="https://github.com/f4exb/libmirisdr-4/"
+HOMEPAGE="https://github.com/f4exb/libmirisdr-4"
+
+if [ ${PV} == "9999" ] ; then
+	inherit git-r3
+	EGIT_REPO_URI="https://github.com/f4exb/libmirisdr-4.git"
+else
+	SRC_URI="https://github.com/f4exb/libmirisdr-4/archive/v${PV}.tar.gz -> ${P}.gh.tar.gz"
+	KEYWORDS="-* ~amd64 ~x86"
+	S="${WORKDIR}/${PN}-4-${PV}"
+fi
 
 LICENSE="GPL-2"
-SLOT="0/${PV}"
-IUSE="static-libs driver"
-KEYWORDS="~amd64 ~x86"
+SLOT="0/4"
+IUSE="static-libs"
 
 DEPEND="virtual/libusb:1"
 BDEPEND="

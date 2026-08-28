@@ -1,0 +1,20 @@
+--- a/amdcovc.cpp
++++ b/amdcovc.cpp
+@@ -824,7 +824,7 @@ struct AMDGPUAdapterInfo
+ static pci_access* pciAccess = nullptr;
+ static pci_filter pciFilter;
+ 
+-static void pciAccessError(char* msg, ...)
++static void pciAccessError(char* msg, ...) __attribute__((noreturn))
+ {
+     va_list ap;
+     va_start(ap, msg);
+@@ -838,7 +838,7 @@ static void initializePCIAccess()
+     pciAccess = pci_alloc();
+     if (pciAccess==nullptr)
+         throw Error("Can't allocate PCIAccess");
+-    pciAccess->error = pciAccessError;
++    pciAccess->error = &pciAccessError;
+     pci_filter_init(pciAccess, &pciFilter);
+     pci_init(pciAccess);
+     pci_scan_bus(pciAccess);

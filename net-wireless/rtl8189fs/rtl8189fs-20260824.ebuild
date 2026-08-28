@@ -3,26 +3,23 @@
 
 EAPI=8
 
-inherit linux-mod-r1
+inherit linux-mod-r1 flag-o-matic
 
-MODULES_KERNEL_MAX=7.1
+MODULES_KERNEL_MAX=7.2
 MODULES_KERNEL_MIN=6.18
 
-COMMIT="36d917d5069f25f4c36b8b4d8b17b5d02e9116e9"
+COMMIT="cac32cbe7b0047c3d97a28ef1bd89e6fe2edd168"
 
 DESCRIPTION="Realtek 8189es wifi chip driver"
 HOMEPAGE="https://github.com/jwrdegoede/rtl8189ES_linux"
-SRC_URI="https://github.com/jwrdegoede/rtl8189ES_linux/archive/${COMMIT}.tar.gz -> ${PN}-${PV}.tar.gz"
+SRC_URI="https://github.com/jwrdegoede/rtl8189ES_linux/archive/${COMMIT}.tar.gz -> ${P}-${COMMIT:0:7}.gh.tar.gz"
+S="${WORKDIR}/rtl8189ES_linux-${COMMIT}"
 
+KEYWORDS="~amd64 ~arm ~arm64 ~x86"
 SLOT="0"
 LICENSE="GPL-2"
-KEYWORDS="~x86 ~amd64 ~arm ~arm64"
 
 DEPEND="virtual/linux-sources"
-
-RDEPEND="!<net-wireless/rtl8189fs-${PV}"
-
-S="${WORKDIR}/rtl8189ES_linux-${COMMIT}"
 
 RESTRICT="mirror bindist"
 
@@ -52,4 +49,3 @@ src_compile() {
 	local modargs=( KVER="${KV_FULL}" KSRC="${KERNEL_DIR}" )
 	linux-mod-r1_src_compile
 }
-

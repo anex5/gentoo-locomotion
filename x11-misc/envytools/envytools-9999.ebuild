@@ -13,7 +13,7 @@ if [[ ${PV} == 9999 ]]; then
 else
 	COMMIT="f102b82381f3f11cee113d16374c87091db039d9"
 	SRC_URI="https://github.com/envytools/envytools/archive/${COMMIT}.tar.gz -> ${P}.tar.gz"
-	S="${WORKDIR}"/${PN}-${COMMIT}
+	S="${WORKDIR}/${PN}-${COMMIT}"
 	KEYWORDS="~amd64"
 fi
 
@@ -68,6 +68,6 @@ src_configure() {
 src_install() {
 	default
 	cmake_src_install
-	dolib.so ${BUILD_DIR}/cgen/libcgen.so
-	dolib.so ${BUILD_DIR}/rnn/libseq.so
+	dolib.so "${BUILD_DIR}"/cgen/libcgen.so
+	dolib.so "${BUILD_DIR}"/rnn/libseq.so
 }

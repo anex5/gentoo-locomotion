@@ -1,4 +1,4 @@
-# Copyright 1999-2025 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -11,6 +11,7 @@ HOMEPAGE="https://www.gtk.org/"
 
 LICENSE="LGPL-2+"
 SLOT="3"
+KEYWORDS="~alpha ~amd64 ~arm ~arm64 ~hppa ~loong ~mips ~ppc ~ppc64 ~riscv ~sparc ~x86"
 IUSE="adwaita-icon-theme aqua atk-bridge broadway cloudproviders colord cups examples gtk-doc +introspection man sysprof test vim-syntax wayland +X xinerama"
 REQUIRED_USE="
 	|| ( aqua wayland X )
@@ -18,9 +19,6 @@ REQUIRED_USE="
 	xinerama? ( X )
 	atk-bridge? ( X )
 "
-RESTRICT="!test? ( test )"
-
-KEYWORDS="~alpha ~amd64 ~arm ~arm64 ~hppa ~loong ~mips ~ppc ~ppc64 ~riscv ~s390 ~sparc ~x86"
 
 COMMON_DEPEND="
 	atk-bridge? ( >=app-accessibility/at-spi2-core-2.46.0[introspection?,X,${MULTILIB_USEDEP}] )
@@ -91,6 +89,8 @@ BDEPEND="
 	)
 	test? ( sys-apps/dbus )
 "
+
+RESTRICT="!test? ( test )"
 
 MULTILIB_CHOST_TOOLS=(
 	/usr/bin/gtk-query-immodules-3.0$(get_exeext)

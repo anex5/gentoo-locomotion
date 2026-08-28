@@ -13,7 +13,7 @@ if [[ ${PV} == *9999 ]]; then
 else
 	COMMIT="f284b0682d57340fde552f41c6060680daafbf78"
 	SRC_URI="https://github.com/opencollab/${PN}-ng/archive/${COMMIT}.tar.gz -> ${P}-${COMMIT:0:7}.tar.gz"
-	KEYWORDS="~alpha amd64 arm arm64 ~hppa ~loong ~ppc ppc64 ~riscv ~s390 ~sparc x86"
+	KEYWORDS="~alpha amd64 arm arm64 ~hppa ~loong ~ppc ppc64 ~riscv ~sparc x86"
 	S="${WORKDIR}/${PN}-ng-${COMMIT}"
 fi
 
