@@ -4,7 +4,7 @@
 EAPI=8
 
 # Using Gentoos firefox patches as system libraries and lto are quite nice
-FIREFOX_PATCHSET="firefox-154-patches-01.tar.xz"
+FIREFOX_PATCHSET="firefox-154-patches-02.tar.xz"
 
 LLVM_COMPAT=( {21..22} )
 
@@ -25,7 +25,7 @@ WASI_SDK_VER=( [22]="32.0" [21]="30.0" )
 
 MOZ_ESR=
 
-MOZ_PV=154.0.0
+MOZ_PV=154.0.1
 MOZ_PV_SUFFIX=
 if [[ ${PV} =~ (_(alpha|beta|rc).*)$ ]] ; then
 	MOZ_PV_SUFFIX=${BASH_REMATCH[1]}
@@ -245,7 +245,7 @@ CDEPEND="
 	>=app-accessibility/at-spi2-core-2.46.0:2[${MULTILIB_USEDEP}]
 	>=dev-libs/glib-2.42:2[${MULTILIB_USEDEP}]
 	>=dev-libs/nspr-4.38[${MULTILIB_USEDEP}]
-	>=dev-libs/nss-3.126[${MULTILIB_USEDEP}]
+	>=dev-libs/nss-3.126.1[${MULTILIB_USEDEP}]
 	>=media-libs/fontconfig-2.7.0[${MULTILIB_USEDEP}]
 	>=media-libs/freetype-2.14.1[${MULTILIB_USEDEP}]
 	>=sys-libs/zlib-1.3.1[${MULTILIB_USEDEP}]
@@ -978,7 +978,7 @@ src_prepare() {
 
 	# Machine learning
 	if ! use ml ; then
-		eapply "${FILESDIR}/extra-patches/firefox-154.0.0-disable-ML.patch"
+		eapply "${FILESDIR}/extra-patches/firefox-154.0.1-disable-ML.patch"
 		sed -e '/\@BINPATH\@\/\@DLL_PREFIX\@mozinference\@DLL_SUFFIX\@/d' -i browser/installer/package-manifest.in || die
 	fi
 
@@ -995,6 +995,10 @@ src_prepare() {
 	#if [[ "${LLVM_SLOT}" =~ ("21"|"22") ]]; then
 	#	sed -e '/CXXFLAGS += \["-Werror=implicit-int-conversion"\]/d' -i "${S}/dom/canvas/moz.build" -i "${S}/dom/webgpu/moz.build" || die
 	#fi
+
+	if ! use telemetry ; then
+		eapply "${FILESDIR}/extra-patches/firefox-154.0.1-disable-normandy.patch"
+	fi
 
 	# Workaround for bug #915651 on musl
 	if use elibc_glibc ; then
@@ -1125,7 +1129,7 @@ src_prepare() {
 	echo -n "${MOZ_API_KEY_MOZILLA//m0ap1/}" > "${S}"/api-mozilla.key || die
 
 	# Change base version
-	echo "${PV/_beta/b}" > "${S}"/browser/config/version.txt || die
+	#echo "${PV/_beta/b}" > "${S}"/browser/config/version.txt || die
 	# Change display version version_display.txt
 	echo "${PV/_beta/b}" > "${S}"/browser/config/version_display.txt || die
 	# Change milestone (extensions become incompartible)
@@ -2128,6 +2132,12 @@ _src_install() {
 		cat >>"${GENTOO_PREFS}" <<-EOF || die "failed to set gfx.font_rendering.graphite.enabled pref"
 		sticky_pref("gfx.font_rendering.graphite.enabled", true);
 		EOF
+	fi
+
+	# Add telemetry config prefs, just in case something happens in future and telemetry build
+	# options stop working.
+	if ! use telemetry ; then
+		cat "${FILESDIR}"/gentoo-telemetry-prefs.js >>"${GENTOO_PREFS}" || die "failed to set telemetry prefs"
 	fi
 
 	# Force machine learning features
