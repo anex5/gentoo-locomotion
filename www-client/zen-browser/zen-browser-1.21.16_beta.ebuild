@@ -6,7 +6,7 @@ EAPI=8
 # Using Gentoos firefox patches as system libraries and lto are quite nice
 FIREFOX_PATCHSET="firefox-154-patches-02.tar.xz"
 
-LLVM_COMPAT=( {21..22} )
+LLVM_COMPAT=( {21..23} )
 
 # This will also filter rust versions that don't match LLVM_COMPAT in the non-clang path; this is fine.
 RUST_NEEDS_LLVM=1
@@ -21,7 +21,7 @@ VIRTUALX_REQUIRED="manual"
 # Information about the bundled wasi toolchain from
 # https://github.com/WebAssembly/wasi-sdk/
 declare -A WASI_SDK_VER
-WASI_SDK_VER=( [22]="32.0" [21]="30.0" )
+WASI_SDK_VER=( [23]="34.0" [22]="32.0" [21]="30.0" )
 
 MOZ_ESR=
 
@@ -50,10 +50,12 @@ SRC_URI="
 	https://dev.gentoo.org/~juippis/mozilla/patchsets/${FIREFOX_PATCHSET}
 	wasm-sandbox? (
 		amd64? (
+			llvm_slot_23? ( https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_SDK_VER[23]/.*/}/wasi-sdk-${WASI_SDK_VER[23]}-x86_64-linux.tar.gz )
 			llvm_slot_22? ( https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_SDK_VER[22]/.*/}/wasi-sdk-${WASI_SDK_VER[22]}-x86_64-linux.tar.gz )
 			llvm_slot_21? ( https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_SDK_VER[21]/.*/}/wasi-sdk-${WASI_SDK_VER[21]}-x86_64-linux.tar.gz )
 		)
 		arm64? (
+			llvm_slot_23? ( https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_SDK_VER[23]/.*/}/wasi-sdk-${WASI_SDK_VER[23]}-arm64-linux.tar.gz )
 			llvm_slot_22? ( https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_SDK_VER[22]/.*/}/wasi-sdk-${WASI_SDK_VER[22]}-arm64-linux.tar.gz )
 			llvm_slot_21? ( https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_SDK_VER[21]/.*/}/wasi-sdk-${WASI_SDK_VER[21]}-arm64-linux.tar.gz )
 		)
