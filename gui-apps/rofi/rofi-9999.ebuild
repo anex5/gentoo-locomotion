@@ -18,7 +18,7 @@ else
 	MY_PV="${PV/_/-}"
 	LIBGWATER_COMMIT="d86f9903efb9c490c0e3b0316d7f2da5b5a5632c"
 	LIBNKUTILS_COMMIT="2f220a40ad32cf51b6b7d7ae83ab641a3ae76693"
-	ROFI_COMMIT="b447eba2fc57f8673be324296a6f459d33d37c46"
+	ROFI_COMMIT="58376cf59976b4791d40f293feb816facf399217"
 	SRC_URI="
 		https://github.com/davatorium/rofi/archive/${ROFI_COMMIT}.tar.gz -> ${P}-${COMMIT}.gh.tar.gz
 		https://github.com/sardemff7/libgwater/archive/${LIBGWATER_COMMIT}.tar.gz -> libgwater-${LIBGWATER_COMMIT}.gh.tar.gz
@@ -85,6 +85,8 @@ PATCHES=(
 	"${FILESDIR}"/rofi-9999-filebrowser-mesg-path.patch
 	"${FILESDIR}"/rofi-9999-filebrowser-regex.patch
 	"${FILESDIR}"/rofi-9999-fix-theme-selector-home.patch
+	"${FILESDIR}"/rofi-2.0.0-add-hover-select-mode-pr2296.patch
+	"${FILESDIR}"/rofi-2.0.0-fix-selection-after-reload-pr2318.patch
 )
 
 src_prepare() {

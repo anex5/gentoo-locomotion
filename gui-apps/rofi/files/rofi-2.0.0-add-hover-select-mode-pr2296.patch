@@ -1,0 +1,859 @@
+From fc0341bc32910265dc3cdb6436f0507b24326c85 Mon Sep 17 00:00:00 2001
+From: haxllo <mshabeeburrahman786@gmail.com>
+Date: Wed, 20 May 2026 02:49:25 +0530
+Subject: [PATCH 1/6] Add hover-select mode to listview widget Implements
+ viewport-based scrolling for mouse-driven usage where scroll  events move the
+ viewport without changing selection, and the item under the cursor is
+ automatically selected. Adds hover_select flag,mouse position tracking,
+ viewport offset management, and position sync logic.
+
+---
+ include/widgets/listview.h |  20 ++++
+ source/view.c              |   9 ++
+ source/widgets/listview.c  | 192 ++++++++++++++++++++++++++++++++++++-
+ 3 files changed, 216 insertions(+), 5 deletions(-)
+
+diff --git a/include/widgets/listview.h b/include/widgets/listview.h
+index 9fee5b52a..e3f864fac 100644
+--- a/include/widgets/listview.h
++++ b/include/widgets/listview.h
+@@ -113,6 +113,26 @@ listview *listview_create(widget *parent, const char *name,
+ void listview_set_selection_changed_callback(
+     listview *lv, listview_selection_changed_callback cb, void *udata);
+ 
++/**
++ * @param lv The listview handle
++ * @param hover_select Enable hover select mode (disables scroll-to-selection)
++ */
++void listview_set_hover_select(listview *lv, gboolean hover_select);
++
++/**
++ * Callback type for hover update after scroll.
++ */
++typedef void (*listview_hover_update_cb)(void *udata);
++
++/**
++ * @param lv The listview handle
++ * @param cb Callback function
++ * @param udata User data
++ *
++ * Set the hover update callback (called after scroll to re-evaluate hover selection).
++ */
++void listview_set_hover_update_callback(listview *lv, listview_hover_update_cb cb, void *udata);
++
+ /**
+  * @param lv The listview handle
+  * @param rows Number of elements
+diff --git a/source/view.c b/source/view.c
+index 30689ae73..717a7282f 100644
+--- a/source/view.c
++++ b/source/view.c
+@@ -761,6 +761,13 @@ static void page_changed_callback(void) {
+   rofi_view_workers_initialize();
+ }
+ 
++static void hover_update_callback(void *udata) {
++  (void)udata;
++  if (config.hover_select && current_active_menu) {
++    rofi_view_ping_mouse(current_active_menu);
++  }
++}
++
+ static void _rofi_view_reload_row(RofiViewState *state) {
+   g_free(state->line_map);
+   g_free(state->distance);
+@@ -1737,6 +1744,8 @@ static void rofi_view_add_widget(RofiViewState *state, widget *parent_widget,
+         state->list_view, selection_changed_callback, (void *)state);
+     box_add((box *)parent_widget, WIDGET(state->list_view), TRUE);
+     listview_set_scroll_type(state->list_view, config.scroll_method);
++    listview_set_hover_select(state->list_view, config.hover_select);
++    listview_set_hover_update_callback(state->list_view, hover_update_callback, NULL);
+     listview_set_mouse_activated_cb(
+         state->list_view, rofi_view_listview_mouse_activated_cb, state);
+ 
+diff --git a/source/widgets/listview.c b/source/widgets/listview.c
+index 03e94d32a..82ac9bf5d 100644
+--- a/source/widgets/listview.c
++++ b/source/widgets/listview.c
+@@ -81,6 +81,7 @@ struct _listview {
+   unsigned int cur_page;
+   unsigned int last_offset;
+   unsigned int selected;
++  unsigned int viewport_offset;
+ 
+   unsigned int element_height;
+   unsigned int max_rows;
+@@ -104,6 +105,10 @@ struct _listview {
+   gboolean filtered;
+ 
+   gboolean cycle;
++  gboolean hover_select;
++  gint mouse_x;
++  gint mouse_y;
++  gboolean mouse_hovering;
+ 
+   ScrollType scroll_type;
+ 
+@@ -123,6 +128,10 @@ struct _listview {
+   void *mouse_activated_data;
+ 
+   listview_page_changed_cb page_callback;
++  void *page_udata;
++
++  listview_hover_update_cb hover_update_callback;
++  void *hover_update_udata;
+ 
+   char *listview_name;
+ 
+@@ -449,6 +458,9 @@ static void barview_draw(widget *wid, cairo_t *draw) {
+   }
+ }
+ 
++static void listview_update_hover_from_mouse(listview *lv);
++static void listview_sync_positions(listview *lv);
++
+ static void listview_draw(widget *wid, cairo_t *draw) {
+   unsigned int offset = 0;
+   listview *lv = (listview *)wid;
+@@ -459,6 +471,18 @@ static void listview_draw(widget *wid, cairo_t *draw) {
+   } else {
+     offset = scroll_continious_rows(lv);
+   }
++
++  if (lv->hover_select) {
++    unsigned int max_offset = lv->req_elements > lv->max_elements
++                                  ? lv->req_elements - lv->max_elements
++                                  : 0;
++    if (lv->viewport_offset <= max_offset) {
++      offset = lv->viewport_offset;
++    } else {
++      offset = max_offset;
++    }
++  }
++
+   // Set these all together to make sure they update consistently.
+   scrollbar_set_max_value(lv->scrollbar, lv->req_elements);
+   scrollbar_set_handle_length(lv->scrollbar, lv->cur_columns * lv->max_rows);
+@@ -561,6 +585,10 @@ static void listview_draw(widget *wid, cairo_t *draw) {
+     }
+   }
+   widget_draw(WIDGET(lv->scrollbar), draw);
++
++  if (lv->hover_select) {
++    listview_update_hover_from_mouse(lv);
++  }
+ }
+ static WidgetTriggerActionResult
+ listview_element_trigger_action(widget *wid,
+@@ -696,6 +724,9 @@ static widget *listview_find_mouse_target(widget *wid, WidgetType type, gint x,
+   widget *target = NULL;
+   gint rx, ry;
+   listview *lv = (listview *)wid;
++  lv->mouse_x = x;
++  lv->mouse_y = y;
++  lv->mouse_hovering = TRUE;
+   if (widget_enabled(WIDGET(lv->scrollbar)) &&
+       widget_intersect(WIDGET(lv->scrollbar), x, y)) {
+     rx = x - widget_get_x_pos(WIDGET(lv->scrollbar));
+@@ -730,10 +761,31 @@ listview_trigger_action(widget *wid, MouseBindingListviewAction action,
+     listview_nav_right(lv);
+     break;
+   case SCROLL_DOWN:
+-    listview_nav_down(lv);
++    if (lv->hover_select) {
++      unsigned int max_offset = lv->req_elements > lv->max_elements
++                                    ? lv->req_elements - lv->max_elements
++                                    : 0;
++      if (lv->viewport_offset < max_offset) {
++        lv->viewport_offset++;
++        listview_sync_positions(lv);
++        listview_update_hover_from_mouse(lv);
++        widget_queue_redraw(WIDGET(lv));
++      }
++    } else {
++      listview_nav_down(lv);
++    }
+     break;
+   case SCROLL_UP:
+-    listview_nav_up(lv);
++    if (lv->hover_select) {
++      if (lv->viewport_offset > 0) {
++        lv->viewport_offset--;
++        listview_sync_positions(lv);
++        listview_update_hover_from_mouse(lv);
++        widget_queue_redraw(WIDGET(lv));
++      }
++    } else {
++      listview_nav_up(lv);
++    }
+     break;
+   }
+   return WIDGET_TRIGGER_ACTION_RESULT_HANDLED;
+@@ -767,10 +819,11 @@ static WidgetTriggerActionResult listview_element_trigger_action(
+   return WIDGET_TRIGGER_ACTION_RESULT_HANDLED;
+ }
+ 
+-static gboolean listview_element_motion_notify(widget *wid,
+-                                               G_GNUC_UNUSED gint x,
+-                                               G_GNUC_UNUSED gint y) {
++static gboolean listview_element_motion_notify(widget *wid, gint x, gint y) {
+   listview *lv = (listview *)wid->parent;
++  lv->mouse_x = x;
++  lv->mouse_y = y;
++  lv->mouse_hovering = TRUE;
+   unsigned int max = MIN(lv->cur_elements, lv->req_elements - lv->last_offset);
+   unsigned int i;
+   for (i = 0; i < max && WIDGET(lv->boxes[i].box) != wid; i++) {
+@@ -781,6 +834,122 @@ static gboolean listview_element_motion_notify(widget *wid,
+   return TRUE;
+ }
+ 
++static void listview_update_hover_from_mouse(listview *lv) {
++  if (!lv->hover_select || !lv->mouse_hovering) {
++    return;
++  }
++  int spacing_vert = distance_get_pixel(lv->spacing, ROFI_ORIENTATION_VERTICAL);
++  int top_offset = widget_padding_get_top(WIDGET(lv));
++  int rel_y = lv->mouse_y - top_offset;
++  if (rel_y < 0) {
++    return;
++  }
++  unsigned int item_height = lv->element_height + spacing_vert;
++  if (item_height == 0) {
++    return;
++  }
++  unsigned int row = rel_y / item_height;
++  unsigned int max = MIN(lv->cur_elements, lv->req_elements - lv->last_offset);
++  if (row < max) {
++    unsigned int idx = lv->last_offset + row;
++    if (idx != listview_get_selected(lv)) {
++      listview_set_selected(lv, idx);
++    }
++  }
++}
++
++static void listview_sync_positions(listview *lv) {
++  unsigned int offset = 0;
++  if (lv->scroll_type == LISTVIEW_SCROLL_PER_PAGE) {
++    offset = scroll_per_page(lv);
++  } else if (lv->pack_direction == ROFI_ORIENTATION_VERTICAL) {
++    offset = scroll_continious_elements(lv);
++  } else {
++    offset = scroll_continious_rows(lv);
++  }
++  if (lv->hover_select) {
++    unsigned int max_offset = lv->req_elements > lv->max_elements
++                                  ? lv->req_elements - lv->max_elements
++                                  : 0;
++    if (lv->viewport_offset <= max_offset) {
++      offset = lv->viewport_offset;
++    } else {
++      offset = max_offset;
++    }
++  }
++  lv->last_offset = offset;
++  int spacing_vert = distance_get_pixel(lv->spacing, ROFI_ORIENTATION_VERTICAL);
++  int spacing_hori =
++      distance_get_pixel(lv->spacing, ROFI_ORIENTATION_HORIZONTAL);
++  int left_offset = widget_padding_get_left(WIDGET(lv));
++  int top_offset = widget_padding_get_top(WIDGET(lv));
++  if (lv->cur_elements > 0 && lv->max_rows > 0) {
++    unsigned int max = MIN(lv->cur_elements, lv->req_elements - offset);
++    unsigned int width = lv->widget.w;
++    width -= widget_padding_get_padding_width(WIDGET(lv));
++    if (widget_enabled(WIDGET(lv->scrollbar))) {
++      width -= spacing_hori;
++      width -= widget_get_width(WIDGET(lv->scrollbar));
++    }
++    unsigned int element_width =
++        (width - spacing_hori * (lv->cur_columns - 1)) / lv->cur_columns;
++    int d = width - (element_width + spacing_hori) * (lv->cur_columns - 1) -
++            element_width;
++    if (lv->cur_columns > 1) {
++      int diff = d / (lv->cur_columns - 1);
++      if (diff >= 1) {
++        spacing_hori += 1;
++        d -= lv->cur_columns - 1;
++      }
++    }
++    for (unsigned int i = 0; i < max; i++) {
++      if (lv->pack_direction == ROFI_ORIENTATION_HORIZONTAL) {
++        unsigned int ex = left_offset + ((i) % lv->cur_columns) *
++                                            (element_width + spacing_hori);
++        unsigned int ey = 0;
++        if (lv->reverse) {
++          ey = WIDGET(lv)->h -
++               (widget_padding_get_bottom(WIDGET(lv)) +
++                ((i) / lv->cur_columns) *
++                    (lv->element_height + spacing_vert)) -
++               lv->element_height;
++          if ((i) / lv->cur_columns == (lv->cur_columns - 1)) {
++            ex += d;
++          }
++        } else {
++          ey = top_offset +
++               ((i) / lv->cur_columns) * (lv->element_height + spacing_vert);
++          if ((i) / lv->cur_columns == (lv->cur_columns - 1)) {
++            ex += d;
++          }
++        }
++        widget_move(WIDGET(lv->boxes[i].box), ex, ey);
++        widget_resize(WIDGET(lv->boxes[i].box), element_width,
++                      lv->element_height);
++      } else {
++        unsigned int ex = left_offset + ((i) / lv->max_rows) *
++                                            (element_width + spacing_hori);
++        if ((i) / lv->max_rows == (lv->cur_columns - 1)) {
++          ex += d;
++        }
++        unsigned int ey = 0;
++        if (lv->reverse) {
++          ey = WIDGET(lv)->h -
++               (widget_padding_get_bottom(WIDGET(lv)) +
++                ((i) % lv->max_rows) * (lv->element_height + spacing_vert)) -
++               lv->element_height;
++        } else {
++          ey = top_offset +
++               ((i) % lv->max_rows) * (lv->element_height + spacing_vert);
++        }
++        widget_move(WIDGET(lv->boxes[i].box), ex, ey);
++        widget_resize(WIDGET(lv->boxes[i].box), element_width,
++                      lv->element_height);
++      }
++    }
++  }
++}
++
+ listview *listview_create(widget *parent, const char *name,
+                           listview_update_callback cb,
+                           listview_page_changed_cb page_cb, void *udata,
+@@ -1142,6 +1311,19 @@ void listview_set_scroll_type(listview *lv, ScrollType type) {
+   }
+ }
+ 
++void listview_set_hover_select(listview *lv, gboolean hover_select) {
++  if (lv) {
++    lv->hover_select = hover_select;
++  }
++}
++
++void listview_set_hover_update_callback(listview *lv, listview_hover_update_cb cb, void *udata) {
++  if (lv) {
++    lv->hover_update_callback = cb;
++    lv->hover_update_udata = udata;
++  }
++}
++
+ void listview_set_mouse_activated_cb(listview *lv,
+                                      listview_mouse_activated_cb cb,
+                                      void *udata) {
+
+From 567f9113051f44dd73f95a9a372a8af004ae1f2b Mon Sep 17 00:00:00 2001
+From: haxllo <mshabeeburrahman786@gmail.com>
+Date: Thu, 21 May 2026 09:31:22 +0530
+Subject: [PATCH 2/6] Fix hover-select lag by removing redundant hover update
+ from draw
+
+Calling listview_update_hover_from_mouse inside listview_draw created a
+feedback loop: draw -> hover update -> set_selected -> queue_redraw -> draw.
+Mouse movement already handles selection updates via
+listview_element_motion_notify.
+---
+ source/widgets/listview.c | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/source/widgets/listview.c b/source/widgets/listview.c
+index 82ac9bf5d..2c71a0c78 100644
+--- a/source/widgets/listview.c
++++ b/source/widgets/listview.c
+@@ -585,10 +585,6 @@ static void listview_draw(widget *wid, cairo_t *draw) {
+     }
+   }
+   widget_draw(WIDGET(lv->scrollbar), draw);
+-
+-  if (lv->hover_select) {
+-    listview_update_hover_from_mouse(lv);
+-  }
+ }
+ static WidgetTriggerActionResult
+ listview_element_trigger_action(widget *wid,
+
+From f95a997bde976318199c129b3eee3bf647d541c4 Mon Sep 17 00:00:00 2001
+From: haxllo <mshabeeburrahman786@gmail.com>
+Date: Thu, 21 May 2026 09:39:06 +0530
+Subject: [PATCH 3/6] Map scrollbar to viewport offset in hover-select mode
+
+Scrollbar now tracks viewport position instead of selected item when
+hover-select is enabled. Sets scrollbar max to max_offset so it reaches
+the bottom when scrolled fully.
+---
+ source/widgets/listview.c | 19 ++++++++++++++-----
+ 1 file changed, 14 insertions(+), 5 deletions(-)
+
+diff --git a/source/widgets/listview.c b/source/widgets/listview.c
+index 2c71a0c78..d52ed395c 100644
+--- a/source/widgets/listview.c
++++ b/source/widgets/listview.c
+@@ -484,12 +484,21 @@ static void listview_draw(widget *wid, cairo_t *draw) {
+   }
+ 
+   // Set these all together to make sure they update consistently.
+-  scrollbar_set_max_value(lv->scrollbar, lv->req_elements);
+-  scrollbar_set_handle_length(lv->scrollbar, lv->cur_columns * lv->max_rows);
+-  if (lv->reverse) {
+-    scrollbar_set_handle(lv->scrollbar, lv->req_elements - lv->selected - 1);
++  if (lv->hover_select) {
++    unsigned int max_offset = lv->req_elements > lv->max_elements
++                                  ? lv->req_elements - lv->max_elements
++                                  : 0;
++    scrollbar_set_max_value(lv->scrollbar, max_offset);
++    scrollbar_set_handle_length(lv->scrollbar, 1);
++    scrollbar_set_handle(lv->scrollbar, lv->viewport_offset);
+   } else {
+-    scrollbar_set_handle(lv->scrollbar, lv->selected);
++    scrollbar_set_max_value(lv->scrollbar, lv->req_elements);
++    scrollbar_set_handle_length(lv->scrollbar, lv->cur_columns * lv->max_rows);
++    if (lv->reverse) {
++      scrollbar_set_handle(lv->scrollbar, lv->req_elements - lv->selected - 1);
++    } else {
++      scrollbar_set_handle(lv->scrollbar, lv->selected);
++    }
+   }
+   lv->last_offset = offset;
+   int spacing_vert = distance_get_pixel(lv->spacing, ROFI_ORIENTATION_VERTICAL);
+
+From f4e1fd95a0fb1238921449e3e294f2e49872f6d9 Mon Sep 17 00:00:00 2001
+From: haxllo <mshabeeburrahman786@gmail.com>
+Date: Thu, 21 May 2026 21:18:15 +0530
+Subject: [PATCH 4/6] Address review feedback: use G_GNUC_UNUSED, remove dead
+ code
+
+- Use G_GNUC_UNUSED for unused parameter in hover_update_callback (maintainer feedback)
+- Remove unused page_udata field from listview struct
+- Remove dead hover_update_callback/udata fields and registration
+  (hover re-evaluation already handled by listview_update_hover_from_mouse in scroll handlers)
+---
+ include/widgets/listview.h | 14 --------------
+ source/view.c              |  8 --------
+ source/widgets/listview.c  | 11 -----------
+ 3 files changed, 33 deletions(-)
+
+diff --git a/include/widgets/listview.h b/include/widgets/listview.h
+index e3f864fac..344b1bb3a 100644
+--- a/include/widgets/listview.h
++++ b/include/widgets/listview.h
+@@ -119,20 +119,6 @@ void listview_set_selection_changed_callback(
+  */
+ void listview_set_hover_select(listview *lv, gboolean hover_select);
+ 
+-/**
+- * Callback type for hover update after scroll.
+- */
+-typedef void (*listview_hover_update_cb)(void *udata);
+-
+-/**
+- * @param lv The listview handle
+- * @param cb Callback function
+- * @param udata User data
+- *
+- * Set the hover update callback (called after scroll to re-evaluate hover selection).
+- */
+-void listview_set_hover_update_callback(listview *lv, listview_hover_update_cb cb, void *udata);
+-
+ /**
+  * @param lv The listview handle
+  * @param rows Number of elements
+diff --git a/source/view.c b/source/view.c
+index 717a7282f..b532b923c 100644
+--- a/source/view.c
++++ b/source/view.c
+@@ -761,13 +761,6 @@ static void page_changed_callback(void) {
+   rofi_view_workers_initialize();
+ }
+ 
+-static void hover_update_callback(void *udata) {
+-  (void)udata;
+-  if (config.hover_select && current_active_menu) {
+-    rofi_view_ping_mouse(current_active_menu);
+-  }
+-}
+-
+ static void _rofi_view_reload_row(RofiViewState *state) {
+   g_free(state->line_map);
+   g_free(state->distance);
+@@ -1745,7 +1738,6 @@ static void rofi_view_add_widget(RofiViewState *state, widget *parent_widget,
+     box_add((box *)parent_widget, WIDGET(state->list_view), TRUE);
+     listview_set_scroll_type(state->list_view, config.scroll_method);
+     listview_set_hover_select(state->list_view, config.hover_select);
+-    listview_set_hover_update_callback(state->list_view, hover_update_callback, NULL);
+     listview_set_mouse_activated_cb(
+         state->list_view, rofi_view_listview_mouse_activated_cb, state);
+ 
+diff --git a/source/widgets/listview.c b/source/widgets/listview.c
+index d52ed395c..85d2c77f6 100644
+--- a/source/widgets/listview.c
++++ b/source/widgets/listview.c
+@@ -128,10 +128,6 @@ struct _listview {
+   void *mouse_activated_data;
+ 
+   listview_page_changed_cb page_callback;
+-  void *page_udata;
+-
+-  listview_hover_update_cb hover_update_callback;
+-  void *hover_update_udata;
+ 
+   char *listview_name;
+ 
+@@ -1322,13 +1318,6 @@ void listview_set_hover_select(listview *lv, gboolean hover_select) {
+   }
+ }
+ 
+-void listview_set_hover_update_callback(listview *lv, listview_hover_update_cb cb, void *udata) {
+-  if (lv) {
+-    lv->hover_update_callback = cb;
+-    lv->hover_update_udata = udata;
+-  }
+-}
+-
+ void listview_set_mouse_activated_cb(listview *lv,
+                                      listview_mouse_activated_cb cb,
+                                      void *udata) {
+
+From 98206ac10e363e9e12a23b6362058fd80bb0877f Mon Sep 17 00:00:00 2001
+From: haxllo <mshabeeburrahman786@gmail.com>
+Date: Wed, 27 May 2026 05:31:23 +0530
+Subject: [PATCH 5/6] Fix scrollbar interaction in hover-select mode and
+ improve UX
+
+- Fix scrollbar clicks scrolling viewport instead of changing selection in hover-select mode (Bug 1)
+- Fix coordinate mismatch between draw and click calculations; use remaining height and account for padding (Bug 3)
+- Fix division by zero when sb->length <= 1
+- Jump on press, not release: MOUSE_CLICK_DOWN scrolls immediately
+- Page up/down on track clicks above/below handle
+- Add handle-pressed-color for visual feedback on press
+- Auto-hide scrollbar when all items fit
+- Widen scrollbar click target via left padding (6px) and larger default (14px)
+- Double the gap between list items and scrollbar
+---
+ include/widgets/listview.h  | 10 +++++
+ include/widgets/scrollbar.h |  1 +
+ source/widgets/listview.c   | 31 ++++++++++++++
+ source/widgets/scrollbar.c  | 83 +++++++++++++++++++++++++++----------
+ test/scrollbar-test.c       | 12 +++---
+ 5 files changed, 111 insertions(+), 26 deletions(-)
+
+diff --git a/include/widgets/listview.h b/include/widgets/listview.h
+index 344b1bb3a..b5b571995 100644
+--- a/include/widgets/listview.h
++++ b/include/widgets/listview.h
+@@ -135,6 +135,16 @@ void listview_set_num_elements(listview *lv, unsigned int rows);
+  */
+ void listview_set_selected(listview *lv, unsigned int selected);
+ 
++/**
++ * @param lv The listview handle
++ * @param line The line index to scroll to
++ *
++ * Handle scrollbar scroll action. In normal mode this is equivalent to
++ * listview_set_selected. In hover-select mode this scrolls the viewport
++ * to the given line and updates the hover selection from mouse position.
++ */
++void listview_scrollbar_scroll_to(listview *lv, unsigned int line);
++
+ /**
+  * @param lv The listview handle
+  *
+diff --git a/include/widgets/scrollbar.h b/include/widgets/scrollbar.h
+index ce3d8d7d3..3aec769f1 100644
+--- a/include/widgets/scrollbar.h
++++ b/include/widgets/scrollbar.h
+@@ -46,6 +46,7 @@ typedef struct _scrollbar {
+   unsigned int pos;
+   unsigned int pos_length;
+   RofiDistance width;
++  gboolean pressed;
+ } scrollbar;
+ 
+ /**
+diff --git a/source/widgets/listview.c b/source/widgets/listview.c
+index 85d2c77f6..551883c3d 100644
+--- a/source/widgets/listview.c
++++ b/source/widgets/listview.c
+@@ -496,6 +496,19 @@ static void listview_draw(widget *wid, cairo_t *draw) {
+       scrollbar_set_handle(lv->scrollbar, lv->selected);
+     }
+   }
++  // Auto-hide scrollbar when everything fits
++  if (lv->type == LISTVIEW && widget_enabled(WIDGET(lv->scrollbar))) {
++    gboolean scrollbar_needed = lv->req_elements > lv->max_elements;
++    if (lv->hover_select) {
++      unsigned int mo = lv->req_elements > lv->max_elements
++                            ? lv->req_elements - lv->max_elements
++                            : 0;
++      scrollbar_needed = mo > 0;
++    }
++    if (!scrollbar_needed) {
++      widget_disable(WIDGET(lv->scrollbar));
++    }
++  }
+   lv->last_offset = offset;
+   int spacing_vert = distance_get_pixel(lv->spacing, ROFI_ORIENTATION_VERTICAL);
+   int spacing_hori =
+@@ -515,6 +528,7 @@ static void listview_draw(widget *wid, cairo_t *draw) {
+       unsigned int width = lv->widget.w;
+       width -= widget_padding_get_padding_width(wid);
+       if (widget_enabled(WIDGET(lv->scrollbar))) {
++        width -= spacing_hori;
+         width -= spacing_hori;
+         width -= widget_get_width(WIDGET(lv->scrollbar));
+       }
+@@ -690,6 +704,22 @@ void listview_set_selected(listview *lv, unsigned int selected) {
+   }
+ }
+ 
++void listview_scrollbar_scroll_to(listview *lv, unsigned int line) {
++  if (lv == NULL) {
++    return;
++  }
++  if (lv->hover_select) {
++    unsigned int max_offset = lv->req_elements > lv->max_elements
++                                  ? lv->req_elements - lv->max_elements
++                                  : 0;
++    lv->viewport_offset = MIN(line, max_offset);
++    listview_sync_positions(lv);
++    widget_queue_redraw(WIDGET(lv));
++  } else {
++    listview_set_selected(lv, line);
++  }
++}
++
+ static void listview_resize(widget *wid, short w, short h) {
+   listview *lv = (listview *)wid;
+   lv->widget.w = MAX(0, w);
+@@ -889,6 +919,7 @@ static void listview_sync_positions(listview *lv) {
+     unsigned int width = lv->widget.w;
+     width -= widget_padding_get_padding_width(WIDGET(lv));
+     if (widget_enabled(WIDGET(lv->scrollbar))) {
++      width -= spacing_hori;
+       width -= spacing_hori;
+       width -= widget_get_width(WIDGET(lv->scrollbar));
+     }
+diff --git a/source/widgets/scrollbar.c b/source/widgets/scrollbar.c
+index 8c10336d1..c1e98d754 100644
+--- a/source/widgets/scrollbar.c
++++ b/source/widgets/scrollbar.c
+@@ -36,7 +36,7 @@
+ #include <math.h>
+ 
+ /** The default width of the scrollbar */
+-#define DEFAULT_SCROLLBAR_WIDTH 8
++#define DEFAULT_SCROLLBAR_WIDTH 14
+ 
+ static void scrollbar_draw(widget *, cairo_t *);
+ static void scrollbar_free(widget *);
+@@ -50,30 +50,32 @@ static int scrollbar_get_desired_height(widget *wid,
+ // TODO
+ // This should behave more like a real scrollbar.
+ guint scrollbar_scroll_get_line(const scrollbar *sb, int y) {
+-  y -= sb->widget.border.top.base.distance;
++  const widget *wid = (const widget *)sb;
++  int pad_top = widget_padding_get_top(wid);
++  int wh = widget_padding_get_remaining_height(wid);
++
++  y -= pad_top;
+   if (y < 0) {
+     return 0;
+   }
+-
+-  if (y > sb->widget.h) {
++  if (y >= wh || sb->length <= 1) {
+     return sb->length - 1;
+   }
+ 
+-  short r =
+-      (sb->length * sb->widget.h) / ((double)(sb->length + sb->pos_length));
+-  short handle = sb->widget.h - r;
+-  double sec = ((r) / (double)(sb->length - 1));
+-  short half_handle = handle / 2;
+-  y -= half_handle;
+-  y = MIN(MAX(0, y), sb->widget.h - 2 * half_handle);
++  double r = (sb->length * wh) / ((double)(sb->length + sb->pos_length));
++  double handle = wh - r;
++  double sec = r / (double)(sb->length - 1);
++  double half_handle = handle / 2.0;
++  double y_pos = y - half_handle;
++  y_pos = CLAMP(y_pos, 0.0, wh - handle);
+ 
+-  unsigned int sel = round((y) / sec);
++  unsigned int sel = (unsigned int)round(y_pos / sec);
+   return MIN(sel, sb->length - 1);
+ }
+ 
+ static void scrollbar_scroll(scrollbar *sb, int y) {
+-  listview_set_selected((listview *)sb->widget.parent,
+-                        scrollbar_scroll_get_line(sb, y));
++  listview_scrollbar_scroll_to((listview *)sb->widget.parent,
++                                scrollbar_scroll_get_line(sb, y));
+ }
+ 
+ static WidgetTriggerActionResult
+@@ -82,10 +84,42 @@ scrollbar_trigger_action(widget *wid, MouseBindingMouseDefaultAction action,
+                          G_GNUC_UNUSED void *user_data) {
+   scrollbar *sb = (scrollbar *)wid;
+   switch (action) {
+-  case MOUSE_CLICK_DOWN:
++  case MOUSE_CLICK_DOWN: {
++    sb->pressed = TRUE;
++    // Check if click is on the handle or on the track
++    const widget *cwid = (const widget *)sb;
++    int pad_top = widget_padding_get_top(cwid);
++    int wh = widget_padding_get_remaining_height(cwid);
++    int click_y = y - pad_top;
++
++    if (wh > 0 && sb->length > 1 && sb->length > sb->pos_length) {
++      double r = (sb->length * wh) / ((double)(sb->length + sb->pos_length));
++      double handle = wh - r;
++      double sec = r / (double)(sb->length - 1);
++      double handle_y = sb->pos * sec;
++
++      if (click_y < handle_y) {
++        // Click above handle: page up
++        unsigned int page = sb->pos_length;
++        unsigned int target = sb->pos > page ? sb->pos - page : 0;
++        listview_scrollbar_scroll_to((listview *)sb->widget.parent, target);
++        return WIDGET_TRIGGER_ACTION_RESULT_GRAB_MOTION_BEGIN;
++      }
++      if (click_y > handle_y + handle) {
++        // Click below handle: page down
++        unsigned int page = sb->pos_length;
++        unsigned int max_pos = sb->length - sb->pos_length;
++        unsigned int target = sb->pos + page < max_pos ? sb->pos + page : max_pos;
++        listview_scrollbar_scroll_to((listview *)sb->widget.parent, target);
++        return WIDGET_TRIGGER_ACTION_RESULT_GRAB_MOTION_BEGIN;
++      }
++    }
++    // Click on handle: jump to position
++    scrollbar_scroll(sb, y);
+     return WIDGET_TRIGGER_ACTION_RESULT_GRAB_MOTION_BEGIN;
++  }
+   case MOUSE_CLICK_UP:
+-    scrollbar_scroll(sb, y);
++    sb->pressed = FALSE;
+     return WIDGET_TRIGGER_ACTION_RESULT_GRAB_MOTION_END;
+   case MOUSE_DCLICK_DOWN:
+   case MOUSE_DCLICK_UP:
+@@ -109,6 +143,9 @@ scrollbar *scrollbar_create(widget *parent, const char *name) {
+   sb->width = rofi_theme_get_distance(WIDGET(sb), "handle-width",
+                                       DEFAULT_SCROLLBAR_WIDTH);
+   int width = distance_get_pixel(sb->width, ROFI_ORIENTATION_HORIZONTAL);
++  // Add left padding to widen the click target without moving the handle.
++  WIDGET(sb)->padding.left.base.distance = 6;
++  WIDGET(sb)->padding.left.base.type = ROFI_PU_PX;
+   sb->widget.w = widget_padding_get_padding_width(WIDGET(sb)) + width;
+   sb->widget.h = widget_padding_get_padding_height(WIDGET(sb));
+ 
+@@ -165,7 +202,7 @@ static void scrollbar_draw(widget *wid, cairo_t *draw) {
+   double wh = widget_padding_get_remaining_height(wid);
+   // Calculate position and size.
+   double r = (sb->length * wh) / ((double)(sb->length + sb->pos_length));
+-  unsigned int handle = wid->h - r;
++  unsigned int handle = (unsigned int)(wh - r);
+   double sec = ((r) / (double)(sb->length - 1));
+   unsigned int height = handle;
+   unsigned int y = sb->pos * sec;
+@@ -175,6 +212,9 @@ static void scrollbar_draw(widget *wid, cairo_t *draw) {
+   height = MAX(2, height);
+   // Cap length;
+   rofi_theme_get_color(WIDGET(sb), "handle-color", draw);
++  if (sb->pressed) {
++    rofi_theme_get_color(WIDGET(sb), "handle-pressed-color", draw);
++  }
+ 
+   if (rofi_theme_get_boolean(WIDGET(sb), "handle-rounded-corners", FALSE)) {
+     float x = widget_padding_get_left(wid);
+@@ -182,13 +222,14 @@ static void scrollbar_draw(widget *wid, cairo_t *draw) {
+ 
+     float radius = ((width < height) ? width : height) /
+                    2; // Limit radius to prevent overlap
++    float draw_y = widget_padding_get_top(wid) + y;
+ 
+     // Draw rounded rectangle
+     cairo_new_sub_path(draw);
+-    cairo_arc(draw, x + width - radius, y + radius, radius, -G_PI_2, 0);
+-    cairo_arc(draw, x + width - radius, y + height - radius, radius, 0, G_PI_2);
+-    cairo_arc(draw, x + radius, y + height - radius, radius, G_PI_2, G_PI);
+-    cairo_arc(draw, x + radius, y + radius, radius, G_PI, 1.5 * G_PI);
++    cairo_arc(draw, x + width - radius, draw_y + radius, radius, -G_PI_2, 0);
++    cairo_arc(draw, x + width - radius, draw_y + height - radius, radius, 0, G_PI_2);
++    cairo_arc(draw, x + radius, draw_y + height - radius, radius, G_PI_2, G_PI);
++    cairo_arc(draw, x + radius, draw_y + radius, radius, G_PI, 1.5 * G_PI);
+     cairo_close_path(draw);
+ 
+     cairo_fill(draw);
+diff --git a/test/scrollbar-test.c b/test/scrollbar-test.c
+index a01d616e6..e980eadf1 100644
+--- a/test/scrollbar-test.c
++++ b/test/scrollbar-test.c
+@@ -96,6 +96,8 @@ double textbox_get_estimated_ch(void) { return 8.0; }
+ 
+ void listview_set_selected(G_GNUC_UNUSED listview *lv,
+                            G_GNUC_UNUSED unsigned int selected) {}
++void listview_scrollbar_scroll_to(G_GNUC_UNUSED listview *lv,
++                                  G_GNUC_UNUSED unsigned int line) {}
+ void rofi_view_get_current_monitor(G_GNUC_UNUSED int *width,
+                                    G_GNUC_UNUSED int *height) {}
+ 
+@@ -123,18 +125,18 @@ int main(G_GNUC_UNUSED int argc, G_GNUC_UNUSED char **argv) {
+   TASSERTE(sb->pos_length, 1u);
+ 
+   guint cl = scrollbar_scroll_get_line(sb, 10);
+-  TASSERTE(cl, 1010u);
++  TASSERTE(cl, 1000u);
+   cl = scrollbar_scroll_get_line(sb, 20);
+-  TASSERTE(cl, 2020u);
++  TASSERTE(cl, 2000u);
+   cl = scrollbar_scroll_get_line(sb, 0);
+   TASSERTE(cl, 0u);
+   cl = scrollbar_scroll_get_line(sb, 99);
+-  TASSERTE(cl, 9999u);
++  TASSERTE(cl, 9899u);
+   scrollbar_set_handle_length(sb, 1000);
+   cl = scrollbar_scroll_get_line(sb, 10);
+-  TASSERTE(cl, 556u);
++  TASSERTE(cl, 600u);
+   cl = scrollbar_scroll_get_line(sb, 20);
+-  TASSERTE(cl, 1667u);
++  TASSERTE(cl, 1700u);
+   cl = scrollbar_scroll_get_line(sb, 0);
+   TASSERTE(cl, 0u);
+   cl = scrollbar_scroll_get_line(sb, 99);
+
+From bc5a7021a16dc38e0dea6675fd2d52c928ae76f5 Mon Sep 17 00:00:00 2001
+From: haxllo <mshabeeburrahman786@gmail.com>
+Date: Wed, 27 May 2026 05:44:32 +0530
+Subject: [PATCH 6/6] Reduce scope of click_y variable
+
+---
+ source/widgets/scrollbar.c | 3 +--
+ subprojects/.wraplock      | 0
+ 2 files changed, 1 insertion(+), 2 deletions(-)
+ create mode 100644 subprojects/.wraplock
+
+diff --git a/source/widgets/scrollbar.c b/source/widgets/scrollbar.c
+index c1e98d754..914888b18 100644
+--- a/source/widgets/scrollbar.c
++++ b/source/widgets/scrollbar.c
+@@ -90,9 +90,8 @@ scrollbar_trigger_action(widget *wid, MouseBindingMouseDefaultAction action,
+     const widget *cwid = (const widget *)sb;
+     int pad_top = widget_padding_get_top(cwid);
+     int wh = widget_padding_get_remaining_height(cwid);
+-    int click_y = y - pad_top;
+-
+     if (wh > 0 && sb->length > 1 && sb->length > sb->pos_length) {
++      int click_y = y - pad_top;
+       double r = (sb->length * wh) / ((double)(sb->length + sb->pos_length));
+       double handle = wh - r;
+       double sec = r / (double)(sb->length - 1);
+diff --git a/subprojects/.wraplock b/subprojects/.wraplock
+new file mode 100644
+index 000000000..e69de29bb
