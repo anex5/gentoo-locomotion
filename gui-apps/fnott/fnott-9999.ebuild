@@ -1,20 +1,24 @@
-# Copyright 1999-2025 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-inherit meson systemd xdg toolchain-funcs
+inherit meson systemd verify-sig xdg toolchain-funcs
 
-DESCRIPTION="Keyboard driven and lightweight Wayland notification daemon."
+DESCRIPTION="Keyboard driven and lightweight Wayland notification daemon"
 HOMEPAGE="https://codeberg.org/dnkl/fnott"
 
 if [[ "${PV}" == "9999" ]]; then
 	inherit git-r3
 	EGIT_REPO_URI="https://codeberg.org/dnkl/fnott.git"
 else
-	SRC_URI="https://codeberg.org/dnkl/fnott/archive/${PV}.tar.gz -> ${P}.tar.gz"
-	S="${WORKDIR}/${PN}"
+	COMMIT="cd31aa61ac9080b00bd42b9afaf9d1741cfe4431"
+	SRC_URI="
+		https://codeberg.org/dnkl/fnott/archive/${COMMIT}.tar.gz -> ${P}-${COMMIT:0:7}.cb.tar.gz
+		verify-sig? ( https://codeberg.org/dnkl/fnott/releases/download/${PV//_p*/}/${PN}-${PV//_p*/}.tar.gz.sig )
+	"
 	KEYWORDS="~amd64 ~x86 ~arm ~arm64"
+	S="${WORKDIR}/${PN}"
 fi
 
 IUSE="man +completions systemd test"
@@ -38,11 +42,16 @@ RDEPEND="
 "
 DEPEND="
 	${RDEPEND}
-	man? ( app-text/scdoc )
 	>=dev-libs/tllist-1.1.0
 	>=dev-libs/wayland-protocols-1.32
-	dev-util/wayland-scanner
 "
+BDEPEND="
+	dev-util/wayland-scanner
+	man? ( app-text/scdoc )
+	verify-sig? ( sec-keys/openpgp-keys-dnkl )
+"
+
+VERIFY_SIG_OPENPGP_KEY_PATH=/usr/share/openpgp-keys/dnkl.asc
 
 src_prepare() {
 	default
@@ -60,20 +69,25 @@ src_configure() {
 	local emesonargs=(
 		$(meson_feature man docs)
 		-Dsystem-nanosvg=enabled
+		# always install unit
+		-Dsystemd-units-dir="$(systemd_get_userunitdir)"
 	)
 	meson_src_configure
 
-	use systemd && ( sed 's|@bindir@|/usr/bin|g' "${S}"/dbus/${PN}.service.in > ${PN}.service || die )
+	#sed 's|@bindir@|/usr/bin|g' "${S}"/dbus/${PN}.service.in > dbus/${PN}.service || die
+	if use systemd; then
+		sed 's|@bindir@|/usr/bin|g' "${S}"/systemd/${PN}.service.in > systemd/${PN}.service || die
+	fi
 }
 
 src_install() {
-	local DOCS=( CHANGELOG.md README.md LICENSE )
+	local DOCS=( CHANGELOG.md README.md )
 	meson_src_install
 
 	#rm -r "${ED}"/usr/share/doc/"${PN}" || die
 
 	if use systemd; then
-		systemd_douserunit ${PN}.service
+		systemd_douserunit systemd/${PN}.service
 	else
 		exeinto /etc/user/init.d
 		newexe "${FILESDIR}"/${PN}.user.initd ${PN}

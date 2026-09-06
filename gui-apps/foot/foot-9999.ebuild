@@ -14,7 +14,7 @@ if [[ ${PV} == *9999* ]]; then
 	KEYWORDS="-*"
 else
 	SRC_URI="https://codeberg.org/dnkl/foot/releases/download/${PV}/${P}.tar.gz -> ${P}.cb.tar.gz
-	verify-sig? ( https://codeberg.org/dnkl/foot/releases/download/${PV}/${P}.tar.gz.sig -> ${P}.cb.tar.gz.sig )"
+	verify-sig? ( https://codeberg.org/dnkl/foot/releases/download/${PV}/${P}.tar.gz.sig )"
 	KEYWORDS="~amd64 ~arm64 ~arm ~x86"
 fi
 
@@ -47,8 +47,8 @@ DEPEND="
 RDEPEND="
 	${COMMON_DEPEND}
 	|| (
-		>=sys-libs/ncurses-6.3[-minimal]
 		~gui-apps/foot-terminfo-${PV}
+		>=sys-libs/ncurses-6.3[-minimal]
 	)
 	utempter? ( sys-libs/libutempter )
 "
