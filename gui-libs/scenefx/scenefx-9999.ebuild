@@ -10,13 +10,13 @@ if [[ ${PV} == 9999 ]]; then
 	inherit git-r3
 else
 	#MY_PV=${PV/_rc/-rc}
-	COMMIT="45c69780fc4fe5b9db0c3a1bac2521360b4538fb"
+	COMMIT="3606f3d3bb4bb97e13228adc5190bf57fc687c88"
 	SRC_URI="https://github.com/wlrfx/scenefx/archive/${COMMIT}.tar.gz -> ${P}-${COMMIT:0:7}.gh.tar.gz"
 	S="${WORKDIR}/${PN}-${COMMIT}"
 	KEYWORDS="~amd64 ~arm64 ~arm ~loong ~ppc64 ~riscv ~x86"
 fi
 
-DESCRIPTION="A replacement for the wlroots scene API with eye-candy effects."
+DESCRIPTION="A replacement for the wlroots scene API with eye-candy effects"
 HOMEPAGE="https://github.com/wlrfx/scenefx"
 LICENSE="MIT"
 SLOT="0"
@@ -55,10 +55,6 @@ BDEPEND="
 BDEPEND+="man? ( >=app-text/scdoc-1.9.2 )"
 
 RESTRICT="mirror"
-
-#PATCHES=(
-#	"${FILESDIR}/${PN}-0.2.1-corner-passing-logic.patch"
-#)
 
 src_configure() {
 	! use elibc_glibc && append-cppflags "-D__always_inline=__attribute__((always_inline))"

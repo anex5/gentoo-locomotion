@@ -506,14 +506,14 @@ index a495fe2a50c8..4dd78fe59e89 100644
 --- a/browser/components/urlbar/UrlbarParentController.sys.mjs
 +++ b/browser/components/urlbar/UrlbarParentController.sys.mjs
 @@ -21,8 +21,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
-     "moz-src:///browser/components/urlbar/UrlbarProvidersManager.sys.mjs",
-   SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
    UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
+   UrlbarProviderOpenTabs: 
+     "moz-src:///browser/components/urlbar/UrlbarProviderOpenTabs.sys.mjs",
 -  UrlbarProviderSemanticHistorySearch:
 -    "moz-src:///browser/components/urlbar/UrlbarProviderSemanticHistorySearch.sys.mjs",
-   UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
-   UrlbarTelemetryUtils:
-     "chrome://browser/content/urlbar/UrlbarTelemetryUtils.mjs",
+   UrlbarProviderTopSites:
+     "moz-src:///browser/components/urlbar/UrlbarProviderTopSites.sys.mjs",
+   UrlbarQueryContext: "chrome://browser/content/urlbar/UrlbarQueryContext.mjs",
 @@ -1066,20 +1064,6 @@ export class TelemetryEvent {
     */
    #getAvailableSemanticSources() {

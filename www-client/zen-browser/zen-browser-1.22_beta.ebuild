@@ -4,7 +4,7 @@
 EAPI=8
 
 # Using Gentoos firefox patches as system libraries and lto are quite nice
-FIREFOX_PATCHSET="firefox-154-patches-02.tar.xz"
+FIREFOX_PATCHSET="firefox-155-patches-05.tar.xz"
 
 LLVM_COMPAT=( {21..23} )
 
@@ -20,12 +20,12 @@ VIRTUALX_REQUIRED="manual"
 
 # Information about the bundled wasi toolchain from
 # https://github.com/WebAssembly/wasi-sdk/
-declare -A WASI_SDK_VER
-WASI_SDK_VER=( [23]="34.0" [22]="32.0" [21]="30.0" )
+WASI_SDK_VER=34.0
+WASI_SDK_LLVM_VER=23
 
 MOZ_ESR=
 
-MOZ_PV=154.0.1
+MOZ_PV=155.0.1
 MOZ_PV_SUFFIX=
 if [[ ${PV} =~ (_(alpha|beta|rc).*)$ ]] ; then
 	MOZ_PV_SUFFIX=${BASH_REMATCH[1]}
@@ -42,27 +42,19 @@ MOZ_PV_DISTFILES="${MOZ_PV}${MOZ_PV_SUFFIX}"
 MOZ_P_DISTFILES="${MOZ_PN}-${MOZ_PV_DISTFILES}"
 
 inherit autotools check-reqs desktop flag-o-matic gnome2-utils linux-info llvm-r1 multiprocessing \
-	multilib-minimal optfeature pax-utils python-any-r1 readme.gentoo-r1 rust toolchain-funcs unpacker virtualx xdg
+	optfeature pax-utils python-any-r1 readme.gentoo-r1 rust toolchain-funcs unpacker virtualx xdg
 
 
 SRC_URI="
 	https://github.com/zen-browser/desktop/releases/download/${PV/_beta/b}/zen.source.tar.zst -> ${P}.tar.zst
 	https://dev.gentoo.org/~juippis/mozilla/patchsets/${FIREFOX_PATCHSET}
 	wasm-sandbox? (
-		amd64? (
-			llvm_slot_23? ( https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_SDK_VER[23]/.*/}/wasi-sdk-${WASI_SDK_VER[23]}-x86_64-linux.tar.gz )
-			llvm_slot_22? ( https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_SDK_VER[22]/.*/}/wasi-sdk-${WASI_SDK_VER[22]}-x86_64-linux.tar.gz )
-			llvm_slot_21? ( https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_SDK_VER[21]/.*/}/wasi-sdk-${WASI_SDK_VER[21]}-x86_64-linux.tar.gz )
-		)
-		arm64? (
-			llvm_slot_23? ( https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_SDK_VER[23]/.*/}/wasi-sdk-${WASI_SDK_VER[23]}-arm64-linux.tar.gz )
-			llvm_slot_22? ( https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_SDK_VER[22]/.*/}/wasi-sdk-${WASI_SDK_VER[22]}-arm64-linux.tar.gz )
-			llvm_slot_21? ( https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_SDK_VER[21]/.*/}/wasi-sdk-${WASI_SDK_VER[21]}-arm64-linux.tar.gz )
-		)
+		amd64? ( https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_SDK_VER/.*/}/wasi-sdk-${WASI_SDK_VER}-x86_64-linux.tar.gz )
+		arm64? ( https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_SDK_VER/.*/}/wasi-sdk-${WASI_SDK_VER}-arm64-linux.tar.gz )
 	)
 "
 
-DESCRIPTION="A fast and beautiful, privacy-focused Firefox fork"
+DESCRIPTION="A fast and beautiful, privacy-focused Zen Browser fork"
 HOMEPAGE="https://zen-browser.app/"
 
 S="${WORKDIR}/${PN}-${PV%_*}"
@@ -150,7 +142,7 @@ XKBCOMMON_PV="0.4.1"
 
 FF_ONLY_DEPEND="
 	screencast? (
-		>=media-video/pipewire-0.3.52:=[${MULTILIB_USEDEP}]
+		>=media-video/pipewire-0.3.52:=
 	)
 	selinux? (
 		sec-policy/selinux-mozilla
@@ -162,15 +154,13 @@ GAMEPAD_BDEPEND="
 	)
 "
 
-# Same as virtual/udev-217-r5 but with multilib changes.
-# Required for gamepad, or WebAuthn roaming authenticators (e.g. USB security key)
 UDEV_RDEPEND="
 	kernel_linux? (
 		systemd? (
-			>=sys-apps/systemd-217[${MULTILIB_USEDEP}]
+			>=sys-apps/systemd-217
 		)
 		!systemd? (
-			>=sys-apps/systemd-utils-217[${MULTILIB_USEDEP},udev]
+			>=sys-apps/systemd-utils-217[udev]
 		)
 	)
 "
@@ -244,35 +234,35 @@ SYSTEM_PYTHON_LIBS="
 CDEPEND="
 	${FF_ONLY_DEPEND}
 	${SYSTEM_PYTHON_LIBS}
-	>=app-accessibility/at-spi2-core-2.46.0:2[${MULTILIB_USEDEP}]
-	>=dev-libs/glib-2.42:2[${MULTILIB_USEDEP}]
-	>=dev-libs/nspr-4.38[${MULTILIB_USEDEP}]
-	>=dev-libs/nss-3.126.1[${MULTILIB_USEDEP}]
-	>=media-libs/fontconfig-2.7.0[${MULTILIB_USEDEP}]
-	>=media-libs/freetype-2.14.1[${MULTILIB_USEDEP}]
-	>=sys-libs/zlib-1.3.1[${MULTILIB_USEDEP}]
-	>=x11-libs/pango-1.22.0[${MULTILIB_USEDEP}]
-	>=x11-libs/pixman-0.40.0[${MULTILIB_USEDEP}]
-	dev-libs/expat[${MULTILIB_USEDEP}]
-	dev-libs/libffi:=[${MULTILIB_USEDEP}]
-	media-libs/alsa-lib[${MULTILIB_USEDEP}]
+	>=app-accessibility/at-spi2-core-2.46.0:2
+	>=dev-libs/glib-2.42:2
+	>=dev-libs/nspr-4.38
+	>=dev-libs/nss-3.126.1
+	>=media-libs/fontconfig-2.7.0
+	>=media-libs/freetype-2.14.1
+	>=sys-libs/zlib-1.3.1
+	>=x11-libs/pango-1.22.0
+	>=x11-libs/pixman-0.40.0
+	dev-libs/expat
+	dev-libs/libffi:=
+	media-libs/alsa-lib
 	virtual/freedesktop-icon-theme
 	x11-libs/cairo
-	x11-libs/gdk-pixbuf:2[${MULTILIB_USEDEP}]
+	x11-libs/gdk-pixbuf:2
 	dbus? (
-		>=dev-libs/dbus-glib-${DBUS_GLIB_PV}[${MULTILIB_USEDEP}]
-		>=sys-apps/dbus-${DBUS_PV}[${MULTILIB_USEDEP}]
+		>=dev-libs/dbus-glib-${DBUS_GLIB_PV}
+		>=sys-apps/dbus-${DBUS_PV}
 	)
 	jack? (
-		virtual/jack[${MULTILIB_USEDEP}]
+		virtual/jack
 	)
 	libproxy? (
-		net-libs/libproxy[${MULTILIB_USEDEP}]
+		net-libs/libproxy
 	)
 	pulseaudio? (
 		|| (
-			media-libs/libpulse[${MULTILIB_USEDEP}]
-			>=media-sound/apulse-0.1.12-r4[${MULTILIB_USEDEP},sdk]
+			media-libs/libpulse
+			>=media-sound/apulse-0.1.12-r4[sdk]
 		)
 	)
 	screencast? (
@@ -282,67 +272,67 @@ CDEPEND="
 		sec-policy/selinux-mozilla
 	)
 	sndio? (
-		>=media-sound/sndio-1.8.0-r1[${MULTILIB_USEDEP}]
+		>=media-sound/sndio-1.8.0-r1
 	)
 	system-av1? (
-		>=media-libs/dav1d-1.5.1:=[${MULTILIB_USEDEP},8bit]
-		>=media-libs/libaom-3.10.0:=[${MULTILIB_USEDEP}]
+		>=media-libs/dav1d-1.5.1:=[8bit]
+		>=media-libs/libaom-3.10.0:=
 	)
 	system-graphite2? (
-		>=media-gfx/graphite2-1.3.14[${MULTILIB_USEDEP}]
+		>=media-gfx/graphite2-1.3.14
 	)
 	system-harfbuzz? (
-		>=media-libs/harfbuzz-12.3.0:0=[${MULTILIB_USEDEP}]
+		>=media-libs/harfbuzz-12.3.0:0=
 	)
 	system-icu? (
-		>=dev-libs/icu-78.1:=[${MULTILIB_USEDEP}]
+		>=dev-libs/icu-78.1:=
 	)
 	system-jpeg? (
-		>=media-libs/libjpeg-turbo-3.0.4[${MULTILIB_USEDEP}]
+		>=media-libs/libjpeg-turbo-3.0.4
 	)
 	system-ffmpeg? (
-		>=media-video/ffmpeg-${FFMPEG_PV}[${MULTILIB_USEDEP},dav1d?,openh264?,opus?,vaapi?,vpx?]
+		>=media-video/ffmpeg-${FFMPEG_PV}[dav1d?,openh264?,opus?,vaapi?,vpx?]
 	)
 	system-libevent? (
-		>=dev-libs/libevent-2.1.12:0[${MULTILIB_USEDEP},threads(+)]
+		>=dev-libs/libevent-2.1.12:0[threads(+)]
 	)
 	system-libvpx? (
-		>=media-libs/libvpx-1.15.2:0[${MULTILIB_USEDEP},postproc]
+		>=media-libs/libvpx-1.15.2:0[postproc]
 	)
 	system-pipewire? (
-		>=media-video/pipewire-1.4.7-r2:=[${MULTILIB_USEDEP}]
+		>=media-video/pipewire-1.4.7-r2:=
 	)
 	system-png? (
-		>=media-libs/libpng-1.6.53:0[${MULTILIB_USEDEP},apng]
+		>=media-libs/libpng-1.6.53:0[apng]
 	)
 	system-webp? (
-		>=media-libs/libwebp-1.6.0:0[${MULTILIB_USEDEP}]
+		>=media-libs/libwebp-1.6.0:0
 	)
 	wayland? (
 		>=media-libs/libepoxy-1.5.10-r1
-		>=x11-libs/gtk+-${GTK3_PV}:3[${MULTILIB_USEDEP},wayland]
-		>=x11-libs/libxkbcommon-${XKBCOMMON_PV}[${MULTILIB_USEDEP},wayland]
+		>=x11-libs/gtk+-${GTK3_PV}:3[wayland]
+		>=x11-libs/libxkbcommon-${XKBCOMMON_PV}[wayland]
 	)
 	wifi? (
 		kernel_linux? (
-			>=dev-libs/dbus-glib-${DBUS_GLIB_PV}[${MULTILIB_USEDEP}]
-			>=net-misc/networkmanager-0.7[${MULTILIB_USEDEP}]
-			>=sys-apps/dbus-${DBUS_PV}[${MULTILIB_USEDEP}]
+			>=dev-libs/dbus-glib-${DBUS_GLIB_PV}
+			>=net-misc/networkmanager-0.7
+			>=sys-apps/dbus-${DBUS_PV}
 		)
 	)
 	X? (
-		>=x11-libs/gtk+-${GTK3_PV}:3[${MULTILIB_USEDEP},X]
-		>=x11-libs/libxkbcommon-${XKBCOMMON_PV}[${MULTILIB_USEDEP},X]
-		>=x11-libs/libXrandr-1.4.0[${MULTILIB_USEDEP}]
-		>=x11-libs/libXtst-1.2.3[${MULTILIB_USEDEP}]
-		virtual/opengl[${MULTILIB_USEDEP}]
-		x11-libs/cairo[${MULTILIB_USEDEP},X]
-		x11-libs/libX11[${MULTILIB_USEDEP}]
-		x11-libs/libXcomposite[${MULTILIB_USEDEP}]
-		x11-libs/libXdamage[${MULTILIB_USEDEP}]
-		x11-libs/libXext[${MULTILIB_USEDEP}]
-		x11-libs/libXfixes[${MULTILIB_USEDEP}]
-		x11-libs/libxcb:=[${MULTILIB_USEDEP}]
+		>=x11-libs/gtk+-${GTK3_PV}:3[X]
+		>=x11-libs/libxkbcommon-${XKBCOMMON_PV}[X]
+		>=x11-libs/libXrandr-1.4.0
+		>=x11-libs/libXtst-1.2.3
+		virtual/opengl
+		x11-libs/cairo[X]
+		x11-libs/libX11
+		x11-libs/libXcomposite
+		x11-libs/libXdamage
+		x11-libs/libXext
+		x11-libs/libXfixes
+		x11-libs/libxcb:=
 	)
 "
 
@@ -352,34 +342,34 @@ RDEPEND+="
 	${CDEPEND}
 	${UDEV_RDEPEND}
 	cups? (
-		net-print/cups[${MULTILIB_USEDEP}]
+		net-print/cups
 	)
 	jack? (
-		virtual/jack[${MULTILIB_USEDEP}]
+		virtual/jack
 	)
 	libcanberra? (
 		!pulseaudio? (
 			alsa? (
-				media-libs/libcanberra[${MULTILIB_USEDEP},alsa]
+				media-libs/libcanberra[alsa]
 			)
 		)
 		pulseaudio? (
-			media-libs/libcanberra[${MULTILIB_USEDEP},pulseaudio]
+			media-libs/libcanberra[pulseaudio]
 		)
 	)
 	libnotify? (
 		x11-libs/libnotify
 	)
 	libsecret? (
-		app-crypt/libsecret[${MULTILIB_USEDEP}]
+		app-crypt/libsecret
 	)
 	openh264? (
-		media-libs/openh264:*[${MULTILIB_USEDEP},plugin]
+		media-libs/openh264:*[plugin]
 	)
 	pulseaudio? (
 		|| (
-			media-sound/pulseaudio[${MULTILIB_USEDEP}]
-			>=media-sound/apulse-0.1.12-r4[${MULTILIB_USEDEP}]
+			media-sound/pulseaudio
+			>=media-sound/apulse-0.1.12-r4
 		)
 	)
 	speech? (
@@ -397,21 +387,21 @@ RDEPEND+="
 		sys-apps/pciutils
 	)
 	vaapi? (
-		media-libs/libva[${MULTILIB_USEDEP},drm(+),X?,wayland?]
+		media-libs/libva[drm(+),X?,wayland?]
 	)
 "
 DEPEND+="
 	${CDEPEND}
 	pulseaudio? (
 		|| (
-			>=media-sound/apulse-0.1.12-r4[${MULTILIB_USEDEP},sdk]
-			media-sound/pulseaudio[${MULTILIB_USEDEP}]
+			>=media-sound/apulse-0.1.12-r4[sdk]
+			media-sound/pulseaudio
 		)
 	)
 	X? (
 		x11-base/xorg-proto
-		x11-libs/libICE[${MULTILIB_USEDEP}]
-		x11-libs/libSM[${MULTILIB_USEDEP}]
+		x11-libs/libICE
+		x11-libs/libSM
 	)
 "
 
@@ -428,13 +418,12 @@ BDEPEND+="
 		wasm-sandbox? ( llvm-core/lld:${LLVM_SLOT} )
 	')
 	>=dev-util/cbindgen-0.29.1
-	>=dev-util/pkgconf-1.8.0[${MULTILIB_USEDEP},pkg-config(+)]
-	>=net-libs/nodejs-21[${MULTILIB_USEDEP}]
+	>=net-libs/nodejs-21
 	|| (
-		>=dev-lang/rust-1.87.0[${MULTILIB_USEDEP}]
-		>=dev-lang/rust-bin-1.87.0[${MULTILIB_USEDEP}]
-		<dev-lang/rust-1.98.0[${MULTILIB_USEDEP}]
-		<dev-lang/rust-bin-1.98.0[${MULTILIB_USEDEP}]
+		>=dev-lang/rust-1.87.0
+		>=dev-lang/rust-bin-1.87.0
+		<dev-lang/rust-1.99.0
+		<dev-lang/rust-bin-1.99.0
 	)
 	app-alternatives/awk
 	app-arch/unzip
@@ -467,7 +456,7 @@ PDEPEND+="
 		sys-apps/firejail[X?]
 	)
 	screencast? (
-		>=media-video/pipewire-0.3.52[${MULTILIB_USEDEP}]
+		>=media-video/pipewire-0.3.52
 		sys-apps/xdg-desktop-portal
 	)
 "
@@ -691,43 +680,38 @@ pkg_pretend() {
 	if [[ ${MERGE_TYPE} != binary ]] ; then
 		# Ensure we have enough disk space to compile
 		if use pgo || use debug ; then
-			CHECKREQS_DISK_BUILD="18700M"
+			CHECKREQS_DISK_BUILD="17000M"
 
 			if ! use clang ; then
-				if tc-is-gcc && ver_test "$(gcc-major-version)" -eq 15 && has_version -b "<sys-devel/gcc-15.2.1_p20251108-r1:15"; then
-					eerror "<gcc-15.2.1_p20251108-r1:15 and pgo detected. Firefox-145.0 can not be compiled"
+				if tc-is-gcc && ver_test "$(gcc-major-version)" -ge 16 && [[ -z "${I_KNOW_WHAT_I_AM_DOING}" ]] ; then
+					eerror "Zen Browser ${PV} can not be compiled"
 					eerror "with this GCC, when also enabling pgo."
 					eerror "See bug https://gcc.gnu.org/PR122620"
 					eerror ""
 					eerror "Your options are:"
-					eerror " 1) upgrade GCC to >=15.2.1_p20251108-r1 - note that even with the 16.0"
-					eerror "    releases, make sure the patch set is equal or newer than 16.0.0_p20251109-r1,"
-					eerror "    or use the \"trunk\" version,"
-					eerror " 2) compile Firefox with Clang by enabling the \"clang\" USE flag, or"
+					eerror " 1) upgrade GCC to >=16.0"
+					eerror " 2) compile Zen Browser with Clang by enabling the \"clang\" USE flag, or"
 					eerror " 3) disable pgo when compiling with GCC for now."
-					die "Firefox-${PV} with gcc+pgo cannot be compiled with the detected gcc version: $(gcc-fullversion)"
+					die "Zen Browser ${PV} with gcc+pgo cannot be compiled with the detected gcc version: $(gcc-fullversion)"
 				fi
 			fi
 		elif tc-is-lto ; then
-			CHECKREQS_DISK_BUILD="10900M"
-
+			CHECKREQS_DISK_BUILD="9900M"
 			if ! use clang ; then
-				if tc-is-gcc && ver_test "$(gcc-major-version)" -eq 15 && has_version -b "<sys-devel/gcc-15.2.1_p20251108-r1:15"; then
-					eerror "<gcc-15.2.1_p20251108-r1:15 and lto detected. Firefox-145.0 can not be compiled"
+				if tc-is-gcc && ver_test "$(gcc-major-version)" -ge 16 && [[ -z "${I_KNOW_WHAT_I_AM_DOING}" ]] ; then
+					eerror "Zen Browser ${PV} can not be compiled"
 					eerror "with this GCC, when also enabling lto."
 					eerror "See bug https://gcc.gnu.org/PR122620"
 					eerror ""
 					eerror "Your options are:"
-					eerror " 1) upgrade GCC to >=15.2.1_p20251108-r1 - note that even with the 16.0"
-					eerror "    releases, make sure the patch set is equal or newer than 16.0.0_p20251109-r1,"
-					eerror "    or use the \"trunk\" version,"
-					eerror " 2) compile Firefox with Clang by enabling the \"clang\" USE flag, or"
+					eerror " 1) upgrade GCC to >=16.0"
+					eerror " 2) compile Zen Browser with Clang by enabling the \"clang\" USE flag, or"
 					eerror " 3) disable lto when compiling with GCC for now."
-					die "Firefox-${PV} with gcc+lto cannot be compiled with the detected gcc version: $(gcc-fullversion)"
+					die "Zen Browser ${PV} with gcc+lto cannot be compiled with the detected gcc version: $(gcc-fullversion)"
 				fi
 			fi
 		else
-			CHECKREQS_DISK_BUILD="9700M"
+			CHECKREQS_DISK_BUILD="9000M"
 		fi
 
 		check-reqs_pkg_pretend
@@ -744,18 +728,16 @@ pkg_setup() {
 			filter-flags -Werror=lto-type-mismatch -Werror=odr
 
 			if ! use clang ; then
-				if tc-is-gcc && ver_test "$(gcc-major-version)" -eq 15 && has_version -b "<sys-devel/gcc-15.2.1_p20251108-r1:15"; then
-					eerror "<gcc-15.2.1_p20251108-r1:15 and pgo detected. Firefox-145.0 can not be compiled"
+				if tc-is-gcc && ver_test "$(gcc-major-version)" -ge 15 && [[ -z "${I_KNOW_WHAT_I_AM_DOING}" ]] ; then
+					eerror "Zen Browser ${PV} can not be compiled"
 					eerror "with this GCC, when also enabling lto."
 					eerror "See bug https://gcc.gnu.org/PR122620"
 					eerror ""
 					eerror "Your options are:"
-					eerror " 1) upgrade GCC to >=15.2.1_p20251108-r1 - note that even with the 16.0"
-					eerror "    releases, make sure the patch set is equal or newer than 16.0.0_p20251109-r1,"
-					eerror "    or use the \"trunk\" version,"
-					eerror " 2) compile Firefox with Clang by enabling the \"clang\" USE flag, or"
+					eerror " 1) upgrade GCC to >=16.0"
+					eerror " 2) compile Zen Browser with Clang by enabling the \"clang\" USE flag, or"
 					eerror " 3) disable lto when compiling with GCC for now."
-					die "Firefox-${PV} with gcc+lto cannot be compiled with the detected gcc version: $(gcc-fullversion)"
+					die "Zen Browser-${PV} with gcc+lto cannot be compiled with the detected gcc version: $(gcc-fullversion)"
 				fi
 			fi
 		fi
@@ -775,7 +757,7 @@ pkg_setup() {
 					eerror " 1) upgrade GCC to >=15.2.1_p20251108-r1 - note that even with the 16.0"
 					eerror "    releases, make sure the patch set is equal or newer than 16.0.0_p20251109-r1,"
 					eerror "    or use the \"trunk\" version,"
-					eerror " 2) compile Firefox with Clang by enabling the \"clang\" USE flag, or"
+					eerror " 2) compile Zen Browser with Clang by enabling the \"clang\" USE flag, or"
 					eerror " 3) disable pgo when compiling with GCC for now."
 					die "Firefox-${PV} with gcc+pgo cannot be compiled with the detected gcc version: $(gcc-fullversion)"
 				fi
@@ -812,7 +794,7 @@ pkg_setup() {
 
 		if use pgo ; then
 			# Update 105.0: "/proc/self/oom_score_adj" isn't enough anymore with pgo, but not sure
-			# whether that's due to better OOM handling by Firefox (bmo#1771712), or portage
+			# whether that's due to better OOM handling by Zen Browser (bmo#1771712), or portage
 			# (PORTAGE_SCHEDULING_POLICY) update...
 			addpredict "/proc"
 
@@ -882,11 +864,6 @@ pkg_setup() {
 		ewarn
 	fi
 
-	local a
-	for a in $(multilib_get_enabled_abis) ; do
-		NABIS=$((${NABIS} + 1))
-	done
-
 	if [[ "${RUSTC_WRAPPER}" =~ "sccache" ]] ; then
 		ewarn
 		ewarn "Using sccache may randomly fail.  Retry if it fails."
@@ -920,24 +897,14 @@ src_unpack() {
 
 	if use wasm-sandbox; then
 		use amd64 && (
-			use llvm_slot_21 && ( unpack wasi-sdk-${WASI_SDK_VER[21]}-x86_64-linux.tar.gz || eerror "Failed to unpack" )
-			use llvm_slot_22 && ( unpack wasi-sdk-${WASI_SDK_VER[22]}-x86_64-linux.tar.gz || eerror "Failed to unpack" )
+			unpack wasi-sdk-${WASI_SDK_VER}-x86_64-linux.tar.gz || eerror "Failed to unpack"
 		)
 		use arm64 && (
-			use llvm_slot_21 && ( unpack wasi-sdk-${WASI_SDK_VER[21]}-arm64-linux.tar.gz || eerror "Failed to unpack" )
-			use llvm_slot_22 && ( unpack wasi-sdk-${WASI_SDK_VER[22]}-arm64-linux.tar.gz || eerror "Failed to unpack" )
+			unpack wasi-sdk-${WASI_SDK_VER}-arm64-linux.tar.gz || eerror "Failed to unpack"
 		)
 	fi
 	mkdir "${S}" && cd ${S} || die
 	unpacker "${P}.tar.zst" || eerror "Failed to unpack."
-}
-
-_get_s() {
-	if (( ${NABIS} == 1 )) ; then
-		echo "${S}"
-	else
-		echo "${S}-${MULTILIB_ABI_FLAG}.${ABI}"
-	fi
 }
 
 src_prepare() {
@@ -1058,16 +1025,9 @@ src_prepare() {
 		sed -i \
 			-e "s:%%PORTAGE_WORKDIR%%:${WORKDIR}:" \
 			-e "s:%%WASI_ARCH%%:${wasi_arch}:" \
-			-e "s:%%WASI_SDK_VER%%:${WASI_SDK_VER[${LLVM_SLOT}]}:" \
-			-e "s:%%WASI_SDK_LLVM_VER%%:${LLVM_SLOT}:" \
+			-e "s:%%WASI_SDK_VER%%:${WASI_SDK_VER}:" \
+			-e "s:%%WASI_SDK_LLVM_VER%%:${WASI_SDK_LLVM_VER}:" \
 			toolkit/moz.configure || die "Failed to update wasi-related paths."
-
-		if [ ${LLVM_SLOT} -lt 22 ]; then
-			sed -e "s/\(wasm32-wasi\|wasm32-unknown-wasi\)p1/\1/g" \
-				-i build/moz.configure/toolchain.configure \
-				-i gfx/harfbuzz/src/wasm/sample/c/Makefile \
-				-i toolkit/moz.configure || die
-		fi
 	fi
 
 	# Make LTO & ICU respect MAKEOPTS
@@ -1123,7 +1083,9 @@ src_prepare() {
 			js/src/moz.build ||
 				die "Failed to adjust FILES_PER_UNIFIED_FILE in js/src/moz.build"
 	fi
-	# Removed creation of a single build dir
+	# Create build dir
+	BUILD_DIR="${WORKDIR}/${PN}_build"
+	mkdir -p "${BUILD_DIR}" || die
 
 	# Write API keys to disk
 	echo -n "${MOZ_API_KEY_GOOGLE//gGaPi/}" > "${S}"/api-google.key || die
@@ -1138,68 +1100,6 @@ src_prepare() {
 	# echo "${PV/_beta/b}" > "${S}"/config/milestone.txt || die
 
 	xdg_environment_reset
-
-	(( ${NABIS} > 1 )) && multilib_copy_sources
-
-	_src_prepare() {
-		cd $(_get_s) || die
-		local CDEFAULT=$(get_abi_CHOST ${DEFAULT_ABI})
-		# Only ${CDEFAULT}-objdump exists because in true multilib.
-		# Logically speaking, there should be i686-pc-linux-gnu-objdump also.
-		if [[ -e "${ESYSROOT}/usr/bin/${CHOST}-objdump" ]] ; then
-		# Adds the toolchain prefix.
-			sed -i \
-				-e "s/\"objdump/\"${CHOST}-objdump/" \
-				python/mozbuild/mozbuild/configure/check_debug_ranges.py \
-				|| die "sed failed to set toolchain prefix"
-			einfo "Using ${CHOST}-objdump for CHOST"
-		else
-			[[ -e "${ESYSROOT}/usr/bin/${CDEFAULT}-objdump" ]] || die
-			# Adds the toolchain prefix.
-			sed -i \
-				-e "s/\"objdump/\"${CDEFAULT}-objdump/" \
-				python/mozbuild/mozbuild/configure/check_debug_ranges.py \
-				|| die "sed failed to set toolchain prefix"
-			ewarn "Using ${CDEFAULT}-objdump for CDEFAULT"
-		fi
-	}
-}
-
-# Corrections based on the ABI being compiled
-# Preconditions:
-#   CHOST must be defined
-#   cwd is ABI's S
-_fix_paths() {
-	# For proper rust cargo cross-compile for libloading and glslopt
-	export PKG_CONFIG="${CHOST}-pkg-config"
-	export CARGO_CFG_TARGET_ARCH=$(echo "${CHOST}" \
-		| cut -f 1 -d "-")
-	export MOZILLA_FIVE_HOME="/usr/$(get_libdir)/${PN}"
-	export BUILD_OBJ_DIR="$(pwd)/ff"
-
-
-	# Set MOZCONFIG
-	export MOZCONFIG="$(pwd)/.mozconfig"
-
-	# For rust crates libloading and glslopt
-	if tc-is-clang ; then
-		local version_clang=$(${CC} --version 2>/dev/null \
-			| grep -F -- 'clang version' \
-			| awk '{ print $3 }')
-		if [[ -n "${version_clang}" ]] ; then
-			version_clang=$(ver_cut 1 "${version_clang}")
-		else
-			eerror "Failed to read clang version!"
-			die
-		fi
-		CC="${CHOST}-clang-${version_clang}"
-		CXX="${CHOST}-clang++-${version_clang}"
-	else
-		CC="${CHOST}-gcc"
-		CXX="${CHOST}-g++"
-	fi
-	tc-export CC CXX
-	strip-unsupported-flags
 }
 
 is_flagq_last() {
@@ -1354,12 +1254,9 @@ check_speech_dispatcher() {
 
 OFLAG=""
 LTO_TYPE=""
-_src_configure() {
+src_configure() {
 	OFLAG="$(sed -ne "s/\(-O[0-9]\+\) .*$/\1/p" <<< "${CFLAGS}")"
-	local s=$(_get_s)
-	cd "${s}" || die
 
-	local CDEFAULT=$(get_abi_CHOST ${DEFAULT_ABI})
 	# Show flags set at the beginning
 	einfo
 	einfo "Current BINDGEN_CFLAGS:\t${BINDGEN_CFLAGS:-no value set}"
@@ -1419,7 +1316,6 @@ _src_configure() {
 	fi
 
 	tc-export CC CXX LD AR AS NM OBJDUMP RANLIB READELF PKG_CONFIG
-	_fix_paths
 	# Pass the correct toolchain paths through cbindgen
 	if tc-is-cross-compiler ; then
 		export BINDGEN_CFLAGS="
@@ -1431,9 +1327,7 @@ _src_configure() {
 	fi
 
 	# Set MOZILLA_FIVE_HOME
-	# MOZILLA_FIVE_HOME is dynamically generated per ABI in _fix_paths().
-	#export MOZILLA_:wq
-	FIVE_HOME="/usr/$(get_libdir)/${PN}"
+	export MOZILLA_FIVE_HOME="/usr/$(get_libdir)/${PN}"
 
 	# python/mach/mach/mixin/process.py fails to detect SHELL
 	export SHELL="${EPREFIX}/bin/bash"
@@ -1441,8 +1335,9 @@ _src_configure() {
 	# Set state path
 	export MOZBUILD_STATE_PATH="${BUILD_DIR}"
 
-	# MOZCONFIG is dynamically generated per ABI in _fix_paths().
-	#export MOZCONFIG="${s}/.mozconfig"
+	# Set MOZCONFIG
+	export MOZCONFIG="${S}/.mozconfig"
+
 	# Set Gentoo defaults
 	export ZEN_FIREFOX_VERSION="${MOZ_PV}"
 
@@ -1472,7 +1367,7 @@ _src_configure() {
 		--enable-system-ffi \
 		--enable-system-pixman \
 		--enable-system-policies \
-		--host="${CDEFAULT}" \
+		--host="${CBUILD:-${CHOST}}" \
 		--libdir="${EPREFIX}/usr/$(get_libdir)" \
 		--prefix="${EPREFIX}/usr" \
 		--target="${CHOST}" \
@@ -1491,7 +1386,7 @@ _src_configure() {
 		--disable-official-branding \
 		--with-update-channel="release" \
 		--with-branding="browser/branding/release" \
-		--with-l10n-base="${s}/browser/locales" \
+		--with-l10n-base="${S}/browser/locales" \
 		--with-unsigned-addon-scopes="app,system"
 
 	if use system-ffmpeg ; then
@@ -1504,12 +1399,6 @@ _src_configure() {
 			'-system-ffmpeg' \
 			--disable-ffmpeg
 	fi
-
-	# mozconfig_add_options_ac \
-	#	'' \
-	#	--with-libclang-path="$(${CHOST}-llvm-config --libdir)"
-	# Disabled the lines above because the distro doesn't support multilib
-	# python, so full cross-compile is not supported.
 
 	# The commented lines above are mutually exclusive with this line below.
 	mozconfig_add_options_ac \
@@ -1526,7 +1415,7 @@ _src_configure() {
 
 	# For future keywording: This is currently (97.0) only supported on:
 	# amd64, arm, arm64, and x86.
-	# You might want to flip the logic around if Firefox is to support more
+	# You might want to flip the logic around if Zen Browser is to support more
 	# arches.
 	# bug 833001, bug 903411#c8
 	if use loong || use ppc64 || use riscv; then
@@ -1546,38 +1435,38 @@ _src_configure() {
 		mozconfig_add_options_ac 'Disable webrtc for RISC-V' --disable-webrtc
 	fi
 
-	if [[ -s "${s}/api-google.key" ]] ; then
+	if [[ -s "${S}/api-google.key" ]] ; then
 		local key_origin="Gentoo default"
-		if [[ $(cat "${s}/api-google.key" | md5sum | awk '{ print $1 }') != 709560c02f94b41f9ad2c49207be6c54 ]] ; then
+		if [[ $(cat "${S}/api-google.key" | md5sum | awk '{ print $1 }') != 709560c02f94b41f9ad2c49207be6c54 ]] ; then
 			key_origin="User value"
 		fi
 
 		mozconfig_add_options_ac "${key_origin}" \
-			--with-google-safebrowsing-api-keyfile="${s}/api-google.key"
+			--with-google-safebrowsing-api-keyfile="${S}/api-google.key"
 	else
 		einfo "Building without Google API key ..."
 	fi
 
-	if [[ -s "${s}/api-location.key" ]] ; then
+	if [[ -s "${S}/api-location.key" ]] ; then
 		local key_origin="Gentoo default"
-		if [[ $(cat "${s}/api-location.key" | md5sum | awk '{ print $1 }') != ffb7895e35dedf832eb1c5d420ac7420 ]] ; then
+		if [[ $(cat "${S}/api-location.key" | md5sum | awk '{ print $1 }') != ffb7895e35dedf832eb1c5d420ac7420 ]] ; then
 			key_origin="User value"
 		fi
 
 		mozconfig_add_options_ac "${key_origin}" \
-			--with-google-location-service-api-keyfile="${s}/api-location.key"
+			--with-google-location-service-api-keyfile="${S}/api-location.key"
 	else
 		einfo "Building without Location API key ..."
 	fi
 
-	if [[ -s "${s}/api-mozilla.key" ]] ; then
+	if [[ -s "${S}/api-mozilla.key" ]] ; then
 		local key_origin="Gentoo default"
-		if [[ $(cat "${s}/api-mozilla.key" | md5sum | awk '{ print $1 }') != 3927726e9442a8e8fa0e46ccc39caa27 ]] ; then
+		if [[ $(cat "${S}/api-mozilla.key" | md5sum | awk '{ print $1 }') != 3927726e9442a8e8fa0e46ccc39caa27 ]] ; then
 			key_origin="User value"
 		fi
 
 		mozconfig_add_options_ac "${key_origin}" \
-			--with-mozilla-api-keyfile="${s}/api-mozilla.key"
+			--with-mozilla-api-keyfile="${S}/api-mozilla.key"
 	else
 		einfo "Building without Mozilla API key ..."
 	fi
@@ -1596,8 +1485,9 @@ _src_configure() {
 	mozconfig_use_enable atk accessibility
 	mozconfig_use_enable dbus
 	mozconfig_use_enable libproxy
+	mozconfig_use_enable jumbo-build unified-build
 	mozconfig_use_enable cups printing
-	multilib_is_native_abi && mozconfig_use_enable speech synth-speechd
+	mozconfig_use_enable speech synth-speechd
 	mozconfig_use_enable webrtc
 	mozconfig_use_enable webspeech
 	mozconfig_add_options_ac '-uniffi' --disable-uniffi-fixtures
@@ -1637,7 +1527,7 @@ _src_configure() {
 	# wasm-sandbox
 	# Since graphite2 is one of the sandboxed libraries, system-graphite2 obviously can't work with +wasm-sandbox.
 	if use wasm-sandbox ; then
-		mozconfig_add_options_ac '+wasm-sandbox' --with-wasi-sysroot="${WORKDIR}/wasi-sdk-${WASI_SDK_VER[${LLVM_SLOT}]}-${wasi_arch}-linux/share/wasi-sysroot/"
+		mozconfig_add_options_ac '+wasm-sandbox' --with-wasi-sysroot="${WORKDIR}/wasi-sdk-${WASI_SDK_VER}-${wasi_arch}-linux/share/wasi-sysroot"
 	else
 		mozconfig_add_options_ac 'no wasm-sandbox' --without-wasm-sandboxed-libraries
 	fi
@@ -1752,10 +1642,10 @@ _src_configure() {
 
 	if is-flagq '-ffast-math' || [[ "${OFLAG}" == "-Ofast" ]] ; then
 		local pos=$(grep -n "#define OPUS_DEFINES_H" \
-			"${s}/media/libopus/include/opus_defines.h" \
+			"${S}/media/libopus/include/opus_defines.h" \
 			| cut -f 1 -d ":")
 		sed -i -e "${pos}a#define FLOAT_APPROX 1" \
-			"${s}/media/libopus/include/opus_defines.h" || die
+			"${S}/media/libopus/include/opus_defines.h" || die
 	fi
 
 	# Modifications to better support ARM, bug #553364
@@ -1777,7 +1667,7 @@ _src_configure() {
 		if ! use system-libvpx ; then
 			sed -i \
 				-e "s|softfp|hard|" \
-				"${s}/media/libvpx/moz.build" \
+				"${S}/media/libvpx/moz.build" \
 				|| die
 		fi
 	fi
@@ -1977,13 +1867,8 @@ _src_configure() {
 	./mach configure || die
 }
 
-src_configure() {
-	multilib_foreach_abi _src_configure
-}
-
-_src_compile() {
-	local s=$(_get_s)
-	cd "${s}" || die
+src_compile() {
+	local virtx_cmd=
 
 	if use mold && use lto; then
 		# increase ulimit with mold+lto, bugs #892641, #907485
@@ -1995,10 +1880,6 @@ _src_compile() {
 			ulimit -n 16384
 		fi
 	fi
-
-	local CDEFAULT=$(get_abi_CHOST "${DEFAULT_ABI}")
-	_fix_paths
-	local virtx_cmd=
 
 	if use pgo; then
 		# Reset and cleanup environment variables used by GNOME/XDG
@@ -2048,15 +1929,7 @@ src_test() {
 	fi
 }
 
-src_compile() {
-	multilib_foreach_abi _src_compile
-}
-
-_src_install() {
-	local s=$(_get_s)
-	cd "${s}" || die
-	local CDEFAULT=$(get_abi_CHOST "${DEFAULT_ABI}")
-	_fix_paths
+src_install() {
 	# xpcshell is getting called during install
 	pax-mark m \
 		"${BUILD_DIR}/dist/bin/xpcshell" \
@@ -2117,16 +1990,9 @@ _src_install() {
 			EOF
 		fi
 
-		# Install the vaapitest binary on supported arches (122.0 supports all platforms, bmo#1865969)
+		# Install the gfxtest binary on supported arches
 		exeinto "${MOZILLA_FIVE_HOME}"
-		doexe "${BUILD_DIR}"/dist/bin/vaapitest
-		doexe "${BUILD_DIR}"/dist/bin/vulkantest
-
-		# Install the v4l2test on supported arches (+ arm, + riscv64 when keyworded)
-		if use arm64 ; then
-			exeinto "${MOZILLA_FIVE_HOME}"
-			doexe "${BUILD_DIR}"/dist/bin/v4l2test
-		fi
+		doexe "${BUILD_DIR}"/dist/bin/gfxtest
 	fi
 
 	# Force the graphite pref if USE=system-harfbuzz is enabled, since the pref cannot disable it
@@ -2160,14 +2026,14 @@ _src_install() {
 	# Install language packs
 	ELIBC_PREFIX=""
 	use elibc_musl && ELIBC_PREFIX="musl-"
-	local langpacks=( $(find "${BUILD_DIR}/dist/linux-${ELIBC_PREFIX}${MULTILIB_ABI_FLAG//abi_}/xpi" -type f -name '*.xpi') )
+	local langpacks=( $(find "${BUILD_DIR}/dist/" -type f -name "*.langpack.xpi" ) )
 
 	if [[ -n "${langpacks}" ]] ; then
 		moz_install_xpi "${MOZILLA_FIVE_HOME}/distribution/extensions" "${langpacks[@]}"
 	fi
 
 	# Install icons
-	local icon_srcdir="${s}/browser/branding/release"
+	local icon_srcdir="${S}/browser/branding/release"
 	local icon_symbolic_file="${FILESDIR}/icon/zen-symbolic.svg"
 
 	insinto /usr/share/icons/hicolor/symbolic/apps
@@ -2240,14 +2106,6 @@ _src_install() {
 	readme.gentoo_create_doc
 }
 
-src_install() {
-	install_abi() {
-		_src_install
-		multilib_check_headers
-	}
-	multilib_foreach_abi install_abi
-}
-
 pkg_preinst() {
 	xdg_pkg_preinst
 
@@ -2307,7 +2165,7 @@ pkg_postinst() {
 		ewarn "You have nouveau drivers installed in your system and 'hwaccel' "
 		ewarn "enabled for Zen Browser. Nouveau / your GPU might not support the "
 		ewarn "required EGL, so either disable 'hwaccel' or try the workaround "
-		ewarn "explained in https://bugs.gentoo.org/835078#c5 if Firefox crashes."
+		ewarn "explained in https://bugs.gentoo.org/835078#c5 if Zen Browser crashes."
 	fi
 
 	readme.gentoo_print_elog
