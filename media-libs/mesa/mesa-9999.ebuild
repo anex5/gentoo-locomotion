@@ -44,7 +44,8 @@ fi
 # but there are "stale" distfiles on the mirrors with the wrong names.
 # export MESON_PACKAGE_CACHE_DIR="${DISTDIR}"
 SRC_URI+="
-	${CARGO_CRATE_URIS}
+	opencl? ( ${CARGO_CRATE_URIS} )
+	!opencl? ( video_cards_nvk? ( ${CARGO_CRATE_URIS} ) )
 "
 
 S="${WORKDIR}/${MY_P}"
