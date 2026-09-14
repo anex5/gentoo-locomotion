@@ -6,7 +6,7 @@ EAPI=8
 LLVM_COMPAT=( {21..23} )
 LLVM_OPTIONAL=1
 CARGO_OPTIONAL=1
-PYTHON_COMPAT=( python3_{12..14} )
+PYTHON_COMPAT=( python3_{12..15} )
 
 inherit flag-o-matic linux-info llvm-r2 meson-multilib python-any-r1 toolchain-funcs
 
@@ -207,17 +207,22 @@ src_unpack() {
 		unpack ${MY_P}.tar.xz
 	fi
 
-	# We need this because we cannot tell meson to use DISTDIR yet
-	pushd "${DISTDIR}" >/dev/null || die
-	mkdir -p "${S}"/subprojects/packagecache || die
-	local i
-	for i in *.crate; do
-		ln -s "${PWD}/${i}" "${S}/subprojects/packagecache/${i/.crate/}.tar.gz" || die
-	done
-	popd >/dev/null || die
+	if use opencl || use video_cards_nvk; then
+		# We need this because we cannot tell meson to use DISTDIR yet
+		mkdir -p "${S}"/subprojects/packagecache || die
+		local i
+		for i in ${CRATES}; do
+			i=${i/@/-}
+			ln -s "${DISTDIR}/${i}.crate" \
+				"${S}/subprojects/packagecache/${i}.tar.gz" || die
+		done
+	fi
 }
 
 pkg_pretend() {
+	if [[ ${MERGE_TYPE} != binary ]] && use test; then
+		tc-check-openmp
+	fi
 	if use vulkan; then
 		if ! use video_cards_asahi &&
 		   ! use video_cards_d3d12 &&
