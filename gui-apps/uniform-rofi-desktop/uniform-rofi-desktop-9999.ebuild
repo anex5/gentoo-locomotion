@@ -20,7 +20,7 @@ fi
 LICENSE="MIT"
 SLOT="0"
 MY_L10N=( "en-US" "ru-RU" )
-IUSE="bluetooth calendar fonts network pipewire +shortcuts usb-storage systemd sway wifi ${MY_L10N[@]/#/l10n_}"
+IUSE="bluetooth +calendar +fonts +network pipewire +shortcuts +storage systemd sway wifi ${MY_L10N[@]/#/l10n_}"
 
 RESTRICT="mirror"
 
@@ -40,7 +40,7 @@ DEPEND="
 		media-video/pipewire
 		media-video/wireplumber
 	)
-	usb-storage? (
+	storage? (
 		sys-apps/hwdata
 		sys-fs/udisks
 	)
@@ -81,7 +81,7 @@ src_install() {
 	use calendar && SNS+=( "urd-date-picker,x-office-calendar-symbolic" )
 	use fonts && SNS+=( "urd-font-picker,font-select-symbolic" )
 	use pipewire && SNS+=( "urd-pipewire-sinks,audio-speakers-symbolic" "urd-pipewire-sources,audio-input-microphone-symbolic" )
-	use usb-storage && SNS+=( "urd-usbstor-mounter,drive-harddisk-usb-symbolic" )
+	use storage && SNS+=( "urd-remstor-mounter,drive-removable-media-symbolic" )
 	use sway && SNS+=( "urd-logout-menu,system-shutdown-symbolic" "urd-sway-display,video-display-symbolic" )
 	use wifi && SNS+=( "urd-wifi-networks,network-wireless-symbolic" )
 	use network && SNS+=( "urd-network-info,network-wired-symbolic" )
