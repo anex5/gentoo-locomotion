@@ -4,7 +4,7 @@
 EAPI=8
 
 CONFIG_CHECK="~ADVISE_SYSCALLS"
-PYTHON_COMPAT=( python3_{12..14} )
+PYTHON_COMPAT=( python3_{12..15} )
 PYTHON_REQ_USE="threads(+)"
 
 inherit bash-completion-r1 check-reqs flag-o-matic linux-info
@@ -101,7 +101,7 @@ PATCHES=(
 	"${FILESDIR}/${PN}-24.2.0-lto-update.patch"
 	"${FILESDIR}/${PN}-24.2.0-support-clang-pgo.patch"
 	"${FILESDIR}/${PN}-19.3.0-v8-oflags.patch"
-	"${FILESDIR}/${PN}-25.1.0-split-pointer-compression-and-v8-sandbox-options.patch"
+	#"${FILESDIR}/${PN}-25.1.0-split-pointer-compression-and-v8-sandbox-options.patch"
 )
 
 pkg_pretend() {
@@ -341,7 +341,7 @@ src_configure() {
 	if use amd64 || use arm64 ; then
 		use pointer-compression && myconf+=( --experimental-enable-pointer-compression )
 	fi
-	use v8-sandbox && myconf+=( --experimental-enable-v8-sandbox )
+	use v8-sandbox && myconf+=( --experimental-pointer-compression-shared-cage )
 	if use kernel_linux && linux_chkconfig_present "TRANSPARENT_HUGEPAGE" ; then
 		myconf+=( --v8-enable-hugepage )
 	fi
