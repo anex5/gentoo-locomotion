@@ -1,0 +1,11 @@
+--- a/src/node_buffer.cc
++++ b/src/node_buffer.cc
+@@ -1610,7 +1610,7 @@ inline size_t CheckNumberToSize(Local<Va
+   CHECK(value >= 0 && value < maxSize);
+   size_t size = static_cast<size_t>(value);
+ #ifdef V8_ENABLE_SANDBOX
+-  CHECK_LE(size, kMaxSafeBufferSizeForSandbox);
++  CHECK_LE(size, v8::internal::kMaxSafeBufferSizeForSandbox);
+ #endif
+   return size;
+ }

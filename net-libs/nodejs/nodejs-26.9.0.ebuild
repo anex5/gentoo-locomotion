@@ -49,24 +49,24 @@ RESTRICT="
 CDEPEND="
 	>=app-arch/brotli-1.2.0
 	dev-db/sqlite:3
-	>=dev-cpp/ada-3.3.0:=
+	>=dev-cpp/ada-4.0.0:=
 	>=dev-cpp/simdutf-7.3.4:=
 	>=dev-libs/libuv-1.52.1:=
-	>=dev-libs/simdjson-4.6.1:=
-	>=net-dns/c-ares-1.34.5:=
-	>=net-libs/nghttp2-1.69.0:=
-	>=net-libs/nghttp3-1.14.0:=
+	>=dev-libs/simdjson-4.6.9:=
+	>=net-dns/c-ares-1.34.8:=
+	>=net-libs/nghttp2-1.70.0:=
+	>=net-libs/nghttp3-1.18.0:=
 	virtual/zlib:=
-	system-icu? ( >=dev-libs/icu-78.2:=	)
+	system-icu? ( >=dev-libs/icu-78:= )
 	system-lief? (
 		>=dev-util/lief-0.17.2:=
 		<dev-util/lief-1.0.0
 	)
 	system-ssl? (
-		>=net-libs/ngtcp2-1.22.1:=
-		>=dev-libs/openssl-3.5.6:0=[asm?,fips?]
+		>=net-libs/ngtcp2-1.25.0:=
+		>=dev-libs/openssl-3.5.8:0=[asm?,fips?]
 	)
-	!system-ssl? ( >=net-libs/ngtcp2-1.14.0:=[-gnutls] )
+	!system-ssl? ( >=net-libs/ngtcp2-1.25.0:=[-gnutls] )
 	|| (
 		sys-devel/gcc:*
 		llvm-runtimes/libatomic-stub
@@ -96,11 +96,16 @@ CHECKREQS_MEMORY="8G"
 CHECKREQS_DISK_BUILD="22G"
 
 PATCHES=(
+	"${FILESDIR}"/${PN}-26.6.0-gcc17.patch
+	"${FILESDIR}"/${PN}-26.6.0-format-cstdlib.patch
+	"${FILESDIR}"/${PN}-26.6.0-v8-climits.patch
+	"${FILESDIR}"/${PN}-26.8.2-add-missing-funcational-inc.patch
 	"${FILESDIR}/${PN}-12.22.5-shared_c-ares_nameser_h.patch"
 	"${FILESDIR}/${PN}-22.2.0-global-npm-config.patch"
 	"${FILESDIR}/${PN}-24.2.0-lto-update.patch"
 	"${FILESDIR}/${PN}-24.2.0-support-clang-pgo.patch"
 	"${FILESDIR}/${PN}-19.3.0-v8-oflags.patch"
+	"${FILESDIR}/${PN}-26.9.0-add-missing-namespace.patch"
 	#"${FILESDIR}/${PN}-25.1.0-split-pointer-compression-and-v8-sandbox-options.patch"
 )
 
@@ -154,16 +159,13 @@ src_prepare() {
 	sed -i -e "/DEPFLAGS =/d" tools/gyp/pylib/gyp/generator/make.py || die
 
 	# We need to disable mprotect on two files when it builds Bug 694100.
-	use pax-kernel && PATCHES+=( "${FILESDIR}"/${PN}-24.1.0-paxmarking.patch )
+	use pax-kernel &&
+		PATCHES+=( "${FILESDIR}"/${PN}-24.1.0-paxmarking.patch )
 
 	use ppc64 &&
 		PATCHES+=(	"${FILESDIR}/${PN}-24.11.1-restore-ppc64be.patch" )
-	# https://github.com/nodejs/node/issues/51339
-	#use pointer-compression && PATCHES+=(
-#		"${FILESDIR}/${PN}-24.4.0-fix-v8-external-code-space.patch"
-#	)
 
-	use system-lief && ( rm -r deps/LIEF || die )
+	#use system-lief && ( rm -r deps/LIEF || die )
 
 	default
 
@@ -362,7 +364,7 @@ src_configure() {
 	GYP_DEFINES="linux_use_gold_flags=0
 		linux_use_bundled_binutils=0
 		linux_use_bundled_gold=0" \
-		"${EPYTHON}" configure.py \
+	"${EPYTHON}" configure.py \
 		--prefix="${EPREFIX}"/usr \
 		--dest-cpu=${myarch} \
 		"${myconf[@]}" || die
@@ -382,7 +384,7 @@ src_install() {
 	local LIBDIR="${ED}/usr/$(get_libdir)"
 	default
 
-	use pax-kernel && pax-mark -m "${ED}/usr/bin/node"
+	pax-mark -m "${ED}"/usr/bin/node
 
 	# set up a symlink structure that node-gyp expects..
 	dodir /usr/include/node/deps/{v8,uv}
