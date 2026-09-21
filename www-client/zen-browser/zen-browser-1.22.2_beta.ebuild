@@ -4,7 +4,7 @@
 EAPI=8
 
 # Using Gentoos firefox patches as system libraries and lto are quite nice
-FIREFOX_PATCHSET="firefox-155-patches-05.tar.xz"
+FIREFOX_PATCHSET="firefox-156-patches-01.tar.xz"
 
 LLVM_COMPAT=( {21..23} )
 
@@ -25,7 +25,7 @@ WASI_SDK_LLVM_VER=23
 
 MOZ_ESR=
 
-MOZ_PV=155.0.1
+MOZ_PV=156.0.0
 MOZ_PV_SUFFIX=
 if [[ ${PV} =~ (_(alpha|beta|rc).*)$ ]] ; then
 	MOZ_PV_SUFFIX=${BASH_REMATCH[1]}
@@ -235,79 +235,49 @@ CDEPEND="
 	${FF_ONLY_DEPEND}
 	${SYSTEM_PYTHON_LIBS}
 	>=app-accessibility/at-spi2-core-2.46.0:2
-	>=dev-libs/glib-2.42:2
-	>=dev-libs/nspr-4.38
-	>=dev-libs/nss-3.126.1
-	>=media-libs/fontconfig-2.7.0
-	>=media-libs/freetype-2.14.1
-	>=sys-libs/zlib-1.3.1
-	>=x11-libs/pango-1.22.0
-	>=x11-libs/pixman-0.40.0
-	dev-libs/expat
+	dev-libs/glib:2
 	dev-libs/libffi:=
+	>=dev-libs/nss-3.128
+	>=dev-libs/nspr-4.39
 	media-libs/alsa-lib
+	media-libs/fontconfig
+	media-libs/freetype
+	virtual/zlib:=
+	dev-libs/expat
 	virtual/freedesktop-icon-theme
 	x11-libs/cairo
 	x11-libs/gdk-pixbuf:2
+	x11-libs/pango
+	x11-libs/pixman
 	dbus? (
 		>=dev-libs/dbus-glib-${DBUS_GLIB_PV}
 		>=sys-apps/dbus-${DBUS_PV}
 	)
-	jack? (
-		virtual/jack
-	)
-	libproxy? (
-		net-libs/libproxy
-	)
+	jack? ( virtual/jack )
 	pulseaudio? (
 		|| (
 			media-libs/libpulse
 			>=media-sound/apulse-0.1.12-r4[sdk]
 		)
 	)
-	screencast? (
-		media-video/pipewire:=
-	)
-	selinux? (
-		sec-policy/selinux-mozilla
-	)
-	sndio? (
-		>=media-sound/sndio-1.8.0-r1
-	)
+	screencast? ( media-video/pipewire:= )
+	libproxy? ( net-libs/libproxy )
+	selinux? ( sec-policy/selinux-mozilla )
+	sndio? ( >=media-sound/sndio-1.8.0-r1 )
 	system-av1? (
-		>=media-libs/dav1d-1.5.1:=[8bit]
-		>=media-libs/libaom-3.10.0:=
+		>=media-libs/dav1d-1.5.4:=[8bit]
+		>=media-libs/libaom-3.12.1:=
 	)
-	system-graphite2? (
-		>=media-gfx/graphite2-1.3.14
-	)
-	system-harfbuzz? (
-		>=media-libs/harfbuzz-12.3.0:0=
-	)
-	system-icu? (
-		>=dev-libs/icu-78.1:=
-	)
-	system-jpeg? (
-		>=media-libs/libjpeg-turbo-3.0.4
-	)
-	system-ffmpeg? (
-		>=media-video/ffmpeg-${FFMPEG_PV}[dav1d?,openh264?,opus?,vaapi?,vpx?]
-	)
-	system-libevent? (
-		>=dev-libs/libevent-2.1.12:0[threads(+)]
-	)
-	system-libvpx? (
-		>=media-libs/libvpx-1.15.2:0[postproc]
-	)
-	system-pipewire? (
-		>=media-video/pipewire-1.4.7-r2:=
-	)
-	system-png? (
-		>=media-libs/libpng-1.6.53:0[apng]
-	)
-	system-webp? (
-		>=media-libs/libwebp-1.6.0:0
-	)
+	system-graphite2? ( >=media-gfx/graphite2-1.3.14 )
+	system-harfbuzz? ( >=media-libs/harfbuzz-12.3.0:0= )
+	system-icu? ( >=dev-libs/icu-78.1:= )
+	system-jpeg? ( >=media-libs/libjpeg-turbo-3.0.4 )
+	system-ffmpeg? ( >=media-video/ffmpeg-${FFMPEG_PV}[dav1d?,openh264?,opus?,vaapi?,vpx?] )
+	system-libevent? ( >=dev-libs/libevent-2.1.12:0[threads(+)] )
+	system-libvpx? ( >=media-libs/libvpx-1.15.2:0[postproc]	)
+	system-pipewire? ( >=media-video/pipewire-1.4.7-r2:= )
+	system-png? ( >=media-libs/libpng-1.6.53:0[apng]	)
+	system-webp? ( >=media-libs/libwebp-1.6.0:0	)
 	wayland? (
 		>=media-libs/libepoxy-1.5.10-r1
 		>=x11-libs/gtk+-${GTK3_PV}:3[wayland]
@@ -321,17 +291,17 @@ CDEPEND="
 		)
 	)
 	X? (
-		>=x11-libs/gtk+-${GTK3_PV}:3[X]
-		>=x11-libs/libxkbcommon-${XKBCOMMON_PV}[X]
-		>=x11-libs/libXrandr-1.4.0
-		>=x11-libs/libXtst-1.2.3
+		x11-libs/libxkbcommon[X]
+		x11-libs/libXtst
 		virtual/opengl
 		x11-libs/cairo[X]
+		x11-libs/gtk+-:3[X]
 		x11-libs/libX11
 		x11-libs/libXcomposite
 		x11-libs/libXdamage
 		x11-libs/libXext
 		x11-libs/libXfixes
+		x11-libs/libXrandr
 		x11-libs/libxcb:=
 	)
 "
@@ -947,7 +917,7 @@ src_prepare() {
 
 	# Machine learning
 	if ! use ml ; then
-		eapply "${FILESDIR}/extra-patches/firefox-154.0.1-disable-ML.patch"
+		eapply "${FILESDIR}/extra-patches/firefox-156.0.1-disable-ML.patch"
 		sed -e '/\@BINPATH\@\/\@DLL_PREFIX\@mozinference\@DLL_SUFFIX\@/d' -i browser/installer/package-manifest.in || die
 	fi
 
@@ -973,6 +943,10 @@ src_prepare() {
 	if use elibc_glibc ; then
 		rm -v "${WORKDIR}"/firefox-patches/*bgo-748849-RUST_TARGET_override.patch || die
 		rm -v "${WORKDIR}"/firefox-patches/*bgo-967694-musl-prctrl-exception-on-musl.patch || die
+	fi
+
+	if use elibc_musl ; then
+		eapply "${FILESDIR}/extra-patches/firefox-156.0.0-audio_thread_priority_musl.patch"
 	fi
 
 	eapply "${WORKDIR}/firefox-patches"
@@ -1932,9 +1906,9 @@ src_test() {
 src_install() {
 	# xpcshell is getting called during install
 	pax-mark m \
-		"${BUILD_DIR}/dist/bin/xpcshell" \
-		"${BUILD_DIR}/dist/bin/${PN}" \
-		"${BUILD_DIR}/dist/bin/plugin-container"
+		"${BUILD_DIR}"/dist/bin/xpcshell \
+		"${BUILD_DIR}"/dist/bin/${PN} \
+		"${BUILD_DIR}"/dist/bin/plugin-container
 
 	DESTDIR="${D}" ./mach install || die
 
@@ -2024,8 +1998,6 @@ src_install() {
 	fi
 
 	# Install language packs
-	ELIBC_PREFIX=""
-	use elibc_musl && ELIBC_PREFIX="musl-"
 	local langpacks=( $(find "${BUILD_DIR}/dist/" -type f -name "*.langpack.xpi" ) )
 
 	if [[ -n "${langpacks}" ]] ; then
