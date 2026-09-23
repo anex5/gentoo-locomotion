@@ -6,17 +6,17 @@ EAPI=8
 inherit cmake-multilib toolchain-funcs
 
 DESCRIPTION="A suite of sparse matrix tools"
-HOMEPAGE="https://github.com/DrTimothyAldenDavis/SuiteSparse"
-HOMEPAGE="http://faculty.cse.tamu.edu/davis/suitesparse.html"
+HOMEPAGE="https://github.com/DrTimothyAldenDavis/SuiteSparse \
+http://faculty.cse.tamu.edu/davis/suitesparse.html"
 SRC_URI="https://github.com/DrTimothyAldenDavis/SuiteSparse/archive/v${PV}.tar.gz -> SuiteSparse-${PV}.gh.tar.gz"
 
+S=${WORKDIR}/SuiteSparse-${PV}
 # No licensing restrictions apply to this file or to the SuiteSparse_config directory.
-LICENSE="public-domain"
+LICENSE="BSD-2 BSD Apache-2.0 MIT public-domain"
 SLOT="0"
-KEYWORDS="amd64 arm arm64 ~hppa ~ia64 ~mips ppc ppc64 sparc x86"
-IUSE="+amd btf blas +camd +ccolamd +cholmod +colamd +cxsparse cuda doc debug fortran -graphblas \
-	klu lagraph ldl mongoose paru openmp rbio +spex spqr supernodal partition static-libs test umfpack"
-RESTRICT="mirror"
+KEYWORDS="amd64 arm arm64 ~hppa ppc64 x86"
+IUSE="+amd btf blas +camd +ccolamd +cholmod +colamd csparse +cxsparse cuda doc debug fortran graphblas \
+klu lagraph ldl mongoose paru openmp +spex spqr supernodal partition static-libs test umfpack"
 
 REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	paru? ( blas )
@@ -30,8 +30,10 @@ BDEPEND="
 	cuda? ( dev-util/nvidia-cuda-toolkit )
 	blas? ( virtual/blas )
 "
-
-S=${WORKDIR}/SuiteSparse-${PV}
+RESTRICT="
+	!test? ( test )
+	mirror
+"
 
 pkg_pretend() {
 	[[ ${MERGE_TYPE} != binary ]] && use openmp && tc-check-openmp
@@ -59,12 +61,12 @@ multilib_src_configure() {
 		$(usex ccolamd "ccolamd;" "")
 		$(usex colamd "colamd;" "")
 		$(usex cholmod "cholmod;" "")
+		$(usex cxsparse "csparse;" "")
 		$(usex cxsparse "cxsparse;" "")
 		$(usex ldl "ldl;" "")
 		$(usex klu "klu;" "")
 		$(usex umfpack "umfpack;" "")
 		$(usex paru "paru;" "")
-		$(usex rbio "rbio;" "")
 		$(usex spqr "spqr;" "")
 		$(usex spex "spex;" "")
 		$(usex graphblas "graphblas;" "")
@@ -176,6 +178,25 @@ multilib_src_test() {
 		diff "${S}"/CCOLAMD/Demo/ccolamd_example.out ccolamd_example.out || die "failed testing ccolamd_example"
 		./ccolamd_l_example > ccolamd_l_example.out || die "failed to run test ccolamd_l_example"
 		diff "${S}"/CCOLAMD/Demo/ccolamd_l_example.out ccolamd_l_example.out || die "failed testing ccolamd_l_example"
+		popd
+	fi
+
+	if use csparse; then
+		pushd CSparse
+		# Programs assume that they can access the Matrix folder in ${S}
+		ln -s "${S}/CSparse/Matrix" || die "cannot link to the Matrix folder"
+		# Run demo files
+		./csparse_demo1 < ./Matrix/t1 || die "failed testing"
+		./csparse_demo2 < ./Matrix/t1 || die "failed testing"
+		./csparse_demo2 < ./Matrix/ash219 || die "failed testing"
+		./csparse_demo2 < ./Matrix/bcsstk01 || die "failed testing"
+		./csparse_demo2 < ./Matrix/fs_183_1 || die "failed testing"
+		./csparse_demo2 < ./Matrix/mbeacxc || die "failed testing"
+		./csparse_demo2 < ./Matrix/west0067 || die "failed testing"
+		./csparse_demo2 < ./Matrix/lp_afiro || die "failed testing"
+		./csparse_demo2 < ./Matrix/bcsstk16 || die "failed testing"
+		./csparse_demo3 < ./Matrix/bcsstk01 || die "failed testing"
+		./csparse_demo3 < ./Matrix/bcsstk16 || die "failed testing"
 		popd
 	fi
 
@@ -365,7 +386,6 @@ multilib_src_test() {
 
 	einfo "All tests passed"
 }
-
 
 multilib_src_install() {
 	cmake_src_install

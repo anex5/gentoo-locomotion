@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer type="person">
+		<email>arsen@gentoo.org</email>
+		<name>Arsen Arsenović</name>
+	</maintainer>
+	<maintainer type="person">
+		<email>anex5.2008@gmail.com</email>
+	</maintainer>
+	<use>
+		<flag name="harfbuzz">Use <pkg>media-libs/harfbuzz</pkg> for grapheme
+			and run shaping</flag>
+		<flag name="libutf8proc">Use <pkg>media-libs/harfbuzz</pkg> and
+		<pkg>dev-libs/libutf8proc</pkg> for run shaping</flag>
+		<flag name="man">Enable manpages install</flag>
+	</use>
+	<upstream>
+		<remote-id type="codeberg">dnkl/fcft</remote-id>
+	</upstream>
+</pkgmetadata>
