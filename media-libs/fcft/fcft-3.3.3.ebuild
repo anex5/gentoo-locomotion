@@ -1,9 +1,9 @@
-# Copyright 2020-2025 Gentoo Authors
+# Copyright 2020-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{10..13} )
+PYTHON_COMPAT=( python3_{11..14} )
 inherit meson python-any-r1 verify-sig
 
 DESCRIPTION="Simple library for font loading and glyph rasterization"
@@ -17,7 +17,7 @@ SRC_URI="
 # ZLIB for nanosvg
 LICENSE="MIT ZLIB"
 SLOT="0"
-KEYWORDS="~amd64 ~arm64 ~arm ~ppc64 ~riscv ~x86"
+KEYWORDS="amd64 arm64 arm ppc64 ~riscv ~x86"
 IUSE="examples +harfbuzz +libutf8proc man test"
 REQUIRED_USE="
 	libutf8proc? ( harfbuzz )
@@ -88,6 +88,13 @@ src_configure() {
 		$(use test && meson_use harfbuzz test-text-shaping)
 		# bundled, tiny, I believe this means we should always include it
 		-Dsvg-backend=nanosvg
+
+		# since 3.3.3, the lib assumes lack of support for COLRv1 and returns an
+		# error with. test-text-shaping needs an emoji font w/o COLRv1 or it
+		# fails. noto-emoji (Noto-COLRv1.ttf) previously used no longer passes
+		# the test, media-fonts/twemoji::guru does it.
+		# https://codeberg.org/dnkl/fcft/pulls/115
+		-Dtest-text-shaping=false
 	)
 
 	meson_src_configure
@@ -97,7 +104,7 @@ src_install() {
 	local DOCS=( CHANGELOG.md README.md )
 	meson_src_install
 
-	rm -r "${ED}"/usr/share/doc/${P} || die
+	use man && ( rm -r "${ED}"/usr/share/doc/${PN} || die )
 
 	use examples && newbin "${BUILD_DIR}/example/example" fcft-example
 }
