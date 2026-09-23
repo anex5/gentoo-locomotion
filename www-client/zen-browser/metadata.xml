@@ -5,7 +5,7 @@
 	<email>mozilla@gentoo.org</email>
 	<name>Gentoo Mozilla Team</name>
 </maintainer>
-<maintainer type="proxy">
+<maintainer type="person">
 	<email>anex5.2008@gmail.com</email>
 </maintainer>
 <use>

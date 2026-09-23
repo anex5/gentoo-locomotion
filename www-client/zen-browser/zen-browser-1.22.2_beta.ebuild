@@ -293,7 +293,7 @@ CDEPEND="
 		x11-libs/libXtst
 		virtual/opengl
 		x11-libs/cairo[X]
-		x11-libs/gtk+-:3[X]
+		x11-libs/gtk+:3[X]
 		x11-libs/libX11
 		x11-libs/libXcomposite
 		x11-libs/libXdamage
