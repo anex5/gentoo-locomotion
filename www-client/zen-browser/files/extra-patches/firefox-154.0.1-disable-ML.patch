@@ -404,6 +404,21 @@ index 4a7cb33a4d90..10ccaebbc72e 100644
    MenuSectionLayout: "resource:///modules/MenuSectionLayout.sys.mjs",
    TabNotes: "moz-src:///browser/components/tabnotes/TabNotes.sys.mjs",
  });
+diff --git a/browser/components/tabbrowser/content/tabbrowser.js b/browser/components/tabbrowser/content/tabbrowser.js
+index ceb40ebe4d1c..2eb42bf352c3 100644
+--- a/browser/components/tabbrowser/content/tabbrowser.js
++++ b/browser/components/tabbrowser/content/tabbrowser.js
+@@ -204,8 +204,8 @@
+           "moz-src:///browser/components/tabbrowser/OpenInTabsUtils.sys.mjs",
+         PictureInPicture:
+           "moz-src:///toolkit/components/pictureinpicture/PictureInPicture.sys.mjs",
+-        SmartTabGroupingManager:
+-          "moz-src:///browser/components/tabbrowser/SmartTabGrouping.sys.mjs",
++        // SmartTabGrouping.sys.mjs is missing. tor-browser#44045.
++        // Unused in this context. See mozilla bug 1981785.
+         SponsorProtection:
+           "moz-src:///browser/components/newtab/SponsorProtection.sys.mjs",
+         TabMetrics:
 diff --git a/browser/components/tabbrowser/content/tabgroup-menu.js b/browser/components/tabbrowser/content/tabgroup-menu.js
 index 6805dbf9237a..9584f0f6b66d 100644
 --- a/browser/components/tabbrowser/content/tabgroup-menu.js
@@ -448,9 +463,9 @@ index 07006616751a..1b7de30e21b9 100644
 -    "SmartTabGrouping.sys.mjs",
 +    # SmartTabGrouping.sys.mjs is excluded because it requires the missing "ml"
 +    # component. tor-browser#44045.
-     "Tabbrowser.sys.mjs",
      "TabMetrics.sys.mjs",
      "TabsList.sys.mjs",
+     "TabUnloader.sys.mjs",
 diff --git a/browser/components/translations/content/selectTranslationsPanel.js b/browser/components/translations/content/selectTranslationsPanel.js
 index bcac71039fb0..ee66512d2563 100644
 --- a/browser/components/translations/content/selectTranslationsPanel.js
@@ -702,6 +717,23 @@ index 3df810ab7f15..78a1edf7403b 100644
  
  UNIFIED_SOURCES += [
      "/toolkit/components/antitracking/ContentBlockingAllowList.cpp",
+diff --git a/toolkit/components/pdfjs/content/PdfjsParent.sys.mjs b/toolkit/components/pdfjs/content/PdfjsParent.sys.mjs
+index 1c11731f68f9..089302293cf1 100644
+--- a/toolkit/components/pdfjs/content/PdfjsParent.sys.mjs
++++ b/toolkit/components/pdfjs/content/PdfjsParent.sys.mjs
+@@ -21,8 +21,12 @@ const lazy = {};
+ 
+ ChromeUtils.defineESModuleGetters(lazy, {
+   clearTimeout: "resource://gre/modules/Timer.sys.mjs",
++  // EngineProcess.sys.mjs is missing but should be unused since
++  // pdfjs.enableGuessAltText is "false". tor-browser#44045.
+   createEngine: "chrome://global/content/ml/EngineProcess.sys.mjs",
+   IndexedDB: "resource://gre/modules/IndexedDB.sys.mjs",
++  // ml/Utils.sys.mjs is missing but should be unused since
++  // pdfjs.enableGuessAltText is "false". tor-browser#44045.
+   MLUninstallService: "chrome://global/content/ml/Utils.sys.mjs",
+   MultiProgressAggregator: "chrome://global/content/ml/Utils.sys.mjs",
+   PdfJsGuessAltTextFeature: "resource://pdf.js/PdfJsAIFeature.sys.mjs",
 diff --git a/toolkit/components/places/moz.build b/toolkit/components/places/moz.build
 index c85af0b47753..fcf3360164a0 100644
 --- a/toolkit/components/places/moz.build
@@ -814,7 +846,7 @@ diff --git a/toolkit/modules/ActorManagerParent.sys.mjs b/toolkit/modules/ActorM
 index 784df0ab6699..0fcc3f6ec8db 100644
 --- a/toolkit/modules/ActorManagerParent.sys.mjs
 +++ b/toolkit/modules/ActorManagerParent.sys.mjs
-@@ -64,19 +64,8 @@ let JSPROCESSACTORS = {
+@@ -64,17 +64,8 @@ let JSPROCESSACTORS = {
      },
    },
  
@@ -822,12 +854,10 @@ index 784df0ab6699..0fcc3f6ec8db 100644
 -  MLEngine: {
 -    remoteTypes: ["inference"],
 -    parent: {
--      esModuleURI:
--        "moz-src:///toolkit/components/ml/actors/MLEngineParent.sys.mjs",
+-      esModuleURI: "resource://gre/actors/MLEngineParent.sys.mjs",
 -    },
 -    child: {
--      esModuleURI:
--        "moz-src:///toolkit/components/ml/actors/MLEngineChild.sys.mjs",
+-      esModuleURI: "resource://gre/actors/MLEngineChild.sys.mjs",
 -    },
 -    enablePreference: "browser.ml.enable",
 -  },
@@ -933,373 +963,6 @@ index 0374344a4e98..5901392d4dba 100644
          ## TODO consider extending it to mobile builds too (See Bug 1790084).
          "SitePermsAddonProvider.sys.mjs",
      ]
-diff --git a/browser/components/aiwindow/ui/modules/AIWindowConstants.sys.mjs b/browser/components/aiwindow/ui/modules/AIWindowConstants.sys.mjs
-index b7a1d71e69e6..4c27fa8217ee 100644
---- a/browser/components/aiwindow/ui/modules/AIWindowConstants.sys.mjs
-+++ b/browser/components/aiwindow/ui/modules/AIWindowConstants.sys.mjs
-@@ -6,10 +6,6 @@
- import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
- 
- const lazy = {};
--ChromeUtils.defineESModuleGetters(lazy, {
--  resolveChatModelChoice:
--    "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
--});
- 
- XPCOMUtils.defineLazyPreferenceGetter(
-   lazy,
-@@ -69,7 +65,8 @@ export async function getModelForChoice(choiceId = lazy.modelChoice) {
-     return null;
-   }
- 
--  const resolved = await lazy.resolveChatModelChoice(choiceId);
-+  // tor-browser#45016: EngineProcess.sys.mjs is not available for us.
-+  const resolved = { model: "unknown", ownerName: "unknown" };
-   if (resolved) {
-     return resolved;
-   }
 -- 
 GitLab
 
---- a/dom/ipc/PContent.ipdl
-+++ b/dom/ipc/PContent.ipdl
-@@ -41,9 +41,6 @@ include protocol PURLClassifierLocal;
- include protocol PURLClassifierLocalByName;
- include protocol PVRManager;
- include protocol PRemoteMediaManager;
--#ifndef ANDROID
--include protocol PHWInferenceManager;
--#endif  // !ANDROID
- include protocol PRemoteWorkerDebuggerManager;
- include protocol PRemoteWorkerService;
- include protocol PProfiler;
-@@ -1196,14 +1193,6 @@ parent:
- 
-     async CreateAudioIPCConnection() returns (FileDescOrError fd);
- 
--#ifndef ANDROID
--    async RequestHWInferenceConnection(Endpoint<PHWInferenceManagerParent> endpoint);
--
--    // One call per RequestHWInferenceConnection. The process is shut down once
--    // nothing holds it anymore.
--    async ReleaseHWInferenceConnection();
--#endif  // !ANDROID
--
-     sync PURLClassifier(nullable nsIPrincipal principal)
-         returns (bool success);
- 
---- a/ipc/glue/PUtilityProcess.ipdl
-+++ b/ipc/glue/PUtilityProcess.ipdl
-@@ -10,10 +10,6 @@ include protocol PProfiler;
- include protocol PUtilityMediaService;
- include protocol PJSOracle;
- 
--#ifndef ANDROID
--include protocol PHWInference;
--#endif  // !ANDROID
--
- #if defined(XP_WIN)
- include protocol PWindowsUtils;
- include protocol PWinFileDialog;
-@@ -132,10 +128,6 @@ child:
-   async UnblockUntrustedModulesThread();
- #endif  // defined(XP_WIN)
- 
--#ifndef ANDROID
--  async StartHWInferenceService(Endpoint<PHWInferenceChild> aEndpoint);
--#endif  // !ANDROID
--
- #if defined(MOZ_SANDBOX) && defined(MOZ_DEBUG) && defined(ENABLE_TESTS)
-   async InitSandboxTesting(Endpoint<PSandboxTestingChild> aEndpoint);
- #endif
---- a/ipc/glue/UtilityProcessManager.h
-+++ b/ipc/glue/UtilityProcessManager.h
-@@ -6,10 +6,6 @@
- #include "mozilla/MozPromise.h"
- #include "mozilla/dom/ipc/IdType.h"
- #include "mozilla/ipc/UtilityProcessHost.h"
--#ifndef ANDROID
--#  include "mozilla/hwinference/HWInferenceParent.h"
--#  include "mozilla/hwinference/PHWInferenceManagerChild.h"
--#endif  // !ANDROID
- #include "mozilla/EnumeratedArray.h"
- #include "mozilla/ProcInfo.h"
- #include "nsIObserver.h"
-@@ -61,11 +61,6 @@ class UtilityProcessManager final : publ
-   using PKCS11ModulePromise = LaunchPromise<RefPtr<psm::PKCS11ModuleParent>>;
- #endif  // NIGHTLY_BUILD && !MOZ_NO_SMART_CARDS
- 
--#ifndef ANDROID
--  using HWInferencePromise =
--      LaunchPromise<RefPtr<hwinference::HWInferenceParent>>;
--#endif  // !ANDROID
--
-   static RefPtr<UtilityProcessManager> GetSingleton();
- 
-   static RefPtr<UtilityProcessManager> GetIfExists();
-@@ -104,18 +104,6 @@ class UtilityProcessManager final : publ
-   RefPtr<PKCS11ModulePromise> StartPKCS11Module();
- #endif  // NIGHTLY_BUILD && !MOZ_NO_SMART_CARDS
- 
--#ifndef ANDROID
--  // Starts (or reuses) the HWInference process.
--  RefPtr<HWInferencePromise> StartHWInference();
--
--  // Starts the HWInference process and hands aEndpoint to it. The endpoint
--  // closes itself if that fails, so there is nothing to report back. The
--  // returned keep-alive is the caller's share of that process' lifetime.
--  already_AddRefed<UtilityProcessKeepAlive> StartContentHWInferenceManager(
--      Endpoint<hwinference::PHWInferenceManagerParent>&& aEndpoint,
--      dom::ContentParentId aChildId);
--#endif  // !ANDROID
--
-   void OnProcessUnexpectedShutdown(UtilityProcessHost* aHost);
- 
-   // Returns the platform pid for this utility sandbox process.
---- a/dom/ipc/ContentParent.h
-+++ b/dom/ipc/ContentParent.h
-@@ -1117,13 +1117,6 @@ class ContentParent final : public PCont
-   mozilla::ipc::IPCResult RecvCreateAudioIPCConnection(
-       CreateAudioIPCConnectionResolver&& aResolver);
- 
--#ifndef ANDROID
--  mozilla::ipc::IPCResult RecvRequestHWInferenceConnection(
--      Endpoint<PHWInferenceManagerParent>&& aEndpoint);
--
--  mozilla::ipc::IPCResult RecvReleaseHWInferenceConnection();
--#endif  // !ANDROID
--
-   already_AddRefed<extensions::PExtensionsParent> AllocPExtensionsParent();
- 
- #ifdef MOZ_WEBRTC
---- a/dom/ipc/ContentParent.cpp
-+++ b/dom/ipc/ContentParent.cpp
-@@ -151,9 +151,6 @@
- #include "mozilla/glean/IpcMetrics.h"
- #include "mozilla/glean/PFOGTransport.h"
- #include "mozilla/hal_sandbox/PHalParent.h"
--#ifndef ANDROID
--#  include "mozilla/hwinference/PHWInferenceManagerChild.h"
--#endif  // !ANDROID
- #include "mozilla/intl/L10nRegistry.h"
- #include "mozilla/intl/LocaleService.h"
- #include "mozilla/intl/OSPreferences.h"
-@@ -1967,12 +1964,6 @@ void ContentParent::ActorDestroy(ActorDe
-     fss->Forget(ChildID());
-   }
- 
--#ifndef ANDROID
--  // A process that dies never sends its ReleaseHWInferenceConnection.
--  mHWInferenceConnections = 0;
--  mHWInferenceKeepAlive = nullptr;
--#endif  // !ANDROID
--
-   if (why == NormalShutdown && !mCalledClose) {
-     // If we shut down normally but haven't called Close, assume somebody
-     // else called Close on us. In that case, we still need to call
-@@ -5262,34 +5253,6 @@ mozilla::ipc::IPCResult ContentParent::R
-   return IPC_OK();
- }
- 
--#ifndef ANDROID
--mozilla::ipc::IPCResult ContentParent::RecvRequestHWInferenceConnection(
--    Endpoint<hwinference::PHWInferenceManagerParent>&& aEndpoint) {
--  RefPtr<UtilityProcessKeepAlive> keepAlive =
--      UtilityProcessManager::GetSingleton()->StartContentHWInferenceManager(
--          std::move(aEndpoint), mChildID);
--
--  ++mHWInferenceConnections;
--  // Assigning replaces a keep-alive left over from an instance that has since
--  // crashed, which no longer keeps anything alive.
--  mHWInferenceKeepAlive = std::move(keepAlive);
--  return IPC_OK();
--}
--
--mozilla::ipc::IPCResult ContentParent::RecvReleaseHWInferenceConnection() {
--  if (mHWInferenceConnections == 0) {
--    return IPC_FAIL(this,
--                    "ReleaseHWInferenceConnection without a matching "
--                    "RequestHWInferenceConnection");
--  }
--
--  if (--mHWInferenceConnections == 0) {
--    mHWInferenceKeepAlive = nullptr;
--  }
--  return IPC_OK();
--}
--#endif  // !ANDROID
--
- already_AddRefed<extensions::PExtensionsParent>
- ContentParent::AllocPExtensionsParent() {
-   return MakeAndAddRef<extensions::ExtensionsParent>();
---- a/ipc/glue/UtilityProcessChild.h
-+++ b/ipc/glue/UtilityProcessChild.h
-@@ -6,9 +6,6 @@
- #include "mozilla/ipc/PUtilityProcessChild.h"
- #include "mozilla/ipc/UtilityProcessSandboxing.h"
- #include "mozilla/ipc/UtilityMediaServiceParent.h"
--#ifndef ANDROID
--#  include "mozilla/hwinference/HWInferenceChild.h"
--#endif  // !ANDROID
- #include "ChildProfilerController.h"
- 
- #if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
-@@ -92,11 +89,6 @@ class UtilityProcessChild final : public
-       Endpoint<PPKCS11ModuleChild>&& aEndpoint, nsCString&& aProfilePath);
- #endif  // NIGHTLY_BUILD && !MOZ_NO_SMART_CARDS
- 
--#ifndef ANDROID
--  mozilla::ipc::IPCResult RecvStartHWInferenceService(
--      Endpoint<PHWInferenceChild>&& aEndpoint);
--#endif  // !ANDROID
--
-   void ActorDestroy(ActorDestroyReason aWhy) override;
- 
- #if defined(MOZ_SANDBOX) && defined(MOZ_DEBUG) && defined(ENABLE_TESTS)
-@@ -108,12 +100,6 @@ class UtilityProcessChild final : public
-     return mUtilityMediaServiceInstance;
-   }
- 
--#ifndef ANDROID
--  hwinference::HWInferenceChild* GetHWInferenceChild() const {
--    return mHWInferenceInstance;
--  }
--#endif  // !ANDROID
--
-  protected:
-   friend class UtilityProcessImpl;
-   ~UtilityProcessChild();
-@@ -123,9 +109,6 @@ class UtilityProcessChild final : public
-   RefPtr<ChildProfilerController> mProfilerController;
-   RefPtr<UtilityMediaServiceParent> mUtilityMediaServiceInstance{};
-   RefPtr<dom::JSOracleChild> mJSOracleInstance{};
--#ifndef ANDROID
--  RefPtr<hwinference::HWInferenceChild> mHWInferenceInstance{};
--#endif  // !ANDROID
- #ifdef XP_WIN
-   RefPtr<PWindowsUtilsChild> mWindowsUtilsInstance;
- #endif
---- a/ipc/glue/UtilityProcessChild.cpp
-+++ b/ipc/glue/UtilityProcessChild.cpp
-@@ -307,21 +307,6 @@ mozilla::ipc::IPCResult UtilityProcessCh
-   return IPC_OK();
- }
- 
--#ifndef ANDROID
--mozilla::ipc::IPCResult UtilityProcessChild::RecvStartHWInferenceService(
--    Endpoint<PHWInferenceChild>&& aEndpoint) {
--  PROFILER_MARKER_UNTYPED(
--      "UtilityProcessChild::RecvStartHWInferenceService", OTHER,
--      MarkerOptions(MarkerTiming::IntervalUntilNowFrom(mChildStartTime)));
--
--  mHWInferenceInstance = MakeRefPtr<hwinference::HWInferenceChild>();
--  if (!aEndpoint.Bind(mHWInferenceInstance)) {
--    return IPC_FAIL(this, "Invalid endpoint");
--  }
--  return IPC_OK();
--}
--#endif  // !ANDROID
--
- #if defined(XP_WIN)
- mozilla::ipc::IPCResult UtilityProcessChild::RecvStartWindowsUtilsService(
-     Endpoint<dom::PWindowsUtilsChild>&& aEndpoint) {
---- a/ipc/glue/UtilityProcessManager.cpp
-+++ b/ipc/glue/UtilityProcessManager.cpp
-@@ -10,9 +10,6 @@
- #include "mozilla/ProfilerMarkers.h"
- #include "mozilla/StaticPrefs_media.h"
- #include "mozilla/SyncRunnable.h"  // for LaunchUtilityProcess
--#ifndef ANDROID
--#  include "mozilla/hwinference/PHWInferenceChild.h"
--#endif  // !ANDROID
- #include "mozilla/ipc/UtilityProcessParent.h"
- #include "mozilla/ipc/UtilityMediaServiceChild.h"
- #include "mozilla/ipc/UtilityMediaServiceParent.h"
-@@ -611,41 +608,6 @@ UtilityProcessManager::StartPKCS11Module
- }
- #endif  // NIGHTLY_BUILD && !MOZ_NO_SMART_CARDS
- 
--#ifndef ANDROID
--RefPtr<UtilityProcessManager::HWInferencePromise>
--UtilityProcessManager::StartHWInference() {
--  LOGD("[%p] StartHWInference called", this);
--  RefPtr<UtilityProcessManager> self = this;
--  using RetPromise = HWInferencePromise;
--  RefPtr<hwinference::HWInferenceParent> hwip =
--      hwinference::HWInferenceParent::GetSingleton();
--  MOZ_ASSERT(hwip, "Unable to get a singleton for HWInference");
--  LOGD("[%p] Starting HWInference utility process with HW_INFERENCE sandboxing",
--       this);
--  return StartUtility(hwip, SandboxingKind::HW_INFERENCE)
--      ->Then(
--          GetMainThreadSerialEventTarget(), __func__,
--          [self, hwip]() {
--            LOGD("StartHWInference: Utility process started successfully");
--            if (!hwip->CanSend()) {
--              MOZ_ASSERT(false, "HWInferenceParent lost in the middle");
--              LOGD("StartHWInference: HWInferenceParent cannot send!");
--              return RetPromise::CreateAndReject(
--                  LaunchError("StartHWInference: !hwip->CanSend()"),
--                  __PRETTY_FUNCTION__);
--            }
--            LOGD("StartHWInference: HWInferenceParent ready, CanSend=true");
--            return RetPromise::CreateAndResolve(std::move(hwip), __func__);
--          },
--          [](LaunchError&& aError) {
--            LOGD("StartHWInference: Failed to start utility process: %s",
--                 aError.FunctionName().get());
--            MOZ_ASSERT_UNREACHABLE("PHWInference: failure when starting actor");
--            return RetPromise::CreateAndReject(std::move(aError), __func__);
--          });
--}
--#endif  // !ANDROID
--
- bool UtilityProcessManager::IsProcessLaunching(SandboxingKind aSandbox) {
-   MOZ_ASSERT(NS_IsMainThread());
- 
-@@ -807,45 +769,6 @@ RefPtr<MemoryReportingProcess> UtilityPr
-   return new UtilityMemoryReporter(parent);
- }
- 
--#ifndef ANDROID
--already_AddRefed<UtilityProcessKeepAlive>
--UtilityProcessManager::StartContentHWInferenceManager(
--    Endpoint<hwinference::PHWInferenceManagerParent>&& aEndpoint,
--    dom::ContentParentId aChildId) {
--  LOGD(
--      "[%p] UtilityProcessManager::StartContentHWInferenceManager for content "
--      "%d",
--      this, static_cast<int>(aChildId));
--
--  // Before launching, so that an actor cached from a process that is already
--  // gone gets evicted rather than rebound: see GetSingleton().
--  RefPtr<hwinference::HWInferenceParent> hwip =
--      hwinference::HWInferenceParent::GetSingleton();
--  MOZ_ASSERT(hwip, "Unable to get a singleton for HWInference");
--
--  RefPtr<UtilityProcessKeepAlive> keepAlive =
--      LaunchProcessWithKeepAlive(SandboxingKind::HW_INFERENCE);
--  if (!keepAlive) {
--    return nullptr;
--  }
--
--  keepAlive->StartUtility(hwip)->Then(
--      GetMainThreadSerialEventTarget(), __func__,
--      [hwip, endpoint = std::move(aEndpoint), aChildId]() mutable {
--        // Send parent endpoint to utility process
--        if (!hwip->SendNewContentHWInferenceManager(std::move(endpoint),
--                                                    aChildId)) {
--          LOGD("Failed to send endpoint to utility process");
--        }
--      },
--      [](LaunchError&& aError) {
--        LOGD("Failed to start HWInference: %s", aError.FunctionName().get());
--      });
--
--  return keepAlive.forget();
--}
--#endif  // !ANDROID
--
- UtilityProcessKeepAlive::UtilityProcessKeepAlive(
-     UtilityProcessManager::ProcessFields* aProcess)
-     : mProcess(aProcess) {
