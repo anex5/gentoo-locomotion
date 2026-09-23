@@ -6,7 +6,7 @@ EAPI=8
 # Using Gentoos firefox patches as system libraries and lto are quite nice
 FIREFOX_PATCHSET="firefox-156-patches-01.tar.xz"
 
-LLVM_COMPAT=( {21..23} )
+LLVM_COMPAT=( {22..23} )
 
 # This will also filter rust versions that don't match LLVM_COMPAT in the non-clang path; this is fine.
 RUST_NEEDS_LLVM=1
@@ -41,9 +41,11 @@ MOZ_P="${MOZ_PN}-${MOZ_PV}"
 MOZ_PV_DISTFILES="${MOZ_PV}${MOZ_PV_SUFFIX}"
 MOZ_P_DISTFILES="${MOZ_PN}-${MOZ_PV_DISTFILES}"
 
-inherit autotools check-reqs desktop flag-o-matic gnome2-utils linux-info llvm-r1 multiprocessing \
+inherit check-reqs desktop flag-o-matic gnome2-utils linux-info llvm-r1 multiprocessing \
 	optfeature pax-utils python-any-r1 readme.gentoo-r1 rust toolchain-funcs unpacker virtualx xdg
 
+DESCRIPTION="A fast and beautiful, privacy-focused Zen Browser fork"
+HOMEPAGE="https://zen-browser.app/"
 
 SRC_URI="
 	https://github.com/zen-browser/desktop/releases/download/${PV/_beta/b}/zen.source.tar.zst -> ${P}.tar.zst
@@ -54,9 +56,6 @@ SRC_URI="
 	)
 "
 
-DESCRIPTION="A fast and beautiful, privacy-focused Zen Browser fork"
-HOMEPAGE="https://zen-browser.app/"
-
 S="${WORKDIR}/${PN}-${PV%_*}"
 LICENSE="MPL-2.0 GPL-2 LGPL-2.1"
 SLOT="0"
@@ -65,7 +64,6 @@ KEYWORDS="amd64 arm64 ~ppc64 ~riscv ~x86"
 CODEC_IUSE="
 aac
 +dav1d
-h264
 +opus
 +vpx
 +openh264
@@ -89,7 +87,7 @@ REQUIRED_USE="
 	dav1d? (
 		system-ffmpeg
 	)
-	h264? (
+	openh264? (
 		system-ffmpeg
 	)
 	libcanberra? (
@@ -338,7 +336,7 @@ RDEPEND+="
 	)
 	pulseaudio? (
 		|| (
-			media-sound/pulseaudio
+			media-libs/libpulse
 			>=media-sound/apulse-0.1.12-r4
 		)
 	)
@@ -430,8 +428,6 @@ PDEPEND+="
 		sys-apps/xdg-desktop-portal
 	)
 "
-
-RESTRICT="mirror"
 
 llvm_check_deps() {
 	if ! has_version -b "llvm-core/clang:${LLVM_SLOT}" ; then
@@ -873,7 +869,7 @@ src_unpack() {
 			unpack wasi-sdk-${WASI_SDK_VER}-arm64-linux.tar.gz || eerror "Failed to unpack"
 		)
 	fi
-	mkdir "${S}" && cd ${S} || die
+	mkdir "${S}" && cd "${S}" || die
 	unpacker "${P}.tar.zst" || eerror "Failed to unpack."
 }
 
@@ -1318,7 +1314,6 @@ src_configure() {
 	# Initialize MOZCONFIG
 	mozconfig_add_options_ac '' --enable-application="browser"
 	mozconfig_add_options_ac '' --enable-project="browser"
-
 
 	mozconfig_add_options_ac 'Gentoo default' \
 		--allow-addon-sideload \
@@ -1988,12 +1983,26 @@ src_install() {
 		sticky_pref("browser.ml.enable", true);
 		sticky_pref("extensions.ml.enabled", true);
 		sticky_pref("browser.tabs.groups.smart.enabled", true);
+		sticky_pref("browser.ml.chat.enabled", true);
+		sticky_pref("browser.ml.chat.shortcuts", true);
+		sticky_pref("browser.ml.chat.shortcuts.custom", true);
+		sticky_pref("browser.ml.chat.sidebar", true);
+		sticky_pref("browser.ml.chat.menu", true);
+		sticky_pref("browser.ml.linkPreview.enabled", true);
+		sticky_pref("browser.preferences.aiControls", true);
 		EOF
 	else
 		cat >>"${GENTOO_PREFS}" <<-EOF || die "failed to set ml pref"
 		sticky_pref("browser.ml.enable", false); // Master switch
 		sticky_pref("extensions.ml.enabled", false);
 		sticky_pref("browser.tabs.groups.smart.enabled", false);
+		sticky_pref("browser.ml.chat.enabled", false);
+		sticky_pref("browser.ml.chat.shortcuts", false);
+		sticky_pref("browser.ml.chat.shortcuts.custom", false);
+		sticky_pref("browser.ml.chat.sidebar", false);
+		sticky_pref("browser.ml.chat.menu", false);
+		sticky_pref("browser.ml.linkPreview.enabled", false);
+		sticky_pref("browser.preferences.aiControls", false);
 		EOF
 	fi
 
@@ -2058,7 +2067,7 @@ src_install() {
 	# Install wrapper script
 	[[ -f "${ED}/usr/bin/${PN}" ]] && rm "${ED}/usr/bin/${PN}"
 	newbin "${FILESDIR}/${PN}.sh" "${PN}-${ABI}"
-	dosym "/usr/bin/${PN}-${ABI}" "/usr/bin/${PN}"
+	dosym "${PN}-${ABI}" "/usr/bin/${PN}"
 
 	if use jpegxl ; then
 		cat >>"${GENTOO_PREFS}" <<-EOF || die "failed to enable jpegxl via pref"
@@ -2151,9 +2160,9 @@ pkg_postinst() {
 	fi
 
 	if ! has_version "sys-libs/glibc"; then
-		elog
-		elog "glibc not found! You won't be able to play DRM content."
-		elog "See Gentoo bug #910309 or upstream bug #1843683."
-		elog
+		ewarn
+		ewarn "glibc not found! You won't be able to play DRM content."
+		ewarn "See Gentoo bug #910309 or upstream bug #1843683."
+		ewarn
 	fi
 }

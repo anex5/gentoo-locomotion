@@ -933,31 +933,6 @@ index 0374344a4e98..5901392d4dba 100644
          ## TODO consider extending it to mobile builds too (See Bug 1790084).
          "SitePermsAddonProvider.sys.mjs",
      ]
-diff --git a/browser/components/aiwindow/ui/modules/AIWindowConstants.sys.mjs b/browser/components/aiwindow/ui/modules/AIWindowConstants.sys.mjs
-index b7a1d71e69e6..4c27fa8217ee 100644
---- a/browser/components/aiwindow/ui/modules/AIWindowConstants.sys.mjs
-+++ b/browser/components/aiwindow/ui/modules/AIWindowConstants.sys.mjs
-@@ -6,10 +6,6 @@
- import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
- 
- const lazy = {};
--ChromeUtils.defineESModuleGetters(lazy, {
--  resolveChatModelChoice:
--    "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
--});
- 
- XPCOMUtils.defineLazyPreferenceGetter(
-   lazy,
-@@ -69,7 +65,8 @@ export async function getModelForChoice(choiceId = lazy.modelChoice) {
-     return null;
-   }
- 
--  const resolved = await lazy.resolveChatModelChoice(choiceId);
-+  // tor-browser#45016: EngineProcess.sys.mjs is not available for us.
-+  const resolved = { model: "unknown", ownerName: "unknown" };
-   if (resolved) {
-     return resolved;
-   }
 -- 
 GitLab
 
