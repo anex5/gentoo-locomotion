@@ -123,6 +123,7 @@ PATCHES=(
 #	"${FILESDIR}/${PN}-7.8.1-freetype-const.patch"
 	#"${FILESDIR}/${PN}-7.8.2-avoid-pre-stripping-binaries.patch"
 	#"${FILESDIR}/${PN}-7.8.2-jemalloc-lib-type.patch"
+	"${FILESDIR}/${PN}-8.0.0-fix-include-mutex.patch"
 )
 
 src_unpack() {

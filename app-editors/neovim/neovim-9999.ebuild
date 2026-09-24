@@ -53,7 +53,7 @@ DEPEND="${LUA_DEPS}
 	' lua5-{1,2})
 	>=dev-libs/libutf8proc-2.11.3:=[-cjk]
 	>=dev-libs/libuv-1.52.1:=
-	=dev-libs/tree-sitter-0.26*:=
+	=dev-libs/tree-sitter-0.27*:=
 	=dev-libs/tree-sitter-c-0.24.2*
 	=dev-libs/tree-sitter-lua-0.5*
 	=dev-libs/tree-sitter-markdown-0.5*

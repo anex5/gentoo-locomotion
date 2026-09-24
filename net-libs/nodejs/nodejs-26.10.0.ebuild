@@ -49,10 +49,11 @@ RESTRICT="
 CDEPEND="
 	>=app-arch/brotli-1.2.0
 	dev-db/sqlite:3
+	dev-cpp/abseil-cpp:0=
 	>=dev-cpp/ada-4.0.0:=
-	>=dev-cpp/simdutf-7.3.4:=
+	>=dev-cpp/simdutf-9.0.0:=
 	>=dev-libs/libuv-1.52.1:=
-	>=dev-libs/simdjson-4.6.9:=
+	>=dev-libs/simdjson-4.6.11:=
 	>=net-dns/c-ares-1.34.8:=
 	>=net-libs/nghttp2-1.70.0:=
 	>=net-libs/nghttp3-1.18.0:=
@@ -105,7 +106,8 @@ PATCHES=(
 	"${FILESDIR}/${PN}-24.2.0-lto-update.patch"
 	"${FILESDIR}/${PN}-24.2.0-support-clang-pgo.patch"
 	"${FILESDIR}/${PN}-19.3.0-v8-oflags.patch"
-	"${FILESDIR}/${PN}-26.9.0-add-missing-namespace.patch"
+	#"${FILESDIR}/${PN}-26.10.0-shared-abseil-cpp.patch"
+	#"${FILESDIR}/${PN}-26.9.0-add-missing-namespace.patch"
 	#"${FILESDIR}/${PN}-25.1.0-split-pointer-compression-and-v8-sandbox-options.patch"
 )
 
@@ -279,11 +281,11 @@ src_configure() {
 		--shared-nghttp3
 		--shared-ngtcp2
 		--shared-simdjson
-		--shared-simdutf
 		--shared-sqlite
 		--shared-zlib
 		--shared-ffi
 		--shared-zstd
+		--shared-abseil
 	)
 	if ! use asm && ! use system-ssl ; then
 		myconf+=( --openssl-no-asm )
@@ -306,7 +308,10 @@ src_configure() {
 	fi
 	if use system-icu; then
 		# No Temporal support: https://github.com/nodejs/node/issues/62676
-		myconf+=( --with-intl=system-icu )
+		myconf+=(
+			--with-intl=system-icu
+			--shared-simdutf
+		)
 	elif use icu; then
 		# Full embedded ICU (Temporal works)
 		myconf+=( --with-intl=full-icu )

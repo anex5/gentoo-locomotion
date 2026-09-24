@@ -27,7 +27,7 @@ SLOT="0"
 KEYWORDS="~alpha amd64 arm arm64 ~hppa ~loong ~mips ppc ppc64 ~riscv ~s390 ~sparc x86"
 
 # setuptools is needed for distutils import
-DEPEND="=dev-libs/tree-sitter-0.26*:="
+DEPEND=">=dev-libs/tree-sitter-0.26:="
 RDEPEND="${DEPEND}
 	$(python_gen_cond_dep '
 		dev-python/setuptools[${PYTHON_USEDEP}]

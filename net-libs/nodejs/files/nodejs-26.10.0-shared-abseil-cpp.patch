@@ -1,0 +1,21 @@
+--- a/tools/v8_gypfiles/v8.gyp
++++ b/tools/v8_gypfiles/v8.gyp
+@@ -1016,10 +1016,15 @@
+     {
+       'target_name': 'libabseil',
+       'type': 'none',
+-      'dependencies': [
+-        '../../deps/v8/third_party/abseil-cpp/absl.gyp:absl',
+-      ],
+       'export_profiles': 1,
++      'link_settings': {
++        'libraries': [
++          '-labsl_strings',
++          '-labsl_synchronization',
++          '-labsl_bad_optional_access',
++          '-labsl_str_format_internal',
++        ],
++      },
+     },
+     {
+       'target_name': 'v8_compiler',

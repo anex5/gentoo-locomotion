@@ -1,0 +1,10 @@
+--- a/src/FoundationClasses/TKernel/NCollection/NCollection_IncAllocator.cxx
++++ b/src/FoundationClasses/TKernel/NCollection/NCollection_IncAllocator.cxx
+@@ -17,6 +17,7 @@
+ #include <Standard_OutOfMemory.hxx>
+
+ #include <cmath>
++#include <mutex>
+ 
+ IMPLEMENT_STANDARD_RTTIEXT(NCollection_IncAllocator, NCollection_BaseAllocator)
+ 

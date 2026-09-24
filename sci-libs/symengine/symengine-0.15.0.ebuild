@@ -3,19 +3,18 @@
 
 EAPI=8
 
-LLVM_COMPAT=( {20..22} )
+LLVM_COMPAT=( {21..23} )
 LLVM_OPTIONAL=1
 
 inherit cmake llvm-r2 toolchain-funcs
 
 DESCRIPTION="Fast symbolic manipulation library, written in C++"
-COMMIT="ab67607b8dfb505dc151f7ed26fce9a030bdff8e"
+#COMMIT="ab67607b8dfb505dc151f7ed26fce9a030bdff8e"
 HOMEPAGE="https://github.com/symengine/symengine"
-SRC_URI="
-	https://github.com/${PN}/${PN}/archive/${COMMIT}.tar.gz
-		-> ${P}-${COMMIT:0:7}.gh.tar.gz
-"
-S="${WORKDIR}/${PN}-${COMMIT}"
+#SRC_URI="https://github.com/${PN}/${PN}/archive/${COMMIT}.tar.gz -> ${P}-${COMMIT:0:7}.gh.tar.gz"
+#S="${WORKDIR}/${PN}-${COMMIT}"
+SRC_URI="https://github.com/${PN}/${PN}/archive/refs/tags/v${PV}.tar.gz -> ${P}.gh.tar.gz"
+
 LICENSE="MIT"
 SLOT="0/$(ver_cut 1-2)"
 KEYWORDS="amd64 ~arm arm64 ~loong ~ppc64 ~riscv ~x86"
@@ -62,6 +61,7 @@ pkg_pretend() {
 
 pkg_setup() {
 	[[ ${MERGE_TYPE} != binary ]] && use openmp && tc-check-openmp
+	use llvm && llvm-r2_pkg_setup
 }
 
 src_configure() {
