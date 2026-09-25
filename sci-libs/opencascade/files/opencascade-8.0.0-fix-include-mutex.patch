@@ -8,3 +8,13 @@
  
  IMPLEMENT_STANDARD_RTTIEXT(NCollection_IncAllocator, NCollection_BaseAllocator)
  
+--- a/src/Visualization/TKService/Aspect/Aspect_VKeySet.hxx
++++ b/src/Visualization/TKService/Aspect/Aspect_VKeySet.hxx
+@@ -21,6 +21,7 @@
+ #include <Standard_Transient.hxx>
+ 
+ #include <shared_mutex>
++#include <mutex>
+ 
+ //! Structure defining key state.
+ class Aspect_VKeySet : public Standard_Transient
