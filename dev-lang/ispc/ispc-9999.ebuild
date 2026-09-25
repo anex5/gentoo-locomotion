@@ -4,7 +4,7 @@
 EAPI=8
 
 LLVM_COMPAT=( {20..23} )
-PYTHON_COMPAT=( python3_{12..14} )
+PYTHON_COMPAT=( python3_{12..15} )
 
 inherit cmake dot-a llvm-r1 multiprocessing python-any-r1 toolchain-funcs
 
@@ -15,10 +15,10 @@ HOMEPAGE="
 "
 
 if [[ ${PV} == 9999 ]]; then
-	inherit git-r3
 	EGIT_REPO_URI="https://github.com/ispc/ispc.git"
 	EGIT_SUBMODULES=()
 	EGIT_BRANCH="main"
+	inherit git-r3
 else
 	SRC_URI="https://github.com/${PN}/${PN}/archive/v${PV//_*/}.tar.gz -> ${P}.tar.gz"
 	KEYWORDS="amd64 ~arm ~arm64 ~ppc64 ~x86"
@@ -69,6 +69,9 @@ src_prepare() {
 	# drop -Werror
 	sed -e 's/-Werror//' -i CMakeLists.txt || die
 
+	# Build with clang 23.1.0
+	sed -e 's/230000/230100/' -i src/ispc_version.h || die
+
 	# fix path for dot binary
 	if use doc; then
 		sed -e 's|/usr/local/bin/dot|/usr/bin/dot|' -i "${S}"/doxygen.cfg || die
@@ -86,10 +89,11 @@ src_prepare() {
 }
 
 src_configure() {
-	#lto-guarantee-fat
+	lto-guarantee-fat
 	local mycmakeargs=(
 		-DX86_ENABLED=$(usex amd64 ON $(usex x86))
-		-DARM_ENABLED=$(usex arm ON OFF)
+		-DARM_ENABLED=$(usex arm)
+		-DPPC64_ENABLED=$(usex ppc64)
 		-DXE_ENABLED=$(usex xe ON OFF)
 		-DWASM_ENABLED=$(usex javascript ON OFF)
 		-DCMAKE_SKIP_RPATH=ON
