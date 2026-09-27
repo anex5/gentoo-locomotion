@@ -6,6 +6,8 @@ EAPI=8
 CONFIG_CHECK="~ADVISE_SYSCALLS"
 PYTHON_COMPAT=( python3_{12..15} )
 PYTHON_REQ_USE="threads(+)"
+RUST_OPTIONAL=1
+RUST_MIN_VER="1.86.0"
 
 inherit bash-completion-r1 check-reqs flag-o-matic linux-info
 inherit ninja-utils pax-utils python-any-r1 toolchain-funcs xdg-utils
@@ -19,9 +21,7 @@ if [[ ${PV} == *9999 ]]; then
 	EGIT_REPO_URI="https://github.com/nodejs/node"
 	SLOT="0"
 else
-	SRC_URI="
-		https://nodejs.org/dist/v${PV}/node-v${PV}.tar.xz
-	"
+	SRC_URI="https://nodejs.org/dist/v${PV}/node-v${PV}.tar.xz"
 	SLOT="0/$(ver_cut 1)"
 	KEYWORDS="~amd64 ~arm ~arm64 ~loong ~ppc64 ~riscv ~x86 ~x64-macos"
 	S="${WORKDIR}/node-v${PV}"
@@ -29,13 +29,14 @@ fi
 
 IUSE="+asm cpu_flags_x86_sse2 debug doc fips +icu inspector +lief +jit \
 lto lld man mold +npm pax-kernel pointer-compression +snapshot +ssl \
-system-icu +system-ssl +system-lief test v8-sandbox"
+system-icu +system-ssl +system-lief +temporal test v8-sandbox"
 REQUIRED_USE="
 	^^ ( mold lld )
 	inspector? ( icu ssl )
 	npm? ( ssl )
 	system-icu? ( icu )
 	system-ssl? ( ssl )
+	temporal? ( icu !system-icu )
 	system-lief? ( lief )
 	x86? ( cpu_flags_x86_sse2 )
 	v8-sandbox? ( pointer-compression )
@@ -47,7 +48,7 @@ RESTRICT="
 "
 
 CDEPEND="
-	>=app-arch/brotli-1.2.0
+	>=app-arch/brotli-1.2.0:=
 	dev-db/sqlite:3
 	dev-cpp/abseil-cpp:0=
 	>=dev-cpp/ada-4.0.0:=
@@ -106,9 +107,6 @@ PATCHES=(
 	"${FILESDIR}/${PN}-24.2.0-lto-update.patch"
 	"${FILESDIR}/${PN}-24.2.0-support-clang-pgo.patch"
 	"${FILESDIR}/${PN}-19.3.0-v8-oflags.patch"
-	#"${FILESDIR}/${PN}-26.10.0-shared-abseil-cpp.patch"
-	#"${FILESDIR}/${PN}-26.9.0-add-missing-namespace.patch"
-	#"${FILESDIR}/${PN}-25.1.0-split-pointer-compression-and-v8-sandbox-options.patch"
 )
 
 pkg_pretend() {
@@ -166,8 +164,6 @@ src_prepare() {
 
 	use ppc64 &&
 		PATCHES+=(	"${FILESDIR}/${PN}-24.11.1-restore-ppc64be.patch" )
-
-	#use system-lief && ( rm -r deps/LIEF || die )
 
 	default
 
@@ -348,6 +344,7 @@ src_configure() {
 	if use amd64 || use arm64 ; then
 		use pointer-compression && myconf+=( --experimental-enable-pointer-compression )
 	fi
+	! use temporal && myconf+=( --v8-disable-temporal-support )
 	use v8-sandbox && myconf+=( --experimental-pointer-compression-shared-cage )
 	if use kernel_linux && linux_chkconfig_present "TRANSPARENT_HUGEPAGE" ; then
 		myconf+=( --v8-enable-hugepage )

@@ -16,7 +16,7 @@ if [[ ${PV} == 9999 ]]; then
 	EGIT_REPO_URI="https://github.com/neovim/neovim.git"
 else
 	SRC_URI="https://github.com/neovim/neovim/archive/v${PV}.tar.gz -> ${P}.tar.gz"
-	KEYWORDS="~amd64 ~arm ~arm64 ~ppc ~ppc64 ~riscv ~x86 ~x64-macos"
+	KEYWORDS="~amd64 ~arm ~arm64 ~ppc ~ppc64 ~x86"
 fi
 
 LICENSE="Apache-2.0 vim"
@@ -57,6 +57,7 @@ DEPEND="${LUA_DEPS}
 	=dev-libs/tree-sitter-c-0.24.2*
 	=dev-libs/tree-sitter-lua-0.5*
 	=dev-libs/tree-sitter-markdown-0.5*
+	=dev-libs/tree-sitter-markdown-inline-0.5*
 	=dev-libs/tree-sitter-query-0.8*
 	=dev-libs/tree-sitter-vim-0.8*
 	=dev-libs/tree-sitter-vimdoc-4*
