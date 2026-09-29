@@ -9,8 +9,8 @@ PYTHON_REQ_USE="threads(+)"
 RUST_OPTIONAL=1
 RUST_MIN_VER="1.86.0"
 
-inherit bash-completion-r1 check-reqs flag-o-matic linux-info
-inherit ninja-utils pax-utils python-any-r1 toolchain-funcs xdg-utils
+inherit check-reqs flag-o-matic linux-info ninja-utils pax-utils
+inherit python-any-r1 rust shell-completion toolchain-funcs xdg-utils
 
 DESCRIPTION="A JavaScript runtime built on Chrome's V8 JavaScript engine"
 HOMEPAGE="https://nodejs.org/"
@@ -77,15 +77,17 @@ CDEPEND="
 
 BDEPEND="${PYTHON_DEPS}
 	app-alternatives/ninja
-	sys-apps/coreutils
-	virtual/pkgconfig
-	test? ( net-misc/curl )
 	pax-kernel? ( sys-apps/elfix )
+	sys-apps/coreutils
+	temporal? ( ${RUST_DEPEND} )
+	test? ( net-misc/curl )
 	mold? ( >=sys-devel/mold-2.0 )
 	lld? ( llvm-core/lld )
+	virtual/pkgconfig
 "
 
 DEPEND="${CDEPEND}"
+RDEPEND="${CDEPEND}"
 
 # These are measured on a loong machine with -ggdb on, and only checked
 # if debugging flags are present in CFLAGS.
@@ -102,6 +104,7 @@ PATCHES=(
 	"${FILESDIR}"/${PN}-26.6.0-format-cstdlib.patch
 	"${FILESDIR}"/${PN}-26.6.0-v8-climits.patch
 	"${FILESDIR}"/${PN}-26.8.2-add-missing-funcational-inc.patch
+	"${FILESDIR}/${PN}-26.10.0-x86-SSE2-fix.patch"
 	"${FILESDIR}/${PN}-12.22.5-shared_c-ares_nameser_h.patch"
 	"${FILESDIR}/${PN}-22.2.0-global-npm-config.patch"
 	"${FILESDIR}/${PN}-24.2.0-lto-update.patch"
@@ -125,6 +128,13 @@ pkg_pretend() {
 		has_version "llvm-runtimes/libatomic-stub" || \
 			die "With clang compiler we need atomic as the support lib.\nPlease install 'llvm-runtimes/libatomic-stub'"
 	)
+	if use system-icu; then
+		ewarn "The ES2026 'Temporal' datetime feature/object is not available when using system-icu."
+		ewarn "Please consider whether this is desirable for your use case."
+		ewarn "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Temporal"
+	fi
+
+	use temporal && rust_pkg_setup
 }
 
 pkg_setup() {
@@ -501,7 +511,7 @@ src_test() {
 
 pkg_postinst() {
 	if use npm; then
-		ewarn "remember to run: source /etc/profile if you plan to use nodejs "
+		ewarn "remember to run: source /etc/profile if you plan to use nodejs"
 		ewarn "in your current shell"
 	fi
 }
