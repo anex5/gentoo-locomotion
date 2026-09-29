@@ -892,9 +892,7 @@ src_prepare() {
 	#	rm -v "${WORKDIR}"/firefox-patches/*ppc64*.patch
 	#fi
 
-	if use x86 && use elibc_glibc ; then
-		rm -v "${WORKDIR}"/firefox-patches/*-musl-non-lfs64-api-on-audio_thread_priority-crate.patch || die
-	fi
+	rm -v "${WORKDIR}"/firefox-patches/*-audio_thread_priority-musl-fix.patch || die
 
 	eapply "${FILESDIR}/extra-patches/firefox-140.2.0e-disallow-store-data-races.patch"
 
