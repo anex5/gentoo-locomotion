@@ -52,7 +52,7 @@ CDEPEND="
 	dev-db/sqlite:3
 	dev-cpp/abseil-cpp:0=
 	>=dev-cpp/ada-4.0.0:=
-	>=dev-cpp/simdutf-9.0.0:=
+	>=dev-cpp/simdutf-9.2.1:=[atomic-base64]
 	>=dev-libs/libuv-1.52.1:=
 	>=dev-libs/simdjson-4.6.11:=
 	>=net-dns/c-ares-1.34.8:=
@@ -105,6 +105,7 @@ PATCHES=(
 	"${FILESDIR}"/${PN}-26.6.0-v8-climits.patch
 	"${FILESDIR}"/${PN}-26.8.2-add-missing-funcational-inc.patch
 	"${FILESDIR}/${PN}-26.10.0-x86-SSE2-fix.patch"
+	"${FILESDIR}"/${PN}-26.10.0-simdutf-use-system-header.patch
 	"${FILESDIR}/${PN}-12.22.5-shared_c-ares_nameser_h.patch"
 	"${FILESDIR}/${PN}-22.2.0-global-npm-config.patch"
 	"${FILESDIR}/${PN}-24.2.0-lto-update.patch"
@@ -287,6 +288,7 @@ src_configure() {
 		--shared-nghttp3
 		--shared-ngtcp2
 		--shared-simdjson
+		--shared-simdutf
 		--shared-sqlite
 		--shared-zlib
 		--shared-ffi
@@ -316,7 +318,6 @@ src_configure() {
 		# No Temporal support: https://github.com/nodejs/node/issues/62676
 		myconf+=(
 			--with-intl=system-icu
-			--shared-simdutf
 		)
 	elif use icu; then
 		# Full embedded ICU (Temporal works)
@@ -513,5 +514,13 @@ pkg_postinst() {
 	if use npm; then
 		ewarn "remember to run: source /etc/profile if you plan to use nodejs"
 		ewarn "in your current shell"
+	fi
+
+	if use system-icu; then
+		ewarn ""
+		ewarn "Node.js was built with USE='system-icu'."
+		ewarn "The JavaScript 'Temporal' API has been disabled."
+		ewarn "If you need full ES2026+ compliance, rebuild with USE='-system-icu'."
+		ewarn ""
 	fi
 }
