@@ -4,7 +4,7 @@
 EAPI=8
 
 # Using Gentoos firefox patches as system libraries and lto are quite nice
-FIREFOX_PATCHSET="firefox-156-patches-02.tar.xz"
+FIREFOX_PATCHSET="firefox-157-patches-01.tar.xz"
 
 LLVM_COMPAT=( {22..23} )
 
@@ -25,7 +25,7 @@ WASI_SDK_LLVM_VER=23
 
 MOZ_ESR=
 
-MOZ_PV=156.0.1
+MOZ_PV=157.0.1
 MOZ_PV_SUFFIX=
 if [[ ${PV} =~ (_(alpha|beta|rc).*)$ ]] ; then
 	MOZ_PV_SUFFIX=${BASH_REMATCH[1]}
@@ -905,15 +905,14 @@ src_prepare() {
 
 	# Allow to use system-ffmpeg completely.
 	if use system-ffmpeg; then
-		#eapply "${FILESDIR}/extra-patches/firefox-115e-allow-ffmpeg-decode-av1.patch"
-		eapply "${FILESDIR}/extra-patches/firefox-128e-disable-ffvpx.patch" || die
+		eapply "${FILESDIR}/extra-patches/firefox-157-disable-ffvpx.patch" || die
 	fi
 
 	# Machine learning
-	if ! use ml ; then
-		eapply "${FILESDIR}/extra-patches/firefox-156.0.1-disable-ML.patch"
-		sed -e '/\@BINPATH\@\/\@DLL_PREFIX\@mozinference\@DLL_SUFFIX\@/d' -i browser/installer/package-manifest.in || die
-	fi
+	#if ! use ml ; then
+		#eapply "${FILESDIR}/extra-patches/firefox-156.0.1-disable-ML.patch"
+		#sed -e '/\@BINPATH\@\/\@DLL_PREFIX\@mozinference\@DLL_SUFFIX\@/d' -i browser/installer/package-manifest.in || die
+	#fi
 
 	# Prevent tab crash
 	eapply "${FILESDIR}/extra-patches/firefox-143.0.3-disable-broken-flags-dom-bindings.patch"
@@ -945,7 +944,7 @@ src_prepare() {
 
 	eapply "${WORKDIR}/firefox-patches"
 
-	# Allow user to apply any additional patches without modifing ebuild
+	# Allow user to apply any additional patches without modifying ebuild
 	eapply_user
 
 	# Make cargo respect MAKEOPTS
@@ -1030,9 +1029,7 @@ src_prepare() {
 
 	# Clear checksums from cargo crates we've manually patched.
 	# moz_clear_vendor_checksums crate
-	# glslopt: bgo#969412
-	# moz_clear_vendor_checksums glslopt
-	# moz_clear_vendor_checksums encoding_rs
+	moz_clear_vendor_checksums bindgen
 
 	# Respect choice for "jumbo-build"
 	# Changing the value for FILES_PER_UNIFIED_FILE may not work, see #905431
@@ -1326,7 +1323,6 @@ src_configure() {
 		--disable-strip \
 		--disable-updater \
 		--disable-valgrind \
-		--disable-wmf \
 		--enable-negotiateauth \
 		--enable-new-pass-manager \
 		--enable-packed-relative-relocs \
@@ -1359,12 +1355,10 @@ src_configure() {
 	if use system-ffmpeg ; then
 		mozconfig_add_options_ac \
 			'+system-ffmpeg' \
-			--enable-ffmpeg \
 			--with-ffvpx=no
 	else
 		mozconfig_add_options_ac \
-			'-system-ffmpeg' \
-			--disable-ffmpeg
+			'-system-ffmpeg'
 	fi
 
 	# The commented lines above are mutually exclusive with this line below.

@@ -1,11 +1,12 @@
---- a/common.gypi	2025-06-09 09:53:41.000000000 -0700
-+++ b/common.gypi	2025-06-14 22:42:59.965065953 -0700
-@@ -188,11 +188,21 @@
+--- a/common.gypi	2026-05-20 01:13:51.000000000 -0700
++++ b/common.gypi	2026-05-24 15:56:50.477245652 -0700
+@@ -188,12 +188,21 @@
              }, {
                'MSVC_runtimeType': 2   # MultiThreadedDLL (/MD)
              }],
 -            ['clang==1', {
 -              'lto': ' -flto ', # Clang
+-              'pgo_use': '-fprofile-use=<(pgo_profile)',
 -            }, {
 +            ['clang==0', {
                'lto': ' -flto=4 -ffat-lto-objects ', # GCC
@@ -19,7 +20,7 @@
 +            ['clang==1 and with_thinlto=="true"', {
 +              'lto': ' -flto=thin', # Clang ThinLTO
 +            }],
-+            ['clang==1 and with_goldlto=="false" and with_thinlto=="false"', {
++            ['clang==1 and with_goldlto=="false" and with_thinlto=="false" and with_moldlto=="false"', {
 +              'lto': ' -flto', # Clang with system default
 +            }],
            ],
@@ -55,9 +56,9 @@
                    '-Wl,--section-ordering-file=<(node_section_ordering_info)',
                  ],
                }],
---- a/configure.py	2025-06-09 09:53:41.000000000 -0700
-+++ b/configure.py	2025-06-14 22:42:27.954879696 -0700
-@@ -704,6 +704,24 @@ parser.add_argument('--use-section-order
+--- a/configure.py	2026-05-20 01:13:51.000000000 -0700
++++ b/configure.py	2026-05-24 15:56:07.602548163 -0700
+@@ -886,6 +886,24 @@ parser.add_argument('--use-section-order
           'Node.js be linked using the gold linker. The gold linker must have ' +
           'version 1.2 or greater.')
  
@@ -82,7 +83,7 @@
  intl_optgroup.add_argument('--with-intl',
      action='store',
      dest='with_intl',
-@@ -1663,6 +1681,23 @@ def configure_node(o):
+@@ -2088,6 +2106,23 @@ def configure_node(o):
      print('Warning! Loading builtin modules from disk is for development')
      o['variables']['node_builtin_modules_path'] = options.node_builtin_modules_path
  
@@ -106,7 +107,7 @@
  def configure_napi(output):
    version = getnapibuildversion.get_napi_version()
    output['variables']['napi_build_version'] = version
-@@ -2186,6 +2221,10 @@ def configure_inspector(o):
+@@ -2700,6 +2735,10 @@ def configure_inspector(o):
    o['variables']['v8_enable_inspector'] = 0 if disable_inspector else 1
  
  def configure_section_file(o):
@@ -117,7 +118,7 @@
    try:
      proc = subprocess.Popen(['ld.gold'] + ['-v'], stdin = subprocess.PIPE,
                              stdout = subprocess.PIPE, stderr = subprocess.PIPE)
-@@ -2205,7 +2244,7 @@ def configure_section_file(o):
+@@ -2719,7 +2758,7 @@ def configure_section_file(o):
        error('''GNU gold version must be greater than 1.2 in order to use section
              reordering''')
  

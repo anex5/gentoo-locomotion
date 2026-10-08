@@ -66,7 +66,7 @@ CDEPEND="
 	)
 	system-ssl? (
 		>=net-libs/ngtcp2-1.25.0:=
-		>=dev-libs/openssl-3.5.8:0=[asm?,fips?]
+		>=dev-libs/openssl-3.5.9:0=[asm?,fips?]
 	)
 	!system-ssl? ( >=net-libs/ngtcp2-1.25.0:=[-gnutls] )
 	|| (
@@ -100,16 +100,14 @@ CHECKREQS_MEMORY="8G"
 CHECKREQS_DISK_BUILD="22G"
 
 PATCHES=(
-	"${FILESDIR}"/${PN}-26.6.0-gcc17.patch
-	"${FILESDIR}"/${PN}-26.6.0-format-cstdlib.patch
-	"${FILESDIR}"/${PN}-26.6.0-v8-climits.patch
-	"${FILESDIR}"/${PN}-26.8.2-add-missing-funcational-inc.patch
+	"${FILESDIR}/${PN}-26.6.0-format-cstdlib.patch"
+	"${FILESDIR}/${PN}-26.6.0-v8-climits.patch"
+	"${FILESDIR}/${PN}-26.11.1-add-missing-funcational-inc.patch"
 	"${FILESDIR}/${PN}-26.10.0-x86-SSE2-fix.patch"
-	"${FILESDIR}"/${PN}-26.10.0-simdutf-use-system-header.patch
+	"${FILESDIR}/${PN}-26.10.0-simdutf-use-system-header.patch"
 	"${FILESDIR}/${PN}-12.22.5-shared_c-ares_nameser_h.patch"
 	"${FILESDIR}/${PN}-22.2.0-global-npm-config.patch"
-	"${FILESDIR}/${PN}-24.2.0-lto-update.patch"
-	"${FILESDIR}/${PN}-24.2.0-support-clang-pgo.patch"
+	"${FILESDIR}/${PN}-26.2.0-lto-update.patch"
 	"${FILESDIR}/${PN}-19.3.0-v8-oflags.patch"
 )
 

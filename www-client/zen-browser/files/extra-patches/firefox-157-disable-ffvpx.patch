@@ -1,6 +1,6 @@
 --- a/toolkit/moz.configure
 +++ b/toolkit/moz.configure
-@@ -2572,18 +2572,33 @@ with only_when(compile_environment):
+@@ -2572,19 +2572,34 @@ with only_when(compile_environment):
  
  # FFmpeg's ffvpx configuration
  # ==============================================================
@@ -28,9 +28,10 @@
      audio_only = False
      flags = []
  
-     # This enables audio and video codecs paths on Windows  x86 and x86_64,
-     # macOS (all arch), and Linux x86_64. On other arch / OS combinations,
-     # only audio codecs are enabled.
+     # This enables audio and video codecs paths on Windows (x86, x86_64,
+     # aarch64), macOS (all arch), Android (x86_64, aarch64, arm), and Linux
+     # x86_64 and aarch64. On other arch / OS combinations, only audio codecs
+     # are enabled.
 -    if target.kernel == "WINNT":
 +    if any("no" in value for value in values):
 +        # Do not set MOZ_FFVPX_AUDIOONLY preprocessor codepaths
