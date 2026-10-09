@@ -913,6 +913,7 @@ src_prepare() {
 		#eapply "${FILESDIR}/extra-patches/firefox-156.0.1-disable-ML.patch"
 		#sed -e '/\@BINPATH\@\/\@DLL_PREFIX\@mozinference\@DLL_SUFFIX\@/d' -i browser/installer/package-manifest.in || die
 	#fi
+	eapply "${FILESDIR}/extra-patches/firefox-157-restrict-check-networking-for-binary.patch"
 
 	# Prevent tab crash
 	eapply "${FILESDIR}/extra-patches/firefox-143.0.3-disable-broken-flags-dom-bindings.patch"

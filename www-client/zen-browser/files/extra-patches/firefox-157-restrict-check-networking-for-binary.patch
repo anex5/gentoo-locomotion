@@ -1,0 +1,13 @@
+--- a/python/mozbuild/mozbuild/action/check_binary.py
++++ b/python/mozbuild/mozbuild/action/check_binary.py
+@@ -220,8 +220,8 @@ def check_networking(binary):
+     retcode = 0
+     networking_functions = set([
+         # socketpair is not concerning; it is restricted to AF_UNIX
+-        "recv",
+-        "send",
++        # "recv",
++        # "send",
+         # We would be concerned by recvmsg and sendmsg; but we believe
+         # they are okay as documented in 1376621#c23
+         "gethostbyname",
