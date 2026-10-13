@@ -27,6 +27,11 @@ IUSE="
 RESTRICT="!test? ( test )"
 
 REQUIRED_USE="
+	!amd64? (
+		!arm64? (
+			!bolt
+		)
+	)
 	amd64? (
 		llvm_targets_X86
 	)
@@ -110,6 +115,7 @@ PDEPEND="
 "
 PATCHES=(
 	"${FILESDIR}/llvm-14.0.0.9999-stop-triple-spam.patch"
+	"${FILESDIR}/llvm-23.1.3-revert-PR5045.patch"
 )
 LLVM_COMPONENTS=(
 	"llvm"

@@ -1,0 +1,12 @@
+--- a/llvm/lib/Bitcode/Writer/BitcodeWriter.cpp
++++ b/llvm/lib/Bitcode/Writer/BitcodeWriter.cpp
+@@ -4924,9 +4924,6 @@ void ModuleBitcodeWriterBase::writePerMo
+     if (!VI || VI.getSummaryList().empty()) {
+       // Only declarations should not have a summary (a declaration might
+       // however have a summary if the def was in module level asm).
+-      if (!F.isDeclaration())
+-        reportFatalUsageError("expected function definition " + F.getName() +
+-                              " to have an associated value info.");
+       continue;
+     }
+     auto *Summary = VI.getSummaryList()[0].get();
