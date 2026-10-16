@@ -19,7 +19,7 @@ fi
 
 LICENSE="Unlicense"
 SLOT="0"
-IUSE="static-libs lto"
+IUSE="man lto static-libs"
 
 DEPEND="
 	sys-libs/ncurses:=[unicode(+),static-libs?]
@@ -118,4 +118,8 @@ src_install(){
 
 src_test(){
 	emake test
+}
+
+pkg_postinst() {
+	optfeature "Inline images support" media-gfx/chafa
 }
