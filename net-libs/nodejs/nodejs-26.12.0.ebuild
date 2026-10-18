@@ -54,7 +54,7 @@ CDEPEND="
 	>=dev-cpp/ada-4.0.0:=
 	>=dev-cpp/simdutf-9.2.1:=[atomic-base64]
 	>=dev-libs/libuv-1.52.1:=
-	>=dev-libs/simdjson-4.6.11:=
+	>=dev-libs/simdjson-5.0.3:=
 	>=net-dns/c-ares-1.34.8:=
 	>=net-libs/nghttp2-1.70.0:=
 	>=net-libs/nghttp3-1.18.0:=
@@ -101,11 +101,12 @@ CHECKREQS_DISK_BUILD="22G"
 
 PATCHES=(
 	"${FILESDIR}/${PN}-26.6.0-format-cstdlib.patch"
-	"${FILESDIR}/${PN}-26.6.0-v8-climits.patch"
+#	"${FILESDIR}/${PN}-26.6.0-v8-climits.patch"
 	"${FILESDIR}/${PN}-26.11.1-add-missing-funcational-inc.patch"
 	"${FILESDIR}/${PN}-26.10.0-x86-SSE2-fix.patch"
 	"${FILESDIR}/${PN}-26.10.0-simdutf-use-system-header.patch"
 	"${FILESDIR}/${PN}-12.22.5-shared_c-ares_nameser_h.patch"
+	"${FILESDIR}"/${PN}-26.11.1-include-EACCES-in-mkdir-test.patch
 	"${FILESDIR}/${PN}-22.2.0-global-npm-config.patch"
 	"${FILESDIR}/${PN}-26.2.0-lto-update.patch"
 	"${FILESDIR}/${PN}-19.3.0-v8-oflags.patch"
@@ -166,6 +167,14 @@ src_prepare() {
 
 	# Avoid writing a depfile, not useful
 	sed -i -e "/DEPFLAGS =/d" tools/gyp/pylib/gyp/generator/make.py || die
+
+	sed -i -e "/'-O3'/d" common.gypi node.gypi || die
+
+	# debug builds. change install path, remove optimisations and override buildtype
+	if use debug; then
+		sed -i -e "s|out/Release/|out/Debug/|g" tools/install.py || die
+		BUILDTYPE=Debug
+	fi
 
 	# We need to disable mprotect on two files when it builds Bug 694100.
 	use pax-kernel &&

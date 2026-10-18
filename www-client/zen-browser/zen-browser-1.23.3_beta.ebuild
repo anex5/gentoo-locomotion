@@ -4,7 +4,7 @@
 EAPI=8
 
 # Using Gentoos firefox patches as system libraries and lto are quite nice
-FIREFOX_PATCHSET="firefox-157-patches-01.tar.xz"
+FIREFOX_PATCHSET="firefox-158-patches-02.tar.xz"
 
 LLVM_COMPAT=( {22..23} )
 
@@ -25,7 +25,7 @@ WASI_SDK_LLVM_VER=23
 
 MOZ_ESR=
 
-MOZ_PV=157.0.1
+MOZ_PV=158.0
 MOZ_PV_SUFFIX=
 if [[ ${PV} =~ (_(alpha|beta|rc).*)$ ]] ; then
 	MOZ_PV_SUFFIX=${BASH_REMATCH[1]}
@@ -235,7 +235,7 @@ CDEPEND="
 	>=app-accessibility/at-spi2-core-2.46.0:2
 	dev-libs/glib:2
 	dev-libs/libffi:=
-	>=dev-libs/nss-3.128
+	>=dev-libs/nss-3.130
 	>=dev-libs/nspr-4.39
 	media-libs/alsa-lib
 	media-libs/fontconfig
@@ -390,8 +390,8 @@ BDEPEND+="
 	|| (
 		>=dev-lang/rust-1.87.0
 		>=dev-lang/rust-bin-1.87.0
-		<dev-lang/rust-1.99.0
-		<dev-lang/rust-bin-1.99.0
+		<dev-lang/rust-1.100.0
+		<dev-lang/rust-bin-1.100.0
 	)
 	app-alternatives/awk
 	app-arch/unzip
@@ -878,13 +878,11 @@ src_prepare() {
 	use dbus || eapply "${FILESDIR}/zen-browser-no-dbus.patch"
 	eapply "${FILESDIR}/zen-browser-no-fribidi.patch"
 	eapply "${FILESDIR}/zen-browser-fix-python-utcfromtimestamp.patch"
-	eapply "${FILESDIR}/zen-browser-fix-wrong-context-PR14384.patch"
 
 	# Use system gtest package
 	sed -e "/TEST_DIRS += [\"test\/gtest\"]/d" -i "image/moz.build" || die
 
 	if use lto; then
-		rm -v "${WORKDIR}"/firefox-patches/*-LTO-Only-enable-LTO-*.patch || die
 		rm -v "${WORKDIR}"/firefox-patches/*-gcc-lto-pgo-gentoo.patch || die
 	fi
 
@@ -1448,7 +1446,6 @@ src_configure() {
 	mozconfig_use_enable dbus
 	mozconfig_use_enable libproxy
 	mozconfig_use_enable jumbo-build unified-build
-	mozconfig_use_enable cups printing
 	mozconfig_use_enable speech synth-speechd
 	mozconfig_use_enable webrtc
 	mozconfig_use_enable webspeech
