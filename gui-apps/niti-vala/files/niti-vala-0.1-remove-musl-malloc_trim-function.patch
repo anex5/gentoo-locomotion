@@ -1,0 +1,35 @@
+--- a/api/niti-memory.vala
++++ b/api/niti-memory.vala
+@@ -1,18 +1,21 @@
+ namespace Niti {
+-
++#if HAVE_MALLOC_TRIM
+     [CCode (cname = "malloc_trim", cheader_filename = "malloc.h")]
+     private extern int malloc_trim (size_t pad);
+-
++#endif
+     public class Memory : GLib.Object {
++#if HAVE_MALLOC_TRIM
+         private static uint trim_source_id = 0;
+         private static int64 last_trim_us = 0;
+-
++#endif
+         public static void trim () {
++#if HAVE_MALLOC_TRIM
+             if (GLib.Environment.get_variable ("NITI_MALLOC_TRIM") == "0") return;
+             if (trim_source_id != 0) GLib.Source.remove (trim_source_id);
+             trim_source_id = GLib.Timeout.add (2000, run_trim);
++#endif
+         }
+-
++#if HAVE_MALLOC_TRIM
+         private static bool run_trim () {
+             trim_source_id = 0;
+             if (GLib.Environment.get_variable ("NITI_MALLOC_TRIM") == "0") return GLib.Source.REMOVE;
+@@ -26,5 +29,6 @@ namespace Niti {
+             last_trim_us = now;
+             return GLib.Source.REMOVE;
+         }
++#endif
+     }
+ }

@@ -91,7 +91,7 @@ DEPEND="
 "
 BDEPEND="
 	${PYTHON_DEPS}
-	>=dev-build/cmake-3.16
+	dev-lang/perl
 	sys-devel/gnuconfig
 	kernel_Darwin? (
 		<llvm-runtimes/libcxx-${LLVM_VERSION}.9999

@@ -23,7 +23,7 @@ HOMEPAGE="https://www.prusa3d.com/prusaslicer/"
 
 LICENSE="AGPL-3 Boost-1.0 GPL-2 LGPL-3 MIT"
 SLOT="0"
-IUSE="debug -gui -step test"
+IUSE="debug gui step test"
 
 RESTRICT="!test? ( test ) mirror"
 
