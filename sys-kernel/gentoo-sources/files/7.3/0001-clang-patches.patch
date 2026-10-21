@@ -1,4 +1,4 @@
-From bf579e4d3a32ca4faee8114255afb1e52798782c Mon Sep 17 00:00:00 2001
+From 375f7de2833643f2155145126f4f30d03030cef4 Mon Sep 17 00:00:00 2001
 From: Peter Jung <admin@ptr1337.dev>
 Date: Thu, 12 Dec 2024 17:28:45 +0100
 Subject: [PATCH 1/4] kbuild: Add support for Clang's polyhedral loop
@@ -46,7 +46,7 @@ Signed-off-by: Peter Jung <admin@ptr1337.dev>
  2 files changed, 29 insertions(+)
 
 diff --git a/Makefile b/Makefile
-index ddcc6dca1..9a681b7a2 100644
+index c61ea07ee..de218699b 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -942,6 +942,22 @@ endif
@@ -73,10 +73,10 @@ index ddcc6dca1..9a681b7a2 100644
  ifdef CONFIG_CC_IS_GCC
  # gcc-10 renamed --param=allow-store-data-races=0 to
 diff --git a/init/Kconfig b/init/Kconfig
-index 10f2013b5..1dcfb83c7 100644
+index ad592fdf2..04dc31b73 100644
 --- a/init/Kconfig
 +++ b/init/Kconfig
-@@ -319,6 +319,19 @@ config BUILD_SALT
+@@ -324,6 +324,19 @@ config BUILD_SALT
  	  This is mostly useful for distributions which want to ensure the
  	  build is unique between builds. It's safe to leave the default.
  
@@ -97,10 +97,10 @@ index 10f2013b5..1dcfb83c7 100644
  	bool
  
 -- 
-2.55.0
+2.56.0
 
 
-From db4684b8f4fda676e47677204a4c832c3e904693 Mon Sep 17 00:00:00 2001
+From 1d609a4891132b576c1f2a13ef7d889cf058e5be Mon Sep 17 00:00:00 2001
 From: Username404-59 <w.iron.zombie@gmail.com>
 Date: Thu, 12 Dec 2024 21:25:40 +0100
 Subject: [PATCH 2/4] kbuild: Update old polly option
@@ -111,7 +111,7 @@ Signed-off-by: Username404-59 <w.iron.zombie@gmail.com>
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/Makefile b/Makefile
-index 9a681b7a2..fc9832f92 100644
+index de218699b..d0e4e47df 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -946,7 +946,7 @@ ifdef CONFIG_POLLY_CLANG
@@ -124,10 +124,10 @@ index 9a681b7a2..fc9832f92 100644
  		   -mllvm -polly-vectorizer=stripmine
  # Polly may optimise loops with dead paths beyound what the linker
 -- 
-2.55.0
+2.56.0
 
 
-From 877f11a82a86d2b063c7b6b5ba4b26bb5df19bc1 Mon Sep 17 00:00:00 2001
+From 8ee58e1721d152a0e43e64aeb566c11bee117382 Mon Sep 17 00:00:00 2001
 From: Username404-59 <w.iron.zombie@gmail.com>
 Date: Thu, 12 Dec 2024 21:41:01 +0100
 Subject: [PATCH 3/4] kbuild: load polly llvm plugin
@@ -138,7 +138,7 @@ Signed-off-by: Username404-59 <w.iron.zombie@gmail.com>
  1 file changed, 2 insertions(+), 1 deletion(-)
 
 diff --git a/Makefile b/Makefile
-index fc9832f92..1bbee4fb0 100644
+index d0e4e47df..7a73bc2a7 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -943,7 +943,8 @@ KBUILD_RUSTFLAGS += -Cdebug-assertions=$(if $(CONFIG_RUST_DEBUG_ASSERTIONS),y,n)
@@ -152,10 +152,10 @@ index fc9832f92..1bbee4fb0 100644
  		   -mllvm -polly-invariant-load-hoisting \
  		   -mllvm -polly-loopfusion-greedy \
 -- 
-2.55.0
+2.56.0
 
 
-From 6b3973243c144a964472c86c295ecc1598e0a347 Mon Sep 17 00:00:00 2001
+From ffc1117f9676eeb29262f410de5e89ff8835ea36 Mon Sep 17 00:00:00 2001
 From: Peter Jung <admin@ptr1337.dev>
 Date: Fri, 13 Dec 2024 11:39:24 +0100
 Subject: [PATCH 4/4] kbuild: Fix polly config call
@@ -166,10 +166,10 @@ Signed-off-by: Peter Jung <admin@ptr1337.dev>
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/init/Kconfig b/init/Kconfig
-index 1dcfb83c7..1e0ad9ccd 100644
+index 04dc31b73..2fb087028 100644
 --- a/init/Kconfig
 +++ b/init/Kconfig
-@@ -321,7 +321,7 @@ config BUILD_SALT
+@@ -326,7 +326,7 @@ config BUILD_SALT
  
  config POLLY_CLANG
  	bool "Use Clang Polly optimizations"
@@ -179,5 +179,5 @@ index 1dcfb83c7..1e0ad9ccd 100644
  	help
  	  This option enables Clang's polyhedral loop optimizer known as
 -- 
-2.55.0
+2.56.0
 

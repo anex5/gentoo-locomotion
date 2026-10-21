@@ -1,4 +1,4 @@
-From a2a3b0a868a96df8c26cdfabcf8eeeeec5c9efca Mon Sep 17 00:00:00 2001
+From 2513902fadf7a63b6993d7644367c1b9a12af3be Mon Sep 17 00:00:00 2001
 From: Mike Galbraith <umgwanakikbuti@gmail.com>
 Date: Sat, 27 Feb 2016 08:09:11 +0100
 Subject: [PATCH 1/9] drm/i915: Use preempt_disable/enable_rt() where
@@ -121,10 +121,10 @@ index 28d811997..744686e4f 100644
  	return position;
  }
 -- 
-2.55.0
+2.56.0
 
 
-From b43aacd5c88952f2c77f2f5c7b2a1bcc29cc817d Mon Sep 17 00:00:00 2001
+From c1c0c781a4030fab1786af321499636074801307 Mon Sep 17 00:00:00 2001
 From: Mike Galbraith <umgwanakikbuti@gmail.com>
 Date: Sat, 27 Feb 2016 09:01:42 +0100
 Subject: [PATCH 2/9] drm/i915: Don't disable interrupts on PREEMPT_RT during
@@ -164,7 +164,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  3 files changed, 16 insertions(+), 8 deletions(-)
 
 diff --git a/drivers/gpu/drm/i915/display/intel_crtc.c b/drivers/gpu/drm/i915/display/intel_crtc.c
-index 7ce2b5229..1ef8c9e90 100644
+index 10ed9bdfe..908cf8194 100644
 --- a/drivers/gpu/drm/i915/display/intel_crtc.c
 +++ b/drivers/gpu/drm/i915/display/intel_crtc.c
 @@ -633,7 +633,8 @@ void intel_pipe_update_start(struct intel_atomic_state *state,
@@ -198,10 +198,10 @@ index 7ce2b5229..1ef8c9e90 100644
  	if (intel_parent_vgpu_active(display))
  		goto out;
 diff --git a/drivers/gpu/drm/i915/display/intel_cursor.c b/drivers/gpu/drm/i915/display/intel_cursor.c
-index 52347668f..97b6c7c53 100644
+index 824ffeef0..a53b15de5 100644
 --- a/drivers/gpu/drm/i915/display/intel_cursor.c
 +++ b/drivers/gpu/drm/i915/display/intel_cursor.c
-@@ -919,13 +919,15 @@ intel_legacy_cursor_update(struct drm_plane *_plane,
+@@ -922,13 +922,15 @@ intel_legacy_cursor_update(struct drm_plane *_plane,
  		 */
  		intel_psr_wait_for_idle_locked(crtc_state);
  
@@ -219,7 +219,7 @@ index 52347668f..97b6c7c53 100644
  	}
  
  	if (new_plane_state->uapi.visible) {
-@@ -935,7 +937,8 @@ intel_legacy_cursor_update(struct drm_plane *_plane,
+@@ -938,7 +940,8 @@ intel_legacy_cursor_update(struct drm_plane *_plane,
  		intel_plane_disable_arm(NULL, plane, crtc_state);
  	}
  
@@ -250,10 +250,10 @@ index 744686e4f..a329e938d 100644
  
  	finish_wait(wq, &wait);
 -- 
-2.55.0
+2.56.0
 
 
-From 387c4c32f89e3026ef235a2997106838ee4e6e9c Mon Sep 17 00:00:00 2001
+From e00b674499c8ea2dd24f7052c4081e3de43317e0 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 6 Dec 2018 09:52:20 +0100
 Subject: [PATCH 3/9] drm/i915: Disable tracing points on PREEMPT_RT
@@ -334,10 +334,10 @@ index f13ff71ed..3c67e267f 100644
  
  #include <linux/types.h>
 -- 
-2.55.0
+2.56.0
 
 
-From efb85c9828fb17a4e94616e40730715270cf82c1 Mon Sep 17 00:00:00 2001
+From 5fe0e3ef5ae3fcbe5120e83035c095cacaf1529f Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 8 Sep 2021 19:03:41 +0200
 Subject: [PATCH 4/9] drm/i915/gt: Use spin_lock_irq() instead of
@@ -429,10 +429,10 @@ index e693b0c9d..841f71932 100644
  	}
  
 -- 
-2.55.0
+2.56.0
 
 
-From 42f4c8914170b389897594e444fa8c542287588f Mon Sep 17 00:00:00 2001
+From 53a7d5d1d86709eca501bcd2650017d371235457 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 1 Oct 2021 20:01:03 +0200
 Subject: [PATCH 5/9] drm/i915: Drop the irqs_disabled() check
@@ -475,10 +475,10 @@ index d2c7b1090..f66f8efc7 100644
  
  	/*
 -- 
-2.55.0
+2.56.0
 
 
-From 6bad16e329f0e0f0dadf0926b97dc895a21013d3 Mon Sep 17 00:00:00 2001
+From 7230121621ebd079385bf8c02d83f2e2f8a10fbe Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 3 Oct 2023 21:37:21 +0200
 Subject: [PATCH 6/9] drm/i915/guc: Consider also RCU depth in busy loop.
@@ -511,10 +511,10 @@ index 053780f56..b25fa8f4d 100644
  	/*
  	 * FIXME: Have caller pass in if we are in an atomic context to avoid
 -- 
-2.55.0
+2.56.0
 
 
-From 700a7e7ad2273354dd9ce85529789fab5e122745 Mon Sep 17 00:00:00 2001
+From 3344962dada14391d070251f2c75b3e56a047563 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Mon, 14 Jul 2025 17:39:53 +0200
 Subject: [PATCH 7/9] drm/i915: Consider RCU read section as atomic.
@@ -549,10 +549,10 @@ index c0fd349a4..9dd966512 100644
  
  	/*
 -- 
-2.55.0
+2.56.0
 
 
-From 8b1ef2a586bfb3b72ddb2697879f78fb4c1f6fb2 Mon Sep 17 00:00:00 2001
+From ac87ef62e5640429391f7b94d830a36dc92ac9eb Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Mon, 21 Feb 2022 17:59:14 +0100
 Subject: [PATCH 8/9] Revert "drm/i915: Depend on !PREEMPT_RT."
@@ -579,10 +579,10 @@ index 5e939004b..40a9234e6 100644
  	select INTERVAL_TREE
  	# we need shmfs for the swappable backing store, and in particular
 -- 
-2.55.0
+2.56.0
 
 
-From d63cb13541779bbba476847ae11bf3a510f7858e Mon Sep 17 00:00:00 2001
+From 3a7d7e7c1d4ae0fbfd48ed98a9dc860cc1c6695e Mon Sep 17 00:00:00 2001
 From: Clark Williams <williams@redhat.com>
 Date: Sat, 30 Jul 2011 21:55:53 -0500
 Subject: [PATCH 9/9] sysfs: Add /sys/kernel/realtime entry
@@ -634,5 +634,5 @@ index f45ade718..670a7a57d 100644
  	NULL
  };
 -- 
-2.55.0
+2.56.0
 

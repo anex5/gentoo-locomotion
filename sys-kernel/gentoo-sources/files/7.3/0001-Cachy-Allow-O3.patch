@@ -1,4 +1,4 @@
-From 6ecc9d5312542ea1b73b2263166297cefdab37e9 Mon Sep 17 00:00:00 2001
+From b8d5e98f70098d20bbca30b6d364b9a79aec2f55 Mon Sep 17 00:00:00 2001
 From: Peter Jung <admin@ptr1337.dev>
 Date: Thu, 17 Aug 2023 13:53:54 +0200
 Subject: [PATCH] Cachy: Allow -O3
@@ -10,7 +10,7 @@ Signed-off-by: Peter Jung <admin@ptr1337.dev>
  2 files changed, 9 insertions(+)
 
 diff --git a/Makefile b/Makefile
-index ddcc6dca1..fd1753478 100644
+index c61ea07ee..0068f4112 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -932,6 +932,9 @@ KBUILD_CFLAGS	+= -fno-delete-null-pointer-checks
@@ -24,10 +24,10 @@ index ddcc6dca1..fd1753478 100644
  KBUILD_CFLAGS += -Os
  KBUILD_RUSTFLAGS += -Copt-level=s
 diff --git a/init/Kconfig b/init/Kconfig
-index 10f2013b5..c748ed159 100644
+index ad592fdf2..8a3aec630 100644
 --- a/init/Kconfig
 +++ b/init/Kconfig
-@@ -1616,6 +1616,12 @@ config CC_OPTIMIZE_FOR_PERFORMANCE
+@@ -1666,6 +1666,12 @@ config CC_OPTIMIZE_FOR_PERFORMANCE
  	  with the "-O2" compiler flag for best performance and most
  	  helpful compile-time warnings.
  
@@ -41,5 +41,5 @@ index 10f2013b5..c748ed159 100644
  	bool "Optimize for size (-Os)"
  	help
 -- 
-2.55.0
+2.56.0
 

@@ -28,8 +28,13 @@ IUSE="examples"
 
 CONFIG_CHECK="VIDEO_DEV"
 
+PATCHES=(
+	"${FILESDIR}/v4l2loopback-0.15.4-add-AV1-pixel-format.patch"
+)
+
 pkg_setup() {
 	linux-mod-r1_pkg_setup
+
 	export KERNELRELEASE=${KV_FULL}
 }
 
@@ -39,7 +44,6 @@ src_prepare() {
 }
 
 src_compile() {
-	filter-flags -fno-plt #912949
 	filter-lto
 	CC=${KERNEL_CC} CXX=${KERNEL_CXX} strip-unsupported-flags
 
@@ -48,6 +52,7 @@ src_compile() {
 	)
 
 	linux-mod-r1_src_compile
+
 	if use examples; then
 		emake CC="$(tc-getCC)" -C examples
 	fi
@@ -55,9 +60,11 @@ src_compile() {
 
 src_install() {
 	linux-mod-r1_src_install
+
 	dosbin utils/v4l2loopback-ctl
 	dodoc doc/kernel_debugging.txt
 	dodoc doc/docs.txt
+
 	if use examples; then
 		dosbin examples/yuv4mpeg_to_v4l2
 		docinto examples

@@ -1,29 +1,37 @@
-From ca23295812c17abc67b4165eff68db49664fba6b Mon Sep 17 00:00:00 2001
+From de4698e24cbabb000e995b625fc97d8cff56ab2e Mon Sep 17 00:00:00 2001
 From: Piotr Gorski <lucjan.lucjanov@gmail.com>
-Date: Mon, 17 Aug 2026 12:09:33 +0200
-Subject: [PATCH] zstd-7.2: merge v1.6.0 into kernel tree
+Date: Mon, 19 Oct 2026 11:00:39 +0200
+Subject: [PATCH] zstd-7.3: merge v1.6.0 into kernel tree
 
 Signed-off-by: Piotr Gorski <lucjan.lucjanov@gmail.com>
 ---
- include/linux/zstd_lib.h                    |  69 ++-
- lib/zstd/common/allocations.h               |   8 +-
- lib/zstd/common/bits.h                      |   2 +-
- lib/zstd/common/bitstream.h                 |   4 +-
- lib/zstd/common/compiler.h                  |  12 +-
- lib/zstd/common/portability_macros.h        |  25 +-
- lib/zstd/common/zstd_common.c               |   9 +
- lib/zstd/common/zstd_internal.h             |   6 +-
- lib/zstd/compress/hist.c                    | 261 ++++++++-
- lib/zstd/compress/hist.h                    |   4 +
- lib/zstd/compress/huf_compress.c            |   1 +
- lib/zstd/compress/zstd_compress.c           | 553 +++++++++++++++++++-
- lib/zstd/compress/zstd_compress_internal.h  |   6 +-
- lib/zstd/compress/zstd_lazy.c               |  50 +-
- lib/zstd/compress/zstd_ldm.c                |   6 +-
- lib/zstd/compress/zstd_opt.c                |  12 +-
- lib/zstd/decompress/huf_decompress.c        | 101 ++--
- lib/zstd/decompress/zstd_decompress_block.c | 232 +++++---
- 18 files changed, 1169 insertions(+), 192 deletions(-)
+ include/linux/zstd_lib.h                      |  69 ++-
+ lib/zstd/common/allocations.h                 |   8 +-
+ lib/zstd/common/bits.h                        |   2 +-
+ lib/zstd/common/bitstream.h                   |   4 +-
+ lib/zstd/common/bmi2.h                        |  41 ++
+ lib/zstd/common/compiler.h                    |  12 +-
+ lib/zstd/common/entropy_common.c              |  13 +-
+ lib/zstd/common/fse_decompress.c              |   7 +-
+ lib/zstd/common/portability_macros.h          |  35 +-
+ lib/zstd/common/zstd_common.c                 |   9 +
+ lib/zstd/common/zstd_internal.h               |   6 +-
+ lib/zstd/compress/hist.c                      | 261 +++++++-
+ lib/zstd/compress/hist.h                      |   4 +
+ lib/zstd/compress/huf_compress.c              |   5 +-
+ lib/zstd/compress/zstd_compress.c             | 570 +++++++++++++++++-
+ lib/zstd/compress/zstd_compress_internal.h    |  33 +-
+ lib/zstd/compress/zstd_compress_sequences.c   |  14 +-
+ lib/zstd/compress/zstd_compress_superblock.c  |   2 +-
+ lib/zstd/compress/zstd_lazy.c                 |  50 +-
+ lib/zstd/compress/zstd_ldm.c                  |   6 +-
+ lib/zstd/compress/zstd_opt.c                  |  12 +-
+ lib/zstd/decompress/huf_decompress.c          | 121 ++--
+ lib/zstd/decompress/zstd_decompress.c         |   9 +-
+ lib/zstd/decompress/zstd_decompress_block.c   | 263 +++++---
+ .../decompress/zstd_decompress_internal.h     |  16 +-
+ 25 files changed, 1327 insertions(+), 245 deletions(-)
+ create mode 100644 lib/zstd/common/bmi2.h
 
 diff --git a/include/linux/zstd_lib.h b/include/linux/zstd_lib.h
 index e295d4125..3cf5ea133 100644
@@ -178,6 +186,53 @@ index 86439da0e..fad3104d0 100644
  MEM_STATIC unsigned BIT_endOfDStream(const BIT_DStream_t* bitD);
  
  
+diff --git a/lib/zstd/common/bmi2.h b/lib/zstd/common/bmi2.h
+new file mode 100644
+index 000000000..df4918acc
+--- /dev/null
++++ b/lib/zstd/common/bmi2.h
+@@ -0,0 +1,41 @@
++/* SPDX-License-Identifier: GPL-2.0+ OR BSD-3-Clause */
++/*
++ * Copyright (c) Meta Platforms, Inc. and affiliates.
++ * All rights reserved.
++ *
++ * This source code is licensed under both the BSD-style license (found in the
++ * LICENSE file in the root directory of this source tree) and the GPLv2 (found
++ * in the COPYING file in the root directory of this source tree).
++ * You may select, at your option, one of the above-listed licenses.
++ */
++
++#ifndef ZSTD_BMI2_H
++#define ZSTD_BMI2_H
++
++#include "portability_macros.h"
++
++#if defined(ZSTD_USE_KERNEL_CPU_FEATURES)
++#  include <asm/cpufeature.h>
++#endif
++
++/*
++ * Select between the BMI2 and default implementations at the final dispatch
++ * site. Integrations may ignore the caller-provided hint and consult their own
++ * CPU-feature policy instead.
++ *
++ * ZSTD_USE_BMI2() may not evaluate its argument. ZSTD_SET_BMI2() may not
++ * evaluate its value argument, which avoids executing the userspace CPUID
++ * probe when the integration supplies the dispatch decision.
++ */
++#if !DYNAMIC_BMI2
++#  define ZSTD_USE_BMI2(bmi2) 0
++#  define ZSTD_SET_BMI2(state, value) do { } while (0)
++#elif defined(ZSTD_USE_KERNEL_CPU_FEATURES)
++#  define ZSTD_USE_BMI2(bmi2) cpu_feature_enabled(X86_FEATURE_BMI2)
++#  define ZSTD_SET_BMI2(state, value) do { (state) = 0; } while (0)
++#else
++#  define ZSTD_USE_BMI2(bmi2) (bmi2)
++#  define ZSTD_SET_BMI2(state, value) do { (state) = (value); } while (0)
++#endif
++
++#endif /* ZSTD_BMI2_H */
 diff --git a/lib/zstd/common/compiler.h b/lib/zstd/common/compiler.h
 index dc9bd15e1..d985659ea 100644
 --- a/lib/zstd/common/compiler.h
@@ -218,8 +273,94 @@ index dc9bd15e1..d985659ea 100644
  }
  
  /* Issue #3240 reports an ASAN failure on an llvm-mingw build. Out of an
+diff --git a/lib/zstd/common/entropy_common.c b/lib/zstd/common/entropy_common.c
+index 6cdd82233..fc922fb86 100644
+--- a/lib/zstd/common/entropy_common.c
++++ b/lib/zstd/common/entropy_common.c
+@@ -16,6 +16,7 @@
+ /* *************************************
+ *  Dependencies
+ ***************************************/
++#include "bmi2.h"
+ #include "mem.h"
+ #include "error_private.h"       /* ERR_*, ERROR */
+ #define FSE_STATIC_LINKING_ONLY  /* FSE_MIN_TABLELOG */
+@@ -202,17 +203,17 @@ BMI2_TARGET_ATTRIBUTE static size_t FSE_readNCount_body_bmi2(
+ {
+     return FSE_readNCount_body(normalizedCounter, maxSVPtr, tableLogPtr, headerBuffer, hbSize);
+ }
++#else
++#define FSE_readNCount_body_bmi2 FSE_readNCount_body_default
+ #endif
+ 
+ size_t FSE_readNCount_bmi2(
+         short* normalizedCounter, unsigned* maxSVPtr, unsigned* tableLogPtr,
+         const void* headerBuffer, size_t hbSize, int bmi2)
+ {
+-#if DYNAMIC_BMI2
+-    if (bmi2) {
++    if (ZSTD_USE_BMI2(bmi2)) {
+         return FSE_readNCount_body_bmi2(normalizedCounter, maxSVPtr, tableLogPtr, headerBuffer, hbSize);
+     }
+-#endif
+     (void)bmi2;
+     return FSE_readNCount_body_default(normalizedCounter, maxSVPtr, tableLogPtr, headerBuffer, hbSize);
+ }
+@@ -323,6 +324,8 @@ static BMI2_TARGET_ATTRIBUTE size_t HUF_readStats_body_bmi2(BYTE* huffWeight, si
+ {
+     return HUF_readStats_body(huffWeight, hwSize, rankStats, nbSymbolsPtr, tableLogPtr, src, srcSize, workSpace, wkspSize, 1);
+ }
++#else
++#define HUF_readStats_body_bmi2 HUF_readStats_body_default
+ #endif
+ 
+ size_t HUF_readStats_wksp(BYTE* huffWeight, size_t hwSize, U32* rankStats,
+@@ -331,11 +334,9 @@ size_t HUF_readStats_wksp(BYTE* huffWeight, size_t hwSize, U32* rankStats,
+                      void* workSpace, size_t wkspSize,
+                      int flags)
+ {
+-#if DYNAMIC_BMI2
+-    if (flags & HUF_flags_bmi2) {
++    if (ZSTD_USE_BMI2(flags & HUF_flags_bmi2)) {
+         return HUF_readStats_body_bmi2(huffWeight, hwSize, rankStats, nbSymbolsPtr, tableLogPtr, src, srcSize, workSpace, wkspSize);
+     }
+-#endif
+     (void)flags;
+     return HUF_readStats_body_default(huffWeight, hwSize, rankStats, nbSymbolsPtr, tableLogPtr, src, srcSize, workSpace, wkspSize);
+ }
+diff --git a/lib/zstd/common/fse_decompress.c b/lib/zstd/common/fse_decompress.c
+index 15081d8dc..792a6db57 100644
+--- a/lib/zstd/common/fse_decompress.c
++++ b/lib/zstd/common/fse_decompress.c
+@@ -19,6 +19,7 @@
+ ****************************************************************/
+ #include "debug.h"      /* assert */
+ #include "bitstream.h"
++#include "bmi2.h"
+ #include "compiler.h"
+ #define FSE_STATIC_LINKING_ONLY
+ #include "fse.h"
+@@ -300,15 +301,15 @@ BMI2_TARGET_ATTRIBUTE static size_t FSE_decompress_wksp_body_bmi2(void* dst, siz
+ {
+     return FSE_decompress_wksp_body(dst, dstCapacity, cSrc, cSrcSize, maxLog, workSpace, wkspSize, 1);
+ }
++#else
++#define FSE_decompress_wksp_body_bmi2 FSE_decompress_wksp_body_default
+ #endif
+ 
+ size_t FSE_decompress_wksp_bmi2(void* dst, size_t dstCapacity, const void* cSrc, size_t cSrcSize, unsigned maxLog, void* workSpace, size_t wkspSize, int bmi2)
+ {
+-#if DYNAMIC_BMI2
+-    if (bmi2) {
++    if (ZSTD_USE_BMI2(bmi2)) {
+         return FSE_decompress_wksp_body_bmi2(dst, dstCapacity, cSrc, cSrcSize, maxLog, workSpace, wkspSize);
+     }
+-#endif
+     (void)bmi2;
+     return FSE_decompress_wksp_body_default(dst, dstCapacity, cSrc, cSrcSize, maxLog, workSpace, wkspSize);
+ }
 diff --git a/lib/zstd/common/portability_macros.h b/lib/zstd/common/portability_macros.h
-index e1890b32d..ec1b26358 100644
+index e1890b32d..84683f45b 100644
 --- a/lib/zstd/common/portability_macros.h
 +++ b/lib/zstd/common/portability_macros.h
 @@ -56,12 +56,14 @@
@@ -239,7 +380,24 @@ index e1890b32d..ec1b26358 100644
        && (defined(__i386__) || defined(__x86_64__) || defined(_M_IX86) || defined(_M_X64)) \
        && !defined(__BMI2__)
  #    define DYNAMIC_BMI2 1
-@@ -115,4 +117,23 @@
+@@ -70,6 +72,16 @@
+ #  endif
+ #endif
+ 
++/*
++ * The Linux kernel importer consumes the outer guard while preserving the
++ * distinction below. Normal x86 kernel objects can use the kernel CPU-feature
++ * policy, while preboot objects cannot use that infrastructure.
++ */
++#  if defined(__KERNEL__) && defined(CONFIG_X86) && \
++      !defined(__DISABLE_EXPORTS)
++#    define ZSTD_USE_KERNEL_CPU_FEATURES
++#  endif
++
+ /*
+  * Only enable assembly for GNU C compatible compilers,
+  * because other platforms may not support GAS assembly syntax.
+@@ -115,4 +127,23 @@
  # define ZSTD_CET_ENDBRANCH
  #endif
  
@@ -636,10 +794,18 @@ index e5d57d79e..c5617f003 100644
  /* HIST_count_wksp() :
   *  Same as HIST_count(), but using an externally provided scratch buffer.
 diff --git a/lib/zstd/compress/huf_compress.c b/lib/zstd/compress/huf_compress.c
-index 0b229f5d2..281c0bc40 100644
+index 0b229f5d2..23e303f8b 100644
 --- a/lib/zstd/compress/huf_compress.c
 +++ b/lib/zstd/compress/huf_compress.c
-@@ -423,6 +423,7 @@ static U32 HUF_setMaxHeight(nodeElt* huffNode, U32 lastNonNull, U32 targetNbBits
+@@ -22,6 +22,7 @@
+ *  Includes
+ ****************************************************************/
+ #include "../common/zstd_deps.h"     /* ZSTD_memcpy, ZSTD_memset */
++#include "../common/bmi2.h"
+ #include "../common/compiler.h"
+ #include "../common/bitstream.h"
+ #include "hist.h"
+@@ -423,6 +424,7 @@ static U32 HUF_setMaxHeight(nodeElt* huffNode, U32 lastNonNull, U32 targetNbBits
                   * gain back half the rank.
                   */
                  U32 nBitsToDecrease = ZSTD_highbit32((U32)totalCost) + 1;
@@ -647,11 +813,31 @@ index 0b229f5d2..281c0bc40 100644
                  for ( ; nBitsToDecrease > 1; nBitsToDecrease--) {
                      U32 const highPos = rankLast[nBitsToDecrease];
                      U32 const lowPos = rankLast[nBitsToDecrease-1];
+@@ -1138,9 +1140,10 @@ HUF_compress1X_usingCTable_internal(void* dst, size_t dstSize,
+                               const void* src, size_t srcSize,
+                               const HUF_CElt* CTable, const int flags)
+ {
+-    if (flags & HUF_flags_bmi2) {
++    if (ZSTD_USE_BMI2(flags & HUF_flags_bmi2)) {
+         return HUF_compress1X_usingCTable_internal_bmi2(dst, dstSize, src, srcSize, CTable);
+     }
++    (void)flags;
+     return HUF_compress1X_usingCTable_internal_default(dst, dstSize, src, srcSize, CTable);
+ }
+ 
 diff --git a/lib/zstd/compress/zstd_compress.c b/lib/zstd/compress/zstd_compress.c
-index c41a74741..e236699af 100644
+index c41a74741..70621edc8 100644
 --- a/lib/zstd/compress/zstd_compress.c
 +++ b/lib/zstd/compress/zstd_compress.c
-@@ -54,6 +54,14 @@
+@@ -14,6 +14,7 @@
+ ***************************************/
+ #include "../common/allocations.h"  /* ZSTD_customMalloc, ZSTD_customCalloc, ZSTD_customFree */
+ #include "../common/zstd_deps.h"  /* INT_MAX, ZSTD_memset, ZSTD_memcpy */
++#include "../common/bmi2.h"
+ #include "../common/mem.h"
+ #include "../common/error_private.h"
+ #include "hist.h"           /* HIST_countFast_wksp */
+@@ -54,6 +55,14 @@
  #  define ZSTD_HASHLOG3_MAX 17
  #endif
  
@@ -666,7 +852,29 @@ index c41a74741..e236699af 100644
  /*-*************************************
  *  Helper functions
  ***************************************/
-@@ -1691,15 +1699,19 @@ size_t ZSTD_estimateCCtxSize_usingCCtxParams(const ZSTD_CCtx_params* params)
+@@ -102,7 +111,9 @@ static void ZSTD_initCCtx(ZSTD_CCtx* cctx, ZSTD_customMem memManager)
+     assert(cctx != NULL);
+     ZSTD_memset(cctx, 0, sizeof(*cctx));
+     cctx->customMem = memManager;
+-    cctx->bmi2 = ZSTD_cpuSupportsBmi2();
++#if DYNAMIC_BMI2
++    ZSTD_SET_BMI2(cctx->bmi2, ZSTD_cpuSupportsBmi2());
++#endif
+     {   size_t const err = ZSTD_CCtx_reset(cctx, ZSTD_reset_parameters);
+         assert(!ZSTD_isError(err));
+         (void)err;
+@@ -142,7 +153,9 @@ ZSTD_CCtx* ZSTD_initStaticCCtx(void* workspace, size_t workspaceSize)
+     cctx->blockState.nextCBlock = (ZSTD_compressedBlockState_t*)ZSTD_cwksp_reserve_object(&cctx->workspace, sizeof(ZSTD_compressedBlockState_t));
+     cctx->tmpWorkspace = ZSTD_cwksp_reserve_object(&cctx->workspace, TMP_WORKSPACE_SIZE);
+     cctx->tmpWkspSize = TMP_WORKSPACE_SIZE;
+-    cctx->bmi2 = ZSTD_cpuid_bmi2(ZSTD_cpuid());
++#if DYNAMIC_BMI2
++    ZSTD_SET_BMI2(cctx->bmi2, ZSTD_cpuSupportsBmi2());
++#endif
+     return cctx;
+ }
+ 
+@@ -1691,15 +1704,19 @@ size_t ZSTD_estimateCCtxSize_usingCCtxParams(const ZSTD_CCtx_params* params)
  {
      ZSTD_compressionParameters const cParams =
                  ZSTD_getCParamsFromCCtxParams(params, ZSTD_CONTENTSIZE_UNKNOWN, 0, ZSTD_cpm_noAttachDict);
@@ -687,7 +895,7 @@ index c41a74741..e236699af 100644
  }
  
  size_t ZSTD_estimateCCtxSize_usingCParams(ZSTD_compressionParameters cParams)
-@@ -1749,6 +1761,7 @@ size_t ZSTD_estimateCStreamSize_usingCCtxParams(const ZSTD_CCtx_params* params)
+@@ -1749,6 +1766,7 @@ size_t ZSTD_estimateCStreamSize_usingCCtxParams(const ZSTD_CCtx_params* params)
      RETURN_ERROR_IF(params->nbWorkers > 0, GENERIC, "Estimate CCtx size is supported for single-threaded compression only.");
      {   ZSTD_compressionParameters const cParams =
                  ZSTD_getCParamsFromCCtxParams(params, ZSTD_CONTENTSIZE_UNKNOWN, 0, ZSTD_cpm_noAttachDict);
@@ -695,7 +903,7 @@ index c41a74741..e236699af 100644
          size_t const blockSize = MIN(ZSTD_resolveMaxBlockSize(params->maxBlockSize), (size_t)1 << cParams.windowLog);
          size_t const inBuffSize = (params->inBufferMode == ZSTD_bm_buffered)
                  ? ((size_t)1 << cParams.windowLog) + blockSize
-@@ -1758,8 +1771,11 @@ size_t ZSTD_estimateCStreamSize_usingCCtxParams(const ZSTD_CCtx_params* params)
+@@ -1758,8 +1776,11 @@ size_t ZSTD_estimateCStreamSize_usingCCtxParams(const ZSTD_CCtx_params* params)
                  : 0;
          ZSTD_ParamSwitch_e const useRowMatchFinder = ZSTD_resolveRowMatchFinderMode(params->useRowMatchFinder, &params->cParams);
  
@@ -708,7 +916,34 @@ index c41a74741..e236699af 100644
              ZSTD_CONTENTSIZE_UNKNOWN, ZSTD_hasExtSeqProd(params), params->maxBlockSize);
      }
  }
-@@ -6901,7 +6917,7 @@ size_t ZSTD_compressSequences(ZSTD_CCtx* cctx,
+@@ -4042,7 +4063,7 @@ ZSTD_compressSeqStore_singleBlock(ZSTD_CCtx* zc,
+                 op + ZSTD_blockHeaderSize, dstCapacity - ZSTD_blockHeaderSize,
+                 srcSize,
+                 zc->tmpWorkspace, zc->tmpWkspSize /* statically allocated in resetCCtx */,
+-                zc->bmi2);
++                ZSTD_CCtx_get_bmi2(zc));
+     FORWARD_IF_ERROR(cSeqsSize, "ZSTD_entropyCompressSeqStore failed!");
+ 
+     if (!zc->isFirstBlock &&
+@@ -4332,7 +4353,7 @@ ZSTD_compressBlock_internal(ZSTD_CCtx* zc,
+             dst, dstCapacity,
+             srcSize,
+             zc->tmpWorkspace, zc->tmpWkspSize /* statically allocated in resetCCtx */,
+-            zc->bmi2);
++            ZSTD_CCtx_get_bmi2(zc));
+ 
+     if (frame &&
+         /* We don't want to emit our first block as a RLE even if it qualifies because
+@@ -6796,7 +6817,7 @@ ZSTD_compressSequences_internal(ZSTD_CCtx* cctx,
+                                 op + ZSTD_blockHeaderSize /* Leave space for block header */, dstCapacity - ZSTD_blockHeaderSize,
+                                 blockSize,
+                                 cctx->tmpWorkspace, cctx->tmpWkspSize /* statically allocated in resetCCtx */,
+-                                cctx->bmi2);
++                                ZSTD_CCtx_get_bmi2(cctx));
+         FORWARD_IF_ERROR(compressedSeqsSize, "Compressing sequences of block failed");
+         DEBUGLOG(5, "Compressed sequences size: %zu", compressedSeqsSize);
+ 
+@@ -6901,7 +6922,7 @@ size_t ZSTD_compressSequences(ZSTD_CCtx* cctx,
  }
  
  
@@ -717,7 +952,7 @@ index c41a74741..e236699af 100644
  
  #include <immintrin.h>  /* AVX2 intrinsics */
  
-@@ -6921,7 +6937,7 @@ size_t ZSTD_compressSequences(ZSTD_CCtx* cctx,
+@@ -6921,7 +6942,7 @@ size_t ZSTD_compressSequences(ZSTD_CCtx* cctx,
   * @returns > 0 if there is one long length (> 65535),
   * indicating the position, and type.
   */
@@ -726,7 +961,7 @@ index c41a74741..e236699af 100644
      SeqDef* dstSeqs,
      const ZSTD_Sequence* inSeqs,
      size_t nbSequences)
-@@ -7067,13 +7083,378 @@ static size_t convertSequences_noRepcodes(
+@@ -7067,13 +7088,378 @@ static size_t convertSequences_noRepcodes(
      return longLen;
  }
  
@@ -1107,7 +1342,7 @@ index c41a74741..e236699af 100644
      SeqDef* dstSeqs,
      const ZSTD_Sequence* inSeqs,
      size_t nbSequences)
-@@ -7084,7 +7465,7 @@ static size_t convertSequences_noRepcodes(
+@@ -7084,7 +7470,7 @@ static size_t convertSequences_noRepcodes(
          dstSeqs[n].offBase = OFFSET_TO_OFFBASE(inSeqs[n].offset);
          dstSeqs[n].litLength = (U16)inSeqs[n].litLength;
          dstSeqs[n].mlBase = (U16)(inSeqs[n].matchLength - MINMATCH);
@@ -1116,7 +1351,7 @@ index c41a74741..e236699af 100644
          if (UNLIKELY(inSeqs[n].matchLength > 65535+MINMATCH)) {
              assert(longLen == 0);
              longLen = n + 1;
-@@ -7234,34 +7615,172 @@ BlockSummary ZSTD_get1BlockSummary(const ZSTD_Sequence* seqs, size_t nbSeqs)
+@@ -7234,34 +7620,172 @@ BlockSummary ZSTD_get1BlockSummary(const ZSTD_Sequence* seqs, size_t nbSeqs)
      }
  }
  
@@ -1299,11 +1534,61 @@ index c41a74741..e236699af 100644
  #endif
  
  
+@@ -7321,7 +7845,7 @@ ZSTD_compressSequencesAndLiterals_internal(ZSTD_CCtx* cctx,
+                                 &cctx->blockState.prevCBlock->entropy, &cctx->blockState.nextCBlock->entropy,
+                                 &cctx->appliedParams,
+                                 cctx->tmpWorkspace, cctx->tmpWkspSize /* statically allocated in resetCCtx */,
+-                                cctx->bmi2);
++                                ZSTD_CCtx_get_bmi2(cctx));
+         FORWARD_IF_ERROR(compressedSeqsSize, "Compressing sequences of block failed");
+         /* note: the spec forbids for any compressed block to be larger than maximum block size */
+         if (compressedSeqsSize > cctx->blockSizeMax) compressedSeqsSize = 0;
 diff --git a/lib/zstd/compress/zstd_compress_internal.h b/lib/zstd/compress/zstd_compress_internal.h
-index b10978385..f59f06351 100644
+index b10978385..b2cd2ea08 100644
 --- a/lib/zstd/compress/zstd_compress_internal.h
 +++ b/lib/zstd/compress/zstd_compress_internal.h
-@@ -699,7 +699,7 @@ ZSTD_safecopyLiterals(BYTE* op, BYTE const* ip, BYTE const* const iend, BYTE con
+@@ -470,7 +470,12 @@ typedef struct {
+ struct ZSTD_CCtx_s {
+     ZSTD_compressionStage_e stage;
+     int cParamsChanged;                  /* == 1 if cParams(except wlog) or compression level are changed in requestedParams. Triggers transmission of new params to ZSTDMT (if available) then reset to 0. */
+-    int bmi2;                            /* == 1 if the CPU supports BMI2 and 0 otherwise. CPU support is determined dynamically once per context lifetime. */
++#if DYNAMIC_BMI2
++    int bmi2;                            /* == 1 if the CPU supports BMI2 and 0 otherwise when CPU state
++                                          * is cached per context. Never read this directly: use ZSTD_CCtx_get_bmi2(),
++                                          * which also handles builds
++                                          * where cached CPU state is not used. */
++#endif
+     ZSTD_CCtx_params requestedParams;
+     ZSTD_CCtx_params appliedParams;
+     ZSTD_CCtx_params simpleApiParams;    /* Param storage used by the simple API - not sticky. Must only be used in top-level simple API functions for storage. */
+@@ -537,6 +542,26 @@ struct ZSTD_CCtx_s {
+     size_t extSeqBufCapacity;
+ };
+ 
++/*
++ * @returns the cached per-context BMI2 dispatch hint, or 0 when the build does
++ *          not use cached CPU state.
++ *
++ * Beware: this is *not* a "does the CPU support BMI2" test. When BMI2 is enabled
++ * at compile time, DYNAMIC_BMI2 is 0: the whole library is already compiled with
++ * BMI2, no separate variant exists, and this returns 0 even though the CPU does
++ * support BMI2. Only use the result as a dispatch hint passed to a lower-level
++ * BMI2/default selector. Integrations may ignore the cached hint and consult
++ * their own CPU-feature policy at that selector.
++ */
++MEM_STATIC int ZSTD_CCtx_get_bmi2(const struct ZSTD_CCtx_s* cctx) {
++#if DYNAMIC_BMI2
++    return cctx->bmi2;
++#else
++    (void)cctx;
++    return 0;
++#endif
++}
++
+ typedef enum { ZSTD_dtlm_fast, ZSTD_dtlm_full } ZSTD_dictTableLoadMethod_e;
+ typedef enum { ZSTD_tfp_forCCtx, ZSTD_tfp_forCDict } ZSTD_tableFillPurpose_e;
+ 
+@@ -699,7 +724,7 @@ ZSTD_safecopyLiterals(BYTE* op, BYTE const* ip, BYTE const* const iend, BYTE con
  {
      assert(iend > ilimit_w);
      if (ip <= ilimit_w) {
@@ -1312,7 +1597,7 @@ index b10978385..f59f06351 100644
          op += ilimit_w - ip;
          ip = ilimit_w;
      }
-@@ -792,7 +792,7 @@ ZSTD_storeSeq(SeqStore_t* seqStorePtr,
+@@ -792,7 +817,7 @@ ZSTD_storeSeq(SeqStore_t* seqStorePtr,
          ZSTD_STATIC_ASSERT(WILDCOPY_OVERLENGTH >= 16);
          ZSTD_copy16(seqStorePtr->lit, literals);
          if (litLength > 16) {
@@ -1321,7 +1606,7 @@ index b10978385..f59f06351 100644
          }
      } else {
          ZSTD_safecopyLiterals(seqStorePtr->lit, literals, litEnd, litLimit_w);
-@@ -1515,7 +1515,7 @@ typedef struct {
+@@ -1515,7 +1540,7 @@ typedef struct {
  /* for benchmark */
  size_t ZSTD_convertBlockSequences(ZSTD_CCtx* cctx,
                          const ZSTD_Sequence* const inSeqs, size_t nbSequences,
@@ -1330,6 +1615,84 @@ index b10978385..f59f06351 100644
  
  typedef struct {
      size_t nbSequences;
+diff --git a/lib/zstd/compress/zstd_compress_sequences.c b/lib/zstd/compress/zstd_compress_sequences.c
+index 256980c9d..95daa973f 100644
+--- a/lib/zstd/compress/zstd_compress_sequences.c
++++ b/lib/zstd/compress/zstd_compress_sequences.c
+@@ -12,6 +12,7 @@
+  /*-*************************************
+  *  Dependencies
+  ***************************************/
++#include "../common/bmi2.h"
+ #include "zstd_compress_sequences.h"
+ 
+ /*
+@@ -301,6 +302,7 @@ ZSTD_encodeSequences_body(
+     FSE_CState_t  stateOffsetBits;
+     FSE_CState_t  stateLitLength;
+ 
++    assert(MEM_32bits() || !longOffsets);
+     RETURN_ERROR_IF(
+         ERR_isError(BIT_initCStream(&blockStream, dst, dstCapacity)),
+         dstSize_tooSmall, "not enough space remaining");
+@@ -316,7 +318,7 @@ ZSTD_encodeSequences_body(
+     if (MEM_32bits()) BIT_flushBits(&blockStream);
+     BIT_addBits(&blockStream, sequences[nbSeq-1].mlBase, ML_bits[mlCodeTable[nbSeq-1]]);
+     if (MEM_32bits()) BIT_flushBits(&blockStream);
+-    if (longOffsets) {
++    if (MEM_32bits() && longOffsets) {
+         U32 const ofBits = ofCodeTable[nbSeq-1];
+         unsigned const extraBits = ofBits - MIN(ofBits, STREAM_ACCUMULATOR_MIN-1);
+         if (extraBits) {
+@@ -354,7 +356,7 @@ ZSTD_encodeSequences_body(
+             if (MEM_32bits() && ((llBits+mlBits)>24)) BIT_flushBits(&blockStream);
+             BIT_addBits(&blockStream, sequences[n].mlBase, mlBits);
+             if (MEM_32bits() || (ofBits+mlBits+llBits > 56)) BIT_flushBits(&blockStream);
+-            if (longOffsets) {
++            if (MEM_32bits() && longOffsets) {
+                 unsigned const extraBits = ofBits - MIN(ofBits, STREAM_ACCUMULATOR_MIN-1);
+                 if (extraBits) {
+                     BIT_addBits(&blockStream, sequences[n].offBase, extraBits);
+@@ -415,6 +417,10 @@ ZSTD_encodeSequences_bmi2(
+                                     sequences, nbSeq, longOffsets);
+ }
+ 
++#else
++
++#define ZSTD_encodeSequences_bmi2 ZSTD_encodeSequences_default
++
+ #endif
+ 
+ size_t ZSTD_encodeSequences(
+@@ -425,15 +431,13 @@ size_t ZSTD_encodeSequences(
+             SeqDef const* sequences, size_t nbSeq, int longOffsets, int bmi2)
+ {
+     DEBUGLOG(5, "ZSTD_encodeSequences: dstCapacity = %u", (unsigned)dstCapacity);
+-#if DYNAMIC_BMI2
+-    if (bmi2) {
++    if (ZSTD_USE_BMI2(bmi2)) {
+         return ZSTD_encodeSequences_bmi2(dst, dstCapacity,
+                                          CTable_MatchLength, mlCodeTable,
+                                          CTable_OffsetBits, ofCodeTable,
+                                          CTable_LitLength, llCodeTable,
+                                          sequences, nbSeq, longOffsets);
+     }
+-#endif
+     (void)bmi2;
+     return ZSTD_encodeSequences_default(dst, dstCapacity,
+                                         CTable_MatchLength, mlCodeTable,
+diff --git a/lib/zstd/compress/zstd_compress_superblock.c b/lib/zstd/compress/zstd_compress_superblock.c
+index dc12d64e9..fada5979c 100644
+--- a/lib/zstd/compress/zstd_compress_superblock.c
++++ b/lib/zstd/compress/zstd_compress_superblock.c
+@@ -684,6 +684,6 @@ size_t ZSTD_compressSuperBlock(ZSTD_CCtx* zc,
+             &zc->appliedParams,
+             dst, dstCapacity,
+             src, srcSize,
+-            zc->bmi2, lastBlock,
++            ZSTD_CCtx_get_bmi2(zc), lastBlock,
+             zc->tmpWorkspace, zc->tmpWkspSize /* statically allocated in resetCCtx */);
+ }
 diff --git a/lib/zstd/compress/zstd_lazy.c b/lib/zstd/compress/zstd_lazy.c
 index 88e2501fe..e49dd0308 100644
 --- a/lib/zstd/compress/zstd_lazy.c
@@ -1444,18 +1807,32 @@ index b62fd1b0d..b3b33eb43 100644
                  ZSTD_optimal_t nextStretch = opt[stretchPos];
                  opt[storeStart].litlen = nextStretch.litlen;
 diff --git a/lib/zstd/decompress/huf_decompress.c b/lib/zstd/decompress/huf_decompress.c
-index ac8b87f48..1faf18022 100644
+index ac8b87f48..29c3328bf 100644
 --- a/lib/zstd/decompress/huf_decompress.c
 +++ b/lib/zstd/decompress/huf_decompress.c
-@@ -16,6 +16,7 @@
+@@ -16,7 +16,9 @@
  /* **************************************************************
  *  Dependencies
  ****************************************************************/
 +#include <linux/types.h>               /* size_t */
  #include "../common/zstd_deps.h"  /* ZSTD_memcpy, ZSTD_memset */
++#include "../common/bmi2.h"
  #include "../common/compiler.h"
  #include "../common/bitstream.h"  /* BIT_* */
-@@ -192,7 +193,7 @@ static size_t HUF_DecompressFastArgs_init(HUF_DecompressFastArgs* args, void* ds
+ #include "../common/fse.h"        /* to compress headers */
+@@ -113,9 +115,10 @@ typedef size_t (*HUF_DecompressUsingDTableFn)(void *dst, size_t dstSize,
+     static size_t fn(void* dst, size_t dstSize, void const* cSrc,           \
+                      size_t cSrcSize, HUF_DTable const* DTable, int flags)  \
+     {                                                                       \
+-        if (flags & HUF_flags_bmi2) {                                       \
++        if (ZSTD_USE_BMI2(flags & HUF_flags_bmi2)) {                        \
+             return fn##_bmi2(dst, dstSize, cSrc, cSrcSize, DTable);         \
+         }                                                                   \
++        (void)flags;                                                        \
+         return fn##_default(dst, dstSize, cSrc, cSrcSize, DTable);          \
+     }
+ 
+@@ -192,7 +195,7 @@ static size_t HUF_DecompressFastArgs_init(HUF_DecompressFastArgs* args, void* ds
  
      const BYTE* const istart = (const BYTE*)src;
  
@@ -1464,7 +1841,7 @@ index ac8b87f48..1faf18022 100644
  
      /* The fast decoding loop assumes 64-bit little-endian.
       * This condition is false on x32.
-@@ -575,7 +576,7 @@ HUF_decompress1X1_usingDTable_internal_body(
+@@ -575,7 +578,7 @@ HUF_decompress1X1_usingDTable_internal_body(
      const HUF_DTable* DTable)
  {
      BYTE* op = (BYTE*)dst;
@@ -1473,7 +1850,16 @@ index ac8b87f48..1faf18022 100644
      const void* dtPtr = DTable + 1;
      const HUF_DEltX1* const dt = (const HUF_DEltX1*)dtPtr;
      BIT_DStream_t bitD;
-@@ -781,19 +782,19 @@ void HUF_decompress4X1_usingDTable_internal_fast_c_loop(HUF_DecompressFastArgs*
+@@ -700,6 +703,8 @@ size_t HUF_decompress4X1_usingDTable_internal_bmi2(void* dst, size_t dstSize, vo
+                     size_t cSrcSize, HUF_DTable const* DTable) {
+     return HUF_decompress4X1_usingDTable_internal_body(dst, dstSize, cSrc, cSrcSize, DTable);
+ }
++#else
++#define HUF_decompress4X1_usingDTable_internal_bmi2 HUF_decompress4X1_usingDTable_internal_default
+ #endif
+ 
+ static
+@@ -781,19 +786,19 @@ void HUF_decompress4X1_usingDTable_internal_fast_c_loop(HUF_DecompressFastArgs*
          }
  #endif
  
@@ -1503,7 +1889,7 @@ index ac8b87f48..1faf18022 100644
          op[(_stream)] += 5;                                         \
          ip[(_stream)] -= nbBytes;                                   \
          bits[(_stream)] = MEM_read64(ip[(_stream)]) | 1;            \
-@@ -812,11 +813,11 @@ void HUF_decompress4X1_usingDTable_internal_fast_c_loop(HUF_DecompressFastArgs*
+@@ -812,11 +817,11 @@ void HUF_decompress4X1_usingDTable_internal_fast_c_loop(HUF_DecompressFastArgs*
              HUF_4X_FOR_EACH_STREAM_WITH_VAR(HUF_4X1_DECODE_SYMBOL, 4);
  
              /* Reload each of the 4 the bitstreams */
@@ -1517,7 +1903,7 @@ index ac8b87f48..1faf18022 100644
      }
  
  _out:
-@@ -842,7 +843,7 @@ HUF_decompress4X1_usingDTable_internal_fast(
+@@ -842,7 +847,7 @@ HUF_decompress4X1_usingDTable_internal_fast(
  {
      void const* dt = DTable + 1;
      BYTE const* const ilowest = (BYTE const*)cSrc;
@@ -1526,7 +1912,28 @@ index ac8b87f48..1faf18022 100644
      HUF_DecompressFastArgs args;
      {   size_t const ret = HUF_DecompressFastArgs_init(&args, dst, dstSize, cSrc, cSrcSize, DTable);
          FORWARD_IF_ERROR(ret, "Failed to init fast loop args");
-@@ -1359,7 +1360,7 @@ HUF_decompress1X2_usingDTable_internal_body(
+@@ -897,18 +902,16 @@ static size_t HUF_decompress4X1_usingDTable_internal(void* dst, size_t dstSize,
+     HUF_DecompressUsingDTableFn fallbackFn = HUF_decompress4X1_usingDTable_internal_default;
+     HUF_DecompressFastLoopFn loopFn = HUF_decompress4X1_usingDTable_internal_fast_c_loop;
+ 
+-#if DYNAMIC_BMI2
+-    if (flags & HUF_flags_bmi2) {
++    if (ZSTD_USE_BMI2(flags & HUF_flags_bmi2)) {
+         fallbackFn = HUF_decompress4X1_usingDTable_internal_bmi2;
+ # if ZSTD_ENABLE_ASM_X86_64_BMI2
+         if (!(flags & HUF_flags_disableAsm)) {
+             loopFn = HUF_decompress4X1_usingDTable_internal_fast_asm_loop;
+         }
+ # endif
+-    } else {
++    } else if (DYNAMIC_BMI2) {
+         return fallbackFn(dst, dstSize, cSrc, cSrcSize, DTable);
+     }
+-#endif
+ 
+ #if ZSTD_ENABLE_ASM_X86_64_BMI2 && defined(__BMI2__)
+     if (!(flags & HUF_flags_disableAsm)) {
+@@ -1359,7 +1362,7 @@ HUF_decompress1X2_usingDTable_internal_body(
  
      /* decode */
      {   BYTE* const ostart = (BYTE*) dst;
@@ -1535,7 +1942,16 @@ index ac8b87f48..1faf18022 100644
          const void* const dtPtr = DTable+1;   /* force compiler to not use strict-aliasing */
          const HUF_DEltX2* const dt = (const HUF_DEltX2*)dtPtr;
          DTableDesc const dtd = HUF_getDTableDesc(DTable);
-@@ -1599,57 +1600,65 @@ void HUF_decompress4X2_usingDTable_internal_fast_c_loop(HUF_DecompressFastArgs*
+@@ -1503,6 +1506,8 @@ size_t HUF_decompress4X2_usingDTable_internal_bmi2(void* dst, size_t dstSize, vo
+                     size_t cSrcSize, HUF_DTable const* DTable) {
+     return HUF_decompress4X2_usingDTable_internal_body(dst, dstSize, cSrc, cSrcSize, DTable);
+ }
++#else
++#define HUF_decompress4X2_usingDTable_internal_bmi2 HUF_decompress4X2_usingDTable_internal_default
+ #endif
+ 
+ static
+@@ -1599,57 +1604,65 @@ void HUF_decompress4X2_usingDTable_internal_fast_c_loop(HUF_DecompressFastArgs*
          }
  #endif
  
@@ -1630,7 +2046,7 @@ index ac8b87f48..1faf18022 100644
  
  _out:
  
-@@ -1668,7 +1677,7 @@ HUF_decompress4X2_usingDTable_internal_fast(
+@@ -1668,7 +1681,7 @@ HUF_decompress4X2_usingDTable_internal_fast(
      HUF_DecompressFastLoopFn loopFn) {
      void const* dt = DTable + 1;
      const BYTE* const ilowest = (const BYTE*)cSrc;
@@ -1639,13 +2055,77 @@ index ac8b87f48..1faf18022 100644
      HUF_DecompressFastArgs args;
      {
          size_t const ret = HUF_DecompressFastArgs_init(&args, dst, dstSize, cSrc, cSrcSize, DTable);
-diff --git a/lib/zstd/decompress/zstd_decompress_block.c b/lib/zstd/decompress/zstd_decompress_block.c
-index 710eb0ffd..698a2e3c0 100644
---- a/lib/zstd/decompress/zstd_decompress_block.c
-+++ b/lib/zstd/decompress/zstd_decompress_block.c
-@@ -17,14 +17,13 @@
+@@ -1719,18 +1732,16 @@ static size_t HUF_decompress4X2_usingDTable_internal(void* dst, size_t dstSize,
+     HUF_DecompressUsingDTableFn fallbackFn = HUF_decompress4X2_usingDTable_internal_default;
+     HUF_DecompressFastLoopFn loopFn = HUF_decompress4X2_usingDTable_internal_fast_c_loop;
+ 
+-#if DYNAMIC_BMI2
+-    if (flags & HUF_flags_bmi2) {
++    if (ZSTD_USE_BMI2(flags & HUF_flags_bmi2)) {
+         fallbackFn = HUF_decompress4X2_usingDTable_internal_bmi2;
+ # if ZSTD_ENABLE_ASM_X86_64_BMI2
+         if (!(flags & HUF_flags_disableAsm)) {
+             loopFn = HUF_decompress4X2_usingDTable_internal_fast_asm_loop;
+         }
+ # endif
+-    } else {
++    } else if (DYNAMIC_BMI2) {
+         return fallbackFn(dst, dstSize, cSrc, cSrcSize, DTable);
+     }
+-#endif
+ 
+ #if ZSTD_ENABLE_ASM_X86_64_BMI2 && defined(__BMI2__)
+     if (!(flags & HUF_flags_disableAsm)) {
+diff --git a/lib/zstd/decompress/zstd_decompress.c b/lib/zstd/decompress/zstd_decompress.c
+index bb009554e..8ad99744d 100644
+--- a/lib/zstd/decompress/zstd_decompress.c
++++ b/lib/zstd/decompress/zstd_decompress.c
+@@ -55,6 +55,7 @@
  *********************************************************/
  #include "../common/zstd_deps.h"   /* ZSTD_memcpy, ZSTD_memmove, ZSTD_memset */
+ #include "../common/allocations.h"  /* ZSTD_customMalloc, ZSTD_customCalloc, ZSTD_customFree */
++#include "../common/bmi2.h"
+ #include "../common/error_private.h"
+ #include "../common/zstd_internal.h"  /* blockProperties_t */
+ #include "../common/mem.h"         /* low level memory routines */
+@@ -110,8 +111,7 @@ static size_t ZSTD_DDictHashSet_emplaceDDict(ZSTD_DDictHashSet* hashSet, const Z
+             hashSet->ddictPtrTable[idx] = ddict;
+             return 0;
+         }
+-        idx &= idxRangeMask;
+-        idx++;
++        idx = (idx + 1) & idxRangeMask;
+     }
+     DEBUGLOG(4, "Final idx after probing for dictID %u is: %zu", dictID, idx);
+     hashSet->ddictPtrTable[idx] = ddict;
+@@ -158,8 +158,7 @@ static const ZSTD_DDict* ZSTD_DDictHashSet_getDDict(ZSTD_DDictHashSet* hashSet,
+             /* currDictID == 0 implies a NULL ddict entry */
+             break;
+         } else {
+-            idx &= idxRangeMask;    /* Goes to start of table when we reach the end */
+-            idx++;
++            idx = (idx + 1) & idxRangeMask;    /* Goes to start of table when we reach the end */
+         }
+     }
+     DEBUGLOG(4, "Final idx after probing for dictID %u is: %zu", dictID, idx);
+@@ -260,7 +259,7 @@ static void ZSTD_initDCtx_internal(ZSTD_DCtx* dctx)
+     dctx->oversizedDuration = 0;
+     dctx->isFrameDecompression = 1;
+ #if DYNAMIC_BMI2
+-    dctx->bmi2 = ZSTD_cpuSupportsBmi2();
++    ZSTD_SET_BMI2(dctx->bmi2, ZSTD_cpuSupportsBmi2());
+ #endif
+     dctx->ddictSet = NULL;
+     ZSTD_DCtx_resetParameters(dctx);
+diff --git a/lib/zstd/decompress/zstd_decompress_block.c b/lib/zstd/decompress/zstd_decompress_block.c
+index 710eb0ffd..dfdda5218 100644
+--- a/lib/zstd/decompress/zstd_decompress_block.c
++++ b/lib/zstd/decompress/zstd_decompress_block.c
+@@ -16,15 +16,15 @@
+ *  Dependencies
+ *********************************************************/
+ #include "../common/zstd_deps.h"   /* ZSTD_memcpy, ZSTD_memmove, ZSTD_memset */
++#include "../common/bmi2.h"
  #include "../common/compiler.h"    /* prefetch */
 -#include "../common/cpu.h"         /* bmi2 */
  #include "../common/mem.h"         /* low level memory routines */
@@ -1659,7 +2139,31 @@ index 710eb0ffd..698a2e3c0 100644
  #include "zstd_decompress_block.h"
  #include "../common/bits.h"  /* ZSTD_highbit32 */
  
-@@ -735,9 +734,10 @@ size_t ZSTD_decodeSeqHeaders(ZSTD_DCtx* dctx, int* nbSeqPtr,
+@@ -622,6 +622,8 @@ BMI2_TARGET_ATTRIBUTE static void ZSTD_buildFSETable_body_bmi2(ZSTD_seqSymbol* d
+     ZSTD_buildFSETable_body(dt, normalizedCounter, maxSymbolValue,
+             baseValue, nbAdditionalBits, tableLog, wksp, wkspSize);
+ }
++#else
++#define ZSTD_buildFSETable_body_bmi2 ZSTD_buildFSETable_body_default
+ #endif
+ 
+ void ZSTD_buildFSETable(ZSTD_seqSymbol* dt,
+@@ -629,13 +631,11 @@ void ZSTD_buildFSETable(ZSTD_seqSymbol* dt,
+             const U32* baseValue, const U8* nbAdditionalBits,
+             unsigned tableLog, void* wksp, size_t wkspSize, int bmi2)
+ {
+-#if DYNAMIC_BMI2
+-    if (bmi2) {
++    if (ZSTD_USE_BMI2(bmi2)) {
+         ZSTD_buildFSETable_body_bmi2(dt, normalizedCounter, maxSymbolValue,
+                 baseValue, nbAdditionalBits, tableLog, wksp, wkspSize);
+         return;
+     }
+-#endif
+     (void)bmi2;
+     ZSTD_buildFSETable_body_default(dt, normalizedCounter, maxSymbolValue,
+             baseValue, nbAdditionalBits, tableLog, wksp, wkspSize);
+@@ -735,9 +735,10 @@ size_t ZSTD_decodeSeqHeaders(ZSTD_DCtx* dctx, int* nbSeqPtr,
          ip++;
  
          /* Build DTables */
@@ -1671,7 +2175,7 @@ index 710eb0ffd..698a2e3c0 100644
                                                        LL_base, LL_bits,
                                                        LL_defaultDTable, dctx->fseEntropy,
                                                        dctx->ddictIsCold, nbSeq,
-@@ -747,9 +747,10 @@ size_t ZSTD_decodeSeqHeaders(ZSTD_DCtx* dctx, int* nbSeqPtr,
+@@ -747,9 +748,10 @@ size_t ZSTD_decodeSeqHeaders(ZSTD_DCtx* dctx, int* nbSeqPtr,
              ip += llhSize;
          }
  
@@ -1683,7 +2187,7 @@ index 710eb0ffd..698a2e3c0 100644
                                                        OF_base, OF_bits,
                                                        OF_defaultDTable, dctx->fseEntropy,
                                                        dctx->ddictIsCold, nbSeq,
-@@ -759,9 +760,10 @@ size_t ZSTD_decodeSeqHeaders(ZSTD_DCtx* dctx, int* nbSeqPtr,
+@@ -759,9 +761,10 @@ size_t ZSTD_decodeSeqHeaders(ZSTD_DCtx* dctx, int* nbSeqPtr,
              ip += ofhSize;
          }
  
@@ -1695,7 +2199,7 @@ index 710eb0ffd..698a2e3c0 100644
                                                        ML_base, ML_bits,
                                                        ML_defaultDTable, dctx->fseEntropy,
                                                        dctx->ddictIsCold, nbSeq,
-@@ -772,7 +774,7 @@ size_t ZSTD_decodeSeqHeaders(ZSTD_DCtx* dctx, int* nbSeqPtr,
+@@ -772,7 +775,7 @@ size_t ZSTD_decodeSeqHeaders(ZSTD_DCtx* dctx, int* nbSeqPtr,
          }
      }
  
@@ -1704,7 +2208,7 @@ index 710eb0ffd..698a2e3c0 100644
  }
  
  
-@@ -802,7 +804,8 @@ typedef struct {
+@@ -802,7 +805,8 @@ typedef struct {
   *  Precondition: *ip <= *op
   *  Postcondition: *op - *op >= 8
   */
@@ -1714,7 +2218,7 @@ index 710eb0ffd..698a2e3c0 100644
      assert(*ip <= *op);
      if (offset < 8) {
          /* close range match, overlap */
-@@ -835,7 +838,9 @@ HINT_INLINE void ZSTD_overlapCopy8(BYTE** op, BYTE const** ip, size_t offset) {
+@@ -835,7 +839,9 @@ HINT_INLINE void ZSTD_overlapCopy8(BYTE** op, BYTE const** ip, size_t offset) {
   *         - ZSTD_overlap_src_before_dst: The src and dst may overlap and may be any distance apart.
   *           The src buffer must be before the dst buffer.
   */
@@ -1725,7 +2229,7 @@ index 710eb0ffd..698a2e3c0 100644
      ptrdiff_t const diff = op - ip;
      BYTE* const oend = op + length;
  
-@@ -850,7 +855,8 @@ static void ZSTD_safecopy(BYTE* op, const BYTE* const oend_w, BYTE const* ip, pt
+@@ -850,7 +856,8 @@ static void ZSTD_safecopy(BYTE* op, const BYTE* const oend_w, BYTE const* ip, pt
      if (ovtype == ZSTD_overlap_src_before_dst) {
          /* Copy 8 bytes and ensure the offset >= 8 when there can be overlap. */
          assert(length >= 8);
@@ -1735,7 +2239,7 @@ index 710eb0ffd..698a2e3c0 100644
          length -= 8;
          assert(op - ip >= 8);
          assert(op <= oend);
-@@ -864,7 +870,7 @@ static void ZSTD_safecopy(BYTE* op, const BYTE* const oend_w, BYTE const* ip, pt
+@@ -864,7 +871,7 @@ static void ZSTD_safecopy(BYTE* op, const BYTE* const oend_w, BYTE const* ip, pt
      if (op <= oend_w) {
          /* Wildcopy until we get close to the end. */
          assert(oend > oend_w);
@@ -1744,7 +2248,7 @@ index 710eb0ffd..698a2e3c0 100644
          ip += oend_w - op;
          op += oend_w - op;
      }
-@@ -875,7 +881,8 @@ static void ZSTD_safecopy(BYTE* op, const BYTE* const oend_w, BYTE const* ip, pt
+@@ -875,7 +882,8 @@ static void ZSTD_safecopy(BYTE* op, const BYTE* const oend_w, BYTE const* ip, pt
  /* ZSTD_safecopyDstBeforeSrc():
   * This version allows overlap with dst before src, or handles the non-overlap case with dst after src
   * Kept separate from more common ZSTD_safecopy case to avoid performance impact to the safecopy common case */
@@ -1754,7 +2258,7 @@ index 710eb0ffd..698a2e3c0 100644
      ptrdiff_t const diff = op - ip;
      BYTE* const oend = op + length;
  
-@@ -886,7 +893,7 @@ static void ZSTD_safecopyDstBeforeSrc(BYTE* op, const BYTE* ip, ptrdiff_t length
+@@ -886,7 +894,7 @@ static void ZSTD_safecopyDstBeforeSrc(BYTE* op, const BYTE* ip, ptrdiff_t length
      }
  
      if (op <= oend - WILDCOPY_OVERLENGTH && diff < -WILDCOPY_VECLEN) {
@@ -1763,7 +2267,7 @@ index 710eb0ffd..698a2e3c0 100644
          ip += oend - WILDCOPY_OVERLENGTH - op;
          op += oend - WILDCOPY_OVERLENGTH - op;
      }
-@@ -937,11 +944,11 @@ size_t ZSTD_execSequenceEnd(BYTE* op,
+@@ -937,11 +945,11 @@ size_t ZSTD_execSequenceEnd(BYTE* op,
              return sequenceLength;
          }
          /* span extDict & currentPrefixSegment */
@@ -1780,7 +2284,7 @@ index 710eb0ffd..698a2e3c0 100644
          }
      }
      ZSTD_safecopy(op, oend_w, match, sequence.matchLength, ZSTD_overlap_src_before_dst);
-@@ -986,11 +993,11 @@ size_t ZSTD_execSequenceEndSplitLitBuffer(BYTE* op,
+@@ -986,11 +994,11 @@ size_t ZSTD_execSequenceEndSplitLitBuffer(BYTE* op,
              return sequenceLength;
          }
          /* span extDict & currentPrefixSegment */
@@ -1797,7 +2301,7 @@ index 710eb0ffd..698a2e3c0 100644
          }
      }
      ZSTD_safecopy(op, oend_w, match, sequence.matchLength, ZSTD_overlap_src_before_dst);
-@@ -1059,11 +1066,11 @@ size_t ZSTD_execSequence(BYTE* op,
+@@ -1059,11 +1067,11 @@ size_t ZSTD_execSequence(BYTE* op,
              return sequenceLength;
          }
          /* span extDict & currentPrefixSegment */
@@ -1814,7 +2318,7 @@ index 710eb0ffd..698a2e3c0 100644
          }
      }
      /* Match within prefix of 1 or more bytes */
-@@ -1080,7 +1087,7 @@ size_t ZSTD_execSequence(BYTE* op,
+@@ -1080,7 +1088,7 @@ size_t ZSTD_execSequence(BYTE* op,
           * longer than literals (in general). In silesia, ~10% of matches are longer
           * than 16 bytes.
           */
@@ -1823,7 +2327,7 @@ index 710eb0ffd..698a2e3c0 100644
          return sequenceLength;
      }
      assert(sequence.offset < WILDCOPY_VECLEN);
-@@ -1091,7 +1098,7 @@ size_t ZSTD_execSequence(BYTE* op,
+@@ -1091,7 +1099,7 @@ size_t ZSTD_execSequence(BYTE* op,
      /* If the match length is > 8 bytes, then continue with the wildcopy. */
      if (sequence.matchLength > 8) {
          assert(op < oMatchEnd);
@@ -1832,7 +2336,7 @@ index 710eb0ffd..698a2e3c0 100644
      }
      return sequenceLength;
  }
-@@ -1152,7 +1159,7 @@ size_t ZSTD_execSequenceSplitLitBuffer(BYTE* op,
+@@ -1152,7 +1160,7 @@ size_t ZSTD_execSequenceSplitLitBuffer(BYTE* op,
              return sequenceLength;
          }
          /* span extDict & currentPrefixSegment */
@@ -1841,7 +2345,7 @@ index 710eb0ffd..698a2e3c0 100644
              ZSTD_memmove(oLitEnd, match, length1);
              op = oLitEnd + length1;
              sequence.matchLength -= length1;
-@@ -1172,7 +1179,7 @@ size_t ZSTD_execSequenceSplitLitBuffer(BYTE* op,
+@@ -1172,7 +1180,7 @@ size_t ZSTD_execSequenceSplitLitBuffer(BYTE* op,
           * longer than literals (in general). In silesia, ~10% of matches are longer
           * than 16 bytes.
           */
@@ -1850,7 +2354,7 @@ index 710eb0ffd..698a2e3c0 100644
          return sequenceLength;
      }
      assert(sequence.offset < WILDCOPY_VECLEN);
-@@ -1183,7 +1190,7 @@ size_t ZSTD_execSequenceSplitLitBuffer(BYTE* op,
+@@ -1183,7 +1191,7 @@ size_t ZSTD_execSequenceSplitLitBuffer(BYTE* op,
      /* If the match length is > 8 bytes, then continue with the wildcopy. */
      if (sequence.matchLength > 8) {
          assert(op < oMatchEnd);
@@ -1859,7 +2363,7 @@ index 710eb0ffd..698a2e3c0 100644
      }
      return sequenceLength;
  }
-@@ -1230,6 +1237,10 @@ FORCE_INLINE_TEMPLATE seq_t
+@@ -1230,6 +1238,10 @@ FORCE_INLINE_TEMPLATE seq_t
  ZSTD_decodeSequence(seqState_t* seqState, const ZSTD_longOffset_e longOffsets, const int isLastSeq)
  {
      seq_t seq;
@@ -1870,7 +2374,7 @@ index 710eb0ffd..698a2e3c0 100644
      /*
       * ZSTD_seqSymbol is a 64 bits wide structure.
       * It can be loaded in one operation
-@@ -1238,7 +1249,7 @@ ZSTD_decodeSequence(seqState_t* seqState, const ZSTD_longOffset_e longOffsets, c
+@@ -1238,7 +1250,7 @@ ZSTD_decodeSequence(seqState_t* seqState, const ZSTD_longOffset_e longOffsets, c
       * operations that cause performance drop. This can be avoided by using this
       * ZSTD_memcpy hack.
       */
@@ -1879,7 +2383,7 @@ index 710eb0ffd..698a2e3c0 100644
      ZSTD_seqSymbol llDInfoS, mlDInfoS, ofDInfoS;
      ZSTD_seqSymbol* const llDInfo = &llDInfoS;
      ZSTD_seqSymbol* const mlDInfo = &mlDInfoS;
-@@ -1246,11 +1257,12 @@ ZSTD_decodeSequence(seqState_t* seqState, const ZSTD_longOffset_e longOffsets, c
+@@ -1246,11 +1258,12 @@ ZSTD_decodeSequence(seqState_t* seqState, const ZSTD_longOffset_e longOffsets, c
      ZSTD_memcpy(llDInfo, seqState->stateLL.table + seqState->stateLL.state, sizeof(ZSTD_seqSymbol));
      ZSTD_memcpy(mlDInfo, seqState->stateML.table + seqState->stateML.state, sizeof(ZSTD_seqSymbol));
      ZSTD_memcpy(ofDInfo, seqState->stateOffb.table + seqState->stateOffb.state, sizeof(ZSTD_seqSymbol));
@@ -1894,7 +2398,7 @@ index 710eb0ffd..698a2e3c0 100644
      seq.matchLength = mlDInfo->baseValue;
      seq.litLength = llDInfo->baseValue;
      {   U32 const ofBase = ofDInfo->baseValue;
-@@ -1269,10 +1281,98 @@ ZSTD_decodeSequence(seqState_t* seqState, const ZSTD_longOffset_e longOffsets, c
+@@ -1269,10 +1282,91 @@ ZSTD_decodeSequence(seqState_t* seqState, const ZSTD_longOffset_e longOffsets, c
          assert(llBits <= MaxLLBits);
          assert(mlBits <= MaxMLBits);
          assert(ofBits <= MaxOff);
@@ -1982,13 +2486,6 @@ index 710eb0ffd..698a2e3c0 100644
 +        BYTE const ofBits = ofDInfo->nbAdditionalBits;
 +        BYTE const totalBits = llBits+mlBits+ofBits;
 +
-+        U16 const llNext = llDInfo->nextState;
-+        U16 const mlNext = mlDInfo->nextState;
-+        U16 const ofNext = ofDInfo->nextState;
-+        U32 const llnbBits = llDInfo->nbBits;
-+        U32 const mlnbBits = mlDInfo->nbBits;
-+        U32 const ofnbBits = ofDInfo->nbBits;
-+
 +        assert(llBits <= MaxLLBits);
 +        assert(mlBits <= MaxMLBits);
 +        assert(ofBits <= MaxOff);
@@ -1997,16 +2494,22 @@ index 710eb0ffd..698a2e3c0 100644
           */
  
          /* sequence */
-@@ -1334,7 +1434,7 @@ ZSTD_decodeSequence(seqState_t* seqState, const ZSTD_longOffset_e longOffsets, c
+@@ -1334,14 +1428,18 @@ ZSTD_decodeSequence(seqState_t* seqState, const ZSTD_longOffset_e longOffsets, c
                      (U32)seq.litLength, (U32)seq.matchLength, (U32)seq.offset);
  
          if (!isLastSeq) {
 -            /* don't update FSE state for last Sequence */
+-            ZSTD_updateFseStateWithDInfo(&seqState->stateLL, &seqState->DStream, llNext, llnbBits);    /* <=  9 bits */
+-            ZSTD_updateFseStateWithDInfo(&seqState->stateML, &seqState->DStream, mlNext, mlnbBits);    /* <=  9 bits */
 +            /* Don't update FSE state for last sequence. */
-             ZSTD_updateFseStateWithDInfo(&seqState->stateLL, &seqState->DStream, llNext, llnbBits);    /* <=  9 bits */
-             ZSTD_updateFseStateWithDInfo(&seqState->stateML, &seqState->DStream, mlNext, mlnbBits);    /* <=  9 bits */
++            ZSTD_updateFseStateWithDInfo(&seqState->stateLL, &seqState->DStream,
++                                         llDInfo->nextState, llDInfo->nbBits);    /* <=  9 bits */
++            ZSTD_updateFseStateWithDInfo(&seqState->stateML, &seqState->DStream,
++                                         mlDInfo->nextState, mlDInfo->nbBits);    /* <=  9 bits */
              if (MEM_32bits()) BIT_reloadDStream(&seqState->DStream);    /* <= 18 bits */
-@@ -1342,6 +1442,7 @@ ZSTD_decodeSequence(seqState_t* seqState, const ZSTD_longOffset_e longOffsets, c
+-            ZSTD_updateFseStateWithDInfo(&seqState->stateOffb, &seqState->DStream, ofNext, ofnbBits);  /* <=  8 bits */
++            ZSTD_updateFseStateWithDInfo(&seqState->stateOffb, &seqState->DStream,
++                                         ofDInfo->nextState, ofDInfo->nbBits);    /* <=  8 bits */
              BIT_reloadDStream(&seqState->DStream);
          }
      }
@@ -2014,7 +2517,7 @@ index 710eb0ffd..698a2e3c0 100644
  
      return seq;
  }
-@@ -1406,10 +1507,8 @@ ZSTD_decompressSequences_bodySplitLitBuffer( ZSTD_DCtx* dctx,
+@@ -1406,10 +1504,8 @@ ZSTD_decompressSequences_bodySplitLitBuffer( ZSTD_DCtx* dctx,
                           const void* seqStart, size_t seqSize, int nbSeq,
                           const ZSTD_longOffset_e isLongOffset)
  {
@@ -2026,7 +2529,7 @@ index 710eb0ffd..698a2e3c0 100644
      BYTE* op = ostart;
      const BYTE* litPtr = dctx->litPtr;
      const BYTE* litBufferEnd = dctx->litBufferEnd;
-@@ -1424,7 +1523,7 @@ ZSTD_decompressSequences_bodySplitLitBuffer( ZSTD_DCtx* dctx,
+@@ -1424,7 +1520,7 @@ ZSTD_decompressSequences_bodySplitLitBuffer( ZSTD_DCtx* dctx,
          dctx->fseEntropy = 1;
          { U32 i; for (i=0; i<ZSTD_REP_NUM; i++) seqState.prevOffset[i] = dctx->entropy.rep[i]; }
          RETURN_ERROR_IF(
@@ -2035,7 +2538,7 @@ index 710eb0ffd..698a2e3c0 100644
              corruption_detected, "");
          ZSTD_initFseState(&seqState.stateLL, &seqState.DStream, dctx->LLTptr);
          ZSTD_initFseState(&seqState.stateOffb, &seqState.DStream, dctx->OFTptr);
-@@ -1516,7 +1615,8 @@ ZSTD_decompressSequences_bodySplitLitBuffer( ZSTD_DCtx* dctx,
+@@ -1516,7 +1612,8 @@ ZSTD_decompressSequences_bodySplitLitBuffer( ZSTD_DCtx* dctx,
  
              /* If there are more sequences, they will need to read literals from litExtraBuffer; copy over the remainder from dst and update litPtr and litEnd */
              if (nbSeq > 0) {
@@ -2045,7 +2548,7 @@ index 710eb0ffd..698a2e3c0 100644
                  DEBUGLOG(6, "There are %i sequences left, and %zu/%zu literals left in buffer", nbSeq, leftoverLit, sequence.litLength);
                  if (leftoverLit) {
                      RETURN_ERROR_IF(leftoverLit > (size_t)(oend - op), dstSize_tooSmall, "remaining lit must fit within dstBuffer");
-@@ -1618,10 +1718,10 @@ ZSTD_decompressSequences_body(ZSTD_DCtx* dctx,
+@@ -1618,10 +1715,10 @@ ZSTD_decompressSequences_body(ZSTD_DCtx* dctx,
      const void* seqStart, size_t seqSize, int nbSeq,
      const ZSTD_longOffset_e isLongOffset)
  {
@@ -2059,7 +2562,7 @@ index 710eb0ffd..698a2e3c0 100644
      BYTE* op = ostart;
      const BYTE* litPtr = dctx->litPtr;
      const BYTE* const litEnd = litPtr + dctx->litSize;
-@@ -1636,7 +1736,7 @@ ZSTD_decompressSequences_body(ZSTD_DCtx* dctx,
+@@ -1636,7 +1733,7 @@ ZSTD_decompressSequences_body(ZSTD_DCtx* dctx,
          dctx->fseEntropy = 1;
          { U32 i; for (i = 0; i < ZSTD_REP_NUM; i++) seqState.prevOffset[i] = dctx->entropy.rep[i]; }
          RETURN_ERROR_IF(
@@ -2068,7 +2571,7 @@ index 710eb0ffd..698a2e3c0 100644
              corruption_detected, "");
          ZSTD_initFseState(&seqState.stateLL, &seqState.DStream, dctx->LLTptr);
          ZSTD_initFseState(&seqState.stateOffb, &seqState.DStream, dctx->OFTptr);
-@@ -1720,8 +1820,8 @@ size_t ZSTD_prefetchMatch(size_t prefetchPos, seq_t const sequence,
+@@ -1720,8 +1817,8 @@ size_t ZSTD_prefetchMatch(size_t prefetchPos, seq_t const sequence,
      {   const BYTE* const matchBase = (sequence.offset > prefetchPos) ? dictEnd : prefixStart;
          /* note : this operation can overflow when seq.offset is really too large, which can only happen when input is corrupted.
           * No consequence though : memory address is only used for prefetching, not for dereferencing */
@@ -2079,7 +2582,7 @@ index 710eb0ffd..698a2e3c0 100644
      }
      return prefetchPos + sequence.matchLength;
  }
-@@ -1737,10 +1837,10 @@ ZSTD_decompressSequencesLong_body(
+@@ -1737,10 +1834,10 @@ ZSTD_decompressSequencesLong_body(
                           const void* seqStart, size_t seqSize, int nbSeq,
                           const ZSTD_longOffset_e isLongOffset)
  {
@@ -2093,7 +2596,7 @@ index 710eb0ffd..698a2e3c0 100644
      BYTE* op = ostart;
      const BYTE* litPtr = dctx->litPtr;
      const BYTE* litBufferEnd = dctx->litBufferEnd;
-@@ -1762,9 +1862,8 @@ ZSTD_decompressSequencesLong_body(
+@@ -1762,9 +1859,8 @@ ZSTD_decompressSequencesLong_body(
          dctx->fseEntropy = 1;
          { int i; for (i=0; i<ZSTD_REP_NUM; i++) seqState.prevOffset[i] = dctx->entropy.rep[i]; }
          assert(dst != NULL);
@@ -2104,7 +2607,7 @@ index 710eb0ffd..698a2e3c0 100644
              corruption_detected, "");
          ZSTD_initFseState(&seqState.stateLL, &seqState.DStream, dctx->LLTptr);
          ZSTD_initFseState(&seqState.stateOffb, &seqState.DStream, dctx->OFTptr);
-@@ -1783,9 +1882,9 @@ ZSTD_decompressSequencesLong_body(
+@@ -1783,9 +1879,9 @@ ZSTD_decompressSequencesLong_body(
  
              if (dctx->litBufferLocation == ZSTD_split && litPtr + sequences[(seqNb - ADVANCED_SEQS) & STORED_SEQS_MASK].litLength > dctx->litBufferEnd) {
                  /* lit buffer is reaching split point, empty out the first buffer and transition to litExtraBuffer */
@@ -2117,7 +2620,7 @@ index 710eb0ffd..698a2e3c0 100644
                      RETURN_ERROR_IF(leftoverLit > (size_t)(oend - op), dstSize_tooSmall, "remaining lit must fit within dstBuffer");
                      ZSTD_safecopyDstBeforeSrc(op, litPtr, leftoverLit);
                      sequences[(seqNb - ADVANCED_SEQS) & STORED_SEQS_MASK].litLength -= leftoverLit;
-@@ -1829,7 +1928,8 @@ ZSTD_decompressSequencesLong_body(
+@@ -1829,7 +1925,8 @@ ZSTD_decompressSequencesLong_body(
          for ( ; seqNb<nbSeq ; seqNb++) {
              seq_t *sequence = &(sequences[seqNb&STORED_SEQS_MASK]);
              if (dctx->litBufferLocation == ZSTD_split && litPtr + sequence->litLength > dctx->litBufferEnd) {
@@ -2127,7 +2630,7 @@ index 710eb0ffd..698a2e3c0 100644
                  if (leftoverLit) {
                      RETURN_ERROR_IF(leftoverLit > (size_t)(oend - op), dstSize_tooSmall, "remaining lit must fit within dstBuffer");
                      ZSTD_safecopyDstBeforeSrc(op, litPtr, leftoverLit);
-@@ -1868,7 +1968,8 @@ ZSTD_decompressSequencesLong_body(
+@@ -1868,7 +1965,8 @@ ZSTD_decompressSequencesLong_body(
  
      /* last literal segment */
      if (dctx->litBufferLocation == ZSTD_split) { /* first deplete literal buffer in dst, then copy litExtraBuffer */
@@ -2137,7 +2640,7 @@ index 710eb0ffd..698a2e3c0 100644
          RETURN_ERROR_IF(lastLLSize > (size_t)(oend - op), dstSize_tooSmall, "");
          if (op != NULL) {
              ZSTD_memmove(op, litPtr, lastLLSize);
-@@ -1877,7 +1978,8 @@ ZSTD_decompressSequencesLong_body(
+@@ -1877,7 +1975,8 @@ ZSTD_decompressSequencesLong_body(
          litPtr = dctx->litExtraBuffer;
          litBufferEnd = dctx->litExtraBuffer + ZSTD_LITBUFFEREXTRASIZE;
      }
@@ -2147,7 +2650,63 @@ index 710eb0ffd..698a2e3c0 100644
          RETURN_ERROR_IF(lastLLSize > (size_t)(oend-op), dstSize_tooSmall, "");
          if (op != NULL) {
              ZSTD_memmove(op, litPtr, lastLLSize);
-@@ -1994,9 +2096,9 @@ ZSTD_decompressSequencesLong(ZSTD_DCtx* dctx,
+@@ -1934,6 +2033,16 @@ ZSTD_decompressSequencesLong_bmi2(ZSTD_DCtx* dctx,
+ }
+ #endif /* ZSTD_FORCE_DECOMPRESS_SEQUENCES_SHORT */
+ 
++#else
++
++#ifndef ZSTD_FORCE_DECOMPRESS_SEQUENCES_LONG
++#define ZSTD_decompressSequences_bmi2 ZSTD_decompressSequences_default
++#define ZSTD_decompressSequencesSplitLitBuffer_bmi2 ZSTD_decompressSequencesSplitLitBuffer_default
++#endif
++#ifndef ZSTD_FORCE_DECOMPRESS_SEQUENCES_SHORT
++#define ZSTD_decompressSequencesLong_bmi2 ZSTD_decompressSequencesLong_default
++#endif
++
+ #endif /* DYNAMIC_BMI2 */
+ 
+ #ifndef ZSTD_FORCE_DECOMPRESS_SEQUENCES_LONG
+@@ -1943,11 +2052,9 @@ ZSTD_decompressSequences(ZSTD_DCtx* dctx, void* dst, size_t maxDstSize,
+                    const ZSTD_longOffset_e isLongOffset)
+ {
+     DEBUGLOG(5, "ZSTD_decompressSequences");
+-#if DYNAMIC_BMI2
+-    if (ZSTD_DCtx_get_bmi2(dctx)) {
++    if (ZSTD_USE_BMI2(ZSTD_DCtx_get_bmi2(dctx))) {
+         return ZSTD_decompressSequences_bmi2(dctx, dst, maxDstSize, seqStart, seqSize, nbSeq, isLongOffset);
+     }
+-#endif
+     return ZSTD_decompressSequences_default(dctx, dst, maxDstSize, seqStart, seqSize, nbSeq, isLongOffset);
+ }
+ static size_t
+@@ -1956,11 +2063,9 @@ ZSTD_decompressSequencesSplitLitBuffer(ZSTD_DCtx* dctx, void* dst, size_t maxDst
+                                  const ZSTD_longOffset_e isLongOffset)
+ {
+     DEBUGLOG(5, "ZSTD_decompressSequencesSplitLitBuffer");
+-#if DYNAMIC_BMI2
+-    if (ZSTD_DCtx_get_bmi2(dctx)) {
++    if (ZSTD_USE_BMI2(ZSTD_DCtx_get_bmi2(dctx))) {
+         return ZSTD_decompressSequencesSplitLitBuffer_bmi2(dctx, dst, maxDstSize, seqStart, seqSize, nbSeq, isLongOffset);
+     }
+-#endif
+     return ZSTD_decompressSequencesSplitLitBuffer_default(dctx, dst, maxDstSize, seqStart, seqSize, nbSeq, isLongOffset);
+ }
+ #endif /* ZSTD_FORCE_DECOMPRESS_SEQUENCES_LONG */
+@@ -1979,11 +2084,9 @@ ZSTD_decompressSequencesLong(ZSTD_DCtx* dctx,
+                              const ZSTD_longOffset_e isLongOffset)
+ {
+     DEBUGLOG(5, "ZSTD_decompressSequencesLong");
+-#if DYNAMIC_BMI2
+-    if (ZSTD_DCtx_get_bmi2(dctx)) {
++    if (ZSTD_USE_BMI2(ZSTD_DCtx_get_bmi2(dctx))) {
+         return ZSTD_decompressSequencesLong_bmi2(dctx, dst, maxDstSize, seqStart, seqSize, nbSeq, isLongOffset);
+     }
+-#endif
+   return ZSTD_decompressSequencesLong_default(dctx, dst, maxDstSize, seqStart, seqSize, nbSeq, isLongOffset);
+ }
+ #endif /* ZSTD_FORCE_DECOMPRESS_SEQUENCES_SHORT */
+@@ -1994,9 +2097,9 @@ ZSTD_decompressSequencesLong(ZSTD_DCtx* dctx,
   * both the prefix and the extDict. At @p op any offset larger than this
   * is invalid.
   */
@@ -2159,7 +2718,7 @@ index 710eb0ffd..698a2e3c0 100644
  }
  
  typedef struct {
-@@ -2095,7 +2197,7 @@ ZSTD_decompressBlock_internal(ZSTD_DCtx* dctx,
+@@ -2095,7 +2198,7 @@ ZSTD_decompressBlock_internal(ZSTD_DCtx* dctx,
           * Additionally, take the min with dstCapacity to ensure that the totalHistorySize fits in a size_t.
           */
          size_t const blockSizeMax = MIN(dstCapacity, ZSTD_blockSizeMax(dctx));
@@ -2168,6 +2727,40 @@ index 710eb0ffd..698a2e3c0 100644
          /* isLongOffset must be true if there are long offsets.
           * Offsets are long if they are larger than ZSTD_maxShortOffset().
           * We don't expect that to be the case in 64-bit mode.
+diff --git a/lib/zstd/decompress/zstd_decompress_internal.h b/lib/zstd/decompress/zstd_decompress_internal.h
+index 2a225d181..3367b2ba4 100644
+--- a/lib/zstd/decompress/zstd_decompress_internal.h
++++ b/lib/zstd/decompress/zstd_decompress_internal.h
+@@ -156,7 +156,10 @@ struct ZSTD_DCtx_s
+     size_t staticSize;
+     int isFrameDecompression;
+ #if DYNAMIC_BMI2
+-    int bmi2;                     /* == 1 if the CPU supports BMI2 and 0 otherwise. CPU support is determined dynamically once per context lifetime. */
++    int bmi2;                     /* == 1 if the CPU supports BMI2 and 0 otherwise when CPU state
++                                   * is cached per context. Never read this directly: use ZSTD_DCtx_get_bmi2(),
++                                   * which also handles builds
++                                   * where cached CPU state is not used. */
+ #endif
+ 
+     /* dictionary */
+@@ -203,6 +206,17 @@ struct ZSTD_DCtx_s
+     /* Tracing */
+ };  /* typedef'd to ZSTD_DCtx within "zstd.h" */
+ 
++/*
++ * @returns the cached per-context BMI2 dispatch hint, or 0 when the build does
++ *          not use cached CPU state.
++ *
++ * Beware: this is *not* a "does the CPU support BMI2" test. When BMI2 is enabled
++ * at compile time, DYNAMIC_BMI2 is 0: the whole library is already compiled with
++ * BMI2, no separate variant exists, and this returns 0 even though the CPU does
++ * support BMI2. Only use the result as a dispatch hint passed to a lower-level
++ * BMI2/default selector. Integrations may ignore the cached hint and consult
++ * their own CPU-feature policy at that selector.
++ */
+ MEM_STATIC int ZSTD_DCtx_get_bmi2(const struct ZSTD_DCtx_s *dctx) {
+ #if DYNAMIC_BMI2
+     return dctx->bmi2;
 -- 
-2.55.0
+2.56.0
 
