@@ -47,8 +47,7 @@ RESTRICT="
 	mirror
 "
 
-CDEPEND="
-	>=app-arch/brotli-1.2.0:=
+COMMON_DEPEND=">=app-arch/brotli-1.2.1:=
 	dev-db/sqlite:3
 	dev-cpp/abseil-cpp:0=
 	>=dev-cpp/ada-4.0.0:=
@@ -86,8 +85,8 @@ BDEPEND="${PYTHON_DEPS}
 	virtual/pkgconfig
 "
 
-DEPEND="${CDEPEND}"
-RDEPEND="${CDEPEND}"
+DEPEND="${COMMON_DEPEND}"
+RDEPEND="${COMMON_DEPEND}"
 
 # These are measured on a loong machine with -ggdb on, and only checked
 # if debugging flags are present in CFLAGS.
@@ -485,6 +484,15 @@ src_test() {
 		test/sequential/test-tls-session-timeout.js
 		test/sequential/test-util-debug.js
 	)
+
+	if has_version "sys-libs/zlib-ng" ; then
+		elog "Some tests will be skipped due to being known to fail with sys-libs/zlib-ng"
+		elog
+		drop_tests+=( test/parallel/test-process-versions.js )
+		drop_tests+=( test/parallel/test-zlib-zip-interop.js )
+		elog
+	fi
+
 	use inspector ||
 		drop_tests+=(
 			test/parallel/test-inspector-emit-protocol-event.js
