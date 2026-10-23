@@ -10,7 +10,6 @@ LLVM_COMPAT=( {22..23} )
 
 # This will also filter rust versions that don't match LLVM_COMPAT in the non-clang path; this is fine.
 RUST_NEEDS_LLVM=1
-# If not building with clang we need at least rust 1.76
 RUST_MIN_VER=1.90.0
 
 PYTHON_COMPAT=( python3_{12..14} )
@@ -387,12 +386,6 @@ BDEPEND+="
 	')
 	>=dev-util/cbindgen-0.29.1
 	>=net-libs/nodejs-21
-	|| (
-		>=dev-lang/rust-1.87.0
-		>=dev-lang/rust-bin-1.87.0
-		<dev-lang/rust-1.100.0
-		<dev-lang/rust-bin-1.100.0
-	)
 	app-alternatives/awk
 	app-arch/unzip
 	app-arch/zip
@@ -440,17 +433,13 @@ llvm_check_deps() {
 			einfo "llvm-core/lld:${LLVM_SLOT} is missing! Cannot use LLVM slot ${LLVM_SLOT} ..." >&2
 			return 1
 		fi
-		if ! has_version -b "dev-lang/rust:0/llvm-${LLVM_SLOT}" && ! has_version -b "dev-lang/rust-bin:0/llvm-${LLVM_SLOT}"; then
-			einfo "dev-lang/rust:0/llvm-${LLVM_SLOT} is missing! Cannot use LLVM slot ${LLVM_SLOT} ..." >&2
-			return 1
-		fi
+	fi
 
-		if use pgo ; then
-			if ! has_version -b "=llvm-runtimes/compiler-rt-sanitizers-${LLVM_SLOT}*[profile]" ; then
-				einfo "=llvm-runtimes/compiler-rt-sanitizers-${LLVM_SLOT}*[profile] is missing!"
-				einfo "Cannot use LLVM slot ${LLVM_SLOT} ..." >&2
-				return 1
-			fi
+	if use pgo ; then
+		if ! has_version -b "=llvm-runtimes/compiler-rt-sanitizers-${LLVM_SLOT}*[profile]" ; then
+			einfo "=llvm-runtimes/compiler-rt-sanitizers-${LLVM_SLOT}*[profile] is missing!"
+			einfo "Cannot use LLVM slot ${LLVM_SLOT} ..." >&2
+			return 1
 		fi
 	fi
 
