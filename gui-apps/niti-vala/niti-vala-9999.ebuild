@@ -161,6 +161,9 @@ src_prepare() {
 	# Fix redefining stdout macros
 	sed -e "s/\bstdout\b/stdout_str/g" -i widgets-power/src/plugin.vala || die
 
+	# Fix systemd service path
+	use systemd && ( sed -e 's/%h\/\.local/\/usr/' -i data/niti-vala.service || die )
+
 	use !elibc_glibc && eapply "${FILESDIR}/niti-vala-0.1-remove-musl-malloc_trim-function.patch"
 	popd
 }
