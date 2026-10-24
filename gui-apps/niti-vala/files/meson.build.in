@@ -20,6 +20,7 @@ add_project_arguments('-D_POSIX_C_SOURCE=200809L', language: 'c')
 
 subproject_map = {
   'widget'        : 'api',
+  'autoprofile'   : 'services-autoprofile',
   'theme'         : 'services-theme',
   'matugen'       : 'services-matugen',
   'eds'           : 'services-eds',
@@ -54,7 +55,7 @@ api_sub = subproject('api')
 meson.override_dependency('niti-widget-1.0', api_sub.get_variable('niti_widget_dep'))
 
 services = [
-  'theme', 'matugen', 'eds', 'niri', 'layout', 'diag', 
+  'theme', 'matugen', 'eds', 'niri', 'layout', 'diag', 'autoprofile',
   'pluginreg', 'audio', 'backlight', 'network', 'bluetooth', 
   'vpn', 'caffeine', 'mpris', 'upower', 'applications', 
   'notifications', 'pwrec', 'abooster', 'systemtray', 'udisks', 

@@ -8,6 +8,7 @@ inherit git-r3 gnome2-utils meson systemd vala xdg
 NITI_SERVICES=(
 	"abooster"
 	"applications"
+	"autoprofile"
 	"audio"
 	"backlight"
 	"bluetooth"
