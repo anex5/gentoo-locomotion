@@ -1,0 +1,72 @@
+--- a/services-caffeine/niti-caffeine.vala
++++ b/services-caffeine/niti-caffeine.vala
+@@ -31,7 +31,7 @@ namespace Niti.Caffeine {
+             }
+             try {
+                 string[] argv = {
+-                    "systemd-inhibit", "--what=idle:sleep:handle-lid-switch",
++                    "elogind-inhibit", "--what=idle:sleep:handle-lid-switch",
+                     "--who=Niti", "--why=Caffeine", "--mode=block", "sleep", "infinity"
+                 };
+                 GLib.Process.spawn_async (null, argv, null,
+--- a/modules-quickcenter/src/page_power.vala
++++ b/modules-quickcenter/src/page_power.vala
+@@ -39,14 +39,16 @@ namespace Niti.QuickCenter {
+         }
+ 
+         public static string builtin_command (string id) {
++            string username = GLib.Environment.get_user_name ();
++            string xdg_session_id = GLib.Environment.get_variable ("XDG_SESSION_ID");
+             switch (id) {
+-                case "suspend": return "systemctl suspend";
+-                case "lock": return "loginctl lock-session";
+-                case "logout": return "niri msg action quit";
+-                case "restart-niti": return "systemctl --user restart niti";
+-                case "reboot": return "systemctl reboot";
+-                case "shutdown": return "systemctl poweroff";
+-                case "uefi": return "systemctl reboot --firmware-setup";
++                case "suspend": return "loginctl suspend";
++                case "lock": return "loginctl lock-session " + xdg_session_id;
++                case "logout": return "loginctl terminate-user " + username;
++                case "restart-niti": return "rc-service --user niti restart";
++                case "reboot": return "loginctl reboot";
++                case "shutdown": return "loginctl poweroff";
++                case "uefi": return "loginctl reboot --firmware-setup";
+                 default: return "";
+             }
+         }
+--- a/modules-quickcenter/src/quickcenter.vala
++++ b/modules-quickcenter/src/quickcenter.vala
+@@ -736,10 +736,10 @@ namespace Niti.QuickCenter {
+                 reboot_btn.sensitive = false;
+                 reboot_btn.label = "Перезагрузка…";
+                 try {
+-                    GLib.Process.spawn_async (null, { "systemctl", "reboot" },
++                    GLib.Process.spawn_async (null, { "loginctl", "reboot" },
+                         null, GLib.SpawnFlags.SEARCH_PATH, null, null);
+                 } catch (GLib.Error e) {
+-                    warning ("niti-quickcenter: systemctl reboot: %s", e.message);
++                    warning ("niti-quickcenter: loginctl reboot: %s", e.message);
+                     reboot_btn.sensitive = true;
+                     reboot_btn.label = "Перезагрузить";
+                 }
+--- a/widgets-systeminfo/src/plugin.vala
++++ b/widgets-systeminfo/src/plugin.vala
+@@ -517,7 +517,7 @@ namespace Niti.Widgets {
+ 
+         private void start_system () {
+             if (ab != null && ab.reboot_pending) {
+-                try { GLib.Process.spawn_command_line_async ("systemctl reboot"); } catch (GLib.Error e) {}
++                try { GLib.Process.spawn_command_line_async ("loginctl reboot"); } catch (GLib.Error e) {}
+                 return;
+             }
+             if (ab != null) {
+@@ -771,7 +771,7 @@ namespace Niti.Widgets {
+                         if (ok && progress_last_source == "booster") {
+                             try {
+                                 new GLib.Subprocess (GLib.SubprocessFlags.NONE,
+-                                    "systemctl", "--user", "restart", "atomic-booster");
++                                    "loginctl", "--user", "atomic-booster", "restart");
+                             } catch (GLib.Error e) {
+                                 warning ("restart atomic-booster: %s", e.message);
+                             }

@@ -69,7 +69,8 @@ EGIT_CHECKOUT_DIR="${S}/subprojects"
 if [[ ${PV} == *9999* ]]; then
 	KEYWORDS=""
 else
-	EGIT_TAG="v${PV//_p/-}"
+	#EGIT_COMMIT="v${PV//_p/-}"
+	EGIT_COMMIT="0be9e4fd779f5dd1478461003e415ef5144936de"
 	KEYWORDS="~amd64 ~arm64"
 fi
 
@@ -92,6 +93,7 @@ COMMON_DEPEND="
 	dev-libs/libpeas:2=
 	dev-libs/wayland
 	gui-libs/gtk4-layer-shell:=
+	media-libs/libpulse
 	gnome-extra/evolution-data-server[introspection,vala]
 	net-misc/networkmanager[introspection,vala]
 	systemd? ( sys-apps/systemd:= )
@@ -166,6 +168,7 @@ src_prepare() {
 	use systemd && ( sed -e 's/%h\/\.local/\/usr/' -i data/niti-vala.service || die )
 
 	use !elibc_glibc && eapply "${FILESDIR}/niti-vala-0.1-remove-musl-malloc_trim-function.patch"
+	use !systemd && eapply "${FILESDIR}/niti-vala-0.1-enable-elogind-support.patch"
 	popd
 }
 
@@ -186,6 +189,8 @@ src_install() {
 }
 
 pkg_postinst() {
+	elog "This package uses dart-sass for compiling styles from *.scss files."
+	elog "You can install dart-sass with npm: \`sudo npm install -g sass\`"
 	xdg_pkg_postinst
 	gnome2_schemas_update
 }
