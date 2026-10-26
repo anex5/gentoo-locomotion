@@ -1,0 +1,28 @@
+#!/sbin/openrc-run
+# Copyright 1999-2025 Gentoo Authors
+# Distributed under the terms of the GNU General Public License, v2 or later
+
+name="Niti-vala"
+description="Niti-vala panel and utils"
+
+depend() {
+	need dbus
+	after xdg-desktop-portal-wlr
+}
+
+export USER=${USER}
+export XDG_RUNTIME_DIR=/run/user/${UID}
+export DBUS_SESSION_BUS_ADDRESS="unix:path=${XDG_RUNTIME_DIR}/bus"
+export WAYLAND_DISPLAY=${WAYLAND_DISPLAY:-wayland-1}
+
+supervisor=supervise-daemon
+command="/usr/bin/niti"
+# command_args="--gapplication-service"
+command_background="yes"
+
+start_pre() {
+	if [ -z "$WAYLAND_DISPLAY" ]; then
+		eerror "WAYLAND_DISPLAY unset, can't proceed."
+		return 1
+	fi
+}

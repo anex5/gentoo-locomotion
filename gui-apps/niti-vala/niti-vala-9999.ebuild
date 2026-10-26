@@ -186,7 +186,12 @@ src_install() {
 	insinto /usr/share/dbus-1/services
 	dodir /usr/share/dbus-1/services || die
 	doins subprojects/data/niti-portal.service || die
-	use systemd && systemd_douserunit subprojects/data/niti-vala.service
+	if use systemd; then
+		systemd_douserunit subprojects/data/niti-vala.service
+	else
+		exeinto /etc/user/init.d
+		newexe "${FILESDIR}"/niti-vala.user.initd niti-vala
+	fi
 }
 
 pkg_postinst() {
