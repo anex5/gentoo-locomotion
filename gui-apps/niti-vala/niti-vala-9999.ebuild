@@ -165,10 +165,11 @@ src_prepare() {
 	sed -e "s/\bstdout\b/stdout_str/g" -i widgets-power/src/plugin.vala || die
 
 	# Fix systemd service path
-	use systemd && ( sed -e 's/%h\/\.local/\/usr/' -i data/niti-vala.service || die )
+	use systemd && ( sed -e 's/%h\/\.local/\/usr/' -e "s/\blib64\b/$(get_libdir)/" -e 's/\%t\/niti-vala/\%t\/niti-vala \%t\/dconf/' -i data/niti-vala.service || die )
 
 	use !elibc_glibc && eapply "${FILESDIR}/niti-vala-0.1-remove-musl-malloc_trim-function.patch"
 	use !systemd && eapply "${FILESDIR}/niti-vala-0.1-enable-elogind-support.patch"
+	eapply "${FILESDIR}/niti-vala-0.1-fix-config-folder-niti.patch"
 	popd
 }
 

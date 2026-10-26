@@ -1,0 +1,138 @@
+--- a/core/theme.vala
++++ b/core/theme.vala
+@@ -23,7 +23,7 @@ namespace Niti {
+ 
+         private static void refresh_colors () {
+             string src = GLib.Path.build_filename (
+-                GLib.Environment.get_home_dir (), ".config", "niti", "colors.scss");
++                GLib.Environment.get_home_dir (), ".config", "niti-vala", "colors.scss");
+             string dst = GLib.Path.build_filename (user_config_dir (), "colors.scss");
+             string data;
+             try {
+@@ -114,7 +114,7 @@ namespace Niti {
+             try {
+                 var colors_file = GLib.File.new_for_path (
+                     GLib.Path.build_filename (
+-                        GLib.Environment.get_home_dir (), ".config", "niti", "colors.scss"));
++                        GLib.Environment.get_home_dir (), ".config", "niti-vala", "colors.scss"));
+                 colors_monitor = colors_file.monitor_file (GLib.FileMonitorFlags.NONE, null);
+                 colors_monitor.changed.connect (on_file_changed);
+             } catch (GLib.Error e) {
+--- a/services-matugen/niti-matugen.vala
++++ b/services-matugen/niti-matugen.vala
+@@ -234,7 +234,7 @@ namespace Niti.Matugen {
+         }
+ 
+         public Service () {
+-            config_dir = GLib.Path.build_filename (GLib.Environment.get_user_config_dir (), "niti");
++            config_dir = GLib.Path.build_filename (GLib.Environment.get_user_config_dir (), "niti-vala");
+             colors_path = GLib.Path.build_filename (config_dir, "colors.scss");
+             request_generate ();
+             start_watch ();
+@@ -247,12 +247,12 @@ namespace Niti.Matugen {
+         private string[] watch_paths () {
+             string home = GLib.Environment.get_home_dir ();
+             return {
+-                GLib.Path.build_filename (home, ".config", "niti", "wallpaper"),
++                GLib.Path.build_filename (home, ".config", "niti-vala", "wallpaper"),
+                 GLib.Path.build_filename (home, ".config", "niri", "wallpaper"),
+                 GLib.Path.build_filename (home, "Pictures", "wallpaper.png"),
+                 GLib.Path.build_filename (home, ".wallpaper"),
+-                GLib.Path.build_filename (home, ".config", "niti", "accent.json"),
+-                GLib.Path.build_filename (home, ".config", "niti", "portal-accent"),
++                GLib.Path.build_filename (home, ".config", "niti-vala", "accent.json"),
++                GLib.Path.build_filename (home, ".config", "niti-vala", "portal-accent"),
+                 GLib.Path.build_filename (home, ".config", "niti-vala", "panel.json"),
+             };
+         }
+@@ -318,7 +318,7 @@ namespace Niti.Matugen {
+                 string color = custom;
+                 if (mode == "accent") {
+                     string accent = "#006b5e";
+-                    try { GLib.FileUtils.get_contents (GLib.Path.build_filename (GLib.Environment.get_user_config_dir (), "niti", "portal-accent"), out accent); } catch (GLib.Error e) { }
++                    try { GLib.FileUtils.get_contents (GLib.Path.build_filename (GLib.Environment.get_user_config_dir (), "niti-vala", "portal-accent"), out accent); } catch (GLib.Error e) { }
+                     AccentConfig cfg = load_accent_config ();
+                     color = overview_accent_color (accent.strip (), resolve_mode (cfg) == "dark");
+                 }
+@@ -766,7 +766,7 @@ $tertiary_fixed_dim: #bdc8ce;""";
+         private async string get_current_wallpaper () {
+             string home = GLib.Environment.get_home_dir ();
+             string[] track_files = {
+-                GLib.Path.build_filename (home, ".config", "niti", "wallpaper"),
++                GLib.Path.build_filename (home, ".config", "niti-vala", "wallpaper"),
+                 GLib.Path.build_filename (home, ".config", "niri", "wallpaper"),
+                 GLib.Path.build_filename (home, ".config", "ignis", "wallpaper"),
+             };
+--- a/services-hidpp/niti-hidpp.vala
++++ b/services-hidpp/niti-hidpp.vala
+@@ -43,7 +43,7 @@ namespace Niti.Hidpp {
+         }
+ 
+         public static string config_path () {
+-            return GLib.Path.build_filename (Environment.get_user_config_dir (), "niti", "logitech-keys.json");
++            return GLib.Path.build_filename (Environment.get_user_config_dir (), "niti-vala", "logitech-keys.json");
+         }
+ 
+         public static Settings load () {
+@@ -399,7 +399,7 @@ namespace Niti.Hidpp {
+         }
+ 
+         private void publish_status (bool found) {
+-            string path = GLib.Path.build_filename (Environment.get_user_config_dir (), "niti", "logitech-keys-status.json");
++            string path = GLib.Path.build_filename (Environment.get_user_config_dir (), "niti-vala", "logitech-keys-status.json");
+             try {
+                 GLib.DirUtils.create_with_parents (GLib.Path.get_dirname (path), 0700);
+                 GLib.FileUtils.set_contents (path, found ? "{\"available\":true}\n" : "{\"available\":false}\n");
+--- a/modules-hotkeys/niti-hotkeys.vala
++++ b/modules-hotkeys/niti-hotkeys.vala
+@@ -63,7 +63,7 @@ namespace Niti.Hotkeys {
+ 
+     private static string hotkeys_pinned_path () {
+         return GLib.Path.build_filename (
+-            GLib.Environment.get_user_config_dir (), "niti", "hotkeys-pinned.json");
++            GLib.Environment.get_user_config_dir (), "niti-vala", "hotkeys-pinned.json");
+     }
+ 
+     private static void ensure_pinned_loaded () {
+--- a/services-matugen/niti-portal-main.vala
++++ b/services-matugen/niti-portal-main.vala
+@@ -12,7 +12,7 @@ namespace Niti.Matugen {
+ 
+     public static int main (string[] args) {
+         var portal = new AccentPortal ();
+-        string path = GLib.Path.build_filename (GLib.Environment.get_user_config_dir (), "niti", "portal-accent");
++        string path = GLib.Path.build_filename (GLib.Environment.get_user_config_dir (), "niti-vala", "portal-accent");
+         apply_accent_file (portal, path);
+         FileMonitor? monitor = null;
+         try {
+--- a/services-applications/niti-applications.vala
++++ b/services-applications/niti-applications.vala
+@@ -907,7 +907,7 @@ namespace Niti.Applications {
+ 
+         private static string pinned_path () {
+             return GLib.Path.build_filename (
+-                GLib.Environment.get_user_config_dir (), "niti", "launcher-pinned.json");
++                GLib.Environment.get_user_config_dir (), "niti-vala", "launcher-pinned.json");
+         }
+ 
+         public bool is_launcher_pinned (string id) {
+--- a/modules-quickcenter/src/page_wallpaper.vala
++++ b/modules-quickcenter/src/page_wallpaper.vala
+@@ -114,7 +114,7 @@ namespace Niti.QuickCenter {
+             string folder = GLib.Path.build_filename (Environment.get_home_dir (), "Изображения", "AtomicNiri");
+             string current = "";
+             string fill = "crop";
+-            string config_path = GLib.Path.build_filename (Environment.get_user_config_dir (), "niti", "wallpaper.json");
++            string config_path = GLib.Path.build_filename (Environment.get_user_config_dir (), "niti-vala", "wallpaper.json");
+             string content;
+             try {
+                 FileUtils.get_contents (config_path, out content);
+@@ -218,7 +218,7 @@ namespace Niti.QuickCenter {
+                 }
+                 if (status != 0) return;
+ 
+-                string config_path = GLib.Path.build_filename (Environment.get_user_config_dir (), "niti", "wallpaper.json");
++                string config_path = GLib.Path.build_filename (Environment.get_user_config_dir (), "niti-vala", "wallpaper.json");
+                 string config_dir = GLib.Path.get_dirname (config_path);
+                 DirUtils.create_with_parents (config_dir, 0755);
+                 string folder = get_data<string> ("wallpaper-folder") ?? GLib.Path.get_dirname (path);
