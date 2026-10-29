@@ -73,7 +73,7 @@ alsa atk clang cpu_flags_arm_neon cups +dbus debug firejail hardened hwaccel \
 jack jemalloc +jit libcanberra libnotify libproxy libsecret lld lto ml mold pgo \
 pulseaudio sndio selinux speech systemd +system-av1 +system-ffmpeg +system-graphite2 \
 +system-harfbuzz +system-icu +system-jpeg +system-libevent +system-libvpx +system-png \
-+system-pipewire system-python-libs +system-webp telemetry test vaapi wayland +webrtc wifi webspeech X
++system-pipewire system-python-libs +system-webp telemetry test vaapi wayland +webrtc wifi X
 "
 
 # Firefox-only IUSE
@@ -118,6 +118,9 @@ REQUIRED_USE="
 	)
 	debug? (
 		!system-av1
+	)
+	speech? (
+		ml
 	)
 	wasm-sandbox? ( !system-graphite2 )
 	wayland? (
@@ -835,11 +838,6 @@ pkg_setup() {
 		ewarn "      decoding if supported."
 		ewarn
 	fi
-	if use webspeech ; then
-		ewarn
-		ewarn "Speech recognition (USE=webspeech) has not been confirmed working."
-		ewarn
-	fi
 
 	if use system-python-libs; then
 		ewarn "Ensure the system python libraries is consistent by running pip check."
@@ -896,10 +894,10 @@ src_prepare() {
 	fi
 
 	# Machine learning
-	#if ! use ml ; then
-		#eapply "${FILESDIR}/extra-patches/firefox-156.0.1-disable-ML.patch"
-		#sed -e '/\@BINPATH\@\/\@DLL_PREFIX\@mozinference\@DLL_SUFFIX\@/d' -i browser/installer/package-manifest.in || die
-	#fi
+	if ! use ml ; then
+		eapply "${FILESDIR}/extra-patches/firefox-158.0.1-disable-ML.patch"
+		sed -e '/\@BINPATH\@\/\@DLL_PREFIX\@mozinference\@DLL_SUFFIX\@/d' -i browser/installer/package-manifest.in || die
+	fi
 	eapply "${FILESDIR}/extra-patches/firefox-157-restrict-check-networking-for-binary.patch"
 
 	# Prevent tab crash
@@ -929,8 +927,6 @@ src_prepare() {
 	if use elibc_musl ; then
 		eapply "${FILESDIR}/extra-patches/firefox-156.0.0-audio_thread_priority_musl.patch"
 	fi
-
-	use !webspeech && ( cp -vp dom/media/webspeech/recognition/PSpeechRecognition.ipdl dom/ipc || die )
 
 	eapply "${WORKDIR}/firefox-patches"
 
@@ -1438,8 +1434,8 @@ src_configure() {
 	mozconfig_use_enable libproxy
 	mozconfig_use_enable jumbo-build unified-build
 	mozconfig_use_enable speech synth-speechd
+	mozconfig_use_enable speech webspeech
 	mozconfig_use_enable webrtc
-	mozconfig_use_enable webspeech
 	mozconfig_add_options_ac '-uniffi' --disable-uniffi-fixtures
 
 	if use hardened ; then
