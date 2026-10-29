@@ -930,6 +930,8 @@ src_prepare() {
 		eapply "${FILESDIR}/extra-patches/firefox-156.0.0-audio_thread_priority_musl.patch"
 	fi
 
+	use !webspeech && ( cp -vp dom/media/webspeech/recognition/PSpeechRecognition.ipdl dom/ipc || die )
+
 	eapply "${WORKDIR}/firefox-patches"
 
 	# Allow user to apply any additional patches without modifying ebuild
