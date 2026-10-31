@@ -1,0 +1,298 @@
+--- a/toolkit/moz.configure
++++ b/toolkit/moz.configure
+@@ -2572,18 +2572,33 @@ with only_when(compile_environment):
+ 
+ # FFmpeg's ffvpx configuration
+ # ==============================================================
++option("--with-ffvpx",
++    help="{Enable,Disable} the vendored ffmpeg fork called ffvpx.  Enables decode only for dav1d, flac, mp3, opus, vpx{8,9} on 64-bit; decode only for flac on 32-bit.",
++    nargs=1,
++    choices=("yes", "no", "default"),
++    default="default",
++)
+ 
+-
+-@depends(target)
+-def ffvpx(target):
+-    use_nasm = True
++@depends("--with-ffvpx", target)
++def ffvpx(values, target):
++    if any("no" in value for value in values):
++        return namespace(
++            use_nasm=False,
++            audio_only=False,
++            flags=[],
++            enable=False
++        )
++
+     audio_only = False
+     flags = []
+ 
+     # This enables audio and video codecs paths on Windows  x86 and x86_64,
+     # macOS (all arch), and Linux x86_64. On other arch / OS combinations,
+     # only audio codecs are enabled.
+-    if target.kernel == "WINNT":
++    if any("no" in value for value in values):
++        # Do not set MOZ_FFVPX_AUDIOONLY preprocessor codepaths
++        pass
++    elif target.kernel == "WINNT":
+         if target.cpu == "x86":
+             # 32-bit windows need to prefix symbols with an underscore.
+             flags = ["-DPIC", "-DWIN32", "-DPREFIX", "-Pconfig_win32.asm"]
+--- a/config/external/moz.build
++++ b/config/external/moz.build
+@@ -50,7 +50,8 @@ if not CONFIG["MOZ_SYSTEM_PNG"]:
+ if not CONFIG["MOZ_SYSTEM_WEBP"]:
+     external_dirs += ["media/libwebp"]
+ 
+-external_dirs += ["media/ffvpx"]
++if CONFIG["MOZ_FFVPX"]:
++    external_dirs += ["media/ffvpx"]
+ 
+ if CONFIG["MOZ_JXL"]:
+     external_dirs += ["media/libjxl", "media/highway"]
+--- a/dom/media/webaudio/FFTBlock.h
++++ b/dom/media/webaudio/FFTBlock.h
+@@ -10,7 +10,11 @@
+ #include "AlignedTArray.h"
+ #include "AudioNodeEngine.h"
+ #include "FFVPXRuntimeLinker.h"
++#ifdef MOZ_FFVPX
+ #include "ffvpx/tx.h"
++#else
++#include <libavutil/tx.h>
++#endif
+ 
+ namespace mozilla {
+ 
+--- a/browser/installer/package-manifest.in
++++ b/browser/installer/package-manifest.in
+@@ -174,8 +174,10 @@
+ #endif
+ @BINPATH@/@DLL_PREFIX@lgpllibs@DLL_SUFFIX@
+ @BINPATH@/@DLL_PREFIX@gkcodecs@DLL_SUFFIX@
++#ifdef MOZ_FFVPX
+ @BINPATH@/@DLL_PREFIX@mozavutil@DLL_SUFFIX@
+ @BINPATH@/@DLL_PREFIX@mozavcodec@DLL_SUFFIX@
++#endif
+ @BINPATH@/@DLL_PREFIX@mozinference@DLL_SUFFIX@
+ 
+ ; [Components]
+
+--- a/dom/media/platforms/ffmpeg/ffvpx/FFVPXRuntimeLinker.h
++++ b/dom/media/platforms/ffmpeg/ffvpx/FFVPXRuntimeLinker.h
+@@ -9,7 +9,11 @@
+ 
+ #include "PlatformDecoderModule.h"
+ #include "PlatformEncoderModule.h"
++#ifdef MOZ_FFVPX
+ #include "ffvpx/tx.h"
++#else
++#include <libavutil/tx.h>
++#endif
+ #include "mozilla/StaticMutex.h"
+ #include "mozilla/ThreadSafety.h"
+ 
+--- a/dom/media/platforms/ffmpeg/FFmpegLibWrapper.h
++++ b/dom/media/platforms/ffmpeg/FFmpegLibWrapper.h
+@@ -5,7 +5,11 @@
+ #ifndef __FFmpegLibWrapper_h__
+ #define __FFmpegLibWrapper_h__
+ 
++#ifdef MOZ_FFVPX
+ #include "ffvpx/tx.h"
++#else
++#include <libavutil/tx.h>
++#endif
+ #include "mozilla/Attributes.h"
+ #include "mozilla/DefineEnum.h"
+ #include "mozilla/Preferences.h"
+--- a/dom/media/platforms/ffmpeg/FFmpegAudioDecoder.cpp
++++ b/dom/media/platforms/ffmpeg/FFmpegAudioDecoder.cpp
+@@ -12,9 +12,7 @@
+ #include "VideoUtils.h"
+ #include "libavutil/dict.h"
+ #include "libavutil/samplefmt.h"
+-#if defined(FFVPX_VERSION)
+-#  include "libavutil/channel_layout.h"
+-#endif
++#include "libavutil/channel_layout.h"
+ #include "mozilla/StaticPrefs_media.h"
+ 
+ #ifdef MOZ_WIDGET_ANDROID
+@@ -159,7 +157,6 @@ void FFmpegAudioDecoder<LIBAV_VER>::Init
+   // audio.
+   mCodecContext->request_sample_fmt =
+       (mLib->mVersion == 53) ? AV_SAMPLE_FMT_S16 : AV_SAMPLE_FMT_FLT;
+-#ifdef FFVPX_VERSION
+   // AudioInfo's layout first 32-bits are bit-per-bit compatible with
+   // WAVEFORMATEXTENSIBLE and FFmpeg's AVChannel enum. We can cast here.
+   mCodecContext->ch_layout.nb_channels =
+@@ -173,7 +170,6 @@ void FFmpegAudioDecoder<LIBAV_VER>::Init
+                                     AssertedCast<int>(mAudioInfo.mChannels));
+   }
+   mCodecContext->sample_rate = AssertedCast<int>(mAudioInfo.mRate);
+-#endif
+ }
+ 
+ static AlignedAudioBuffer CopyAndPackAudio(AVFrame* aFrame,
+@@ -493,7 +489,6 @@ AVCodecID FFmpegAudioDecoder<LIBAV_VER>:
+   if (aMimeType.EqualsLiteral("audio/mp4a-latm")) {
+     return AV_CODEC_ID_AAC;
+   }
+-#ifdef FFVPX_VERSION
+   if (aMimeType.EqualsLiteral("audio/mpeg")) {
+     return AV_CODEC_ID_MP3;
+   }
+@@ -544,7 +539,6 @@ AVCodecID FFmpegAudioDecoder<LIBAV_VER>:
+       return AV_CODEC_ID_PCM_MULAW;
+     }
+   }
+-#endif
+ 
+   return AV_CODEC_ID_NONE;
+ }
+--- a/dom/media/platforms/ffmpeg/moz.build
++++ b/dom/media/platforms/ffmpeg/moz.build
+@@ -7,14 +7,6 @@ EXPORTS += [
+ ]
+ 
+ DIRS += [
+-    "libav53",
+-    "libav54",
+-    "libav55",
+-    "ffmpeg57",
+-    "ffmpeg58",
+-    "ffmpeg59",
+-    "ffmpeg60",
+-    "ffmpeg61",
+     "ffmpeg62",
+     "ffmpeg63",
+ ]
+--- a/dom/media/platforms/ffmpeg/FFmpegRuntimeLinker.cpp
++++ b/dom/media/platforms/ffmpeg/FFmpegRuntimeLinker.cpp
+@@ -52,18 +51,6 @@ static const char* sLibs[] = {
+ #else
+   "libavcodec.so." FFMPEG_MAX_MAJOR_VERSION_STR(FFMPEG_MAX_MAJOR_VERSION),
+   "libavcodec.so.62",
+-  "libavcodec.so.61",
+-  "libavcodec.so.60",
+-  "libavcodec.so.59",
+-  "libavcodec.so.58",
+-  "libavcodec-ffmpeg.so.58",
+-  "libavcodec-ffmpeg.so.57",
+-  "libavcodec-ffmpeg.so.56",
+-  "libavcodec.so.57",
+-  "libavcodec.so.56",
+-  "libavcodec.so.55",
+-  "libavcodec.so.54",
+-  "libavcodec.so.53",
+ #endif
+     // clang-format on
+ };
+@@ -87,39 +86,6 @@ bool FFmpegRuntimeLinker::Init() {
+           sLinkStatus = LinkStatus_SUCCEEDED;
+           sLinkStatusLibraryName = lib;
+           switch (sLibAV.mVersion) {
+-            case 53:
+-              FFmpegDecoderModule<53>::Init(&sLibAV);
+-              FFmpegEncoderModule<53>::Init(&sLibAV);
+-              break;
+-            case 54:
+-              FFmpegDecoderModule<54>::Init(&sLibAV);
+-              FFmpegEncoderModule<54>::Init(&sLibAV);
+-              break;
+-            case 55:
+-            case 56:
+-              FFmpegDecoderModule<55>::Init(&sLibAV);
+-              FFmpegEncoderModule<55>::Init(&sLibAV);
+-              break;
+-            case 57:
+-              FFmpegDecoderModule<57>::Init(&sLibAV);
+-              FFmpegEncoderModule<57>::Init(&sLibAV);
+-              break;
+-            case 58:
+-              FFmpegDecoderModule<58>::Init(&sLibAV);
+-              FFmpegEncoderModule<58>::Init(&sLibAV);
+-              break;
+-            case 59:
+-              FFmpegDecoderModule<59>::Init(&sLibAV);
+-              FFmpegEncoderModule<59>::Init(&sLibAV);
+-              break;
+-            case 60:
+-              FFmpegDecoderModule<60>::Init(&sLibAV);
+-              FFmpegEncoderModule<60>::Init(&sLibAV);
+-              break;
+-            case 61:
+-              FFmpegDecoderModule<61>::Init(&sLibAV);
+-              FFmpegEncoderModule<61>::Init(&sLibAV);
+-              break;
+             case 62:
+               FFmpegDecoderModule<62>::Init(&sLibAV);
+               FFmpegEncoderModule<62>::Init(&sLibAV);
+@@ -193,31 +159,6 @@ already_AddRefed<PlatformDecoderModule>
+   }
+   RefPtr<PlatformDecoderModule> module;
+   switch (sLibAV.mVersion) {
+-    case 53:
+-      module = FFmpegDecoderModule<53>::Create(&sLibAV);
+-      break;
+-    case 54:
+-      module = FFmpegDecoderModule<54>::Create(&sLibAV);
+-      break;
+-    case 55:
+-    case 56:
+-      module = FFmpegDecoderModule<55>::Create(&sLibAV);
+-      break;
+-    case 57:
+-      module = FFmpegDecoderModule<57>::Create(&sLibAV);
+-      break;
+-    case 58:
+-      module = FFmpegDecoderModule<58>::Create(&sLibAV);
+-      break;
+-    case 59:
+-      module = FFmpegDecoderModule<59>::Create(&sLibAV);
+-      break;
+-    case 60:
+-      module = FFmpegDecoderModule<60>::Create(&sLibAV);
+-      break;
+-    case 61:
+-      module = FFmpegDecoderModule<61>::Create(&sLibAV);
+-      break;
+     case 62:
+       module = FFmpegDecoderModule<62>::Create(&sLibAV);
+       break;
+--- a/dom/media/platforms/ffmpeg/FFmpegRuntimeLinker.cpp
++++ b/dom/media/platforms/ffmpeg/FFmpegRuntimeLinker.cpp
+@@ -180,31 +180,6 @@ already_AddRefed<PlatformEncoderModule>
+   }
+   RefPtr<PlatformEncoderModule> module;
+   switch (sLibAV.mVersion) {
+-    case 53:
+-      module = FFmpegEncoderModule<53>::Create(&sLibAV);
+-      break;
+-    case 54:
+-      module = FFmpegEncoderModule<54>::Create(&sLibAV);
+-      break;
+-    case 55:
+-    case 56:
+-      module = FFmpegEncoderModule<55>::Create(&sLibAV);
+-      break;
+-    case 57:
+-      module = FFmpegEncoderModule<57>::Create(&sLibAV);
+-      break;
+-    case 58:
+-      module = FFmpegEncoderModule<58>::Create(&sLibAV);
+-      break;
+-    case 59:
+-      module = FFmpegEncoderModule<59>::Create(&sLibAV);
+-      break;
+-    case 60:
+-      module = FFmpegEncoderModule<60>::Create(&sLibAV);
+-      break;
+-    case 61:
+-      module = FFmpegEncoderModule<61>::Create(&sLibAV);
+-      break;
+     case 62:
+       module = FFmpegEncoderModule<62>::Create(&sLibAV);
+       break;

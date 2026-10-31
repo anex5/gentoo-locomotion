@@ -4,12 +4,13 @@
 EAPI=8
 
 # Using Gentoos firefox patches as system libraries and lto are quite nice
-FIREFOX_PATCHSET="firefox-158-patches-02.tar.xz"
+FIREFOX_PATCHSET="firefox-156-patches-02.tar.xz"
 
 LLVM_COMPAT=( {22..23} )
 
 # This will also filter rust versions that don't match LLVM_COMPAT in the non-clang path; this is fine.
 RUST_NEEDS_LLVM=1
+# If not building with clang we need at least rust 1.76
 RUST_MIN_VER=1.90.0
 
 PYTHON_COMPAT=( python3_{12..14} )
@@ -24,7 +25,7 @@ WASI_SDK_LLVM_VER=23
 
 MOZ_ESR=
 
-MOZ_PV=158.0.1
+MOZ_PV=156.0.1
 MOZ_PV_SUFFIX=
 if [[ ${PV} =~ (_(alpha|beta|rc).*)$ ]] ; then
 	MOZ_PV_SUFFIX=${BASH_REMATCH[1]}
@@ -73,7 +74,7 @@ alsa atk clang cpu_flags_arm_neon cups +dbus debug firejail hardened hwaccel \
 jack jemalloc +jit libcanberra libnotify libproxy libsecret lld lto ml mold pgo \
 pulseaudio sndio selinux speech systemd +system-av1 +system-ffmpeg +system-graphite2 \
 +system-harfbuzz +system-icu +system-jpeg +system-libevent +system-libvpx +system-png \
-+system-pipewire system-python-libs +system-webp telemetry test vaapi wayland +webrtc wifi X
++system-pipewire system-python-libs +system-webp telemetry test vaapi wayland +webrtc wifi webspeech X
 "
 
 # Firefox-only IUSE
@@ -118,9 +119,6 @@ REQUIRED_USE="
 	)
 	debug? (
 		!system-av1
-	)
-	speech? (
-		ml
 	)
 	wasm-sandbox? ( !system-graphite2 )
 	wayland? (
@@ -237,7 +235,7 @@ CDEPEND="
 	>=app-accessibility/at-spi2-core-2.46.0:2
 	dev-libs/glib:2
 	dev-libs/libffi:=
-	>=dev-libs/nss-3.130
+	>=dev-libs/nss-3.128
 	>=dev-libs/nspr-4.39
 	media-libs/alsa-lib
 	media-libs/fontconfig
@@ -436,13 +434,17 @@ llvm_check_deps() {
 			einfo "llvm-core/lld:${LLVM_SLOT} is missing! Cannot use LLVM slot ${LLVM_SLOT} ..." >&2
 			return 1
 		fi
-	fi
-
-	if use pgo ; then
-		if ! has_version -b "=llvm-runtimes/compiler-rt-sanitizers-${LLVM_SLOT}*[profile]" ; then
-			einfo "=llvm-runtimes/compiler-rt-sanitizers-${LLVM_SLOT}*[profile] is missing!"
-			einfo "Cannot use LLVM slot ${LLVM_SLOT} ..." >&2
+		if ! has_version -b "dev-lang/rust:0/llvm-${LLVM_SLOT}" && ! has_version -b "dev-lang/rust-bin:0/llvm-${LLVM_SLOT}"; then
+			einfo "dev-lang/rust:0/llvm-${LLVM_SLOT} is missing! Cannot use LLVM slot ${LLVM_SLOT} ..." >&2
 			return 1
+		fi
+
+		if use pgo ; then
+			if ! has_version -b "=llvm-runtimes/compiler-rt-sanitizers-${LLVM_SLOT}*[profile]" ; then
+				einfo "=llvm-runtimes/compiler-rt-sanitizers-${LLVM_SLOT}*[profile] is missing!"
+				einfo "Cannot use LLVM slot ${LLVM_SLOT} ..." >&2
+				return 1
+			fi
 		fi
 	fi
 
@@ -838,6 +840,11 @@ pkg_setup() {
 		ewarn "      decoding if supported."
 		ewarn
 	fi
+	if use webspeech ; then
+		ewarn
+		ewarn "Speech recognition (USE=webspeech) has not been confirmed working."
+		ewarn
+	fi
 
 	if use system-python-libs; then
 		ewarn "Ensure the system python libraries is consistent by running pip check."
@@ -865,11 +872,13 @@ src_prepare() {
 	use dbus || eapply "${FILESDIR}/zen-browser-no-dbus.patch"
 	eapply "${FILESDIR}/zen-browser-no-fribidi.patch"
 	eapply "${FILESDIR}/zen-browser-fix-python-utcfromtimestamp.patch"
+	eapply "${FILESDIR}/zen-browser-fix-wrong-context-PR14384.patch"
 
 	# Use system gtest package
 	sed -e "/TEST_DIRS += [\"test\/gtest\"]/d" -i "image/moz.build" || die
 
 	if use lto; then
+		rm -v "${WORKDIR}"/firefox-patches/*-LTO-Only-enable-LTO-*.patch || die
 		rm -v "${WORKDIR}"/firefox-patches/*-gcc-lto-pgo-gentoo.patch || die
 	fi
 
@@ -890,12 +899,13 @@ src_prepare() {
 
 	# Allow to use system-ffmpeg completely.
 	if use system-ffmpeg; then
-		eapply "${FILESDIR}/extra-patches/firefox-157-disable-ffvpx.patch" || die
+		#eapply "${FILESDIR}/extra-patches/firefox-115e-allow-ffmpeg-decode-av1.patch"
+		eapply "${FILESDIR}/extra-patches/firefox-128e-disable-ffvpx.patch" || die
 	fi
 
 	# Machine learning
 	if ! use ml ; then
-		eapply "${FILESDIR}/extra-patches/firefox-158.0.1-disable-ML.patch"
+		eapply "${FILESDIR}/extra-patches/firefox-156.0.1-disable-ML.patch"
 		sed -e '/\@BINPATH\@\/\@DLL_PREFIX\@mozinference\@DLL_SUFFIX\@/d' -i browser/installer/package-manifest.in || die
 	fi
 	eapply "${FILESDIR}/extra-patches/firefox-157-restrict-check-networking-for-binary.patch"
@@ -930,7 +940,7 @@ src_prepare() {
 
 	eapply "${WORKDIR}/firefox-patches"
 
-	# Allow user to apply any additional patches without modifying ebuild
+	# Allow user to apply any additional patches without modifing ebuild
 	eapply_user
 
 	# Make cargo respect MAKEOPTS
@@ -1015,7 +1025,9 @@ src_prepare() {
 
 	# Clear checksums from cargo crates we've manually patched.
 	# moz_clear_vendor_checksums crate
-	moz_clear_vendor_checksums bindgen
+	# glslopt: bgo#969412
+	# moz_clear_vendor_checksums glslopt
+	# moz_clear_vendor_checksums encoding_rs
 
 	# Respect choice for "jumbo-build"
 	# Changing the value for FILES_PER_UNIFIED_FILE may not work, see #905431
@@ -1309,6 +1321,7 @@ src_configure() {
 		--disable-strip \
 		--disable-updater \
 		--disable-valgrind \
+		--disable-wmf \
 		--enable-negotiateauth \
 		--enable-new-pass-manager \
 		--enable-packed-relative-relocs \
@@ -1341,10 +1354,12 @@ src_configure() {
 	if use system-ffmpeg ; then
 		mozconfig_add_options_ac \
 			'+system-ffmpeg' \
+			--enable-ffmpeg \
 			--with-ffvpx=no
 	else
 		mozconfig_add_options_ac \
-			'-system-ffmpeg'
+			'-system-ffmpeg' \
+			--disable-ffmpeg
 	fi
 
 	# The commented lines above are mutually exclusive with this line below.
@@ -1433,9 +1448,10 @@ src_configure() {
 	mozconfig_use_enable dbus
 	mozconfig_use_enable libproxy
 	mozconfig_use_enable jumbo-build unified-build
+	mozconfig_use_enable cups printing
 	mozconfig_use_enable speech synth-speechd
-	mozconfig_use_enable speech webspeech
 	mozconfig_use_enable webrtc
+	mozconfig_use_enable webspeech
 	mozconfig_add_options_ac '-uniffi' --disable-uniffi-fixtures
 
 	if use hardened ; then
@@ -2086,13 +2102,6 @@ pkg_preinst() {
 
 pkg_postinst() {
 	xdg_pkg_postinst
-
-	elog "Cloudflare browser checks are broken with Zen Browser anti fingerprinting measures."
-	elog "You can fix cloudflare browser checks by undoing them in about:config like below:"
-	# Specifying (X11) is necessary for it to work, even in a Wayland session
-	elog "   general.appversion.override: ${PV%.[0-9]*} (X11)"
-	elog "   general.oscpu.override: Linux x86_64"
-	elog "   general.platform.override: Linux x86_64"
 
 	if use pulseaudio && has_version ">=media-sound/apulse-0.1.12-r4" ; then
 		elog "Apulse was detected at merge time on this system and so it will always be"
