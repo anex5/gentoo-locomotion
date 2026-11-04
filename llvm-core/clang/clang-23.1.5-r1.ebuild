@@ -3,7 +3,7 @@
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{12..14} )
+PYTHON_COMPAT=( python3_{13..14} )
 
 inherit cmake llvm.org multilib multilib-minimal
 inherit prefix python-single-r1 toolchain-funcs
@@ -354,14 +354,19 @@ src_prepare() {
 
 	eapply_hardened
 
-	# Add Gentoo Portage Prefix for Darwin.  See prefix-dirs.patch.
+	# Bug: https://github.com/llvm/llvm-project/pull/211587
+	sed -e "s/llvm::sys::path::append(LibPath, \"lib\");/llvm::sys::path::append(LibPath, \"$(get_libdir)\");/" \
+		-i lib/Driver/ToolChains/AMDGPU.cpp || die
+	sed -e "s@\([/*]\)lib\(/libamdhip64\.so\|]]\|}}\)@\1$(get_libdir)\2@g" \
+		-i test/Driver/{hip-runtime-libs-{linux,msvc},rocm-detect}.hip || die
+
+	# add Gentoo Portage Prefix for Darwin (see prefix-dirs.patch)
 	eprefixify \
 		lib/Lex/InitHeaderSearch.cpp \
 		lib/Driver/ToolChains/Darwin.cpp || die
 
 	if ! use prefix-guest && [[ -n ${EPREFIX} ]]; then
-		sed -i "/LibDir.*Loader/s@return \"\/\"@return \"${EPREFIX}/\"@" \
-			lib/Driver/ToolChains/Linux.cpp || die
+		sed -i "/LibDir.*Loader/s@return \"\/\"@return \"${EPREFIX}/\"@" lib/Driver/ToolChains/Linux.cpp || die
 	fi
 }
 
