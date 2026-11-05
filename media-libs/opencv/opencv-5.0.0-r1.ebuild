@@ -3,7 +3,7 @@
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{13..14} )
+PYTHON_COMPAT=( python3_{13..15} )
 
 inherit flag-o-matic multilib multiprocessing toolchain-funcs
 inherit cuda java-pkg-opt-2 cmake-multilib python-r1 virtualx xdg-utils
@@ -79,7 +79,7 @@ SLOT="0/${PV}" # subslot = libopencv* soname version
 IUSE="debug doc +eigen flatbuffers gflags glog java non-free lto onnx opencvapps python test testprograms"
 
 # modules
-IUSE+=" contrib contribcvv contribdnn contribfreetype contribhdf contribovis contribsfm contribxfeatures2d examples +features wechat-qrcode"
+IUSE+=" contrib contribcvv contribdnn contribfreetype contribhdf contribovis contribsfm contribxfeatures2d examples +features2d wechat-qrcode"
 # hardware
 IUSE+=" cuda cudnn opencl video_cards_intel"
 # video
@@ -190,7 +190,7 @@ REQUIRED_USE="
 	?? ( gtk3 qt6 )
 	?? ( cuda gdal )
 	?? ( opengl vulkan )
-	test? ( || ( ffmpeg gstreamer ) jpeg png tiff features )
+	test? ( || ( ffmpeg gstreamer ) jpeg png tiff features2d )
 	wayland? ( !vtk )
 	wechat-qrcode? ( contribdnn )
 "
@@ -382,6 +382,7 @@ PATCHES=(
 
 	#"${FILESDIR}/${PN}-4.11.0-qt-6.9.patch" # https://github.com/opencv/opencv/issues/27223
 	"${FILESDIR}/${PN}-5.0.0-dnn-restore-caffe-proto.patch"
+	"${FILESDIR}/${PN}-5.0.0-ffmpeg9-avcodec-removed-fields.patch"
 )
 
 cuda_get_host_compiler() {
@@ -896,10 +897,10 @@ multilib_src_configure() {
 	# configure modules to be build
 	# ===================================================
 		-DBUILD_opencv_dnn="$(usex contribdnn)"
-		-DBUILD_opencv_gapi="$(usex contrib "$(usex features "$(usex ffmpeg yes "$(usex gstreamer)")" no)" no)"
+		-DBUILD_opencv_gapi="$(usex contrib "$(usex features2d "$(usex ffmpeg yes "$(usex gstreamer)")" no)" no)"
 		-DBUILD_opencv_ml="$(usex contrib)"
 		# features2d was renamed to features in 5.x (ships a features2d.hpp shim).
-		-DBUILD_opencv_features="$(usex features)"
+		-DBUILD_opencv_features="$(usex features2d)"
 		-DBUILD_opencv_java_bindings_generator="$(usex java)"
 		-DBUILD_opencv_wechat_qrcode="$(usex wechat-qrcode)"
 		-DBUILD_opencv_julia="no"
