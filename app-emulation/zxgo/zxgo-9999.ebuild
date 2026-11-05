@@ -3,7 +3,7 @@
 
 EAPI=8
 
-inherit go-module toolchain-funcs xdg-utils desktop
+inherit go-module toolchain-funcs flag-o-matic xdg-utils desktop
 
 MY_PN="${PN}-v3"
 DESCRIPTION="Very simple Sinclair ZX Spectrum emulator"
@@ -32,8 +32,15 @@ BDEPEND="
 "
 RESTRICT="mirror"
 
+
+pkg_setup() {
+	strip-unsupported-flags
+}
+
 src_compile() {
-	ego build -o "bin/${PN}" "./cmd/${PN}"
+	GOFLAGS="-v -x -mod=vendor -trimpath"
+	CGO_ENABLED=1 CGO_CFLAGS_ALLOW="-fno-strict-overflow" \
+    ego build -ldflags="-s -w" -o "bin/${PN}" "./cmd/${PN}"
 }
 
 #src_test() {
@@ -41,7 +48,6 @@ src_compile() {
 #}
 
 src_install() {
-	#mv emulator zxgo
 	doicon -s scalable "${FILESDIR}"/zx.svg
 	domenu "${FILESDIR}/${PN}.desktop"
 	dobin bin/zxgo
