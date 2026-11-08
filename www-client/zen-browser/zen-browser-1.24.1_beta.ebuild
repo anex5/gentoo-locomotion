@@ -4,7 +4,7 @@
 EAPI=8
 
 # Using Gentoos firefox patches as system libraries and lto are quite nice
-FIREFOX_PATCHSET="firefox-159-patches-01.tar.xz"
+FIREFOX_PATCHSET="firefox-159-patches-02.tar.xz"
 
 LLVM_COMPAT=( {22..23} )
 
@@ -24,7 +24,7 @@ WASI_SDK_LLVM_VER=23
 
 MOZ_ESR=
 
-MOZ_PV=159.0
+MOZ_PV=159.0.1
 MOZ_PV_SUFFIX=
 if [[ ${PV} =~ (_(alpha|beta|rc).*)$ ]] ; then
 	MOZ_PV_SUFFIX=${BASH_REMATCH[1]}
@@ -736,7 +736,7 @@ pkg_setup() {
 		rust_pkg_setup
 		python-any-r1_pkg_setup
 
-		# Avoid PGO profiling problems due to enviroment leakage
+		# Avoid PGO profiling problems due to environment leakage
 		# These should *always* be cleaned up anyway
 		unset \
 			DBUS_SESSION_BUS_ADDRESS \
@@ -892,11 +892,11 @@ src_prepare() {
 	fi
 
 	# Machine learning
-	if ! use ml ; then
-		eapply "${FILESDIR}/extra-patches/firefox-159.0.1-disable-ML.patch"
-		sed -e '/\@BINPATH\@\/\@DLL_PREFIX\@mozinference\@DLL_SUFFIX\@/d' -i browser/installer/package-manifest.in || die
-		rm -vrf toolkit/components/ml || die
-	fi
+	#if ! use ml ; then
+		#eapply "${FILESDIR}/extra-patches/firefox-159.0.1-disable-ML.patch"
+		#sed -e '/\@BINPATH\@\/\@DLL_PREFIX\@mozinference\@DLL_SUFFIX\@/d' -i browser/installer/package-manifest.in || die
+		#rm -vrf toolkit/components/ml || die
+	#fi
 	eapply "${FILESDIR}/extra-patches/firefox-157-restrict-check-networking-for-binary.patch"
 
 	# Prevent tab crash
