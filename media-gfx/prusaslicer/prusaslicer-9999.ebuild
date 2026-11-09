@@ -7,7 +7,7 @@ WX_GTK_VER="3.2-gtk3"
 MY_PN="PrusaSlicer"
 MY_PV="$(ver_rs 3 -)"
 
-inherit cmake wxwidgets xdg
+inherit cmake udev wxwidgets xdg
 
 if [[ ${PV} == *9999* ]]; then
 	inherit git-r3
@@ -27,7 +27,7 @@ IUSE="debug gui step test"
 
 RESTRICT="!test? ( test ) mirror"
 
-RDEPEND="
+CDEPEND="
 	dev-cpp/eigen:=
 	dev-cpp/tbb:=
 	dev-cpp/nlohmann_json:=
@@ -60,7 +60,11 @@ RDEPEND="
 	)
 	media-libs/nanosvg:=
 "
-DEPEND="${RDEPEND}
+RDEPEND="
+	${CDEPEND}
+	virtual/udev
+"
+DEPEND="${CDEPEND}
 	media-libs/qhull[static-libs]
 	test? ( >=dev-cpp/catch-3.8 )
 "
@@ -78,6 +82,7 @@ PATCHES=(
 	"${FILESDIR}/${PN}-2.9.5-fix-build-with-eigen-5.patch"
 	"${FILESDIR}/${PN}-2.9.5-thumbnails-offscreen-OpenGL-PR15355.patch"
 	"${FILESDIR}/${PN}-2.9.6-catch2-3.8-resultcapture.patch"
+	"${FILESDIR}/${PN}-2.9.7-fix-missing-exception-include.patch"
 )
 
 src_prepare() {
@@ -143,4 +148,14 @@ src_test() {
 		"^libslic3r_tests$"
 	)
 	cmake_src_test
+}
+
+pkg_postinst() {
+	xdg_pkg_postinst
+	udev_reload
+}
+
+pkg_postrm() {
+	xdg_pkg_postrm
+	udev_reload
 }

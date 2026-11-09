@@ -1,0 +1,26 @@
+--- a/bundled_deps/tcbspan/tcbspan/span.hpp
++++ b/bundled_deps/tcbspan/tcbspan/span.hpp
+@@ -13,6 +13,7 @@
+ #include <cstddef>
+ #include <element_type>
+ #include <type_traits>
++#include <exception>
+ 
+ namespace tcb {
+ 
+--- a/src/libslic3r/ObjectID.cpp
++++ b/src/libslic3r/ObjectID.cpp
+@@ -6,2 +4,3 @@
+ #include "ObjectID.hpp"
++#include <vector>
+ 
+--- a/src/occt_wrapper/OCCTWrapper.cpp
++++ b/src/occt_wrapper/OCCTWrapper.cpp
+@@ -22,6 +22,7 @@
+ #include "TDataStd_Name.hxx"
+ #include "BRepBuilderAPI_Transform.hxx"
+ #include "TopExp_Explorer.hxx"
++#include <TDF_LabelSequence.hxx>
+ #include "BRep_Tool.hxx"
+ #include "admesh/stl.h"
+ #include "libslic3r/Point.hpp"
