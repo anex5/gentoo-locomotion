@@ -17,8 +17,8 @@ if [[ "${PV}" == "9999" ]]; then
 else
 	MY_PV="${PV/_/-}"
 	LIBGWATER_COMMIT="d86f9903efb9c490c0e3b0316d7f2da5b5a5632c"
-	LIBNKUTILS_COMMIT="2f220a40ad32cf51b6b7d7ae83ab641a3ae76693"
-	ROFI_COMMIT="58376cf59976b4791d40f293feb816facf399217"
+	LIBNKUTILS_COMMIT="d436ee7a35eae0a6f926f375727bb3f99bc285f4"
+	ROFI_COMMIT="f30560ff95264ba3f897c71987ea0c8ffa0b0585"
 	SRC_URI="
 		https://github.com/davatorium/rofi/archive/${ROFI_COMMIT}.tar.gz -> ${P}-${COMMIT}.gh.tar.gz
 		https://github.com/sardemff7/libgwater/archive/${LIBGWATER_COMMIT}.tar.gz -> libgwater-${LIBGWATER_COMMIT}.gh.tar.gz
