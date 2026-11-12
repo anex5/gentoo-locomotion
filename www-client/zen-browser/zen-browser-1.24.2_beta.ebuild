@@ -4,7 +4,7 @@
 EAPI=8
 
 # Using Gentoos firefox patches as system libraries and lto are quite nice
-FIREFOX_PATCHSET="firefox-159-patches-02.tar.xz"
+FIREFOX_PATCHSET="firefox-160-patches-02.tar.xz"
 
 LLVM_COMPAT=( 22 23 )
 
@@ -24,7 +24,7 @@ WASI_SDK_LLVM_VER=23
 
 MOZ_ESR=
 
-MOZ_PV=159.0.1
+MOZ_PV=160.0.0
 MOZ_PV_SUFFIX=
 if [[ ${PV} =~ (_(alpha|beta|rc).*)$ ]] ; then
 	MOZ_PV_SUFFIX=${BASH_REMATCH[1]}
@@ -900,7 +900,7 @@ src_prepare() {
 	eapply "${FILESDIR}/extra-patches/firefox-157-restrict-check-networking-for-binary.patch"
 
 	# Prevent tab crash
-	eapply "${FILESDIR}/extra-patches/firefox-143.0.3-disable-broken-flags-dom-bindings.patch"
+	eapply "${FILESDIR}/extra-patches/firefox-160.0-disable-broken-flags-dom-bindings.patch"
 
 	# Prevent video seek bug
 	eapply "${FILESDIR}/extra-patches/firefox-122.0-disable-broken-flags-ipc-chromium-chromium-config.patch"
