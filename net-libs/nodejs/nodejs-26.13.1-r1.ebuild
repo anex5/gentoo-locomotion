@@ -23,7 +23,7 @@ if [[ ${PV} == *9999 ]]; then
 else
 	SRC_URI="https://nodejs.org/dist/v${PV}/node-v${PV}.tar.xz"
 	SLOT="0/$(ver_cut 1)"
-	KEYWORDS="~amd64 ~arm ~arm64 ~loong ~ppc64 ~riscv ~x86 ~x64-macos"
+	KEYWORDS="amd64 ~arm ~arm64 ~loong ~ppc64 ~riscv ~x86 ~x64-macos"
 	S="${WORKDIR}/node-v${PV}"
 fi
 
@@ -40,6 +40,7 @@ REQUIRED_USE="
 	system-lief? ( lief )
 	x86? ( cpu_flags_x86_sse2 )
 	v8-sandbox? ( pointer-compression )
+	ppc64? ( !lief )
 "
 
 RESTRICT="
@@ -54,7 +55,7 @@ COMMON_DEPEND=">=app-arch/brotli-1.2.1:=
 	>=dev-cpp/simdutf-9.2.1-r1:=
 	>=dev-libs/libuv-1.52.1:=
 	>=dev-libs/simdjson-5.0.3:=
-	>=net-dns/c-ares-1.34.8:=
+	>=net-dns/c-ares-1.34.9:=
 	>=net-libs/nghttp2-1.70.0:=
 	>=net-libs/nghttp3-1.18.0:=
 	virtual/zlib:=
@@ -63,11 +64,14 @@ COMMON_DEPEND=">=app-arch/brotli-1.2.1:=
 		>=dev-util/lief-0.17.2:=
 		<dev-util/lief-1.0.0
 	)
-	system-ssl? (
-		>=net-libs/ngtcp2-1.25.0:=
-		>=dev-libs/openssl-3.5.9:0=[asm?,fips?]
+	ssl? (
+		system-ssl? (
+			>=net-libs/ngtcp2-1.25.0:=
+			>=dev-libs/openssl-3.5.9:0=
+		)
+		!system-ssl? ( >=net-libs/ngtcp2-1.25.0:=[-gnutls] )
 	)
-	!system-ssl? ( >=net-libs/ngtcp2-1.25.0:=[-gnutls] )
+	!ssl? ( >=net-libs/ngtcp2-1.25.0:= )
 	|| (
 		sys-devel/gcc:*
 		llvm-runtimes/libatomic-stub
@@ -79,7 +83,7 @@ BDEPEND="${PYTHON_DEPS}
 	pax-kernel? ( sys-apps/elfix )
 	sys-apps/coreutils
 	temporal? ( ${RUST_DEPEND} )
-	test? ( net-misc/curl )
+	test? ( net-misc/curl app-arch/unzip )
 	mold? ( >=sys-devel/mold-2.0 )
 	lld? ( llvm-core/lld )
 	virtual/pkgconfig
@@ -100,7 +104,7 @@ CHECKREQS_DISK_BUILD="22G"
 
 PATCHES=(
 	"${FILESDIR}/${PN}-26.6.0-format-cstdlib.patch"
-#	"${FILESDIR}/${PN}-26.6.0-v8-climits.patch"
+	"${FILESDIR}/${PN}-26.12.0-v8-climits.patch"
 	"${FILESDIR}/${PN}-26.11.1-add-missing-funcational-inc.patch"
 	"${FILESDIR}/${PN}-26.10.0-x86-SSE2-fix.patch"
 	"${FILESDIR}/${PN}-26.10.0-simdutf-use-system-header.patch"
@@ -338,11 +342,6 @@ src_configure() {
 	use npm || myconf+=( --without-npm )
 	use snapshot || myconf+=( --without-node-snapshot )
 	if use ssl; then
-		use system-ssl && myconf+=(--shared-openssl --openssl-use-def-ca-store)
-	else
-		myconf+=(--without-ssl)
-	fi
-	if use ssl; then
 		use system-ssl && myconf+=( --shared-openssl --openssl-use-def-ca-store )
 	else
 		myconf+=( --without-ssl )
@@ -458,6 +457,7 @@ src_install() {
 
 src_test() {
 	local drop_tests=(
+		test/parallel/test-blocklist.js
 		test/parallel/test-dns.js
 		test/parallel/test-dns-resolveany-bad-ancount.js
 		test/parallel/test-dns-setserver-when-querying.js
@@ -481,8 +481,12 @@ src_test() {
 		test/parallel/test-snapshot-reproducible.js
 		test/parallel/test-socket-write-after-fin-error.js
 		test/parallel/test-strace-openat-openssl.js
+		test/parallel/test-x509-escaping.js
+		test/parallel/test-util-styletext.js
+		test/parallel/test-util-styletext-hex.js
 		test/sequential/test-tls-session-timeout.js
 		test/sequential/test-util-debug.js
+		test/sequential/test-watch-mode.mjs
 	)
 
 	if has_version "sys-libs/zlib-ng" ; then
@@ -491,6 +495,13 @@ src_test() {
 		drop_tests+=( test/parallel/test-process-versions.js )
 		drop_tests+=( test/parallel/test-zlib-zip-interop.js )
 		elog
+	fi
+
+	# Skip the ZIP interop test when system unzip lacks natspec
+	# (zipinfo can't handle the Unicode filename otherwise)
+	if ! has_version "app-arch/unzip[natspec]" ; then
+		elog "Skipping test-zlib-zip-interop.js: system unzip was built without natspec"
+		drop_tests+=( test/parallel/test-zlib-zip-interop.js )
 	fi
 
 	use inspector ||
