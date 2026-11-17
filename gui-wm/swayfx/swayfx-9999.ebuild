@@ -83,7 +83,7 @@ src_prepare() {
 }
 
 src_configure() {
-	! use elibc_glibc && append-cppflags "-D__always_inline=__attribute__((always_inline))"
+	! use elibc_glibc && append-cppflags "-D__always_inline=__attribute__\(\(always_inline\)\)"
 	local emesonargs=(
 		$(meson_feature man man-pages)
 		$(meson_feature tray)
