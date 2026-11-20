@@ -12,7 +12,7 @@ LLVM_COMPAT=( 22 23 )
 RUST_NEEDS_LLVM=1
 RUST_MIN_VER=1.91.0
 
-PYTHON_COMPAT=( python3_{12..14} )
+PYTHON_COMPAT=( python3_{12..15} )
 PYTHON_REQ_USE="ncurses,sqlite,ssl"
 
 VIRTUALX_REQUIRED="manual"
@@ -24,7 +24,7 @@ WASI_SDK_LLVM_VER=23
 
 MOZ_ESR=
 
-MOZ_PV=160.0.0
+MOZ_PV=160.0.1
 MOZ_PV_SUFFIX=
 if [[ ${PV} =~ (_(alpha|beta|rc).*)$ ]] ; then
 	MOZ_PV_SUFFIX=${BASH_REMATCH[1]}
@@ -1947,6 +1947,14 @@ src_install() {
 	# options stop working.
 	if ! use telemetry ; then
 		cat "${FILESDIR}"/gentoo-telemetry-prefs.js >>"${GENTOO_PREFS}" || die "failed to set telemetry prefs"
+
+		# When not building "official" copy of Firefox, ie when building with '-telemetry' use flag, these
+		# prefs are turned on causing verbose messaging in sysjournal. Guard these prefs behind 'telemetry'
+		# use flag so they get enabled for '+debug' builds correctly. # bgo#956677
+		cat >>"${GENTOO_PREFS}" <<-EOF || die "failed to set non-official debug prefs"
+		sticky_pref("browser.dom.window.dump.enabled", false);
+		sticky_pref("devtools.console.stdout.chrome", false);
+		EOF
 	fi
 
 	# Force machine learning features
